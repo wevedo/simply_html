@@ -4,49 +4,67 @@
 require("dotenv").config(); // Load environment variables
 const { adams } = require("../Ibrahim/adams");
 const yts = require("yt-search");
-const axios = require("axios");
+const puppeteer = require("puppeteer");
 
 // Retrieve sensitive data from environment variables
-const BaseUrl = process.env.GITHUB_GIT;
-const adamsapikey = process.env.BOT_OWNER;
-
-// Validate that the necessary environment variables are set
 function validateConfig() {
-  if (!BaseUrl || !adamsapikey) {
-    console.error("Configuration error: Missing BaseUrl or API key.");
-    process.exit(1); // Exit gracefully if critical config is missing
+  if (!process.env.BOT_OWNER) {
+    throw new Error("Configuration error: Missing API key.");
   }
 }
 validateConfig();
 
-// Helper function to handle errors and log them
-function handleError(error, context) {
-  console.error(`Error in ${context}:`, error.message || error);
-  return null; // Return null to indicate failure without crashing the bot
-}
-
-// Search YouTube
+// Function to search YouTube for videos
 async function searchYouTube(query) {
   try {
     const search = await yts(query);
     return search.videos.length > 0 ? search.videos[0] : null;
   } catch (error) {
-    return handleError(error, "YouTube Search");
+    console.error("YouTube Search Error:", error);
+    return null;
   }
 }
 
-// Download media using the API
-async function downloadMedia(url, type) {
+// Scraper function for `https://ytconvert.pro`
+async function scrapeDownloadLink(videoUrl, type) {
   try {
-    const endpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
-    const { data } = await axios.get(endpoint);
-    return data.status === 200 && data.success ? data.result.download_url : null;
+    const browser = await puppeteer.launch({ headless: true });
+    const page = await browser.newPage();
+
+    // Navigate to ytconvert.pro
+    await page.goto("https://ytconvert.pro", { waitUntil: "networkidle2" });
+
+    // Enter the YouTube video URL in the input field
+    await page.type("#url", videoUrl); // Replace with the actual input selector
+
+    // Select the format (mp3 or mp4)
+    if (type === "mp3") {
+      await page.click("#convert-mp3"); // Replace with the correct MP3 button selector
+    } else if (type === "mp4") {
+      await page.click("#convert-mp4"); // Replace with the correct MP4 button selector
+    }
+
+    // Click the "Convert" button
+    await page.click("#convert"); // Replace with the actual convert button selector
+
+    // Wait for the download link to appear
+    await page.waitForSelector("a.download-link"); // Replace with the actual link selector
+
+    // Extract the download link
+    const downloadLink = await page.$eval("a.download-link", (el) =>
+      el.getAttribute("href")
+    );
+
+    console.log(`Download Link Found: ${downloadLink}`);
+    await browser.close();
+    return downloadLink;
   } catch (error) {
-    return handleError(error, `API Download (${type})`);
+    console.error("Scraping Error:", error.message);
+    return null;
   }
 }
 
-// Command: Play Audio
+// Audio Command
 adams(
   {
     nomCom: "play",
@@ -57,11 +75,11 @@ adams(
     const { ms, repondre, arg } = commandeOptions;
     if (!arg[0]) return repondre("Please insert a song name.");
 
-    // Search for the song
+    // Step 1: Search for the song on YouTube
     const video = await searchYouTube(arg.join(" "));
     if (!video) return repondre("No audio found. Try another name.");
 
-    // Show song info
+    // Show the song info
     await zk.sendMessage(
       dest,
       {
@@ -77,34 +95,27 @@ adams(
       { quoted: ms }
     );
 
+    // Step 2: Notify user of the download process
     repondre("*Downloading your audio...*");
 
-    // Download audio
-    const audioDlUrl = await downloadMedia(video.url, "mp3");
+    // Step 3: Scrape the download link
+    const audioDlUrl = await scrapeDownloadLink(video.url, "mp3");
     if (!audioDlUrl) return repondre("Failed to download the audio.");
 
-    // Send audio file
+    // Step 4: Send the audio file
     await zk.sendMessage(
       dest,
       {
         audio: { url: audioDlUrl },
         mimetype: "audio/mp4",
         ptt: false,
-        contextInfo: {
-          externalAdReply: {
-            title: video.title,
-            body: `By ${video.author.name}`,
-            thumbnailUrl: video.thumbnail,
-            sourceUrl: video.url,
-          },
-        },
       },
       { quoted: ms }
     );
   }
 );
 
-// Command: Play Video
+// Video Command
 adams(
   {
     nomCom: "video",
@@ -115,11 +126,11 @@ adams(
     const { ms, repondre, arg } = commandeOptions;
     if (!arg[0]) return repondre("Please insert a video name.");
 
-    // Search for the video
+    // Step 1: Search for the video on YouTube
     const video = await searchYouTube(arg.join(" "));
     if (!video) return repondre("No video found. Try another name.");
 
-    // Show video info
+    // Show the video info
     await zk.sendMessage(
       dest,
       {
@@ -135,27 +146,20 @@ adams(
       { quoted: ms }
     );
 
+    // Step 2: Notify user of the download process
     repondre("*Downloading your video...*");
 
-    // Download video
-    const videoDlUrl = await downloadMedia(video.url, "mp4");
+    // Step 3: Scrape the download link
+    const videoDlUrl = await scrapeDownloadLink(video.url, "mp4");
     if (!videoDlUrl) return repondre("Failed to download the video.");
 
-    // Send video file
+    // Step 4: Send the video file
     await zk.sendMessage(
       dest,
       {
         video: { url: videoDlUrl },
         mimetype: "video/mp4",
         caption: `Enjoy your video: *${video.title}*\n\n*© Ibrahim Adams*`,
-        contextInfo: {
-          externalAdReply: {
-            title: video.title,
-            body: `By ${video.author.name}`,
-            thumbnailUrl: video.thumbnail,
-            sourceUrl: video.url,
-          },
-        },
       },
       { quoted: ms }
     );
