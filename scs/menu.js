@@ -1,15 +1,14 @@
-/*onst util = require('util');
-const fs = require('fs-extra');
-const axios = require('axios');
-const { adams } = require(__dirname + "/../Ibrahim/adams");
+const { adams } = require("../Ibrahim/adams");
 const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
 const moment = require("moment-timezone");
+const axios = require('axios');
 const s = require(__dirname + "/../config");
 
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
-
+const BaseUrl = process.env.GITHUB_GIT;
+const adamsapikey = process.env.BOT_OWNER;
 const runtime = function (seconds) { 
     seconds = Number(seconds); 
     var d = Math.floor(seconds / (3600 * 24)); 
@@ -23,10 +22,10 @@ const runtime = function (seconds) {
     return dDisplay + hDisplay + mDisplay + sDisplay; 
 };
 
-// Function to fetch GitHub repo data
+// GitHub repo data function
 const fetchGitHubStats = async () => {
     try {
-        const repo = 'Devibraah/BWM-XMD'; // Replace with your repo
+        const repo = 'Devibraah/BWM-XMD';
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
         const forks = response.data.forks_count;
         const stars = response.data.stargazers_count;
@@ -38,23 +37,51 @@ const fetchGitHubStats = async () => {
     }
 };
 
+const audioUrls = [
+    "https://files.catbox.moe/sxygdt.mp3",
+    "https://files.catbox.moe/zdti7y.wav",
+    "https://files.catbox.moe/nwreb4.mp3",
+    "https://files.catbox.moe/y1uawp.mp3",
+    "https://files.catbox.moe/x4h8us.mp3"
+];
+
+// Array of menu image URLs
+const menuImages = [
+    "https://files.catbox.moe/h2ydge.jpg",
+    "https://files.catbox.moe/0xa925.jpg",
+    "https://files.catbox.moe/k13s7u.jpg"
+];
+
+// Function to get a random image for the menu
+const getRandomMenuImage = () => {
+    return menuImages[Math.floor(Math.random() * menuImages.length)];
+};
+
+// Function to determine the MIME type based on the file extension
+const getMimeType = (url) => {
+    return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+};
+
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     var coms = {};
-    var mode = s.MODE.toLowerCase() === "public" ? "public" : "private";
+    var mode = "public";
 
-    cm.map((com) => {
+    if ((s.MODE).toLocaleLowerCase() != "public") {
+        mode = "Private";
+    }
+
+    cm.map(async (com) => {
         const categoryUpper = com.categorie.toUpperCase();
         if (!coms[categoryUpper]) coms[categoryUpper] = [];
         coms[categoryUpper].push(com.nomCom);
     });
 
-    moment.tz.setDefault(`${s.TZ}`);
+    moment.tz.setDefault('${s.TZ}');
     const temps = moment().format('HH:mm:ss');
     const date = moment().format('DD/MM/YYYY');
     const hour = moment().hour();
-
     let greeting = "Good night";
     if (hour >= 0 && hour <= 11) greeting = "Good morning";
     else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
@@ -63,74 +90,90 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
+    // Updated infoMsg with a smaller menu
     let infoMsg = `
-╭─────═━┈┈━═──━┈⊷
-┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴍᴡ ᴍᴅ*
-┇ ᴍᴏᴅᴇ: *${mode}*
-┇ ᴘʀᴇғɪx: *[ ${prefixe} ]*
-┇ ᴘʟᴀᴛғᴏʀᴍ: *${os.platform()}*
-┇ ᴛʏᴘᴇ: *ᴠ6x*
-┇ ᴅᴀᴛᴇ: *${date}*
-┇ ᴛɪᴍᴇ: *${temps}*
-┇ ᴄᴀᴘᴀᴄɪᴛʏ ${format(os.totalmem() - os.freemem())}/${format(os.totalmem())}
-╰─────═━┈┈━═──━┈⊷\n\n
-🌍 𝐁𝐄𝐒𝐓 𝐖𝐇𝐀𝐓𝐒𝐀𝐏𝐏 𝐁𝐎𝐓 🌍\n\n`;
+╭──────────────────⊷
+┇🗄 *COMMANDS PAGE*
+╰──────────────────⊷
+\n\n`;
 
+    // Simplified menuMsg
     let menuMsg = `${readmore}  
-╭─────═━┈┈━═──━┈⊷
-┇ ʙᴍᴡ ᴍᴅ ᴄᴏᴍᴍᴀɴᴅ ʟɪsᴛ
-╰─────═━┈┈━═──━┈⊷\n\n`;
+╭─── *COMMAND LIST* ───╮\n`;
 
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        menuMsg += `*╭────❒* *${cat}* *❒*`;
+        menuMsg += `\n*${cat}*:\n`;
         coms[cat].forEach((cmd) => {
-            menuMsg += `\n*╏* ${cmd}`;
+            menuMsg += `- ${cmd}\n`;
         });
-        menuMsg += `\n*╰─═════════════❒*\n`;
     });
-
-    menuMsg += `
-▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄
-©𝑰𝒃𝒓𝒂𝒉𝒊𝒎 𝑨𝒅𝒂𝒎𝒔 𝑷𝒓𝒐𝒋𝒆𝒄𝒕
-▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄`;
+    menuMsg += "\n╰──────────────────╯";
 
     try {
+        // Send random image first with caption
+        const randomImage = getRandomMenuImage();
+        await zk.sendMessage(dest, { 
+            image: { url: randomImage }, 
+            caption: `╭─────═━┈┈━═──━┈⊷
+┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ xᴍᴅ*
+┇ ᴏᴡɴᴇʀ: ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+┇ ᴍᴏᴅᴇ: *${mode}*
+┇ ᴘʀᴇғɪx: *[ ${prefixe} ]*
+┇ ᴅᴀᴛᴇ: *${date}*
+┇ ᴛɪᴍᴇ: *${temps}*
+╰─────═━┈┈━═──━┈⊷\n\n
+🌍 *BEST WHATSAPP BOT* 🌍`,
+            width: 335,
+            height: 340,
+            contextInfo: {
+                externalAdReply: {
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                    body: "Click here to view our WhatsApp channel",
+                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your contact's profile picture URL
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Replace with your WhatsApp channel URL
+                    showAdAttribution: true, // Ensures the "View Channel" button appears
+                }
+            }
+        });
+
+        // Short delay to ensure the image loads first
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Send the menu text, making sure the width matches the image
         await zk.sendMessage(dest, { 
             text: infoMsg + menuMsg,
             contextInfo: {
-                mentionedJid: [nomAuteurMessage],
                 externalAdReply: {
-                    body: "©Ibrahim Adams",
-                    thumbnailUrl: "https://files.catbox.moe/ytix9f.jpeg",
-                    sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
-                    mediaType: 1,
-                    rendersmallThumbnail: true
+                    title: "©Ibrahim adams",
+                    body: "View the full list of commands",
+                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Thumbnail for the commands page
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your WhatsApp channel URL
+                    showAdAttribution: true, // Enables the channel button
                 }
             }
         });
 
-        // Send audio with caption
-        await zk.sendMessage(dest, { 
-            audio: { 
-                url: "https://files.catbox.moe/oordg5.mp3" // Replace with your audio URL
-            }, 
-            mimetype: 'audio/mp4', 
-            ptt: false, // Set to true if you want it as a voice note
-            caption: "BMW MD SONG",
-            contextInfo: {
-                externalAdReply: {
-                    body: "BMW SONG BY IBRAHIM",
-                    thumbnailUrl: "https://files.catbox.moe/va22vq.jpeg",
-                    sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
-                    rendersmallThumbnail: false
-                }
-            }
-        });
+        // Send the audio message with only a caption
+        try {
+            const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+            console.log("Selected audio URL:", randomAudio); // Log selected audio URL
+
+            await zk.sendMessage(dest, { 
+                audio: { url: randomAudio },
+                mimetype: getMimeType(randomAudio),
+                ptt: true,  
+                caption: "BMW MD SONG"
+            });
+
+        } catch (audioError) {
+            console.error("Error sending audio:", audioError);
+            repondre("Error sending audio file: " + audioError.message);
+        }
 
     } catch (e) {
-        console.log("🥵🥵 Menu erreur " + e);
-        repondre("🥵🥵 Menu erreur " + e);
+        console.log("🥵🥵 Menu error " + e);
+        repondre("🥵🥵 Menu error " + e);
     }
 });
-**/
+
