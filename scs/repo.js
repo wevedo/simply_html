@@ -1,3 +1,5 @@
+/**
+
 const axios = require('axios');
 const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
@@ -197,7 +199,109 @@ adams({
 });
 
 
+**/
 
+
+const axios = require('axios');
+const moment = require("moment-timezone");
+const { adams } = require(__dirname + "/../Ibrahim/adams");
+
+// Function to fetch GitHub repository details
+const fetchGitHubRepoDetails = async (repo) => {
+    try {
+        const response = await axios.get(`https://api.github.com/repos/${repo}`);
+        const {
+            name, description, forks_count, stargazers_count,
+            watchers_count, open_issues_count, owner, license, html_url
+        } = response.data;
+
+        return {
+            name,
+            description: description || "No description provided",
+            forks: forks_count,
+            stars: stargazers_count,
+            watchers: watchers_count,
+            issues: open_issues_count,
+            owner: owner.login,
+            license: license ? license.name : "No license",
+            url: html_url,
+        };
+    } catch (error) {
+        console.error(`❌ Error fetching details for ${repo}:`, error);
+        return null;
+    }
+};
+
+// Repositories to process
+const repositories = {
+    "BMW-MD": "ibrahimaitech/BMW-MD",
+    "NORMAL-BOT": "ibrahimadamstech/NORMAL-BOT",
+    "BWM-XMD": "devibraah/BWM-XMD",
+};
+
+// Command setup
+const commands = ["git", "repo", "script", "sc"];
+
+commands.forEach((command) => {
+    adams({ nomCom: command, categorie: "GitHub" }, async (dest, zk, commandeOptions) => {
+        let { repondre } = commandeOptions;
+
+        try {
+            // Fetch details for Repo 3 only
+            const repoThreeDetails = await fetchGitHubRepoDetails(repositories["BWM-XMD"]);
+
+            // Nairobi Timezone
+            const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
+
+            const message = `
+🚀 *Repository URLs* 🚀
+
+1️⃣ Repo 1: [BMW-MD](https://github.com/ibrahimaitech/BMW-MD)
+2️⃣ Repo 2: [NORMAL-BOT](https://github.com/ibrahimadamstech/NORMAL-BOT)
+3️⃣ Repo 3 (Open this one): [BWM-XMD](https://github.com/devibraah/BWM-XMD)
+
+🌟 *Important:* Please focus on Repo 3 for all the latest updates and resources.
+
+📅 *Fetched on:* ${currentTime}
+👨‍💻 *Owner:* Sir Ibrahim Adams
+`;
+
+            await zk.sendMessage(dest, {
+                image: { url: "https://files.catbox.moe/xnlp0v.jpg" }, // Replace with your desired image URL
+                caption: `
+✨ Repository Categories ✨
+
+1️⃣ Repo 1: https://github.com/ibrahimaitech/BMW-MD  
+2️⃣ Repo 2: https://github.com/ibrahimadamstech/NORMAL-BOT  
+3️⃣ Repo 3: https://github.com/devibraah/BWM-XMD (Focus here!)
+
+📢 Stay connected: 
+https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
+                `.trim(),
+                contextInfo: {
+                    forwardingScore: 2,
+                    isForwarded: true,
+                    externalAdReply: {
+                        title: "🚀 Open Repo 3 Now 🚀",
+                        body: "Stay updated with BWM-XMD",
+                        mediaUrl: "https://github.com/devibraah/BWM-XMD",
+                        mediaType: 1, // 1 = link preview
+                        thumbnail: { url: "https://files.catbox.moe/xnlp0v.jpg" }, // Replace with your desired thumbnail URL
+                        sourceUrl: "https://github.com/devibraah/BWM-XMD",
+                    },
+                },
+            });
+
+            await zk.sendMessage(dest, {
+                text: message,
+            });
+
+        } catch (error) {
+            console.error("❌ Error processing GitHub repositories:", error);
+            repondre("❌ Error processing GitHub repositories: " + error.message);
+        }
+    });
+});
 
 
 
