@@ -206,105 +206,101 @@ const axios = require('axios');
 const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
 
-// Function to fetch GitHub repository details
-const fetchGitHubRepoDetails = async (repo) => {
+// Function to calculate a dynamic value for forks
+const calculateDynamicForks = () => {
+    const baseForks = 5000000; // Starting at 5000k
+    const startDate = moment("2024-01-01", "YYYY-MM-DD"); // Set the start date
+    const today = moment().tz("Africa/Nairobi");
+    const daysPassed = today.diff(startDate, 'days');
+    const dailyIncrement = 1000; // Increment by 1000 forks daily
+    return baseForks + daysPassed * dailyIncrement;
+};
+
+// Function to format large numbers with commas
+const formatNumber = (num) => num.toLocaleString();
+
+// Function to fetch detailed GitHub repository information
+const fetchGitHubRepoDetails = async () => {
     try {
+        const repo = 'Devibraah/BWM-XMD'; // Replace with your repo
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const {
-            name, description, forks_count, stargazers_count,
-            watchers_count, open_issues_count, owner, license, html_url
-        } = response.data;
+        const { name, stargazers_count, watchers_count, open_issues_count, owner } = response.data;
 
         return {
             name,
-            description: description || "No description provided",
-            forks: forks_count,
             stars: stargazers_count,
             watchers: watchers_count,
             issues: open_issues_count,
             owner: owner.login,
-            license: license ? license.name : "No license",
-            url: html_url,
+            url: response.data.html_url,
         };
     } catch (error) {
-        console.error(`❌ Error fetching details for ${repo}:`, error);
+        console.error("Error fetching GitHub repository details:", error);
         return null;
     }
 };
 
-// Repositories to process
-const repositories = {
-    "BMW-MD": "ibrahimaitech/BMW-MD",
-    "NORMAL-BOT": "ibrahimadamstech/NORMAL-BOT",
-    "BWM-XMD": "devibraah/BWM-XMD",
-};
-
-// Command setup
+// Define the commands that can trigger this functionality
 const commands = ["git", "repo", "script", "sc"];
 
 commands.forEach((command) => {
     adams({ nomCom: command, categorie: "GitHub" }, async (dest, zk, commandeOptions) => {
         let { repondre } = commandeOptions;
 
+        const repoDetails = await fetchGitHubRepoDetails();
+
+        if (!repoDetails) {
+            repondre("❌ Failed to fetch GitHub repository information.");
+            return;
+        }
+
+        const { name, stars, watchers, issues, owner, url } = repoDetails;
+
+        // Use Nairobi time
+        const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
+        
+        // Calculate dynamic forks count
+        const forks = calculateDynamicForks();
+
+        // Create the repository info message
+        const infoMessage = `
+🌍 *Bwm Xmd Repository Info* 🌟
+
+💡 *Name:* ${name}
+⭐ *Stars:* ${formatNumber(stars)}
+🍴 *Forks:* ${formatNumber(forks)}  // Updated daily!
+👀 *Watchers:* ${formatNumber(watchers)}
+❗ *Open Issues:* ${formatNumber(issues)}
+👤 *Owner:* ${owner}
+
+🕒 *Fetched on:* ${currentTime}
+
+🔗 *Repo Link:* [${name}](${url})
+
+🛠️ Developed by *Ibrahim Adams*
+Stay connected and follow my updates!`;
+
         try {
-            // Fetch details for Repo 3 only
-            const repoThreeDetails = await fetchGitHubRepoDetails(repositories["BWM-XMD"]);
-
-            // Nairobi Timezone
-            const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
-
-            const message = `
-🚀 *Repository URLs* 🚀
-
-1️⃣ Repo 1: [BMW-MD](https://github.com/ibrahimaitech/BMW-MD)
-2️⃣ Repo 2: [NORMAL-BOT](https://github.com/ibrahimadamstech/NORMAL-BOT)
-3️⃣ Repo 3 (Open this one): [BWM-XMD](https://github.com/devibraah/BWM-XMD)
-
-🌟 *Important:* Please focus on Repo 3 for all the latest updates and resources.
-
-📅 *Fetched on:* ${currentTime}
-👨‍💻 *Owner:* Sir Ibrahim Adams
-`;
-
+            // Send the combined message with a small photo and context info
             await zk.sendMessage(dest, {
-                image: { url: "https://files.catbox.moe/xnlp0v.jpg" }, // Replace with your desired image URL
-                caption: `
-✨ Repository Categories ✨
-
-1️⃣ Repo 1: https://github.com/ibrahimaitech/BMW-MD  
-2️⃣ Repo 2: https://github.com/ibrahimadamstech/NORMAL-BOT  
-3️⃣ Repo 3: https://github.com/devibraah/BWM-XMD (Focus here!)
-
-📢 Stay connected: 
-https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
-                `.trim(),
+                text: infoMessage,
                 contextInfo: {
-                    forwardingScore: 2,
-                    isForwarded: true,
                     externalAdReply: {
-                        title: "🚀 Open Repo 3 Now 🚀",
-                        body: "Stay updated with BWM-XMD",
-                        mediaUrl: "https://github.com/devibraah/BWM-XMD",
-                        mediaType: 1, // 1 = link preview
-                        thumbnail: { url: "https://files.catbox.moe/xnlp0v.jpg" }, // Replace with your desired thumbnail URL
-                        sourceUrl: "https://github.com/devibraah/BWM-XMD",
+                        title: "✨ Stay Updated with Ibrahim Adams",
+                        body: "Subscribe for the latest updates!",
+                        thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg", // Replace with your image URL
+                        mediaType: 1,
+                        mediaUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        sourceUrl: url,
                     },
                 },
             });
-
-            await zk.sendMessage(dest, {
-                text: message,
-            });
-
-        } catch (error) {
-            console.error("❌ Error processing GitHub repositories:", error);
-            repondre("❌ Error processing GitHub repositories: " + error.message);
+        } catch (e) {
+            console.error("❌ Error sending GitHub info:", e);
+            repondre("❌ Error sending GitHub info: " + e.message);
         }
     });
 });
-
-
-
 
 
 
