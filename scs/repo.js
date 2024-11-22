@@ -60,7 +60,7 @@ commands.forEach((command) => {
 
         // Create the repository info message
         const infoMessage = `
-🌍 *Bwm xmd Repository Info* 🌟
+🌍 *Bwm Xmd Repository Info* 🌟
 
 💡 *Name:* ${name}
 ⭐ *Stars:* ${formatNumber(stars)}
