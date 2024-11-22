@@ -43,7 +43,7 @@ adams(
 
     // Reply with ping results and contact card
     await zk.sendMessage(dest, {
-      text: `🚀 *BWM XMD Ping Results:*\n${formattedResults}`,
+      text: '🚀 *BWM XMD* 🚀',
       contextInfo,
       contacts: { displayName: "BWM XMD Verified Contact", contacts: [contactCard] },
       quoted: ms,
@@ -88,7 +88,7 @@ adams(
     };
 
     await zk.sendMessage(dest, {
-      text: `*BWM XMD Uptime:* ${formattedRuntime}`,
+      text: `*BWM XMD UPTIME* ${formattedRuntime}`,
       contextInfo,
       contacts: { displayName: "BWM XMD Verified Contact", contacts: [contactCard] },
       quoted: ms,
