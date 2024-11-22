@@ -36,9 +36,28 @@ async function downloadMedia(url, type) {
   }
 }
 
+  try {
+    const search = await yts(query);
+    return search.videos.length > 0 ? search.videos[0] : null;
+  } catch (error) {
+    console.error('YouTube Search Error:', error);
+    return null;
+  }
+}
+
+async function downloadMedia(url, type) {
+  try {
+    const endpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
+    const { data } = await axios.get(endpoint);
+    return data.status === 200 && data.success ? data.result.download_url : null;
+  } catch (error) {
+    console.error(`API Error (${type}):`, error);
+    return null;
+  }
+}
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-// Video Command (Full Thumbnail)
+// Video Command
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -51,7 +70,7 @@ adams({
   if (!video) return repondre("No videos found. Try another name.");
 
   // Fast response with inline details
-  repondre(`*Downloading ${video.title}* | *👤 Owner  ${video.author.name}* | *⏱️ Time ${video.timestamp}*`);
+  repondre(`Downloading video: 🎥 *${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
 
   const videoDlUrl = await downloadMedia(video.url, 'mp4');
   if (!videoDlUrl) return repondre("Failed to download the video.");
@@ -62,9 +81,9 @@ adams({
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: BWM XMD,
-        body: Tap here to join our Channel,
-        mediaType: 2,  // For videos
+        title: "BMW XMD",
+        body: "Tap here to view bot updates",
+        mediaType: 2, // For videos
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
         showAdAttribution: true // Show ad attribution
@@ -73,7 +92,7 @@ adams({
   }, { quoted: ms });
 });
 
-// Play Command (Full Thumbnail for Audio)
+// Play Command
 adams({
   nomCom: "play",
   categorie: "Download",
@@ -86,7 +105,7 @@ adams({
   if (!video) return repondre("No audio found. Try another name.");
 
   // Fast response with inline details
-  repondre(`*Downloading ${video.title}* | *👤 Owner ${video.author.name}* | *⏱️Time ${video.timestamp}*`);
+  repondre(`Downloading audio: 🎵 *${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
 
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
@@ -97,8 +116,8 @@ adams({
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: BWM XMD,
-        body: Tap here to join our Channel,
+        title: "BMW XMD",
+        body: "Tap here to view bot updates",
         mediaType: 2, // For audio files
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
@@ -107,8 +126,6 @@ adams({
     }
   }, { quoted: ms });
 });
-
-
 adams({
   nomCom: "song",
   categorie: "Download",
@@ -121,7 +138,7 @@ adams({
   if (!video) return repondre("No audio found. Try another name.");
 
   // Fast response with inline details
-  repondre(`*Downloading ${video.title}* | *👤 Owner ${video.author.name}* | *⏱️Time ${video.timestamp}*`);
+  repondre(`Downloading audio: 🎵 *${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
 
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
@@ -132,8 +149,8 @@ adams({
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: BWM XMD,
-        body: Tap here to join our Channel,
+        title: "BMW XMD",
+        body: "Tap here to view bot updates",
         mediaType: 2, // For audio files
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
