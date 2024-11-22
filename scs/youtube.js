@@ -1,5 +1,3 @@
-
-
 require('dotenv').config(); // Load environment variables
 const { adams } = require("../Ibrahim/adams");
 const yts = require('yt-search');
@@ -38,6 +36,8 @@ async function downloadMedia(url, type) {
   }
 }
 
+const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
+
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -61,7 +61,16 @@ adams({
 
   await zk.sendMessage(dest, {
     video: { url: videoDlUrl },
-    mimetype: 'video/mp4'
+    mimetype: 'video/mp4',
+    contextInfo: {
+      externalAdReply: {
+        title: "Download powered by BMW XMD",
+        body: "Follow our WhatsApp channel for updates",
+        mediaType: 2, // For video
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL
+      }
+    }
   }, { quoted: ms });
 
   repondre('Downloaded Successfully ✅');
@@ -90,7 +99,16 @@ adams({
 
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4'
+    mimetype: 'audio/mp4',
+    contextInfo: {
+      externalAdReply: {
+        title: "Download powered by BMW XMD",
+        body: " Follow our WhatsApp channel for updates",
+        mediaType: 2, // For audio
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL
+      }
+    }
   }, { quoted: ms });
 
   repondre(`*Bwm xmd Just Downloaded ${video.title}*\n\n*®Adams 2024*`);
@@ -119,7 +137,16 @@ adams({
 
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4'
+    mimetype: 'audio/mp4',
+    contextInfo: {
+      externalAdReply: {
+        title: "Download powered by BMW XMD",
+        body: "Follow our WhatsApp channel for updates",
+        mediaType: 2, // For audio
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL
+      }
+    }
   }, { quoted: ms });
 
   repondre(`*Bwm xmd Just Downloaded ${video.title}*\n\n*®Adams 2024*`);
