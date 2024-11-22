@@ -36,25 +36,7 @@ async function downloadMedia(url, type) {
   }
 }
 
-  try {
-    const search = await yts(query);
-    return search.videos.length > 0 ? search.videos[0] : null;
-  } catch (error) {
-    console.error('YouTube Search Error:', error);
-    return null;
-  }
-}
-
-async function downloadMedia(url, type) {
-  try {
-    const endpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
-    const { data } = await axios.get(endpoint);
-    return data.status === 200 && data.success ? data.result.download_url : null;
-  } catch (error) {
-    console.error(`API Error (${type}):`, error);
-    return null;
-  }
-}const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
+const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
 // Video Command (Full Thumbnail)
 adams({
@@ -126,6 +108,8 @@ adams({
   }, { quoted: ms });
 });
 
+
+
 adams({
   nomCom: "song",
   categorie: "Download",
@@ -159,4 +143,5 @@ adams({
     }
   }, { quoted: ms });
 });
-  
+
+    
