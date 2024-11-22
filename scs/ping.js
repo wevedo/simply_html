@@ -26,8 +26,8 @@ adams(
     // Context info with source URL
     const contextInfo = {
       externalAdReply: {
-        title: "BWM XMD - Ultra-Fast Response",
-        body: `Ping Results:\n${formattedResults}`,
+        title: "Bwm Xmd - Ultra-Fast Response",
+        body: `Ping Results : ${formattedResults}`,
         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your channel URL
         thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your bot profile photo URL
         mediaType: 1,
