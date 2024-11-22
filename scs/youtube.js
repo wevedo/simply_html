@@ -62,9 +62,9 @@ adams({
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
-        mediaType: 2, // For videos
+        title: BWM XMD,
+        body: Tap here to join our Channel,
+        mediaType: 2,  // For videos
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
         showAdAttribution: true // Show ad attribution
@@ -97,8 +97,8 @@ adams({
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
+        title: BWM XMD,
+        body: Tap here to join our Channel,
         mediaType: 2, // For audio files
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
@@ -132,8 +132,8 @@ adams({
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
+        title: BWM XMD,
+        body: Tap here to join our Channel,
         mediaType: 2, // For audio files
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
