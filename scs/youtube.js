@@ -38,7 +38,7 @@ async function downloadMedia(url, type) {
 
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-// Video Command
+// Video Command (Full Thumbnail)
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -50,21 +50,21 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No videos found. Try another name.");
 
-  // Fast response with details
-  repondre(`Downloading video...\n\n🎥 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}`);
+  // Fast response with inline details
+  repondre(`Downloading...........🎥 *${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
 
   const videoDlUrl = await downloadMedia(video.url, 'mp4');
   if (!videoDlUrl) return repondre("Failed to download the video.");
 
-  // Send the final response with full thumbnail and ad attribution
+  // Send the final response with a big thumbnail
   await zk.sendMessage(dest, {
     video: { url: videoDlUrl },
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: `🎥 ${video.title}`,
-        body: `Author: ${video.author.name} • Duration: ${video.timestamp}`,
-        mediaType: 2, // Video media type
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
+        mediaType: 2, // For videos
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
         showAdAttribution: true // Show ad attribution
@@ -73,45 +73,11 @@ adams({
   }, { quoted: ms });
 });
 
-// Audio Command
-adams({
-  nomCom: "song",
-  categorie: "Download",
-  reaction: "🎤"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-  if (!arg[0]) return repondre("Please insert a song name.");
-
-  const video = await searchYouTube(arg.join(" "));
-  if (!video) return repondre("No audio found. Try another name.");
-
-  // Fast response with details
-  repondre(`Downloading audio...\n\n🎵 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}`);
-
-  const audioDlUrl = await downloadMedia(video.url, 'mp3');
-  if (!audioDlUrl) return repondre("Failed to download the audio.");
-
-  // Send the final response with full thumbnail and ad attribution
-  await zk.sendMessage(dest, {
-    audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4',
-    contextInfo: {
-      externalAdReply: {
-        title: `🎵 ${video.title}`,
-        body: `Author: ${video.author.name} • Duration: ${video.timestamp}`,
-        mediaType: 1, // Thumbnail media type
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        showAdAttribution: true // Show ad attribution
-      }
-    }
-  }, { quoted: ms });
-});
-
+// Play Command (Full Thumbnail for Audio)
 adams({
   nomCom: "play",
   categorie: "Download",
-  reaction: "🎤"
+  reaction: "🎧"
 }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
   if (!arg[0]) return repondre("Please insert a song name.");
@@ -119,21 +85,21 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No audio found. Try another name.");
 
-  // Fast response with details
-  repondre(`Downloading audio...\n\n🎵 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}`);
+  // Fast response with inline details
+  repondre(`Downloading...........🎵 *${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
 
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
 
-  // Send the final response with full thumbnail and ad attribution
+  // Send the final response with a big thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: `🎵 ${video.title}`,
-        body: `Author: ${video.author.name} • Duration: ${video.timestamp}`,
-        mediaType: 1, // Thumbnail media type
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
+        mediaType: 2, // For audio files
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
         showAdAttribution: true // Show ad attribution
@@ -141,3 +107,39 @@ adams({
     }
   }, { quoted: ms });
 });
+
+
+adams({
+  nomCom: "song",
+  categorie: "Download",
+  reaction: "🎧"
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg } = commandeOptions;
+  if (!arg[0]) return repondre("Please insert a song name.");
+
+  const video = await searchYouTube(arg.join(" "));
+  if (!video) return repondre("No audio found. Try another name.");
+
+  // Fast response with inline details
+  repondre(`Downloading........🎵 *${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
+
+  const audioDlUrl = await downloadMedia(video.url, 'mp3');
+  if (!audioDlUrl) return repondre("Failed to download the audio.");
+
+  // Send the final response with a big thumbnail
+  await zk.sendMessage(dest, {
+    audio: { url: audioDlUrl },
+    mimetype: 'audio/mp4',
+    contextInfo: {
+      externalAdReply: {
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
+        mediaType: 2, // For audio files
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        showAdAttribution: true // Show ad attribution
+      }
+    }
+  }, { quoted: ms });
+});
+  
