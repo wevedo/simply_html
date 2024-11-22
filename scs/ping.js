@@ -1,30 +1,10 @@
 const { adams } = require("../Ibrahim/adams");
 const speed = require("performance-now");
 
-// Function for delay simulation (reduced delay further for faster execution)
+// Function for delay simulation
 function delay(ms) {
+  console.log(`⏱️ delay for ${ms}ms`);
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Shortened and faster loading animation
-async function loading(dest, zk) {
-  const lod = [
-    "◆◇◇◇◇◇◇◇◇◇ 25%",
-    "◆◆◆◇◇◇◇◇◇ 50%",
-    "◆◆◆◆◆◆◇◇ 75%",
-    "◆◆◆◆◆◆◆◆ 100%",
-    "🚀 Completed ✅"
-  ];
-
-  let { key } = await zk.sendMessage(dest, { text: '⏳ Loading...' });
-
-  for (let i = 0; i < lod.length; i++) {
-    await zk.sendMessage(dest, {
-      contextInfo: { externalAdReply: { title: lod[i] } },
-      edit: key,
-    });
-    await delay(100); // Very quick animation
-  }
 }
 
 // Command: Ping
@@ -39,89 +19,85 @@ adams(
   async (dest, zk, commandeOptions) => {
     const { ms } = commandeOptions;
 
-    // Call the optimized loading animation
-    await loading(dest, zk);
-
-    // Generate ping results
+    // Generate 3 ping results with large random numbers
     const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
-    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping} ms 🟢`);
+    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}  🟢`).join("\n");
 
-    // Get the sender's contact to tag
-    const mention = ms.key.participant || ms.key.remoteJid;
-
-    // Send the ping results with contextInfo
-    await zk.sendMessage(dest, {
-      contextInfo: {
-        externalAdReply: {
-          title: "🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀",
-          body: `${formattedResults.join("\n")}`,
-          thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
-          sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-          mediaType: 1,
-          showAdAttribution: true,
-          mentions: [mention],
-        },
+    // Context info with source URL
+    const contextInfo = {
+      externalAdReply: {
+        title: "BWM XMD - Ultra-Fast Response",
+        body: `Ping Results:\n${formattedResults}`,
+        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your channel URL
+        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your bot profile photo URL
+        mediaType: 1,
+        showAdAttribution: true, // Verified badge
       },
+    };
+
+    // Contact card with verified tick
+    const contactCard = {
+      displayName: "BWM XMD Support",
+      vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:BWM XMD\nORG:BWM XMD Nexus;\nTEL;type=CELL;type=VOICE;waid=254712345678:+254 712 345 678\nEND:VCARD`,
+    };
+
+    // Reply with ping results and contact card
+    await zk.sendMessage(dest, {
+      text: `🚀 *BWM XMD Ping Results:*\n${formattedResults}`,
+      contextInfo,
+      contacts: { displayName: "BWM XMD Verified Contact", contacts: [contactCard] },
+      quoted: ms,
     });
 
-    console.log("Ping results sent successfully with faster loading animation and user tagging!");
+    console.log("Ping results sent successfully with contact and context info!");
   }
 );
 
 // Command: Uptime
-adams({
-  nomCom: 'uptime',
-  desc: 'To check runtime',
-  Categorie: 'General',
-  reaction: '🚘',
-  fromMe: 'true',
-}, async (dest, zk, commandeOptions) => {
-  const { repondre, ms } = commandeOptions;
-  const mention = ms.key.participant || ms.key.remoteJid;
+adams(
+  {
+    nomCom: 'uptime',
+    desc: 'To check runtime',
+    Categorie: 'General',
+    reaction: '🚘',
+    fromMe: 'true',
+  },
+  async (dest, zk, commandeOptions) => {
+    const { ms, repondre } = commandeOptions;
 
-  await zk.sendMessage(dest, {
-    contextInfo: {
+    // Calculate bot uptime
+    const runtime = process.uptime();
+    const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
+
+    // Context info with source URL
+    const contextInfo = {
       externalAdReply: {
-        title: "BWM Uptime",
-        body: `*BWM speed is: ${runtime(process.uptime())}*`,
-        mentions: [mention],
+        title: "BWM XMD - System Uptime",
+        body: `Bot has been running for: ${formattedRuntime}`,
+        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your channel URL
+        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your bot profile photo URL
+        mediaType: 1,
+        showAdAttribution: true, // Verified badge
       },
-    },
-  });
-});
+    };
 
-// Command: Screenshot
-adams({
-  nomCom: 'ss',
-  desc: 'Screenshots website',
-  Categorie: 'General',
-  reaction: '🎥',
-  fromMe: 'true',
-}, async (dest, zk, commandeOptions) => {
-  const { arg, repondre, ms } = commandeOptions;
+    // Reply with uptime and contact card
+    const contactCard = {
+      displayName: "BWM XMD Support",
+      vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:BWM XMD\nORG:BWM XMD Nexus;\nTEL;type=CELL;type=VOICE;waid=254712345678:+254 712 345 678\nEND:VCARD`,
+    };
 
-  if (!arg || arg.length === 0) return repondre("Provide a link...");
+    await zk.sendMessage(dest, {
+      text: `*BWM XMD Uptime:* ${formattedRuntime}`,
+      contextInfo,
+      contacts: { displayName: "BWM XMD Verified Contact", contacts: [contactCard] },
+      quoted: ms,
+    });
 
-  const linkk = arg.join(' ');
-  const screenshotUrl = `https://api.maher-zubair.tech/misc/sstab?url=${linkk}&dimension=720x720`;
-  const res = await getBuffer(screenshotUrl);
-  const caption = '*Powered by BARAKA-MD-V1*';
-  const mention = ms.key.participant || ms.key.remoteJid;
-
-  await zk.sendMessage(dest, {
-    image: res,
-    contextInfo: {
-      externalAdReply: {
-        title: "Website Screenshot",
-        body: caption,
-        mentions: [mention],
-      },
-    },
-  });
-});
+    console.log("Uptime sent successfully with contact and context info!");
+  }
+);
 
 module.exports = {
   delay,
-  loading,
-  react,
 };
