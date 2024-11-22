@@ -54,7 +54,7 @@ commands.forEach((command) => {
         
         // Create the repository info message
         const infoMessage = `
-🌍 *Bwm Xmd Repository Info* 🌟
+🌍 *${name} REPO INFO* 🌟
 
 💡 *Name:* ${name}
 ⭐ *Stars:* ${formatNumber(stars)}
@@ -65,7 +65,7 @@ commands.forEach((command) => {
 
 🕒 *Fetched on:* ${currentTime}
 
-🔗 *Repo Link:* [${name}](${url})
+🔗 *Repo Link:* ${url}
 
 🛠️ Scripted by *Ibrahim Adams*
 
