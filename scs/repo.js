@@ -59,15 +59,15 @@ commands.forEach((command) => {
         const forks = calculateDynamicForks();
 
         // Create the repository info message
-        const infoMessage = `
+                const infoMessage = `
 🌍 *Bwm xmd Repository Info* 🌟
 
 💡 *Name:* ${name}
 ⭐ *Stars:* ${formatNumber(stars)}
-🍴 *Forks:* ${formatNumber(forks)}  // Updated daily!
 👀 *Watchers:* ${formatNumber(watchers)}
 ❗ *Open Issues:* ${formatNumber(issues)}
-👤 *Owner:* ${owner}
+👤 *Owner:* Ibrahim Adams
+🍴 *Total Forks From All Repos:* ${formatNumber(forks)}
 
 🕒 *Fetched on:* ${currentTime}
 
@@ -100,6 +100,10 @@ Stay connected and follow my updates!`;
         }
     });
 });
+
+
+
+
 
 
 
