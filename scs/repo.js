@@ -59,21 +59,19 @@ commands.forEach((command) => {
         const forks = calculateDynamicForks();
 
         // Create the repository info message
-                const infoMessage = `
+        const infoMessage = `
 🌍 *Bwm xmd Repository Info* 🌟
 
 💡 *Name:* ${name}
 ⭐ *Stars:* ${formatNumber(stars)}
+🍴 *Forks:* ${formatNumber(forks)}  
 👀 *Watchers:* ${formatNumber(watchers)}
 ❗ *Open Issues:* ${formatNumber(issues)}
-👤 *Owner:* Ibrahim Adams
-🍴 *Total Forks From All Repos:* ${formatNumber(forks)}
+👤 *Owner:* ${owner}
 
 🕒 *Fetched on:* ${currentTime}
 
-🔗 *Repo Link:* (${url})
-
-🌍 *Channel:* https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
+🔗 *Repo Link:* [${name}](${url})
 
 🛠️ Scripted by *Ibrahim Adams*
 
@@ -90,7 +88,7 @@ Stay connected and follow my updates!`;
                         thumbnail: "https://files.catbox.moe/xnlp0v.jpg", // Slim-width image URL
                         mediaType: 1,
                         mediaUrl: url,
-                        sourceUrl: `https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y`,
+                        sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
                     },
                 },
             });
@@ -100,8 +98,6 @@ Stay connected and follow my updates!`;
         }
     });
 });
-
-
 
 
 
