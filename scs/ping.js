@@ -1,19 +1,29 @@
 const { adams } = require("../Ibrahim/adams");
+const speed = require("performance-now");
 
-// Loading animation with shorter steps and faster execution
-async function loading(dest, zk, msg) {
+// Function for delay simulation (reduced delay further for faster execution)
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Shortened and faster loading animation
+async function loading(dest, zk) {
   const lod = [
-    "◇◇◇◇◇◇◇◇◇◇ 0%",
-    "◆◆◆◇◇◇◇◇◇ 30%",
-    "◆◆◆◆◆◆◆◇ 70%",
-    "◆◆◆◆◆◆◆◆◆◆ 100%",
-    "🚀 Loading Completed ✅"
+    "◆◇◇◇◇◇◇◇◇◇ 25%",
+    "◆◆◆◇◇◇◇◇◇ 50%",
+    "◆◆◆◆◆◆◇◇ 75%",
+    "◆◆◆◆◆◆◆◆ 100%",
+    "🚀 Completed ✅"
   ];
 
-  let { key } = await zk.sendMessage(dest, { text: 'Loading Please Wait', quoted: msg });
+  let { key } = await zk.sendMessage(dest, { text: '⏳ Loading...' });
 
   for (let i = 0; i < lod.length; i++) {
-    await zk.sendMessage(dest, { text: lod[i], edit: key });
+    await zk.sendMessage(dest, {
+      contextInfo: { externalAdReply: { title: lod[i] } },
+      edit: key,
+    });
+    await delay(100); // Very quick animation
   }
 }
 
@@ -27,85 +37,91 @@ adams(
     fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
-    const { ms, repondre } = commandeOptions;
+    const { ms } = commandeOptions;
 
-    // Call the updated loading animation
-    await loading(dest, zk, ms);
+    // Call the optimized loading animation
+    await loading(dest, zk);
 
-    // Generate 3 ping results with random numbers
+    // Generate ping results
     const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
+    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping} ms 🟢`);
 
-    // Create formatted ping results
-    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}ms 🟢`).join("\n");
+    // Get the sender's contact to tag
+    const mention = ms.key.participant || ms.key.remoteJid;
 
-    // Send the ping results with updated format
-    await repondre(
-      `🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀\n\n${formattedResults}`,
-      {
-        contextInfo: {
-          externalAdReply: {
-            title: "BWM XMD - Ultra-Fast Response",
-            body: formattedResults,
-            thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your bot profile photo URL
-            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your channel URL
-            mediaType: 1,
-            showAdAttribution: true, // Verified badge
-          },
+    // Send the ping results with contextInfo
+    await zk.sendMessage(dest, {
+      contextInfo: {
+        externalAdReply: {
+          title: "🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀",
+          body: `${formattedResults.join("\n")}`,
+          thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
+          sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+          mediaType: 1,
+          showAdAttribution: true,
+          mentions: [mention],
         },
-      }
-    );
+      },
+    });
 
-    console.log("Ping results sent successfully with enhanced response handling!");
+    console.log("Ping results sent successfully with faster loading animation and user tagging!");
   }
 );
 
 // Command: Uptime
-adams(
-  {
-    nomCom: 'uptime',
-    desc: 'To check runtime',
-    Categorie: 'General',
-    reaction: '🚘',
-    fromMe: 'true',
-  },
-  async (dest, zk, commandeOptions) => {
-    const { repondre } = commandeOptions;
+adams({
+  nomCom: 'uptime',
+  desc: 'To check runtime',
+  Categorie: 'General',
+  reaction: '🚘',
+  fromMe: 'true',
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, ms } = commandeOptions;
+  const mention = ms.key.participant || ms.key.remoteJid;
 
-    const runtime = process.uptime(); // Bot runtime
-    const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
+  await zk.sendMessage(dest, {
+    contextInfo: {
+      externalAdReply: {
+        title: "BWM Uptime",
+        body: `*BWM speed is: ${runtime(process.uptime())}*`,
+        mentions: [mention],
+      },
+    },
+  });
+});
 
-    await repondre(`*BWM XMD Uptime:* ${formattedRuntime}`);
-  }
-);
+// Command: Screenshot
+adams({
+  nomCom: 'ss',
+  desc: 'Screenshots website',
+  Categorie: 'General',
+  reaction: '🎥',
+  fromMe: 'true',
+}, async (dest, zk, commandeOptions) => {
+  const { arg, repondre, ms } = commandeOptions;
 
-// Command: Screenshot Website
-adams(
-  {
-    nomCom: 'ss',
-    desc: 'Screenshot website',
-    Categorie: 'General',
-    reaction: '🎥',
-    fromMe: 'true',
-  },
-  async (dest, zk, commandeOptions) => {
-    const { arg, repondre } = commandeOptions;
+  if (!arg || arg.length === 0) return repondre("Provide a link...");
 
-    if (!arg || arg.length === 0) return repondre("Provide a valid URL...");
+  const linkk = arg.join(' ');
+  const screenshotUrl = `https://api.maher-zubair.tech/misc/sstab?url=${linkk}&dimension=720x720`;
+  const res = await getBuffer(screenshotUrl);
+  const caption = '*Powered by BARAKA-MD-V1*';
+  const mention = ms.key.participant || ms.key.remoteJid;
 
-    const link = arg.join(' ');
-    const apiUrl = `https://api.maher-zubair.tech/misc/sstab?url=${link}&dimension=720x720`;
-
-    try {
-      const res = await getBuffer(apiUrl); // Use your buffer-fetching utility
-      const caption = '*Powered by BARAKA-MD-V1*';
-
-      await zk.sendMessage(dest, { image: res, caption }, { quoted: commandeOptions.ms });
-    } catch (error) {
-      await repondre("Failed to capture screenshot. Please try again later.");
-    }
-  }
-);
+  await zk.sendMessage(dest, {
+    image: res,
+    contextInfo: {
+      externalAdReply: {
+        title: "Website Screenshot",
+        body: caption,
+        mentions: [mention],
+      },
+    },
+  });
+});
 
 module.exports = {
+  delay,
   loading,
+  react,
 };
