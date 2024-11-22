@@ -38,6 +38,7 @@ async function downloadMedia(url, type) {
 
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
+// Video Command
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -49,71 +50,30 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No videos found. Try another name.");
 
-  await zk.sendMessage(dest, {
-    image: { url: video.thumbnail },
-    caption: `*BMW XMD Video Downloader*\n\n🎥 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}\n📅 *Uploaded on:* ${video.ago}\n\n> ©Ibrahim Adams`
-  }, { quoted: ms });
-
-  repondre("Downloading video...");
+  // Fast response with details
+  repondre(`Downloading video...\n\n🎥 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}`);
 
   const videoDlUrl = await downloadMedia(video.url, 'mp4');
   if (!videoDlUrl) return repondre("Failed to download the video.");
 
+  // Send the final response with full thumbnail and ad attribution
   await zk.sendMessage(dest, {
     video: { url: videoDlUrl },
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: "Download powered by BMW XMD",
-        body: "Follow our WhatsApp channel for updates",
-        mediaType: 2, // For video
+        title: `🎥 ${video.title}`,
+        body: `Author: ${video.author.name} • Duration: ${video.timestamp}`,
+        mediaType: 2, // Video media type
         thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL
+        sourceUrl: WhatsAppChannelURL,
+        showAdAttribution: true // Show ad attribution
       }
     }
   }, { quoted: ms });
-
-  repondre('Downloaded Successfully ✅');
 });
 
-adams({
-  nomCom: "play",
-  categorie: "Download",
-  reaction: "🎧"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-  if (!arg[0]) return repondre("Please insert a song name.");
-
-  const video = await searchYouTube(arg.join(" "));
-  if (!video) return repondre("No audio found. Try another name.");
-
-  await zk.sendMessage(dest, {
-    image: { url: video.thumbnail },
-    caption: `*BMW Song Player*\n\n🎵 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}\n📅 *Uploaded on:* ${video.ago}\n\n> ©Ibrahim Adams`
-  }, { quoted: ms });
-
-  repondre("Downloading audio...");
-
-  const audioDlUrl = await downloadMedia(video.url, 'mp3');
-  if (!audioDlUrl) return repondre("Failed to download the audio.");
-
-  await zk.sendMessage(dest, {
-    audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4',
-    contextInfo: {
-      externalAdReply: {
-        title: "Download powered by BMW XMD",
-        body: " Follow our WhatsApp channel for updates",
-        mediaType: 2, // For audio
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL
-      }
-    }
-  }, { quoted: ms });
-
-  repondre(`*Bwm xmd Just Downloaded ${video.title}*\n\n*®Adams 2024*`);
-});
-
+// Audio Command
 adams({
   nomCom: "song",
   categorie: "Download",
@@ -125,29 +85,59 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No audio found. Try another name.");
 
-  await zk.sendMessage(dest, {
-    image: { url: video.thumbnail },
-    caption: `*BMW Song Player*\n\n🎵 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}\n📅 *Uploaded on:* ${video.ago}\n\n> ©Ibrahim Adams`
-  }, { quoted: ms });
-
-  repondre("Downloading audio...");
+  // Fast response with details
+  repondre(`Downloading audio...\n\n🎵 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}`);
 
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
 
+  // Send the final response with full thumbnail and ad attribution
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: "Download powered by BMW XMD",
-        body: "Follow our WhatsApp channel for updates",
-        mediaType: 2, // For audio
+        title: `🎵 ${video.title}`,
+        body: `Author: ${video.author.name} • Duration: ${video.timestamp}`,
+        mediaType: 1, // Thumbnail media type
         thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL
+        sourceUrl: WhatsAppChannelURL,
+        showAdAttribution: true // Show ad attribution
       }
     }
   }, { quoted: ms });
+});
 
-  repondre(`*Bwm xmd Just Downloaded ${video.title}*\n\n*®Adams 2024*`);
+adams({
+  nomCom: "play",
+  categorie: "Download",
+  reaction: "🎤"
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg } = commandeOptions;
+  if (!arg[0]) return repondre("Please insert a song name.");
+
+  const video = await searchYouTube(arg.join(" "));
+  if (!video) return repondre("No audio found. Try another name.");
+
+  // Fast response with details
+  repondre(`Downloading audio...\n\n🎵 *Title:* ${video.title}\n👤 *Author:* ${video.author.name}\n⏱️ *Duration:* ${video.timestamp}\n🔗 *Link:* ${video.url}`);
+
+  const audioDlUrl = await downloadMedia(video.url, 'mp3');
+  if (!audioDlUrl) return repondre("Failed to download the audio.");
+
+  // Send the final response with full thumbnail and ad attribution
+  await zk.sendMessage(dest, {
+    audio: { url: audioDlUrl },
+    mimetype: 'audio/mp4',
+    contextInfo: {
+      externalAdReply: {
+        title: `🎵 ${video.title}`,
+        body: `Author: ${video.author.name} • Duration: ${video.timestamp}`,
+        mediaType: 1, // Thumbnail media type
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        showAdAttribution: true // Show ad attribution
+      }
+    }
+  }, { quoted: ms });
 });
