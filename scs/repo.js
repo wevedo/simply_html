@@ -2,15 +2,8 @@ const axios = require('axios');
 const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
 
-// Function to calculate a dynamic value for forks
-const calculateDynamicForks = () => {
-    const baseForks = 5000; // Starting at 5000
-    const startDate = moment("2024-01-01", "YYYY-MM-DD"); // Set the start date
-    const today = moment().tz("Africa/Nairobi");
-    const daysPassed = today.diff(startDate, 'days');
-    const dailyIncrement = 1000; // Increment by 1000 forks daily
-    return baseForks + daysPassed * dailyIncrement;
-};
+// Initialize the fork count
+let dynamicForks = 5000;
 
 // Function to format large numbers with commas
 const formatNumber = (num) => num.toLocaleString();
@@ -18,15 +11,19 @@ const formatNumber = (num) => num.toLocaleString();
 // Function to fetch detailed GitHub repository information
 const fetchGitHubRepoDetails = async () => {
     try {
-        const repo = 'Devibrah/BWM-XMD'; // Replace with your repo
+        const repo = 'Devibraah/BWM-XMD'; // Replace with your repo
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const { name, stargazers_count, watchers_count, open_issues_count, owner } = response.data;
+        const { name, stargazers_count, watchers_count, open_issues_count, forks_count, owner } = response.data;
+
+        // Update the dynamic forks count based on API response
+        dynamicForks += forks_count;
 
         return {
             name,
             stars: stargazers_count,
             watchers: watchers_count,
             issues: open_issues_count,
+            forks: dynamicForks,
             owner: owner.login,
             url: response.data.html_url,
         };
@@ -50,21 +47,18 @@ commands.forEach((command) => {
             return;
         }
 
-        const { name, stars, watchers, issues, owner, url } = repoDetails;
+        const { name, stars, watchers, issues, forks, owner, url } = repoDetails;
 
         // Use Nairobi time
         const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
         
-        // Calculate dynamic forks count
-        const forks = calculateDynamicForks();
-
         // Create the repository info message
         const infoMessage = `
 🌍 *Bwm Xmd Repository Info* 🌟
 
 💡 *Name:* ${name}
 ⭐ *Stars:* ${formatNumber(stars)}
-🍴 *Forks:* ${formatNumber(forks)}  
+🍴 *Forks:* ${formatNumber(forks)}
 👀 *Watchers:* ${formatNumber(watchers)}
 ❗ *Open Issues:* ${formatNumber(issues)}
 👤 *Owner:* ${owner}
@@ -78,17 +72,18 @@ commands.forEach((command) => {
 Stay connected and follow my updates!`;
 
         try {
-            // Send the combined message with a slim-width big photo and context info
+            // Send the combined message with a large photo and proper source URL
             await zk.sendMessage(dest, {
                 text: infoMessage,
                 contextInfo: {
                     externalAdReply: {
-                        title: "✨ Dynamic Channel Updates - Ibrahim Adams",
-                        body: `Forks: ${formatNumber(forks)}`,
-                        thumbnail: "https://files.catbox.moe/xnlp0v.jpg", // Slim-width image URL
+                        title: "✨ Stay Updated with Ibrahim Adams",
+                        body: "Tap here for the latest updates!",
+                        thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg", // Replace with your image URL
                         mediaType: 1,
-                        mediaUrl: url,
-                        sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
+                        renderLargerThumbnail: true, // Ensures a larger thumbnail display
+                        mediaUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Source URL in context
                     },
                 },
             });
