@@ -902,11 +902,10 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-
 // Function to download and return media buffer
 async function downloadMedia(message) {
     const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
-    const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
+    const stream = await zk.downloadMediaMessage(message[mediaType], mediaType);
     let buffer = Buffer.from([]);
 
     try {
@@ -957,7 +956,7 @@ zk.ev.on("messages.upsert", async (m) => {
         // Handle mentions
         const mtype = Object.keys(ms.message)[0];
         if (ms.message[mtype].contextInfo && ms.message[mtype].contextInfo.mentionedJid) {
-            if (ms.message[mtype].contextInfo.mentionedJid.includes(idBot) || ms.message[mtype].contextInfo.mentionedJid.includes(conf.NUMERO_OWNER + '@s.whatsapp.net')) {
+            if (ms.message[mtype].contextInfo.mentionedJid.includes(conf.NUMERO_OWNER + '@s.whatsapp.net')) {
                 if (origineMessage == "120363158701337904@g.us") {
                     return;
                 }
@@ -1062,7 +1061,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-
 // Map keywords to corresponding audio files
 const audioMap = {
     "hey": "files/hey.wav",
