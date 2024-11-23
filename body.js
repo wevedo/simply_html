@@ -903,12 +903,10 @@ zk.ev.on("messages.upsert", async (m) => {
 });
 
 
-
-/**
 // Function to download and return media buffer
 async function downloadMedia(message) {
     const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
-    const stream = await baileys.downloadContentFromMessage(message[mediaType], mediaType);
+    const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
     let buffer = Buffer.from([]);
 
     try {
@@ -925,8 +923,16 @@ async function downloadMedia(message) {
 // Function to format notification message
 function createNotification(deletedMessage) {
     const deletedBy = deletedMessage.key.participant || deletedMessage.key.remoteJid;
+
+    // Format time in Nairobi timezone
+    const timeInNairobi = new Intl.DateTimeFormat('en-KE', {
+        timeZone: 'Africa/Nairobi',
+        dateStyle: 'full',
+        timeStyle: 'medium',
+    }).format(new Date());
+
     let notification = `*[ANTIDELETE DETECTED]*\n\n`;
-    notification += `*Time:* ${new Date().toLocaleString()}\n`;
+    notification += `*Time:* ${timeInNairobi}\n`;
     notification += `*Deleted By:* @${deletedBy.split('@')[0]}\n\n`;
 
     return notification;
@@ -934,29 +940,23 @@ function createNotification(deletedMessage) {
 
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    // Check if ANTIDELETE is enabled
-    if (conf.ANTIDELETE === "yes") {
+    if (conf.ANTIDELETE === "yes") { // Check if ANTIDELETE is enabled
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return;
 
-        // Store each received message
         const messageKey = ms.key;
         const remoteJid = messageKey.remoteJid;
 
-        // Store message for future undelete reference
+        // Store message for future reference
         if (!store.chats[remoteJid]) {
             store.chats[remoteJid] = [];
         }
-
-        // Save the received message to storage
         store.chats[remoteJid].push(ms);
 
         // Handle deleted messages
         if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
             const deletedKey = ms.message.protocolMessage.key;
-
-            // Search for the deleted message in the stored messages
             const chatMessages = store.chats[remoteJid];
             const deletedMessage = chatMessages.find(
                 (msg) => msg.key.id === deletedKey.id
@@ -964,32 +964,31 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    // Create notification about the deleted message
+                    // Create a notification about the deleted message
                     const notification = createNotification(deletedMessage);
 
-                    // Resend deleted content based on its type
-                    if (deletedMessage.message.conversation) {
-                        // Text message
-                        await zk.sendMessage(remoteJid, {
-                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
+                    // Determine the type of deleted content and resend it
+                    const mtype = Object.keys(deletedMessage.message)[0];
+                    const isMediaMessage =
+                        mtype === 'imageMessage' ||
+                        mtype === 'videoMessage' ||
+                        mtype === 'documentMessage' ||
+                        mtype === 'audioMessage' ||
+                        mtype === 'stickerMessage' ||
+                        mtype === 'voiceMessage';
+
+                    if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
+                        // Resend text message
+                        await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
+                            text: notification + `*Message:* ${deletedMessage.message[mtype].text}`,
                             mentions: [deletedMessage.key.participant],
                         });
-                    } else if (deletedMessage.message.imageMessage || 
-                               deletedMessage.message.videoMessage || 
-                               deletedMessage.message.documentMessage || 
-                               deletedMessage.message.audioMessage || 
-                               deletedMessage.message.stickerMessage || 
-                               deletedMessage.message.voiceMessage) {
-                        // Media message (image, video, document, audio, sticker, voice)
+                    } else if (isMediaMessage) {
+                        // Resend media message
                         const mediaBuffer = await downloadMedia(deletedMessage.message);
                         if (mediaBuffer) {
-                            const mediaType = deletedMessage.message.imageMessage ? 'image' :
-                                deletedMessage.message.videoMessage ? 'video' :
-                                deletedMessage.message.documentMessage ? 'document' :
-                                deletedMessage.message.audioMessage ? 'audio' :
-                                deletedMessage.message.stickerMessage ? 'sticker' : 'audio';
-
-                            await zk.sendMessage(remoteJid, {
+                            const mediaType = mtype.replace('Message', '').toLowerCase();
+                            await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
                                 [mediaType]: mediaBuffer,
                                 caption: notification,
                                 mentions: [deletedMessage.key.participant],
@@ -1003,7 +1002,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-**/
 
 
 // Map keywords to corresponding audio files
