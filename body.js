@@ -1445,6 +1445,7 @@ if (conf.AUTO_READ === 'yes') {
 
 
 
+try {
     if (conf.ANTIDELETE === 'yes') { // Ensure the feature is enabled
         zk.ev.on('messages.update', async (updates) => {
             for (const update of updates) {
