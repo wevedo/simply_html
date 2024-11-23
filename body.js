@@ -902,13 +902,17 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-// Function to download and return media buffer
+
+
+
+
+        
+ // Function to download and return media buffer
 async function downloadMedia(message) {
     const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
-    const stream = await zk.downloadMediaMessage(message[mediaType], mediaType);
-    let buffer = Buffer.from([]);
-
     try {
+        const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
+        let buffer = Buffer.from([]);
         for await (const chunk of stream) {
             buffer = Buffer.concat([buffer, chunk]);
         }
@@ -1061,7 +1065,12 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-// Map keywords to corresponding audio files
+
+
+
+
+
+    
 const audioMap = {
     "hey": "files/hey.wav",
     "hi": "files/hey.wav",
