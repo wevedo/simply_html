@@ -907,7 +907,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
 
         
- // Function to download and return media buffer
+// Function to download and return media buffer
 async function downloadMedia(message) {
     const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
     try {
@@ -957,68 +957,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
         store.chats[remoteJid].push(ms);
 
-        // Handle mentions
-        const mtype = Object.keys(ms.message)[0];
-        if (ms.message[mtype].contextInfo && ms.message[mtype].contextInfo.mentionedJid) {
-            if (ms.message[mtype].contextInfo.mentionedJid.includes(conf.NUMERO_OWNER + '@s.whatsapp.net')) {
-                if (origineMessage == "120363158701337904@g.us") {
-                    return;
-                }
-                if (superUser) {
-                    console.log('hummm');
-                    return;
-                }
-
-                try {
-                    let mbd = require('./lib/mention');
-                    let alldata = await mbd.recupererToutesLesValeurs();
-                    let data = alldata[0];
-
-                    if (data.status === 'non') {
-                        console.log('mention pas actifs');
-                        return;
-                    }
-
-                    let msg;
-                    if (data.type.toLocaleLowerCase() === 'image') {
-                        msg = {
-                            image: { url: data.url },
-                            caption: data.message,
-                        };
-                    } else if (data.type.toLocaleLowerCase() === 'video') {
-                        msg = {
-                            video: { url: data.url },
-                            caption: data.message,
-                        };
-                    } else if (data.type.toLocaleLowerCase() === 'sticker') {
-                        let stickerMess = new Sticker(data.url, {
-                            pack: conf.NOM_OWNER,
-                            type: StickerTypes.FULL,
-                            categories: ["🤩", "🎉"],
-                            id: "12345",
-                            quality: 70,
-                            background: "transparent",
-                        });
-
-                        const stickerBuffer2 = await stickerMess.toBuffer();
-                        msg = {
-                            sticker: stickerBuffer2,
-                        };
-                    } else if (data.type.toLocaleLowerCase() === 'audio') {
-                        msg = {
-                            audio: { url: data.url },
-                            mimetype: 'audio/mp4',
-                        };
-                    }
-
-                    zk.sendMessage(origineMessage, msg, { quoted: ms });
-
-                } catch (error) {
-                    console.error('Error handling mention:', error);
-                }
-            }
-        }
-
         // Handle deleted messages
         if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
             const deletedKey = ms.message.protocolMessage.key;
@@ -1031,23 +969,19 @@ zk.ev.on("messages.upsert", async (m) => {
                 try {
                     const notification = createNotification(deletedMessage);
 
+                    // Determine message type
                     const mtype = Object.keys(deletedMessage.message)[0];
-                    const isMediaMessage =
-                        mtype === 'imageMessage' ||
-                        mtype === 'videoMessage' ||
-                        mtype === 'documentMessage' ||
-                        mtype === 'audioMessage' ||
-                        mtype === 'stickerMessage' ||
-                        mtype === 'voiceMessage';
 
+                    // Handle text messages (conversation or extendedTextMessage)
                     if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
-                        // Resend text message
                         await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
                             text: notification + `*Message:* ${deletedMessage.message[mtype].text}`,
                             mentions: [deletedMessage.key.participant],
                         });
-                    } else if (isMediaMessage) {
-                        // Resend media message
+                    }
+                    // Handle media messages (image, video, document, audio, sticker, voice)
+                    else if (mtype === 'imageMessage' || mtype === 'videoMessage' || mtype === 'documentMessage' ||
+                             mtype === 'audioMessage' || mtype === 'stickerMessage' || mtype === 'voiceMessage') {
                         const mediaBuffer = await downloadMedia(deletedMessage.message);
                         if (mediaBuffer) {
                             const mediaType = mtype.replace('Message', '').toLowerCase();
@@ -1065,8 +999,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-
-
 
 
 
