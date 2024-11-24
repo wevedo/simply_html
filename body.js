@@ -1114,7 +1114,74 @@ if (conf.AUDIO_REPLY === "yes") {
         }
     });
 }
-         
+         // Required Libraries
+const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
+const speech = require("@google-cloud/speech"); // Google Speech-to-Text library
+const client = new speech.SpeechClient(); // Google Speech Client
+
+// Function to process voice note
+async function processVoiceCommand(message) {
+    try {
+        // Download the voice note
+        const stream = await downloadContentFromMessage(message.audioMessage, "audio");
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+
+        // Save the audio locally for transcription
+        const audioPath = "./voice_note.ogg";
+        fs.writeFileSync(audioPath, buffer);
+
+        // Convert the audio to text using Google Speech-to-Text API
+        const audio = { content: buffer.toString("base64") };
+        const config = {
+            encoding: "OGG_OPUS",
+            sampleRateHertz: 16000,
+            languageCode: "en-US", // Adjust based on your preferred language
+        };
+        const request = { audio, config };
+
+        const [response] = await client.recognize(request);
+        const transcription = response.results
+            .map((result) => result.alternatives[0].transcript)
+            .join("\n");
+
+        console.log("Transcription:", transcription);
+        return transcription.toLowerCase();
+    } catch (error) {
+        console.error("Error processing voice command:", error.message);
+        return null;
+    }
+}
+
+// Command handling for voice notes
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+    if (!ms.message) return;
+
+    const remoteJid = ms.key.remoteJid;
+
+    // Check if the message is a voice note
+    if (ms.message.audioMessage) {
+        const transcription = await processVoiceCommand(ms.message);
+
+        if (!transcription) {
+            await zk.sendMessage(remoteJid, { text: "❌ Could not understand the voice note. Please try again." });
+            return;
+        }
+
+        // Respond to commands based on the transcribed text
+        if (transcription.includes("menu")) {
+            await zk.sendMessage(remoteJid, {
+                text: "📜 *Menu*\n1. Command 1\n2. Command 2\n3. Command 3\n\nReply with a number to choose.",
+            });
+        } else {
+            await zk.sendMessage(remoteJid, { text: `🤖 Command "${transcription}" not recognized.` });
+        }
+    }
+});
         // Initialize zk after creating the socket instance
 
 
