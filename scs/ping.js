@@ -18,58 +18,47 @@ adams(
   },
   async (dest, zk, commandeOptions) => {
     const { ms } = commandeOptions;
+    const name = commandeOptions.name || zk.getName(dest.sender);
+    const img = 'https://files.catbox.moe/fxcksg.webp';
+    const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-    // Simulating "pinging from xbwm" animation
-    const animationFrames = [
-      "🌐 Pinging from xbwm.   ",
-      "🌐 Pinging from xbwm..  ",
-      "🌐 Pinging from xbwm... ",
-      "🌐 Pinging from xbwm....",
-    ];
-
-    for (let i = 0; i < animationFrames.length; i++) {
-      await zk.sendMessage(dest, { text: animationFrames[i], quoted: ms });
-      await delay(500); // 500ms delay between frames
-    }
-
-    // Generate 3 ping results
+    // Generate 3 ping results with large random numbers
     const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
     const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}  🟢`).join("\n");
 
-    const contextInfo = {
-      externalAdReply: {
-        title: "Bwm Xmd - Ultra-Fast Response",
-        body: `Ping Results : ${formattedResults}`,
-        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
-        mediaType: 1,
-        showAdAttribution: true,
-      },
-    };
-
-    const contactCard = {
+    // Constructing the contact message
+    const con = {
       key: {
-        fromMe: true,
-        participant: `${dest.split('@')[0]}@s.whatsapp.net`,
-        ...(dest ? { remoteJid: '254712345678@s.whatsapp.net' } : {}),
+        fromMe: false,
+        participant: `${dest.sender.split('@')[0]}@s.whatsapp.net`,
+        ...(dest.chat ? { remoteJid: dest.chat } : {}),
       },
       message: {
         contactMessage: {
-          displayName: "BWM XMD Support",
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;BWM XMD;;;;\nFN:BWM XMD\nitem1.TEL;waid=254712345678:+254 712 345 678\nitem1.X-ABLabel:Verified Contact\nEND:VCARD`,
+          displayName: name,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${dest.sender.split('@')[0]}:${dest.sender.split('@')[0]}\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
         },
       },
     };
 
-    // Final response with ping results
+    // Reply with ping results
     await zk.sendMessage(dest, {
-      text: '🚀 *BWM XMD* 🚀',
-      contextInfo,
-      contacts: { displayName: "BWM XMD Verified Contact", contacts: [contactCard] },
-      quoted: ms,
+      text: '🚀 *BWM XMD PING* 🚀\n\n' + formattedResults,
+      contextInfo: {
+        mentionedJid: [dest.sender],
+        externalAdReply: {
+          title: "BWM XMD - Ultra-Fast Response",
+          body: `Ping Results: ${formattedResults}`,
+          thumbnailUrl: img,
+          sourceUrl: murl,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+        },
+      },
+      quoted: con,
     });
 
-    console.log("Ping results sent successfully with animation, contact, and context info!");
+    console.log("Ping results sent successfully with verified tick!");
   }
 );
 
@@ -84,43 +73,45 @@ adams(
   },
   async (dest, zk, commandeOptions) => {
     const { ms } = commandeOptions;
-
+    const name = commandeOptions.name || zk.getName(dest.sender);
     const runtime = process.uptime();
     const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
+    const img = 'https://files.catbox.moe/fxcksg.webp';
+    const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-    const contextInfo = {
-      externalAdReply: {
-        title: "BWM XMD - System Uptime",
-        body: `Bot has been running for: ${formattedRuntime}`,
-        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
-        mediaType: 1,
-        showAdAttribution: true,
-      },
-    };
-
-    const contactCard = {
+    // Constructing the contact message
+    const con = {
       key: {
         fromMe: false,
-        participant: `${dest.split('@')[0]}@s.whatsapp.net`,
-        ...(dest ? { remoteJid: '254712345678@s.whatsapp.net' } : {}),
+        participant: `${dest.sender.split('@')[0]}@s.whatsapp.net`,
+        ...(dest.chat ? { remoteJid: dest.chat } : {}),
       },
       message: {
         contactMessage: {
-          displayName: "BWM XMD Support",
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;BWM XMD;;;;\nFN:BWM XMD\nitem1.TEL;waid=254712345678:+254 712 345 678\nitem1.X-ABLabel:Verified Contact\nEND:VCARD`,
+          displayName: name,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${dest.sender.split('@')[0]}:${dest.sender.split('@')[0]}\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
         },
       },
     };
 
+    // Reply with uptime
     await zk.sendMessage(dest, {
-      text: `*BWM XMD UPTIME* ${formattedRuntime}`,
-      contextInfo,
-      contacts: { displayName: "BWM XMD Verified Contact", contacts: [contactCard] },
-      quoted: ms,
+      text: `*BWM XMD UPTIME* 🕒\n\nRuntime: ${formattedRuntime}`,
+      contextInfo: {
+        mentionedJid: [dest.sender],
+        externalAdReply: {
+          title: "BWM XMD - System Uptime",
+          body: `Bot has been running for: ${formattedRuntime}`,
+          thumbnailUrl: img,
+          sourceUrl: murl,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+        },
+      },
+      quoted: con,
     });
 
-    console.log("Uptime sent successfully with contact and context info!");
+    console.log("Uptime sent successfully with verified tick!");
   }
 );
 
