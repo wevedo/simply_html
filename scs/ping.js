@@ -7,6 +7,15 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Helper function to safely get the sender's name
+function getName(dest, commandeOptions) {
+  return (
+    commandeOptions.pushName ||
+    commandeOptions.name ||
+    (dest.sender ? dest.sender.split('@')[0] : "Unknown User")
+  );
+}
+
 // Command: Ping
 adams(
   {
@@ -17,7 +26,7 @@ adams(
     fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
-    const name = commandeOptions.pushName || commandeOptions.name || dest.sender.split('@')[0];
+    const name = getName(dest, commandeOptions);
     const img = 'https://files.catbox.moe/fxcksg.webp';
     const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
@@ -29,13 +38,17 @@ adams(
     const con = {
       key: {
         fromMe: false,
-        participant: `${dest.sender.split('@')[0]}@s.whatsapp.net`,
+        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
         ...(dest.chat ? { remoteJid: dest.chat } : {}),
       },
       message: {
         contactMessage: {
           displayName: name,
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${dest.sender.split('@')[0]}:${dest.sender.split('@')[0]}\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${
+            dest.sender ? dest.sender.split('@')[0] : "unknown"
+          }:${
+            dest.sender ? dest.sender.split('@')[0] : "unknown"
+          }\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
         },
       },
     };
@@ -44,7 +57,7 @@ adams(
     await zk.sendMessage(dest, {
       text: '🚀 *BWM XMD PING* 🚀\n\n' + formattedResults,
       contextInfo: {
-        mentionedJid: [dest.sender],
+        mentionedJid: [dest.sender || ""],
         externalAdReply: {
           title: "BWM XMD - Ultra-Fast Response",
           body: `Ping Results: ${formattedResults}`,
@@ -71,7 +84,7 @@ adams(
     fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
-    const name = commandeOptions.pushName || commandeOptions.name || dest.sender.split('@')[0];
+    const name = getName(dest, commandeOptions);
     const runtime = process.uptime();
     const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
     const img = 'https://files.catbox.moe/fxcksg.webp';
@@ -81,13 +94,17 @@ adams(
     const con = {
       key: {
         fromMe: false,
-        participant: `${dest.sender.split('@')[0]}@s.whatsapp.net`,
+        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
         ...(dest.chat ? { remoteJid: dest.chat } : {}),
       },
       message: {
         contactMessage: {
           displayName: name,
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${dest.sender.split('@')[0]}:${dest.sender.split('@')[0]}\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${
+            dest.sender ? dest.sender.split('@')[0] : "unknown"
+          }:${
+            dest.sender ? dest.sender.split('@')[0] : "unknown"
+          }\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
         },
       },
     };
@@ -96,7 +113,7 @@ adams(
     await zk.sendMessage(dest, {
       text: `*BWM XMD UPTIME* 🕒\n\nRuntime: ${formattedRuntime}`,
       contextInfo: {
-        mentionedJid: [dest.sender],
+        mentionedJid: [dest.sender || ""],
         externalAdReply: {
           title: "BWM XMD - System Uptime",
           body: `Bot has been running for: ${formattedRuntime}`,
