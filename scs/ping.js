@@ -17,8 +17,7 @@ adams(
     fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
-    const { ms } = commandeOptions;
-    const name = commandeOptions.name || zk.getName(dest.sender);
+    const name = commandeOptions.pushName || commandeOptions.name || dest.sender.split('@')[0];
     const img = 'https://files.catbox.moe/fxcksg.webp';
     const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
@@ -72,8 +71,7 @@ adams(
     fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
-    const { ms } = commandeOptions;
-    const name = commandeOptions.name || zk.getName(dest.sender);
+    const name = commandeOptions.pushName || commandeOptions.name || dest.sender.split('@')[0];
     const runtime = process.uptime();
     const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
     const img = 'https://files.catbox.moe/fxcksg.webp';
