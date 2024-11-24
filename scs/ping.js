@@ -49,7 +49,7 @@ adams(
 
     const contactCard = {
       key: {
-        fromMe: false,
+        fromMe: true,
         participant: `${dest.split('@')[0]}@s.whatsapp.net`,
         ...(dest ? { remoteJid: '254712345678@s.whatsapp.net' } : {}),
       },
