@@ -21,7 +21,7 @@ adams(
     const img = 'https://files.catbox.moe/fxcksg.webp';
     const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-    // Generate 3 ping results with large random numbers
+    // Generate 3 ping results with random numbers
     const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
     const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}  🟢`).join("\n");
 
