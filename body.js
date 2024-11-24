@@ -1114,7 +1114,9 @@ if (conf.AUDIO_REPLY === "yes") {
         }
     });
 }
-         // Required Libraries
+  
+        
+        /*// Required Libraries
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const speech = require("@google-cloud/speech"); // Google Speech-to-Text library
 const client = new speech.SpeechClient(); // Google Speech Client
@@ -1185,7 +1187,7 @@ zk.ev.on("messages.upsert", async (m) => {
         // Initialize zk after creating the socket instance
 
 
-       /**     
+       
 
 if (conf.AUTO_TAG_STATUS === "yes") {
     console.log("AUTO_TAG_STATUS is enabled. Listening for new status updates...");
