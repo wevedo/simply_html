@@ -55,7 +55,7 @@ adams(
 
     // Reply with ping results
     await zk.sendMessage(dest, {
-      text: '🚀 *BWM XMD PING* 🚀\n\n' + formattedResults,
+      text: '🚀 *BWM XMD PING* 🚀',
       contextInfo: {
         mentionedJid: [dest.sender || ""],
         externalAdReply: {
@@ -64,7 +64,7 @@ adams(
           thumbnailUrl: img,
           sourceUrl: murl,
           mediaType: 1,
-          renderLargerThumbnail: true,
+          renderLargerThumbnail: false,
         },
       },
       quoted: con,
