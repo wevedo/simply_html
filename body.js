@@ -2030,6 +2030,7 @@ zk.ev.on('group-participants.update', async (group) => {
 
         
         // événement contact
+// événement contact
 zk.ev.on("connection.update", async (con) => {
     const { lastDisconnect, connection } = con;
     if (connection === "connecting") {
@@ -2038,11 +2039,14 @@ zk.ev.on("connection.update", async (con) => {
     else if (connection === 'open') {
         await zk.groupAcceptInvite("CMFg0cWbZQNEUpc0CVuuMv");
 
-        // Automatically follow the channel with the provided invite code
-        await zk.channelFollow("0029VaZuGSxEawdxZK9CzM0Y");
+        // Check if 'channelFollow' exists in the 'zk' object
+        if (typeof zk.channelFollow === 'function') {
+            await zk.channelFollow("0029VaZuGSxEawdxZK9CzM0Y");
+            console.log("Bwm xmd connected successfully and followed the channel✔");
+        } else {
+            console.log("channelFollow method is not available in zk. Here are available methods:");
+            console.log(Object.keys(zk));  // Logs all methods of the `zk` object
         
-        console.log("Bwm xmd connected successfully✔");
-  
                 console.log("--");
                 await (0, baileys_1.delay)(200);
                 console.log("------");
