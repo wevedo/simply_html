@@ -230,7 +230,7 @@ function generateBio(username) {
 // Auto Bio Update Interval
 setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
-        const username = pushName || numero_owner || "User"; // Fetch the name from pushName or numero_owner
+        const username = NUMERO_OWNER || "User"; // Use NUMERO_OWNER directly
         const bioText = generateBio(username); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
