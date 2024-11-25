@@ -194,7 +194,6 @@ function getCurrentDateTime() {
 
 // List of mixed quotes: Kenyan and cool English ones
 const quotes = [
-    // Cool English Quotes
     "Dream big, code smart, live limitless. 🚀",
     "Innovation is just a bug fix away. 💻✨",
     "Stay sharp, stay focused, stay coding. 🔥",
@@ -203,16 +202,12 @@ const quotes = [
     "Don’t stop when you’re tired; stop when it’s done. 🏁",
     "Keep calm and deploy the bot. 🤖🌐",
     "Hustle in silence, let your code speak. 👨‍💻👩‍💻",
-    // Kenyan Quotes
     "Hakuna stress, tuko hapa kwa ground 🚜🇰🇪",
     "Bora uhai, na bot imewaka! 🔥",
-    "Wacha tupange... meanwhile, Bwm xmd inachukua jukumu. 😂",
     "Sina form but Bwm xmd iko online! 💃",
     "Weuh! Vitu kwa ground ni different lakini bot iko shwari! 🌟",
-    "Mambo ni mengi, masaa ni machache... lakini Bwm xmd iko tuned! ⏰",
     "Acha tu! Hii bot ni kama chai ya mama mboga, shwari kabisa! ☕✨",
     "Life is short, sip your chai and vibe with Bwm xmd! ☕💬",
-    "Fanya ile kitu... lakini usisahau bot imewaka! 😂",
 ];
 
 // Function to get a random quote
@@ -227,18 +222,15 @@ function generateBio(participant) {
     return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey @${participant}, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
-// Auto Bio Update Interval
-setInterval(async () => {
+// Example of how to update bio on message received (Baileys or similar)
+client.on('message', async (message) => {
     if (conf.AUTO_BIO === "yes") {
-        // Assuming you're receiving the message object from the bot framework
-        const message = await getMessage(); // Replace this with the actual message object
-
-        const participant = message?.key?.participant || "user"; // Access participant dynamically
+        const participant = message.key?.participant || "user"; // Dynamically fetch participant from message
         const bioText = generateBio(participant); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
     }
-}, 60000); // Update bio every 60 seconds
+});
 
 // Function to handle deleted messages
 // Other functions (auto-react, anti-delete, etc.) as needed
