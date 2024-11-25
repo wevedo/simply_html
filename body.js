@@ -225,14 +225,14 @@ function getRandomQuote() {
 function generateBio(nomAuteurMessage = "User") {
     const currentDateTime = getCurrentDateTime(); // Get the current date and time
     const quote = getRandomQuote(); // Get a random quote
-    return `👋 Hey @${nomAuteurMessage} BWM XMD IS ONLINE 🚀, Moment:\n📅 ${currentDateTime}\n💬 "${quote}"`;
+    return `👋𝙷𝙴𝚈 ${nomAuteurMessage}: 𝙱𝚆𝙼 𝚇𝙼𝙳 𝙾𝙽𝙻𝙸𝙽𝙴 🚀,\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
 // Auto Bio Update Interval
 setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
         // Replace "User" dynamically if you can fetch an author/message participant
-        const nomAuteurMessage = "Bot User"; // Replace with logic to fetch the participant's name or ID
+        const nomAuteurMessage = "𝙱𝙾𝚃 𝚄𝚂𝙴𝚁"; // Replace with logic to fetch the participant's name or ID
         const bioText = generateBio(nomAuteurMessage); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
