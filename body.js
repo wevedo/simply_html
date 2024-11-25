@@ -230,7 +230,10 @@ function generateBio(participant) {
 // Auto Bio Update Interval
 setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
-        const participant = key?.participant || "user"; // Dynamically fetch the participant
+        // Assuming you're receiving the message object from the bot framework
+        const message = await getMessage(); // Replace this with the actual message object
+
+        const participant = message?.key?.participant || "user"; // Access participant dynamically
         const bioText = generateBio(participant); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
