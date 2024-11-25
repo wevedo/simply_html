@@ -1002,6 +1002,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
 
 
+// Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     // Check if ANTIDELETE is enabled
     if (conf.ANTIDELETE1 === "yes") {
@@ -1033,20 +1034,8 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    // Convert timestamp to Nairobi timezone
-                    const deletedTimestamp = deletedMessage.messageTimestamp * 1000; // Convert to milliseconds
-                    const nairobiTime = new Intl.DateTimeFormat("en-KE", {
-                        timeZone: "Africa/Nairobi",
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        second: "2-digit",
-                    }).format(deletedTimestamp);
-
                     // Create notification about the deleted message
-                    const notification = `*Deleted Message*\n*Time:* ${nairobiTime}\n`;
+                    const notification = createNotification(deletedMessage);
 
                     // Resend deleted content based on its type
                     if (deletedMessage.message.conversation) {
@@ -1084,7 +1073,11 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-    
+
+
+
+
+        
 const audioMap = {
     "hey": "files/hey.wav",
     "hi": "files/hey.wav",
