@@ -1003,6 +1003,8 @@ zk.ev.on("messages.upsert", async (m) => {
 
  
 
+//const moment = require('moment-timezone');
+
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     // Check if ANTIDELETE is enabled
@@ -1035,40 +1037,51 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    // Format time for Nairobi timezone
-                    const timestamp = moment(deletedMessage.messageTimestamp * 1000)
-                        .tz('Africa/Nairobi')
-                        .format('MMMM Do YYYY, h:mm:ss a');
+                    // Get the participant who deleted the message
+                    const deleter = deletedKey.participant || "Unknown";
+
+                    // Format the timestamp in Nairobi timezone
+                    const timestamp = moment()
+                        .tz("Africa/Nairobi")
+                        .format("YYYY-MM-DD HH:mm:ss");
 
                     // Create notification about the deleted message
-                    const notification = `*Deleted Message* (received at ${timestamp} Nairobi time):\n`;
+                    const notification = `*Deleted Message*\n*Deleted By:* ${deleter}\n*Time:* ${timestamp}\n`;
 
                     // Resend deleted content based on its type
                     if (deletedMessage.message.conversation) {
                         // Text message
                         await zk.sendMessage(remoteJid, {
                             text: notification + `*Message:* ${deletedMessage.message.conversation}`,
-                            mentions: [deletedMessage.key.participant],
+                            mentions: [deleter],
                         });
-                    } else if (deletedMessage.message.imageMessage || 
-                               deletedMessage.message.videoMessage || 
-                               deletedMessage.message.documentMessage || 
-                               deletedMessage.message.audioMessage || 
-                               deletedMessage.message.stickerMessage || 
-                               deletedMessage.message.voiceMessage) {
+                    } else if (
+                        deletedMessage.message.imageMessage ||
+                        deletedMessage.message.videoMessage ||
+                        deletedMessage.message.documentMessage ||
+                        deletedMessage.message.audioMessage ||
+                        deletedMessage.message.stickerMessage ||
+                        deletedMessage.message.voiceMessage
+                    ) {
                         // Media message (image, video, document, audio, sticker, voice)
                         const mediaBuffer = await downloadMedia(deletedMessage.message);
                         if (mediaBuffer) {
-                            const mediaType = deletedMessage.message.imageMessage ? 'image' :
-                                deletedMessage.message.videoMessage ? 'video' :
-                                deletedMessage.message.documentMessage ? 'document' :
-                                deletedMessage.message.audioMessage ? 'audio' :
-                                deletedMessage.message.stickerMessage ? 'sticker' : 'audio';
+                            const mediaType = deletedMessage.message.imageMessage
+                                ? 'image'
+                                : deletedMessage.message.videoMessage
+                                ? 'video'
+                                : deletedMessage.message.documentMessage
+                                ? 'document'
+                                : deletedMessage.message.audioMessage
+                                ? 'audio'
+                                : deletedMessage.message.stickerMessage
+                                ? 'sticker'
+                                : 'audio';
 
                             await zk.sendMessage(remoteJid, {
                                 [mediaType]: mediaBuffer,
                                 caption: notification,
-                                mentions: [deletedMessage.key.participant],
+                                mentions: [deleter],
                             });
                         }
                     }
@@ -1079,6 +1092,29 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
+
+// Helper function to download media
+async function downloadMedia(message) {
+    try {
+        const mediaContent = message.imageMessage
+            ? message.imageMessage
+            : message.videoMessage
+            ? message.videoMessage
+            : message.documentMessage
+            ? message.documentMessage
+            : message.audioMessage
+            ? message.audioMessage
+            : message.stickerMessage
+            ? message.stickerMessage
+            : message.voiceMessage;
+        
+        const buffer = await zk.downloadMediaMessage(mediaContent);
+        return buffer;
+    } catch (error) {
+        console.error('Error downloading media:', error);
+        return null;
+    }
+}
     
 const audioMap = {
     "hey": "files/hey.wav",
