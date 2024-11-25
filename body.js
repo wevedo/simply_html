@@ -943,7 +943,7 @@ function createNotification(deletedMessage) {
 
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE === "yes") { // Check if ANTIDELETE is enabled
+    if (conf.ANTIDELETE2 === "yes") { // Check if ANTIDELETE is enabled
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return;
@@ -1001,7 +1001,84 @@ zk.ev.on("messages.upsert", async (m) => {
 });
 
 
+ 
 
+// Event listener for all incoming messages
+zk.ev.on("messages.upsert", async (m) => {
+    // Check if ANTIDELETE is enabled
+    if (conf.ANTIDELETE1 === "yes") {
+        const { messages } = m;
+        const ms = messages[0];
+        if (!ms.message) return;
+
+        // Store each received message
+        const messageKey = ms.key;
+        const remoteJid = messageKey.remoteJid;
+
+        // Store message for future undelete reference
+        if (!store.chats[remoteJid]) {
+            store.chats[remoteJid] = [];
+        }
+
+        // Save the received message to storage
+        store.chats[remoteJid].push(ms);
+
+        // Handle deleted messages
+        if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
+            const deletedKey = ms.message.protocolMessage.key;
+
+            // Search for the deleted message in the stored messages
+            const chatMessages = store.chats[remoteJid];
+            const deletedMessage = chatMessages.find(
+                (msg) => msg.key.id === deletedKey.id
+            );
+
+            if (deletedMessage) {
+                try {
+                    // Format time for Nairobi timezone
+                    const timestamp = moment(deletedMessage.messageTimestamp * 1000)
+                        .tz('Africa/Nairobi')
+                        .format('MMMM Do YYYY, h:mm:ss a');
+
+                    // Create notification about the deleted message
+                    const notification = `*Deleted Message* (received at ${timestamp} Nairobi time):\n`;
+
+                    // Resend deleted content based on its type
+                    if (deletedMessage.message.conversation) {
+                        // Text message
+                        await zk.sendMessage(remoteJid, {
+                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
+                            mentions: [deletedMessage.key.participant],
+                        });
+                    } else if (deletedMessage.message.imageMessage || 
+                               deletedMessage.message.videoMessage || 
+                               deletedMessage.message.documentMessage || 
+                               deletedMessage.message.audioMessage || 
+                               deletedMessage.message.stickerMessage || 
+                               deletedMessage.message.voiceMessage) {
+                        // Media message (image, video, document, audio, sticker, voice)
+                        const mediaBuffer = await downloadMedia(deletedMessage.message);
+                        if (mediaBuffer) {
+                            const mediaType = deletedMessage.message.imageMessage ? 'image' :
+                                deletedMessage.message.videoMessage ? 'video' :
+                                deletedMessage.message.documentMessage ? 'document' :
+                                deletedMessage.message.audioMessage ? 'audio' :
+                                deletedMessage.message.stickerMessage ? 'sticker' : 'audio';
+
+                            await zk.sendMessage(remoteJid, {
+                                [mediaType]: mediaBuffer,
+                                caption: notification,
+                                mentions: [deletedMessage.key.participant],
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling deleted message:', error);
+                }
+            }
+        }
+    }
+});
     
 const audioMap = {
     "hey": "files/hey.wav",
