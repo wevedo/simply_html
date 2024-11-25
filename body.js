@@ -192,25 +192,27 @@ function getCurrentDateTime() {
     return new Intl.DateTimeFormat('en-KE', options).format(new Date());
 }
 
-// Random motivational, tech-related, and Kenyan meme quotes
+// List of mixed quotes: Kenyan and cool English ones
 const quotes = [
-    // Motivational/Tech Quotes
-    "Coding is the language of the future 🌍✨",
-    "Every line of code brings a dream closer 🚀",
-    "Never stop learning, never stop building 🔥",
-    "The key to success: stay curious and keep coding 💡",
-    "Great things are built one commit at a time 🌟",
-    // Kenyan Meme Quotes
-    "Sina form but Bwm xmd iko online 💃😂",
+    // Cool English Quotes
+    "Dream big, code smart, live limitless. 🚀",
+    "Innovation is just a bug fix away. 💻✨",
+    "Stay sharp, stay focused, stay coding. 🔥",
+    "Think less, code more. Results will follow. 🛠️",
+    "Every bug is just an opportunity in disguise. 🐛➡️🎯",
+    "Don’t stop when you’re tired; stop when it’s done. 🏁",
+    "Keep calm and deploy the bot. 🤖🌐",
+    "Hustle in silence, let your code speak. 👨‍💻👩‍💻",
+    // Kenyan Quotes
     "Hakuna stress, tuko hapa kwa ground 🚜🇰🇪",
-    "Vitu kwa ground ni different lakini bot iko tuned! 🔥",
-    "Wacha tupange... but meanwhile, enjoy Bwm xmd 😎",
-    "Weuh! Content ni mingi na bot iko radar! 📡",
-    "Mambo ni mengi, masaa ni machache. Bwm xmd inachukua jukumu 😂",
-    "Life is short, sip your chai and chat with Bwm xmd ☕💬",
-    "Acha tu! Hii bot ni shwari kama samaki kwa maji 🐟✨",
     "Bora uhai, na bot imewaka! 🔥",
-    "Fanya ile kitu... lakini usisahau Bwm xmd iko ready! 😂",
+    "Wacha tupange... meanwhile, Bwm xmd inachukua jukumu. 😂",
+    "Sina form but Bwm xmd iko online! 💃",
+    "Weuh! Vitu kwa ground ni different lakini bot iko shwari! 🌟",
+    "Mambo ni mengi, masaa ni machache... lakini Bwm xmd iko tuned! ⏰",
+    "Acha tu! Hii bot ni kama chai ya mama mboga, shwari kabisa! ☕✨",
+    "Life is short, sip your chai and vibe with Bwm xmd! ☕💬",
+    "Fanya ile kitu... lakini usisahau bot imewaka! 😂",
 ];
 
 // Function to get a random quote
@@ -222,13 +224,13 @@ function getRandomQuote() {
 function generateBio(username) {
     const currentDateTime = getCurrentDateTime(); // Get the current date and time
     const quote = getRandomQuote(); // Get a random quote
-    return `🌟 Bwm xmd by ${username},\n📅 Moment ${currentDateTime}\n💬 "${quote}"`;
+    return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey ${username}, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
 // Auto Bio Update Interval
 setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
-        const username = await zk.getCurrentUser(); // Fetch the current user's name or username
+        const username = pushName || numero_owner || "User"; // Fetch the name from pushName or numero_owner
         const bioText = generateBio(username); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
