@@ -223,7 +223,7 @@ function generateBio(participant) {
 }
 
 // Example of how to update bio on message received (Baileys or similar)
-client.on('message', async (message) => {
+zk.ev.on('message', async (message) => {
     if (conf.AUTO_BIO === "yes") {
         const participant = message.key?.participant || "user"; // Dynamically fetch participant from message
         const bioText = generateBio(participant); // Generate the advanced bio text
