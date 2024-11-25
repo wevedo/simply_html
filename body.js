@@ -305,7 +305,7 @@ setInterval(async () => {
 }, 60000); // Update bio every 60 seconds
 
 // Example usage in a bot command or message handler
-zk.on('message', async (message) => {
+zk.ev.on('message', async (message) => {
     const commandeOptions = {
         ms: message,
         repondre: message.reply, // Assuming Baileys or similar library
