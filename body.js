@@ -178,6 +178,7 @@ setInterval(async () => {
 }, 60000); // Update bio every 60 seconds*/
 
        // Function to get the current date and time in Kenya
+// Function to get the current date and time in Kenya
 function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
@@ -216,23 +217,24 @@ function getRandomQuote() {
 }
 
 // Function to generate a dynamic bio
-function generateBio(participant) {
+function generateBio() {
     const currentDateTime = getCurrentDateTime(); // Get the current date and time
     const quote = getRandomQuote(); // Get a random quote
-    return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey @${participant}, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
+    return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey there, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
-// Example of how to update bio on message received (Baileys or similar)
-zk.ev.on('message', async (message) => {
+// Auto Bio Update Interval
+setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
-        const participant = message.key?.participant || "user"; // Dynamically fetch participant from message
-        const bioText = generateBio(participant); // Generate the advanced bio text
+        const bioText = generateBio(); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
     }
-});
+}, 60000); // Update bio every 60 seconds
 
-// Function to handle deleted messages
+
+
+        
 // Other functions (auto-react, anti-delete, etc.) as needed
         zk.ev.on("call", async (callData) => {
   if (conf.ANTICALL === 'yes') {
