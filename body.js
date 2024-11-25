@@ -182,7 +182,9 @@ setInterval(async () => {
         // Function to get the current date and time in Kenya*/
 // Function to get the current date and time in Kenya
 // Function to get the current date and time in Kenya
-function getCurrentDateTime() {
+
+     /*   
+        function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
         year: 'numeric',
@@ -236,8 +238,11 @@ setInterval(async () => {
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
     }
 }, 60000); // Update bio every 60 seconds
-// Function to get the current date and time in Kenya
-/*function getCurrentDateTime() {
+
+        
+   */
+        // Function to get the current date and time in Kenya
+function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
         year: 'numeric',
@@ -275,22 +280,46 @@ function getRandomQuote() {
 }
 
 // Function to generate a dynamic bio
-function generateBio() {
+function generateBio(nomAuteurMessage) {
     const currentDateTime = getCurrentDateTime(); // Get the current date and time
     const quote = getRandomQuote(); // Get a random quote
-    return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey there, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
+    return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey @${nomAuteurMessage}, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
-// Auto Bio Update Interval
+// Periodic Auto Bio Update
 setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
-        const bioText = generateBio(); // Generate the advanced bio text
-        await zk.updateProfileStatus(bioText); // Update the bio
-        console.log(`Updated Bio: ${bioText}`); // Log the updated bio
+        // Extract variables from commandeOptions
+        let { nomAuteurMessage } = commandeOptions; // Get the username or default to "user"
+        nomAuteurMessage = nomAuteurMessage || "user"; // Fallback if undefined
+
+        // Generate bio text
+        const bioText = generateBio(nomAuteurMessage);
+
+        // Update the bio
+        await zk.updateProfileStatus(bioText);
+
+        // Log the updated bio
+        console.log(`Updated Bio: ${bioText}`);
     }
 }, 60000); // Update bio every 60 seconds
 
-*/
+// Example usage in a bot command or message handler
+zk.on('message', async (message) => {
+    const commandeOptions = {
+        ms: message,
+        repondre: message.reply, // Assuming Baileys or similar library
+        prefixe: "!",
+        nomAuteurMessage: message.key?.participant || "user", // Get participant or default
+        mybotpic: null, // Set bot picture if needed
+    };
+
+    if (conf.AUTO_BIO === "yes") {
+        const bioText = generateBio(commandeOptions.nomAuteurMessage);
+        await zk.updateProfileStatus(bioText);
+        console.log(`Updated Bio: ${bioText}`);
+    }
+});
 
         
 // Other functions (auto-react, anti-delete, etc.) as needed
