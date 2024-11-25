@@ -1033,17 +1033,20 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    // Format the timestamp to Nairobi timezone
+                    // Convert timestamp to Nairobi timezone
                     const deletedTimestamp = deletedMessage.messageTimestamp * 1000; // Convert to milliseconds
-                    const formattedTime = moment(deletedTimestamp)
-                        .tz("Africa/Nairobi")
-                        .format("YYYY-MM-DD HH:mm:ss");
-
-                    // Identify the participant who deleted the message
-                    const participant = deletedMessage.key.participant || "Unknown";
+                    const nairobiTime = new Intl.DateTimeFormat("en-KE", {
+                        timeZone: "Africa/Nairobi",
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                    }).format(deletedTimestamp);
 
                     // Create notification about the deleted message
-                    const notification = `*Deleted Message*\n*Time:* ${formattedTime}\n*Deleted By:* ${participant}\n`;
+                    const notification = `*Deleted Message*\n*Time:* ${nairobiTime}\n`;
 
                     // Resend deleted content based on its type
                     if (deletedMessage.message.conversation) {
