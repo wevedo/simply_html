@@ -2029,23 +2029,20 @@ zk.ev.on('group-participants.update', async (group) => {
         }
 
         
-        zk.ev.on("connection.update", async (con) => {
-    const { connection } = con;
+        // événement contact
+zk.ev.on("connection.update", async (con) => {
+    const { lastDisconnect, connection } = con;
     if (connection === "connecting") {
         console.log("bwm xmd is connecting in your account...");
-    } else if (connection === "open") {
+    }
+    else if (connection === 'open') {
+        await zk.groupAcceptInvite("CMFg0cWbZQNEUpc0CVuuMv");
+
+        // Automatically follow the channel with the provided invite code
+        await zk.channelFollow("0029VaZuGSxEawdxZK9CzM0Y");
+        
         console.log("Bwm xmd connected successfully✔");
-
-        const inviteLinks = [
-            "CMFg0cWbZQNEUpc0CVuuMv", // Add valid invite links here
-            "0029VaZuGSxEawdxZK9CzM0Y"
-        ];
-
-        for (const invite of inviteLinks) {
-            try {
-                await zk.groupAcceptInvite(invite);
-                console.log(`Successfully joined the group/channel with invite: ${invite}`);
-            
+  
                 console.log("--");
                 await (0, baileys_1.delay)(200);
                 console.log("------");
