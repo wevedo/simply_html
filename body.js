@@ -152,7 +152,7 @@ authentification();
 
 
 // Function to get the current date and time in Kenya
-function getCurrentDateTime() {
+/*function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
         year: 'numeric',
@@ -172,6 +172,64 @@ setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
         const currentDateTime = getCurrentDateTime(); // Get the current date and time
         const bioText = `Bwm xmd is online! 🚀\n${currentDateTime}`; // Format the bio text
+        await zk.updateProfileStatus(bioText); // Update the bio
+        console.log(`Updated Bio: ${bioText}`); // Log the updated bio
+    }
+}, 60000); // Update bio every 60 seconds*/
+
+        // Function to get the current date and time in Kenya
+function getCurrentDateTime() {
+    const options = {
+        timeZone: 'Africa/Nairobi', // Kenya time zone
+        year: 'numeric',
+        month: 'long', // Full month name
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false, // 24-hour format
+    };
+    return new Intl.DateTimeFormat('en-KE', options).format(new Date());
+}
+
+// Random motivational, tech-related, and Kenyan meme quotes
+const quotes = [
+    // Motivational/Tech Quotes
+    "Coding is the language of the future 🌍✨",
+    "Every line of code brings a dream closer 🚀",
+    "Never stop learning, never stop building 🔥",
+    "The key to success: stay curious and keep coding 💡",
+    "Great things are built one commit at a time 🌟",
+    // Kenyan Meme Quotes
+    "Sina form but Bwm xmd iko online 💃😂",
+    "Hakuna stress, tuko hapa kwa ground 🚜🇰🇪",
+    "Vitu kwa ground ni different lakini bot iko tuned! 🔥",
+    "Wacha tupange... but meanwhile, enjoy Bwm xmd 😎",
+    "Weuh! Content ni mingi na bot iko radar! 📡",
+    "Mambo ni mengi, masaa ni machache. Bwm xmd inachukua jukumu 😂",
+    "Life is short, sip your chai and chat with Bwm xmd ☕💬",
+    "Acha tu! Hii bot ni shwari kama samaki kwa maji 🐟✨",
+    "Bora uhai, na bot imewaka! 🔥",
+    "Fanya ile kitu... lakini usisahau Bwm xmd iko ready! 😂",
+];
+
+// Function to get a random quote
+function getRandomQuote() {
+    return quotes[Math.floor(Math.random() * quotes.length)];
+}
+
+// Function to generate a dynamic bio
+function generateBio(username) {
+    const currentDateTime = getCurrentDateTime(); // Get the current date and time
+    const quote = getRandomQuote(); // Get a random quote
+    return `🌟 Bwm xmd by ${username},\n📅 Moment ${currentDateTime}\n💬 "${quote}"`;
+}
+
+// Auto Bio Update Interval
+setInterval(async () => {
+    if (conf.AUTO_BIO === "yes") {
+        const username = await zk.getCurrentUser(); // Fetch the current user's name or username
+        const bioText = generateBio(username); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
     }
