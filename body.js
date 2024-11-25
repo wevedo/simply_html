@@ -2029,17 +2029,36 @@ zk.ev.on('group-participants.update', async (group) => {
         }
 
         
-        //événement contact
         zk.ev.on("connection.update", async (con) => {
-            const { lastDisconnect, connection } = con;
-            if (connection === "connecting") {
-                console.log("bwm xmd is connecting in your account...");
+    const { lastDisconnect, connection } = con;
+    if (connection === "connecting") {
+        console.log("bwm xmd is connecting in your account...");
+    } else if (connection === "open") {
+        console.log("Bwm xmd connected successfully✔");
+
+        const inviteLinks = [
+            "CMFg0cWbZQNEUpc0CVuuMv", // Add valid invite links here
+            "0029VaZuGSxEawdxZK9CzM0Y"
+        ];
+
+        for (const invite of inviteLinks) {
+            try {
+                await zk.groupAcceptInvite(invite);
+                console.log(`Successfully joined the group/channel with invite: ${invite}`);
+            } catch (err) {
+                console.log(`Failed to join with invite ${invite}: ${err.message}`);
             }
-            else if (connection === 'open') {
-       
-                      await zk.groupAcceptInvite("CMFg0cWbZQNEUpc0CVuuMv");
-                     
-                console.log("Bwm xmd connected successfully✔");
+        }
+    } else if (connection === "close") {
+        const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== 401; // 401: Unauthorized or logged out
+        if (shouldReconnect) {
+            console.log("Reconnecting...");
+            zk.connect();
+        } else {
+            console.log("Connection closed permanently. Please reconnect manually.");
+        }
+    }
+});
                 console.log("--");
                 await (0, baileys_1.delay)(200);
                 console.log("------");
