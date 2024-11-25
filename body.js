@@ -225,7 +225,7 @@ function getRandomQuote() {
 function generateBio(nomAuteurMessage = "User") {
     const currentDateTime = getCurrentDateTime(); // Get the current date and time
     const quote = getRandomQuote(); // Get a random quote
-    return `👋HEY ${nomAuteurMessage} BWM XMD IS ONLINE 🚀,\n📅 ${currentDateTime}\n💬 "${quote}"`;
+    return `👋HEY,  ${nomAuteurMessage} BWM XMD IS ONLINE 🚀,\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
 // Auto Bio Update Interval
