@@ -179,7 +179,8 @@ setInterval(async () => {
 
        // Function to get the current date and time in Kenya
         
-        // Function to get the current date and time in Kenya
+        // Function to get the current date and time in Kenya*/
+// Function to get the current date and time in Kenya
 function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
@@ -217,22 +218,22 @@ function getRandomQuote() {
     return quotes[Math.floor(Math.random() * quotes.length)];
 }
 
-// Function to generate a dynamic bio
-function generateBio(participant) {
+// Function to generate a dynamic bio with a mention
+function generateBio(participant = "user") {
     const currentDateTime = getCurrentDateTime(); // Get the current date and time
     const quote = getRandomQuote(); // Get a random quote
     return `🌟 Bwm xmd by Ibrahim Adams 🚀\n👋 Hey @${participant}, welcome back!\n📅 ${currentDateTime}\n💬 "${quote}"`;
 }
 
-// Example of how to update bio on message received (Baileys or similar)
+// Auto Bio Update Interval
 setInterval(async () => {
     if (conf.AUTO_BIO === "yes") {
-        const participant = message.key?.participant || "user"; // Dynamically fetch participant from message
+        const participant = "user"; // You can dynamically assign this based on your context
         const bioText = generateBio(participant); // Generate the advanced bio text
         await zk.updateProfileStatus(bioText); // Update the bio
         console.log(`Updated Bio: ${bioText}`); // Log the updated bio
     }
-});
+}, 60000); // Update bio every 60 seconds
 // Function to get the current date and time in Kenya
 /*function getCurrentDateTime() {
     const options = {
