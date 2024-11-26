@@ -1,5 +1,5 @@
 //adams code
-
+/*
 const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
 const { adams } = require("../Ibrahim/adams");
 const traduire = require("../Ibrahim/traduction");
@@ -165,6 +165,114 @@ try{
 
 
 
+*/
+const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
+const { adams } = require("../Ibrahim/adams");
+const traduire = require("../Ibrahim/traduction");
+const { downloadMediaMessage, downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const fs = require("fs-extra");
+const axios = require('axios');
+const { exec } = require("child_process");
+const ffmpeg = require("fluent-ffmpeg");
+const FormData = require('form-data');
+const { Catbox } = require('node-catbox');
+
+const catbox = new Catbox();
+
+async function uploadToCatbox(Path) {
+    if (!fs.existsSync(Path)) {
+        throw new Error("Fichier non existant");
+    }
+
+    try {
+        const response = await catbox.uploadFile({
+            path: Path // Provide the path to the file
+        });
+
+        if (response) {
+            return response; // returns the uploaded file URL
+        } else {
+            throw new Error("Erreur lors de la récupération du lien du fichier");
+        }
+    } catch (err) {
+        throw new Error(String(err));
+    }
+}
+
+adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+    const { msgRepondu, repondre } = commandeOptions;
+
+    if (!msgRepondu) {
+        repondre('Please reply to an image, video, audio, GIF, or document.');
+        return;
+    }
+
+    let mediaPath, mediaType;
+
+    if (msgRepondu.videoMessage) {
+        const videoSize = msgRepondu.videoMessage.fileLength;
+
+        if (videoSize > 50 * 1024 * 1024) {
+            repondre('The video is too long. Please send a smaller video.');
+            return;
+        }
+
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        mediaType = 'video';
+    } else if (msgRepondu.imageMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
+        mediaType = 'image';
+    } else if (msgRepondu.audioMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        mediaType = 'audio';
+    } else if (msgRepondu.documentMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.documentMessage);
+        mediaType = 'document';
+
+        // Validate if the document is a JS file
+        if (!mediaPath.endsWith('.js')) {
+            repondre('Please provide a valid JavaScript (.js) file.');
+            fs.unlinkSync(mediaPath); // Clean up non-JS documents
+            return;
+        }
+    } else if (msgRepondu.videoMessage?.gifPlayback) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        mediaType = 'gif';
+    } else {
+        repondre('Unsupported media type. Reply with an image, video, audio, GIF, or document.');
+        return;
+    }
+
+    try {
+        const catboxUrl = await uploadToCatbox(mediaPath);
+        fs.unlinkSync(mediaPath); // Remove the local file after uploading
+
+        // Respond with the URL based on media type
+        switch (mediaType) {
+            case 'image':
+                repondre(`Here is your image URL:\n${catboxUrl}`);
+                break;
+            case 'video':
+                repondre(`Here is your video URL:\n${catboxUrl}`);
+                break;
+            case 'audio':
+                repondre(`Here is your audio URL:\n${catboxUrl}`);
+                break;
+            case 'gif':
+                repondre(`Here is your GIF URL:\n${catboxUrl}`);
+                break;
+            case 'document':
+                repondre(`Here is your JavaScript file URL:\n${catboxUrl}`);
+                break;
+            default:
+                repondre('An unknown error occurred.');
+                break;
+        }
+    } catch (error) {
+        console.error('Error while creating your URL:', error);
+        repondre('Oops, an error occurred.');
+    }
+});
 
 
   
