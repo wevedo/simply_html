@@ -168,20 +168,19 @@ try{
 */
 const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
 const { adams } = require("../Ibrahim/adams");
-const traduire = require("../Ibrahim/traduction");
 const { downloadMediaMessage, downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const fs = require("fs-extra");
 const axios = require('axios');
 const { exec } = require("child_process");
 const ffmpeg = require("fluent-ffmpeg");
 const FormData = require('form-data');
-const { Catbox } = require('node-catbox');
+const { Catbox } = require('node-catbox'); // Import Catbox
 
 const catbox = new Catbox();
 
 async function uploadToCatbox(Path) {
     if (!fs.existsSync(Path)) {
-        throw new Error("Fichier non existant");
+        throw new Error("File does not exist");
     }
 
     try {
@@ -190,93 +189,127 @@ async function uploadToCatbox(Path) {
         });
 
         if (response) {
-            return response; // returns the uploaded file URL
+            return response; // Return the uploaded file URL
         } else {
-            throw new Error("Erreur lors de la récupération du lien du fichier");
+            throw new Error("Failed to retrieve the file URL");
         }
     } catch (err) {
         throw new Error(String(err));
     }
 }
 
-adams({ nomCom: "url2", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        repondre('Please reply to an image, video, audio, GIF, or document.');
+        repondre('Mention an image, video, audio, or GIF');
         return;
     }
 
     let mediaPath, mediaType;
 
-    if (msgRepondu.videoMessage) {
+    if (msgRepondu.audioMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        mediaType = 'audio';
+    } else if (msgRepondu.videoMessage) {
         const videoSize = msgRepondu.videoMessage.fileLength;
-
         if (videoSize > 50 * 1024 * 1024) {
-            repondre('The video is too long. Please send a smaller video.');
+            repondre('The video is too large. Please send a smaller video.');
             return;
         }
-
         mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
         mediaType = 'video';
     } else if (msgRepondu.imageMessage) {
         mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
         mediaType = 'image';
-    } else if (msgRepondu.audioMessage) {
-        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
-        mediaType = 'audio';
-    } else if (msgRepondu.documentMessage) {
-        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.documentMessage);
-        mediaType = 'document';
-
-        // Validate if the document is a JS file
-        if (!mediaPath.endsWith('.js')) {
-            repondre('Please provide a valid JavaScript (.js) file.');
-            fs.unlinkSync(mediaPath); // Clean up non-JS documents
-            return;
-        }
-    } else if (msgRepondu.videoMessage?.gifPlayback) {
-        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+    } else if (msgRepondu.gifMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.gifMessage);
         mediaType = 'gif';
     } else {
-        repondre('Unsupported media type. Reply with an image, video, audio, GIF, or document.');
+        repondre('Reply to an image, video, audio, or GIF');
         return;
     }
 
     try {
         const catboxUrl = await uploadToCatbox(mediaPath);
-        fs.unlinkSync(mediaPath); // Remove the local file after uploading
+        fs.unlinkSync(mediaPath); // Delete file after use
 
-        // Respond with the URL based on media type
-        switch (mediaType) {
-            case 'image':
-                repondre(`Here is your image URL:\n${catboxUrl}`);
-                break;
-            case 'video':
-                repondre(`Here is your video URL:\n${catboxUrl}`);
-                break;
-            case 'audio':
-                repondre(`Here is your audio URL:\n${catboxUrl}`);
-                break;
-            case 'gif':
-                repondre(`Here is your GIF URL:\n${catboxUrl}`);
-                break;
-            case 'document':
-                repondre(`Here is your JavaScript file URL:\n${catboxUrl}`);
-                break;
-            default:
-                repondre('An unknown error occurred.');
-                break;
-        }
+        repondre(`Here is your ${mediaType} URL:\n${catboxUrl}`);
     } catch (error) {
         console.error('Error while creating your URL:', error);
         repondre('Oops, an error occurred.');
     }
 });
 
+adams({ nomCom: "sticker", categorie: "Conversion", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+    const { ms, mtype, arg, repondre, nomAuteurMessage } = commandeOptions;
 
-  
+    const alea = (ext) => `${Math.floor(Math.random() * 10000)}${ext}`;
+    const stickerFileName = alea(".webp");
+
+    if (mtype === "imageMessage" || mtype === "videoMessage") {
+        let downloadFilePath = ms.message[mtype];
+        if (!downloadFilePath) {
+            repondre("Please mention an image or video!");
+            return;
+        }
+
+        const media = await downloadContentFromMessage(downloadFilePath, mtype.includes("image") ? "image" : "video");
+        let buffer = Buffer.from([]);
+        for await (const elm of media) {
+            buffer = Buffer.concat([buffer, elm]);
+        }
+
+        const sticker = new Sticker(buffer, {
+            pack: "BMW-MD",
+            author: nomAuteurMessage,
+            type: arg.includes("-c") ? StickerTypes.CROPPED : StickerTypes.FULL,
+            quality: 40,
+        });
+
+        await sticker.toFile(stickerFileName);
+        await zk.sendMessage(origineMessage, { sticker: fs.readFileSync(stickerFileName) }, { quoted: ms });
+
+        try {
+            fs.unlinkSync(stickerFileName);
+        } catch (e) {
+            console.log(e);
+        }
+    } else {
+        repondre("Please mention an image or video!");
+    }
 });
+
+adams({ nomCom: "js", categorie: "Utility", reaction: "📄" }, async (origineMessage, zk, commandeOptions) => {
+    const { msgRepondu, repondre } = commandeOptions;
+
+    if (!msgRepondu || !msgRepondu.documentMessage) {
+        repondre('Reply to a document to convert it into a JS file.');
+        return;
+    }
+
+    const documentPath = await zk.downloadAndSaveMediaMessage(msgRepondu.documentMessage);
+
+    try {
+        const jsContent = `// Example JavaScript File\nconsole.log('Document converted to JS');`;
+        const jsFilePath = `${documentPath.replace(/\.\w+$/, '')}.js`;
+
+        fs.writeFileSync(jsFilePath, jsContent);
+        await zk.sendMessage(origineMessage, {
+            document: fs.readFileSync(jsFilePath),
+            mimetype: 'application/javascript',
+            fileName: 'converted.js',
+        });
+
+        fs.unlinkSync(documentPath);
+        fs.unlinkSync(jsFilePath);
+        repondre('Document converted to a JS file.');
+    } catch (error) {
+        console.error('Error during document processing:', error);
+        repondre('Oops, an error occurred while processing the document.');
+    }
+});
+
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
    const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
