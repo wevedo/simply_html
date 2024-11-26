@@ -184,10 +184,7 @@ async function uploadToCatbox(Path) {
     }
 
     try {
-        const response = await catbox.uploadFile({
-            path: Path // Provide the path to the file
-        });
-
+        const response = await catbox.uploadFile({ path: Path });
         if (response) {
             return response; // Return the uploaded file URL
         } else {
@@ -209,8 +206,22 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
     let mediaPath, mediaType;
 
     if (msgRepondu.audioMessage) {
-        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
-        mediaType = 'audio';
+        const tempPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        mediaPath = tempPath.replace(/\.\w+$/, ".mp3");
+
+        // Convert audio to MP3 if necessary
+        await new Promise((resolve, reject) => {
+            ffmpeg(tempPath)
+                .toFormat("mp3")
+                .save(mediaPath)
+                .on("end", () => {
+                    fs.unlinkSync(tempPath); // Delete the original file
+                    resolve();
+                })
+                .on("error", reject);
+        });
+
+        mediaType = "audio";
     } else if (msgRepondu.videoMessage) {
         const videoSize = msgRepondu.videoMessage.fileLength;
         if (videoSize > 50 * 1024 * 1024) {
@@ -281,35 +292,47 @@ adams({ nomCom: "sticker", categorie: "Conversion", reaction: "👨🏿‍💻" 
 });
 
 adams({ nomCom: "js", categorie: "Utility", reaction: "📄" }, async (origineMessage, zk, commandeOptions) => {
-    const { msgRepondu, repondre } = commandeOptions;
+    const { msgRepondu, repondre, ms } = commandeOptions;
 
-    if (!msgRepondu || !msgRepondu.documentMessage) {
-        repondre('Reply to a document to convert it into a JS file.');
-        return;
-    }
+    if (msgRepondu && msgRepondu.documentMessage) {
+        const documentPath = await zk.downloadAndSaveMediaMessage(msgRepondu.documentMessage);
 
-    const documentPath = await zk.downloadAndSaveMediaMessage(msgRepondu.documentMessage);
+        try {
+            const jsContent = `// Example JavaScript File\nconsole.log('Document converted to JS');`;
+            const jsFilePath = `${documentPath.replace(/\.\w+$/, '')}.js`;
 
-    try {
-        const jsContent = `// Example JavaScript File\nconsole.log('Document converted to JS');`;
-        const jsFilePath = `${documentPath.replace(/\.\w+$/, '')}.js`;
+            fs.writeFileSync(jsFilePath, jsContent);
+            const jsUrl = await uploadToCatbox(jsFilePath);
 
-        fs.writeFileSync(jsFilePath, jsContent);
-        await zk.sendMessage(origineMessage, {
-            document: fs.readFileSync(jsFilePath),
-            mimetype: 'application/javascript',
-            fileName: 'converted.js',
-        });
+            await zk.sendMessage(origineMessage, { text: `Here is your JavaScript file URL:\n${jsUrl}` }, { quoted: ms });
+            fs.unlinkSync(documentPath);
+            fs.unlinkSync(jsFilePath);
+        } catch (error) {
+            console.error('Error during document processing:', error);
+            repondre('Oops, an error occurred while processing the document.');
+        }
+    } else if (msgRepondu && msgRepondu.extendedTextMessage) {
+        const jsText = msgRepondu.extendedTextMessage.text;
 
-        fs.unlinkSync(documentPath);
-        fs.unlinkSync(jsFilePath);
-        repondre('Document converted to a JS file.');
-    } catch (error) {
-        console.error('Error during document processing:', error);
-        repondre('Oops, an error occurred while processing the document.');
+        if (jsText.startsWith("//") || jsText.includes("function") || jsText.includes("console")) {
+            const tempPath = `./temp_${Date.now()}.js`;
+            fs.writeFileSync(tempPath, jsText);
+
+            try {
+                const jsUrl = await uploadToCatbox(tempPath);
+                repondre(`Here is your JavaScript text as a URL:\n${jsUrl}`);
+                fs.unlinkSync(tempPath);
+            } catch (error) {
+                console.error('Error while creating JS URL:', error);
+                repondre('Failed to convert the JavaScript text.');
+            }
+        } else {
+            repondre('The text provided is not valid JavaScript.');
+        }
+    } else {
+        repondre('Reply to a document or valid JavaScript text to convert.');
     }
 });
-
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
    const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
