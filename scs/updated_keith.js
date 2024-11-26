@@ -2125,7 +2125,7 @@ adams({
     reply("An error occurred during translation");
   }
 });
-adams({
+/*adams({
   'nomCom': 'url',       // Command to trigger the function
   'categorie': "General", // Command category
   'reaction': '👨🏿‍💻'    // Reaction to use on command
@@ -2165,7 +2165,7 @@ adams({
     repondre("Oops, there was an error.");
   }
 });
-
+*/
 
 adams({
   'nomCom': 'apk',
