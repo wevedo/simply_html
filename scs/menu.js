@@ -1,13 +1,16 @@
 const { adams } = require("../Ibrahim/adams");
-const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const moment = require("moment-timezone");
 const axios = require('axios');
 const s = require(__dirname + "/../config");
 
-const BaseUrl = process.env.GITHUB_GIT;
-const adamsapikey = process.env.BOT_OWNER;
+const audioUrls = [
+    "https://files.catbox.moe/sxygdt.mp3",
+    "https://files.catbox.moe/zdti7y.wav",
+    "https://files.catbox.moe/nwreb4.mp3",
+    "https://files.catbox.moe/y1uawp.mp3",
+    "https://files.catbox.moe/x4h8us.mp3"
+];
 
-// GitHub repo data function
 const fetchGitHubStats = async () => {
     try {
         const repo = 'Devibraah/BWM-XMD';
@@ -22,27 +25,10 @@ const fetchGitHubStats = async () => {
     }
 };
 
-const audioUrls = [
-    "https://files.catbox.moe/sxygdt.mp3",
-    "https://files.catbox.moe/zdti7y.wav",
-    "https://files.catbox.moe/nwreb4.mp3",
-    "https://files.catbox.moe/y1uawp.mp3",
-    "https://files.catbox.moe/x4h8us.mp3"
-];
-
-// Array of menu image URLs
-const menuImages = [
-    "https://files.catbox.moe/h2ydge.jpg",
-    "https://files.catbox.moe/0xa925.jpg",
-    "https://files.catbox.moe/k13s7u.jpg"
-];
-
-const getRandomMenuImage = () => {
-    return menuImages[Math.floor(Math.random() * menuImages.length)];
-};
+const getRandomAudio = () => audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { repondre, prefixe } = commandeOptions;
+    const { repondre } = commandeOptions;
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const temps = moment().format("HH:mm:ss");
@@ -56,70 +42,84 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Menu message with buttons
-    try {
-        const randomImage = getRandomMenuImage();
-        await zk.sendMessage(dest, {
-            image: { url: randomImage },
-            caption: `
+    const menuText = `
 ╭─────═━┈┈━═──━┈⊷
 ┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ xᴍᴅ*
 ┇ ᴏᴡɴᴇʀ: ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
-┇ ᴘʀᴇғɪx: *[ ${prefixe} ]*
 ┇ ᴅᴀᴛᴇ: *${date}*
 ┇ ᴛɪᴍᴇ: *${temps}*
 ┇ ᴛᴏᴛᴀʟ ᴜsᴇʀs: *${formattedTotalUsers}*
 ╰─────═━┈┈━═──━┈⊷
-\n${greeting}, welcome to the best WhatsApp bot!`,
-            buttons: [
-                { buttonId: `${prefixe}allcommands`, buttonText: { displayText: "📜 All Commands" }, type: 1 },
-                { buttonId: `${prefixe}ping`, buttonText: { displayText: "📡 Ping" }, type: 1 },
-                { buttonId: `${prefixe}repo`, buttonText: { displayText: "📁 Repository" }, type: 1 },
-                { buttonId: `${prefixe}channel`, buttonText: { displayText: "📱 WhatsApp Channel" }, type: 1 }
-            ],
-            headerType: 4
-        });
 
-        // Send audio after the menu
-        const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
-        await zk.sendMessage(dest, {
-            audio: { url: randomAudio },
-            mimetype: randomAudio.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
-            ptt: true
-        });
+${greeting}, please reply with a number to choose an option:
 
-    } catch (error) {
-        console.error("Error sending menu:", error);
-        repondre("🥵 Error displaying menu: " + error.message);
+1️⃣ View all commands  
+2️⃣ Check ping  
+3️⃣ Open repository  
+4️⃣ Access WhatsApp channel  
+5️⃣ Play bot audio song
+`;
+
+    // Send the menu
+    await zk.sendMessage(dest, { text: menuText });
+});
+
+adams({ nomCom: "respondToNumber", categorie: "Utility" }, async (dest, zk, commandeOptions) => {
+    const { repondre, ms } = commandeOptions;
+
+    if (!ms.message || !ms.message.conversation) {
+        return repondre("Please reply with a valid number.");
+    }
+
+    const userResponse = ms.message.conversation.trim();
+
+    switch (userResponse) {
+        case "1":
+            await zk.sendMessage(dest, { 
+                text: "📜 Here are all available commands:\n- menu\n- ping\n- repo\n- channel\n- song"
+            });
+            break;
+
+        case "2":
+            const start = Date.now();
+            await zk.sendMessage(dest, { text: "📡 Pinging..." });
+            const latency = Date.now() - start;
+            await zk.sendMessage(dest, { text: `🏓 Pong! Latency: ${latency}ms` });
+            break;
+
+        case "3":
+            await zk.sendMessage(dest, {
+                text: "📁 Visit the repository:\nhttps://github.com/Devibraah/BWM-XMD",
+                contextInfo: { externalAdReply: { title: "GitHub Repository", body: "Click to view", sourceUrl: "https://github.com/Devibraah/BWM-XMD" } }
+            });
+            break;
+
+        case "4":
+            await zk.sendMessage(dest, {
+                text: "📱 Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                contextInfo: { externalAdReply: { title: "WhatsApp Channel", body: "Click to join", sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" } }
+            });
+            break;
+
+        case "5":
+            try {
+                const randomAudio = getRandomAudio();
+                await zk.sendMessage(dest, { 
+                    audio: { url: randomAudio },
+                    mimetype: randomAudio.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
+                    ptt: true
+                });
+            } catch (audioError) {
+                console.error("Error sending audio:", audioError);
+                repondre("Error sending audio file: " + audioError.message);
+            }
+            break;
+
+        default:
+            repondre("Invalid option. Please reply with a number from 1 to 5.");
+            break;
     }
 });
-
-// Add command handlers
-adams({ nomCom: "allcommands", categorie: "Utility" }, async (dest, zk) => {
-    zk.sendMessage(dest, { text: "📜 Here are all available commands:\n- menu\n- ping\n- repo\n- channel\n..." });
-});
-
-adams({ nomCom: "ping", categorie: "Utility" }, async (dest, zk) => {
-    const start = Date.now();
-    await zk.sendMessage(dest, { text: "📡 Pinging..." });
-    const latency = Date.now() - start;
-    zk.sendMessage(dest, { text: `🏓 Pong! Latency: ${latency}ms` });
-});
-
-adams({ nomCom: "repo", categorie: "Utility" }, async (dest, zk) => {
-    zk.sendMessage(dest, {
-        text: "📁 Visit the repository:\nhttps://github.com/Devibraah/BWM-XMD",
-        contextInfo: { externalAdReply: { title: "GitHub Repository", body: "Click to view", sourceUrl: "https://github.com/Devibraah/BWM-XMD" } }
-    });
-});
-
-adams({ nomCom: "channel", categorie: "Utility" }, async (dest, zk) => {
-    zk.sendMessage(dest, {
-        text: "📱 Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-        contextInfo: { externalAdReply: { title: "WhatsApp Channel", body: "Click to join", sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" } }
-    });
-});
-
 /**const { adams } = require("../Ibrahim/adams");
 const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
