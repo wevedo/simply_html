@@ -1,4 +1,4 @@
-
+/**
 const { adams } = require("../Ibrahim/adams");
 const yts = require('yt-search');
 const ytdl = require('ytdl-core');
@@ -140,10 +140,10 @@ adams({
     }
   }, { quoted: ms });
 });
+**/
 
 
 
-/**
 require('dotenv').config(); // Load environment variables
 const { adams } = require("../Ibrahim/adams");
 const yts = require('yt-search');
@@ -289,5 +289,5 @@ adams({
     }
   }, { quoted: ms });
 });
-**/
+
     
