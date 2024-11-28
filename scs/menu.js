@@ -1,31 +1,27 @@
 const { adams } = require("../Ibrahim/adams");
-const os = require("os");
+const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const moment = require("moment-timezone");
 const axios = require('axios');
 const s = require(__dirname + "/../config");
 
-const more = String.fromCharCode(8206);
-const readmore = more.repeat(4001);
-const BaseUrl = process.env.GITHUB_GIT || "https://github.com/Devibraah/BWM-XMD";
+const BaseUrl = process.env.GITHUB_GIT;
 const adamsapikey = process.env.BOT_OWNER;
-const whatsappChannel = "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y";
 
-// Helper function for runtime calculation
-const runtime = function (seconds) {
-    seconds = Number(seconds);
-    var d = Math.floor(seconds / (3600 * 24));
-    var h = Math.floor((seconds % (3600 * 24)) / 3600);
-    var m = Math.floor((seconds % 3600) / 60);
-    var s = Math.floor(seconds % 60);
-    return (
-        (d > 0 ? d + "d, " : "") +
-        (h > 0 ? h + "h, " : "") +
-        (m > 0 ? m + "m, " : "") +
-        (s > 0 ? s + "s" : "")
-    );
+// GitHub repo data function
+const fetchGitHubStats = async () => {
+    try {
+        const repo = 'Devibraah/BWM-XMD';
+        const response = await axios.get(`https://api.github.com/repos/${repo}`);
+        const forks = response.data.forks_count;
+        const stars = response.data.stargazers_count;
+        const totalUsers = (forks * 2) + (stars * 2);
+        return { forks, stars, totalUsers };
+    } catch (error) {
+        console.error("Error fetching GitHub stats:", error);
+        return { forks: 0, stars: 0, totalUsers: 0 }; 
+    }
 };
 
-// Audio and menu images
 const audioUrls = [
     "https://files.catbox.moe/sxygdt.mp3",
     "https://files.catbox.moe/zdti7y.wav",
@@ -33,93 +29,95 @@ const audioUrls = [
     "https://files.catbox.moe/y1uawp.mp3",
     "https://files.catbox.moe/x4h8us.mp3"
 ];
-const menuImageUrl = "https://files.catbox.moe/h2ydge.jpg"; // Replace with a valid menu image URL
+
+// Array of menu image URLs
+const menuImages = [
+    "https://files.catbox.moe/h2ydge.jpg",
+    "https://files.catbox.moe/0xa925.jpg",
+    "https://files.catbox.moe/k13s7u.jpg"
+];
+
+const getRandomMenuImage = () => {
+    return menuImages[Math.floor(Math.random() * menuImages.length)];
+};
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { prefixe } = commandeOptions;
+    let { repondre, prefixe } = commandeOptions;
 
-    // Set timezone
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
-    const temps = moment().format('HH:mm:ss');
-    const date = moment().format('DD/MM/YYYY');
+    const temps = moment().format("HH:mm:ss");
+    const date = moment().format("DD/MM/YYYY");
     const hour = moment().hour();
     let greeting = "Good night";
     if (hour >= 0 && hour <= 11) greeting = "Good morning";
     else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
     else if (hour >= 16 && hour <= 21) greeting = "Good evening";
 
+    const { totalUsers } = await fetchGitHubStats();
+    const formattedTotalUsers = totalUsers.toLocaleString();
+
+    // Menu message with buttons
     try {
-        // Send interactive menu
+        const randomImage = getRandomMenuImage();
         await zk.sendMessage(dest, {
-            image: { url: menuImageUrl },
-            caption: `╭─────═━┈┈━═──━┈⊷
+            image: { url: randomImage },
+            caption: `
+╭─────═━┈┈━═──━┈⊷
 ┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ xᴍᴅ*
 ┇ ᴏᴡɴᴇʀ: ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+┇ ᴘʀᴇғɪx: *[ ${prefixe} ]*
 ┇ ᴅᴀᴛᴇ: *${date}*
 ┇ ᴛɪᴍᴇ: *${temps}*
-╰─────═━┈┈━═──━┈⊷\n\n🌍 *BEST WHATSAPP BOT* 🌍`,
-            footer: `Select an option below:`,
+┇ ᴛᴏᴛᴀʟ ᴜsᴇʀs: *${formattedTotalUsers}*
+╰─────═━┈┈━═──━┈⊷
+\n${greeting}, welcome to the best WhatsApp bot!`,
             buttons: [
-                { buttonId: "menu_all", buttonText: { displayText: "📜 All Commands" }, type: 1 },
-                { buttonId: "menu_ping", buttonText: { displayText: "📡 Ping" }, type: 1 },
-                { buttonId: "menu_repo", buttonText: { displayText: "💻 Repo" }, type: 1 },
-                { buttonId: "menu_channel", buttonText: { displayText: "🔗 WhatsApp Channel" }, type: 1 }
+                { buttonId: `${prefixe}allcommands`, buttonText: { displayText: "📜 All Commands" }, type: 1 },
+                { buttonId: `${prefixe}ping`, buttonText: { displayText: "📡 Ping" }, type: 1 },
+                { buttonId: `${prefixe}repo`, buttonText: { displayText: "📁 Repository" }, type: 1 },
+                { buttonId: `${prefixe}channel`, buttonText: { displayText: "📱 WhatsApp Channel" }, type: 1 }
             ],
-            headerType: 4 // 4 indicates an image header
+            headerType: 4
         });
 
-        // Short delay before sending audio
+        // Send audio after the menu
         const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
-        await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
-
-        // Send the audio
         await zk.sendMessage(dest, {
             audio: { url: randomAudio },
-            mimetype: "audio/mpeg",
-            ptt: true,
-            caption: "BMW MD SONG"
+            mimetype: randomAudio.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
+            ptt: true
         });
 
     } catch (error) {
-        console.error("Error in menu handler:", error);
-        await zk.sendMessage(dest, { text: `An error occurred while processing the menu: ${error.message}` });
+        console.error("Error sending menu:", error);
+        repondre("🥵 Error displaying menu: " + error.message);
     }
 });
 
-// Listen for button responses
-zk.on('message', async (msg) => {
-    if (msg.type === 'buttons_response_message') {
-        const selectedButton = msg.buttonsResponseMessage.selectedButtonId;
+// Add command handlers
+adams({ nomCom: "allcommands", categorie: "Utility" }, async (dest, zk) => {
+    zk.sendMessage(dest, { text: "📜 Here are all available commands:\n- menu\n- ping\n- repo\n- channel\n..." });
+});
 
-        try {
-            switch (selectedButton) {
-                case "menu_all":
-                    await zk.sendMessage(msg.key.remoteJid, {
-                        text: `Here is the full list of commands:\n\n- Command 1\n- Command 2\n- Command 3`
-                    });
-                    break;
-                case "menu_ping":
-                    await zk.sendMessage(msg.key.remoteJid, {
-                        text: `Pong! 🏓\nBot is active and running smoothly.`
-                    });
-                    break;
-                case "menu_repo":
-                    await zk.sendMessage(msg.key.remoteJid, {
-                        text: `Check out the GitHub repo:\n${BaseUrl}`
-                    });
-                    break;
-                case "menu_channel":
-                    await zk.sendMessage(msg.key.remoteJid, {
-                        text: `Join our WhatsApp channel:\n${whatsappChannel}`
-                    });
-                    break;
-                default:
-                    console.warn("Unknown button ID:", selectedButton);
-            }
-        } catch (responseError) {
-            console.error("Error handling button response:", responseError);
-        }
-    }
+adams({ nomCom: "ping", categorie: "Utility" }, async (dest, zk) => {
+    const start = Date.now();
+    await zk.sendMessage(dest, { text: "📡 Pinging..." });
+    const latency = Date.now() - start;
+    zk.sendMessage(dest, { text: `🏓 Pong! Latency: ${latency}ms` });
+});
+
+adams({ nomCom: "repo", categorie: "Utility" }, async (dest, zk) => {
+    zk.sendMessage(dest, {
+        text: "📁 Visit the repository:\nhttps://github.com/Devibraah/BWM-XMD",
+        contextInfo: { externalAdReply: { title: "GitHub Repository", body: "Click to view", sourceUrl: "https://github.com/Devibraah/BWM-XMD" } }
+    });
+});
+
+adams({ nomCom: "channel", categorie: "Utility" }, async (dest, zk) => {
+    zk.sendMessage(dest, {
+        text: "📱 Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+        contextInfo: { externalAdReply: { title: "WhatsApp Channel", body: "Click to join", sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" } }
+    });
 });
 
 /**const { adams } = require("../Ibrahim/adams");
