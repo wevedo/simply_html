@@ -1,6 +1,6 @@
 const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
-const axios = require('axios');
+const axios = require("axios");
 const s = require(__dirname + "/../config");
 
 const audioUrls = [
@@ -13,7 +13,7 @@ const audioUrls = [
 
 const fetchGitHubStats = async () => {
     try {
-        const repo = 'Devibraah/BWM-XMD';
+        const repo = "Devibraah/BWM-XMD";
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
         const forks = response.data.forks_count;
         const stars = response.data.stargazers_count;
@@ -21,7 +21,7 @@ const fetchGitHubStats = async () => {
         return { forks, stars, totalUsers };
     } catch (error) {
         console.error("Error fetching GitHub stats:", error);
-        return { forks: 0, stars: 0, totalUsers: 0 }; 
+        return { forks: 0, stars: 0, totalUsers: 0 };
     }
 };
 
@@ -33,16 +33,12 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const temps = moment().format("HH:mm:ss");
     const date = moment().format("DD/MM/YYYY");
-    const hour = moment().hour();
-    let greeting = "Good night";
-    if (hour >= 0 && hour <= 11) greeting = "Good morning";
-    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
-    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    const menuText = `
+    const menuImageUrl = "https://files.catbox.moe/h2ydge.jpg"; // Replace with your desired menu image URL
+    const menuCaption = `
 ╭─────═━┈┈━═──━┈⊷
 ┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ xᴍᴅ*
 ┇ ᴏᴡɴᴇʀ: ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
@@ -51,7 +47,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┇ ᴛᴏᴛᴀʟ ᴜsᴇʀs: *${formattedTotalUsers}*
 ╰─────═━┈┈━═──━┈⊷
 
-${greeting}, please reply with a number to choose an option:
+Please reply with a number to choose an option:
 
 1️⃣ View all commands  
 2️⃣ Check ping  
@@ -60,22 +56,28 @@ ${greeting}, please reply with a number to choose an option:
 5️⃣ Play bot audio song
 `;
 
-    // Send the menu
-    await zk.sendMessage(dest, { text: menuText });
+    await zk.sendMessage(dest, {
+        image: { url: menuImageUrl },
+        caption: menuCaption
+    });
 });
 
 adams({ nomCom: "respondToNumber", categorie: "Utility" }, async (dest, zk, commandeOptions) => {
     const { repondre, ms } = commandeOptions;
 
-    if (!ms.message || !ms.message.conversation) {
-        return repondre("Please reply with a valid number.");
+    if (!ms.message || !ms.message.extendedTextMessage || !ms.message.extendedTextMessage.contextInfo) {
+        return repondre("Please reply to the menu with a valid number.");
     }
 
-    const userResponse = ms.message.conversation.trim();
+    const userResponse = ms.message.conversation?.trim();
+
+    if (!userResponse) {
+        return repondre("Invalid response. Reply with a number.");
+    }
 
     switch (userResponse) {
         case "1":
-            await zk.sendMessage(dest, { 
+            await zk.sendMessage(dest, {
                 text: "📜 Here are all available commands:\n- menu\n- ping\n- repo\n- channel\n- song"
             });
             break;
@@ -104,7 +106,7 @@ adams({ nomCom: "respondToNumber", categorie: "Utility" }, async (dest, zk, comm
         case "5":
             try {
                 const randomAudio = getRandomAudio();
-                await zk.sendMessage(dest, { 
+                await zk.sendMessage(dest, {
                     audio: { url: randomAudio },
                     mimetype: randomAudio.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
                     ptt: true
