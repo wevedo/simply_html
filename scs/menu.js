@@ -45,6 +45,23 @@ const audioUrls = [
     "https://files.catbox.moe/x4h8us.mp3"
 ];
 
+// Array of menu image URLs
+const menuImages = [
+    "https://files.catbox.moe/h2ydge.jpg",
+    "https://files.catbox.moe/0xa925.jpg",
+    "https://files.catbox.moe/k13s7u.jpg"
+];
+
+// Function to get a random image for the menu
+const getRandomMenuImage = () => {
+    return menuImages[Math.floor(Math.random() * menuImages.length)];
+};
+
+// Function to determine the MIME type based on the file extension
+const getMimeType = (url) => {
+    return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+};
+
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
@@ -65,59 +82,101 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const temps = moment().format('HH:mm:ss');
     const date = moment().format('DD/MM/YYYY');
     const hour = moment().hour();
-    let greeting = "🌙 Good Night 🌙";
-    if (hour >= 0 && hour <= 11) greeting = "🌅 Good Morning 🌅";
-    else if (hour >= 12 && hour <= 16) greeting = "🌞 Good Afternoon 🌞";
-    else if (hour >= 16 && hour <= 21) greeting = "🌇 Good Evening 🌇";
+    let greeting = "Good night";
+    if (hour >= 0 && hour <= 11) greeting = "Good morning";
+    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
+    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    let menuMsg = `
-╔══════✪ *BWM XMD MENU* ✪══════╗
-║
-║  🌍 *BOT INFORMATION*
-║  ────────────────
-║  • *Name*: BWM XMD
-║  • *Owner*: Ibrahim Adams
-║  • *Mode*: ${mode.toUpperCase()}
-║  • *Prefix*: ${prefixe}
-║  • *Total Users*: ${formattedTotalUsers}
-║  • *Date*: ${date}
-║  • *Time*: ${temps}
-║
-╠══════✪ *COMMANDS* ✪══════╣
-║
-${Object.keys(coms)
-    .sort()
-    .map(
-        (category) =>
-            `║  ➤ *${category}*\n${coms[category]
-                .map((cmd) => `║      ◉ ${cmd}`)
-                .join("\n")}`
-    )
-    .join("\n\n")}
-║
-╚═══════════════════════════╝
+    // Updated infoMsg with a classic menu style
+    let infoMsg = `
+╭━━━━━━━━━━━━━━━━━━━━━━━━━━━⊷
+┇  🌟 *COMMANDS HUB* 🌟
+╰━━━━━━━━━━━━━━━━━━━━━━━━━━━⊷
+\n\n`;
+
+    // Stylish, simplified menu with professional symbols
+    let menuMsg = `${readmore}  
+╭─── *COMMAND LIST* ───╮
+┇📚 *Categories*:
 `;
 
+    const sortedCategories = Object.keys(coms).sort();
+    sortedCategories.forEach((cat) => {
+        menuMsg += `\n🔸 *${cat}*:\n`;
+        coms[cat].forEach((cmd) => {
+            menuMsg += `➖ ${cmd}\n`;
+        });
+    });
+    menuMsg += "\n╰───────────────────────╯";
+
     try {
-        // Send the menu text in one box
-        await zk.sendMessage(dest, { text: menuMsg });
-
-        // Send the audio message below the menu
-        const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
-        console.log("Selected audio URL:", randomAudio); // Log selected audio URL
-
+        // Send a random image with new stylish caption
+        const randomImage = getRandomMenuImage();
         await zk.sendMessage(dest, { 
-            audio: { url: randomAudio },
-            mimetype: "audio/mpeg",
-            ptt: true  
+            image: { url: randomImage }, 
+            caption: `╭━━━━━⊷━━━━━⊷
+┇  *𝗕𝗪𝗠 𝗫𝗠𝗗* 🦾
+┇  Owner: Ibrahim Adams 🌟
+┇  Mode: *${mode}* 🔒
+┇  Prefix: *[ ${prefixe} ]*
+┇  Date: *${date}* 📅
+┇  Time: *${temps}* 🕰️
+╰━━━━━⊷━━━━━⊷
+
+🔗 Click here to explore more: [WhatsApp Channel]`,
+            width: 335,
+            height: 340,
+            contextInfo: {
+                externalAdReply: {
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                    body: "Click to join our WhatsApp Channel",
+                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your contact's profile picture URL
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your WhatsApp channel URL
+                    showAdAttribution: true, // Enables the "View Channel" button
+                }
+            }
         });
 
+        // Short delay to ensure image loads first
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Send the newly styled menu text with cool features
+        await zk.sendMessage(dest, { 
+            text: infoMsg + menuMsg,
+            contextInfo: {
+                externalAdReply: {
+                    title: "©Ibrahim Adams",
+                    body: "Discover all available commands",
+                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Thumbnail for the commands page
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Your WhatsApp channel URL
+                    showAdAttribution: true, // Enables the channel button
+                }
+            }
+        });
+
+        // Send a random audio message below the menu
+        try {
+            const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+            console.log("Selected audio URL:", randomAudio); // Log selected audio URL
+
+            await zk.sendMessage(dest, { 
+                audio: { url: randomAudio },
+                mimetype: getMimeType(randomAudio),
+                ptt: true,  
+                caption: "💥 *BMW MD SONG* 🎶"
+            });
+
+        } catch (audioError) {
+            console.error("Error sending audio:", audioError);
+            repondre("Error sending audio file: " + audioError.message);
+        }
+
     } catch (e) {
-        console.error("🥵 Menu error:", e);
-        repondre("🥵 Menu error: " + e.message);
+        console.log("🥵🥵 Menu error " + e);
+        repondre("🥵🥵 Menu error " + e);
     }
 });
 /**const { adams } = require("../Ibrahim/adams");
