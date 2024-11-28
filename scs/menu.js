@@ -1,7 +1,41 @@
 const { adams } = require("../Ibrahim/adams");
+const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
+const os = require("os");
 const moment = require("moment-timezone");
-const axios = require("axios");
+const axios = require('axios');
 const s = require(__dirname + "/../config");
+
+const more = String.fromCharCode(8206);
+const readmore = more.repeat(4001);
+const BaseUrl = process.env.GITHUB_GIT;
+const adamsapikey = process.env.BOT_OWNER;
+const runtime = function (seconds) { 
+    seconds = Number(seconds); 
+    var d = Math.floor(seconds / (3600 * 24)); 
+    var h = Math.floor((seconds % (3600 * 24)) / 3600); 
+    var m = Math.floor((seconds % 3600) / 60); 
+    var s = Math.floor(seconds % 60); 
+    var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " d, ") : ""; 
+    var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " h, ") : ""; 
+    var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " m, ") : ""; 
+    var sDisplay = s > 0 ? s + (s == 1 ? " second" : " s") : ""; 
+    return dDisplay + hDisplay + mDisplay + sDisplay; 
+};
+
+// GitHub repo data function
+const fetchGitHubStats = async () => {
+    try {
+        const repo = 'Devibraah/BWM-XMD';
+        const response = await axios.get(`https://api.github.com/repos/${repo}`);
+        const forks = response.data.forks_count;
+        const stars = response.data.stargazers_count;
+        const totalUsers = (forks * 2) + (stars * 2);
+        return { forks, stars, totalUsers };
+    } catch (error) {
+        console.error("Error fetching GitHub stats:", error);
+        return { forks: 0, stars: 0, totalUsers: 0 }; 
+    }
+};
 
 const audioUrls = [
     "https://files.catbox.moe/sxygdt.mp3",
@@ -11,115 +45,79 @@ const audioUrls = [
     "https://files.catbox.moe/x4h8us.mp3"
 ];
 
-const fetchGitHubStats = async () => {
-    try {
-        const repo = "Devibraah/BWM-XMD";
-        const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const forks = response.data.forks_count;
-        const stars = response.data.stargazers_count;
-        const totalUsers = (forks * 2) + (stars * 2);
-        return { forks, stars, totalUsers };
-    } catch (error) {
-        console.error("Error fetching GitHub stats:", error);
-        return { forks: 0, stars: 0, totalUsers: 0 };
-    }
-};
-
-const getRandomAudio = () => audioUrls[Math.floor(Math.random() * audioUrls.length)];
-
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { repondre } = commandeOptions;
+    let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
+    var coms = {};
+    var mode = "public";
 
-    moment.tz.setDefault(s.TZ || "Africa/Nairobi");
-    const temps = moment().format("HH:mm:ss");
-    const date = moment().format("DD/MM/YYYY");
+    if ((s.MODE).toLocaleLowerCase() != "public") {
+        mode = "Private";
+    }
+
+    cm.map(async (com) => {
+        const categoryUpper = com.categorie.toUpperCase();
+        if (!coms[categoryUpper]) coms[categoryUpper] = [];
+        coms[categoryUpper].push(com.nomCom);
+    });
+
+    moment.tz.setDefault('${s.TZ}');
+    const temps = moment().format('HH:mm:ss');
+    const date = moment().format('DD/MM/YYYY');
+    const hour = moment().hour();
+    let greeting = "🌙 Good Night 🌙";
+    if (hour >= 0 && hour <= 11) greeting = "🌅 Good Morning 🌅";
+    else if (hour >= 12 && hour <= 16) greeting = "🌞 Good Afternoon 🌞";
+    else if (hour >= 16 && hour <= 21) greeting = "🌇 Good Evening 🌇";
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    const menuImageUrl = "https://files.catbox.moe/h2ydge.jpg"; // Replace with your desired menu image URL
-    const menuCaption = `
-╭─────═━┈┈━═──━┈⊷
-┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ xᴍᴅ*
-┇ ᴏᴡɴᴇʀ: ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
-┇ ᴅᴀᴛᴇ: *${date}*
-┇ ᴛɪᴍᴇ: *${temps}*
-┇ ᴛᴏᴛᴀʟ ᴜsᴇʀs: *${formattedTotalUsers}*
-╰─────═━┈┈━═──━┈⊷
-
-Please reply with a number to choose an option:
-
-1️⃣ View all commands  
-2️⃣ Check ping  
-3️⃣ Open repository  
-4️⃣ Access WhatsApp channel  
-5️⃣ Play bot audio song
+    let menuMsg = `
+╔══════✪ *BWM XMD MENU* ✪══════╗
+║
+║  🌍 *BOT INFORMATION*
+║  ────────────────
+║  • *Name*: BWM XMD
+║  • *Owner*: Ibrahim Adams
+║  • *Mode*: ${mode.toUpperCase()}
+║  • *Prefix*: ${prefixe}
+║  • *Total Users*: ${formattedTotalUsers}
+║  • *Date*: ${date}
+║  • *Time*: ${temps}
+║
+╠══════✪ *COMMANDS* ✪══════╣
+║
+${Object.keys(coms)
+    .sort()
+    .map(
+        (category) =>
+            `║  ➤ *${category}*\n${coms[category]
+                .map((cmd) => `║      ◉ ${cmd}`)
+                .join("\n")}`
+    )
+    .join("\n\n")}
+║
+╚═══════════════════════════╝
 `;
 
-    await zk.sendMessage(dest, {
-        image: { url: menuImageUrl },
-        caption: menuCaption
-    });
-});
+    try {
+        // Send the menu text in one box
+        await zk.sendMessage(dest, { text: menuMsg });
 
-adams({ nomCom: "respondToNumber", categorie: "Utility" }, async (dest, zk, commandeOptions) => {
-    const { repondre, ms } = commandeOptions;
+        // Send the audio message below the menu
+        const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+        console.log("Selected audio URL:", randomAudio); // Log selected audio URL
 
-    if (!ms.message || !ms.message.extendedTextMessage || !ms.message.extendedTextMessage.contextInfo) {
-        return repondre("Please reply to the menu with a valid number.");
-    }
+        await zk.sendMessage(dest, { 
+            audio: { url: randomAudio },
+            mimetype: "audio/mpeg",
+            ptt: true  
+        });
 
-    const userResponse = ms.message.conversation?.trim();
-
-    if (!userResponse) {
-        return repondre("Invalid response. Reply with a number.");
-    }
-
-    switch (userResponse) {
-        case "1":
-            await zk.sendMessage(dest, {
-                text: "📜 Here are all available commands:\n- menu\n- ping\n- repo\n- channel\n- song"
-            });
-            break;
-
-        case "2":
-            const start = Date.now();
-            await zk.sendMessage(dest, { text: "📡 Pinging..." });
-            const latency = Date.now() - start;
-            await zk.sendMessage(dest, { text: `🏓 Pong! Latency: ${latency}ms` });
-            break;
-
-        case "3":
-            await zk.sendMessage(dest, {
-                text: "📁 Visit the repository:\nhttps://github.com/Devibraah/BWM-XMD",
-                contextInfo: { externalAdReply: { title: "GitHub Repository", body: "Click to view", sourceUrl: "https://github.com/Devibraah/BWM-XMD" } }
-            });
-            break;
-
-        case "4":
-            await zk.sendMessage(dest, {
-                text: "📱 Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                contextInfo: { externalAdReply: { title: "WhatsApp Channel", body: "Click to join", sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" } }
-            });
-            break;
-
-        case "5":
-            try {
-                const randomAudio = getRandomAudio();
-                await zk.sendMessage(dest, {
-                    audio: { url: randomAudio },
-                    mimetype: randomAudio.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
-                    ptt: true
-                });
-            } catch (audioError) {
-                console.error("Error sending audio:", audioError);
-                repondre("Error sending audio file: " + audioError.message);
-            }
-            break;
-
-        default:
-            repondre("Invalid option. Please reply with a number from 1 to 5.");
-            break;
+    } catch (e) {
+        console.error("🥵 Menu error:", e);
+        repondre("🥵 Menu error: " + e.message);
     }
 });
 /**const { adams } = require("../Ibrahim/adams");
