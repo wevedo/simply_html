@@ -66,11 +66,6 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     var coms = {};
-    var mode = "public";
-
-    if ((s.MODE).toLocaleLowerCase() != "public") {
-        mode = "Private";
-    }
 
     cm.map(async (com) => {
         const categoryUpper = com.categorie.toUpperCase();
@@ -90,7 +85,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Updated infoMsg with a classic menu style
+    // Updated infoMsg with added daily users and a classic menu style
     let infoMsg = `
 ╭━━━━━━━━━━━━━━━━━━━━━━━━━━━⊷
 ┇  🌟 *COMMANDS HUB* 🌟
@@ -120,10 +115,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
             caption: `╭━━━━━⊷━━━━━⊷
 ┇  *𝗕𝗪𝗠 𝗫𝗠𝗗* 🦾
 ┇  Owner: Ibrahim Adams 🌟
-┇  Mode: *${mode}* 🔒
+┇  Mode: *Public* 🔓
 ┇  Prefix: *[ ${prefixe} ]*
 ┇  Date: *${date}* 📅
 ┇  Time: *${temps}* 🕰️
+┇  Daily Users: *${formattedTotalUsers}* 👥
 ╰━━━━━⊷━━━━━⊷
 
 🔗 Click here to explore more: [WhatsApp Channel]`,
