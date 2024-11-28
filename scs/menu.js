@@ -1,4 +1,99 @@
 const { adams } = require("../Ibrahim/adams");
+const axios = require('axios');
+const moment = require("moment-timezone");
+const audioUrls = [
+    "https://files.catbox.moe/sxygdt.mp3",
+    "https://files.catbox.moe/zdti7y.wav",
+    "https://files.catbox.moe/nwreb4.mp3"
+];
+
+const BaseUrl = process.env.GITHUB_GIT;
+const adamsapikey = process.env.BOT_OWNER;
+const menuImageUrl = "https://files.catbox.moe/fxcksg.webp"; // Menu image URL
+const githubRepo = "https://github.com/Devibraah/BWM-XMD"; // Your repo URL
+const whatsappChannel = "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y"; // Your channel URL
+
+// Helper function to get a random audio URL
+const getRandomAudio = () => {
+    return audioUrls[Math.floor(Math.random() * audioUrls.length)];
+};
+
+adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+    let { prefixe } = commandeOptions;
+    moment.tz.setDefault('Africa/Nairobi'); // Set default timezone
+    const date = moment().format('DD/MM/YYYY');
+    const time = moment().format('HH:mm:ss');
+    const hour = moment().hour();
+    let greeting = "Good night";
+    if (hour >= 0 && hour <= 11) greeting = "Good morning";
+    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
+    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
+
+    try {
+        // Send an interactive message with buttons
+        await zk.sendMessage(dest, {
+            image: { url: menuImageUrl },
+            caption: `╭─────═━┈┈━═──━┈⊷
+┇ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ xᴍᴅ*
+┇ ᴏᴡɴᴇʀ: ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+┇ ᴘʀᴇғɪx: *[ ${prefixe} ]*
+┇ ᴅᴀᴛᴇ: *${date}*
+┇ ᴛɪᴍᴇ: *${time}*
+╰─────═━┈┈━═──━┈⊷\n\n🌍 *BEST WHATSAPP BOT* 🌍`,
+            footer: "Choose an option below:",
+            buttons: [
+                { buttonId: "menu_all", buttonText: { displayText: "📜 All Commands" }, type: 1 },
+                { buttonId: "menu_ping", buttonText: { displayText: "📡 Ping" }, type: 1 },
+                { buttonId: "menu_repo", buttonText: { displayText: "💻 Repo" }, type: 1 },
+                { buttonId: "menu_channel", buttonText: { displayText: "🔗 WhatsApp Channel" }, type: 1 }
+            ],
+            headerType: 4, // Header contains an image
+        });
+
+        // Wait for button response and handle accordingly
+        zk.on('message', async (msg) => {
+            if (msg.type === 'buttons_response_message') {
+                const selectedButton = msg.buttonsResponseMessage.selectedButtonId;
+
+                if (selectedButton === 'menu_all') {
+                    await zk.sendMessage(dest, { text: "Here is the full list of commands:\n\n- Command 1\n- Command 2\n- Command 3" });
+                } else if (selectedButton === 'menu_ping') {
+                    await zk.sendMessage(dest, { text: "Pong! 🏓\nBot is active and running smoothly." });
+                } else if (selectedButton === 'menu_repo') {
+                    await zk.sendMessage(dest, {
+                        text: "Check out the GitHub repo for this bot:",
+                        footer: githubRepo,
+                        buttons: [
+                            { buttonId: "open_repo", buttonText: { displayText: "Open Repo" }, type: 1 }
+                        ]
+                    });
+                } else if (selectedButton === 'menu_channel') {
+                    await zk.sendMessage(dest, {
+                        text: "Join our WhatsApp channel:",
+                        footer: whatsappChannel,
+                        buttons: [
+                            { buttonId: "open_channel", buttonText: { displayText: "Open Channel" }, type: 1 }
+                        ]
+                    });
+                }
+            }
+        });
+
+        // Send a random audio file after the interactive message
+        const randomAudio = getRandomAudio();
+        await zk.sendMessage(dest, {
+            audio: { url: randomAudio },
+            mimetype: randomAudio.endsWith('.wav') ? 'audio/wav' : 'audio/mpeg',
+            ptt: true, // Send as push-to-talk
+        });
+    } catch (error) {
+        console.error("Error sending menu or audio:", error);
+        await zk.sendMessage(dest, { text: "An error occurred while processing the menu. Please try again." });
+    }
+});
+
+
+/**const { adams } = require("../Ibrahim/adams");
 const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
 const moment = require("moment-timezone");
@@ -177,3 +272,4 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     }
 });
 
+**/
