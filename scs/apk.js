@@ -1,9 +1,11 @@
-const {
-  adams
-} = require("../Ibrahim/adams");
-const {
-  default: axios
-} = require("axios");
+const {adams} = require("../Ibrahim/adams");
+const fs = require('fs-extra');
+const conf = require('../config');
+const { default: axios } = require("axios");
+const ffmpeg = require("fluent-ffmpeg");
+
+
+
 adams({
   'nomCom': 'apk',
   'aliases': ['app', 'playstore'],
@@ -44,7 +46,7 @@ adams({
         document: { url: appDetails.BK9.dllink },
         fileName: `${appDetails.BK9.name}.apk`,
         mimetype: "application/vnd.android.package-archive",
-        caption: "BWM XMD"
+        caption: "BWM-XMD"
       },
       { quoted: ms }
     );
@@ -53,5 +55,5 @@ adams({
     // Catch any errors and notify the user
     console.error("Error during APK download process:", error);
     repondre("APK download failed. Please try again later.");
-
-    
+  }
+});
