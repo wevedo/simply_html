@@ -6,6 +6,14 @@ const s = require(__dirname + "/../config");
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
 
+// Cool fonts for greetings
+const coolFonts = {
+    morning: "🌞 𝐆𝐨𝐨𝐝 𝐌𝐨𝐫𝐧𝐢𝐧𝐠",
+    afternoon: "☀️ 𝐆𝐨𝐨𝐝 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧",
+    evening: "🌅 𝐆𝐨𝐨𝐝 𝐄𝐯𝐞𝐧𝐢𝐧𝐠",
+    night: "🌙 𝐆𝐨𝐨𝐝 𝐍𝐢𝐠𝐡𝐭"
+};
+
 // GitHub repo stats function
 const fetchGitHubStats = async () => {
     try {
@@ -66,10 +74,10 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const hour = moment().hour();
 
     // Greeting based on time
-    let greeting = "Good night";
-    if (hour >= 0 && hour <= 11) greeting = "Good morning";
-    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
-    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
+    let greeting = coolFonts.night;
+    if (hour >= 0 && hour <= 11) greeting = coolFonts.morning;
+    else if (hour >= 12 && hour <= 16) greeting = coolFonts.afternoon;
+    else if (hour >= 16 && hour <= 21) greeting = coolFonts.evening;
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
@@ -92,24 +100,24 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         await zk.sendMessage(dest, {
             image: { url: randomImage },
             caption: `
-╭━━━╮ 🤖 *BWM XMD MENU* 🤖
+╭━━━╮ 🤖 *𝐁𝐖𝐌 𝐗𝐌𝐃* 🤖
 ┃💻 Owner: Ibrahim Adams
 ┃📅 Date: ${date}
 ┃⏰ Time: ${temps}
-┃👥 Users Today: ${formattedTotalUsers}
+┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
 
-${greeting}, here is the command list:
+${greeting},
 ${readmore}
 ${commandList}
 
 🎶 *Background Music*:
-Enjoy the experience with a robotic touch.
+Enjoy the experience with bwm xmd touch. 🤖✨
 `,
             contextInfo: {
                 externalAdReply: {
-                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗 - Robotic Menu",
-                    body: "Command Hub for Grown-ups",
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                    body: "Tap here to follow our channel",
                     thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                 },
@@ -127,8 +135,6 @@ Enjoy the experience with a robotic touch.
         repondre("Error generating menu: " + e.message);
     }
 });
-
-
 
 
 
