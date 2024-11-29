@@ -8,10 +8,34 @@ const readmore = more.repeat(4001);
 
 // Cool fonts for greetings
 const coolFonts = {
-    morning: ["🌞 𝐆𝐨𝐨𝐝 𝐌𝐨𝐫𝐧𝐢𝐧𝐠", "🌄 𝑹𝒊𝒔𝒆 & 𝑺𝒉𝒊𝒏𝒆", "🌅 𝐌𝐨𝐫𝐧𝐢𝐧𝐠 𝐕𝐢𝐛𝐞𝐬"],
-    afternoon: ["☀️ 𝐆𝐨𝐨𝐝 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧", "🌻 𝐇𝐚𝐩𝐩𝐲 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧", "☀️ 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 𝐃𝐞𝐥𝐢𝐠𝐡𝐭"],
-    evening: ["🌅 𝐆𝐨𝐨𝐝 𝐄𝐯𝐞𝐧𝐢𝐧𝐠", "🌇 𝐒𝐞𝐫𝐞𝐧𝐞 𝐄𝐯𝐞𝐧𝐢𝐧𝐠𝐬", "✨ 𝐄𝐯𝐞𝐧𝐢𝐧𝐠 𝐌𝐚𝐠𝐢𝐜"],
-    night: ["🌙 𝐆𝐨𝐨𝐝 𝐍𝐢𝐠𝐡𝐭", "🌌 𝐃𝐫𝐞𝐚𝐦𝐲 𝐍𝐢𝐠𝐡𝐭𝐬", "✨ 𝐒𝐥𝐞𝐞𝐩 𝐓𝐢𝐠𝐡𝐭"]
+    morning: [
+        "🌞 🎄 𝐆𝐨𝐨𝐝 𝐌𝐨𝐫𝐧𝐢𝐧𝐠 🎄", 
+        "🌄 🎅 𝑹𝒊𝒔𝒆 & 𝑺𝒉𝒊𝒏𝒆 🎁", 
+        "🌅 ❄️ 𝐌𝐨𝐫𝐧𝐢𝐧𝐠 𝐕𝐢𝐛𝐞𝐬 🎄", 
+        "🎄☕ 𝐖𝐚𝐤𝐞 𝐔𝐩 & 𝐒𝐦𝐞𝐥𝐥 𝐭𝐡𝐞 𝐂𝐨𝐟𝐟𝐞𝐞 🎅", 
+        "🌞🎄 𝐅𝐫𝐨𝐬𝐭𝐲 𝐌𝐨𝐫𝐧𝐢𝐧𝐠 𝐆𝐫𝐞𝐞𝐭𝐢𝐧𝐠𝐬 🎁"
+    ],
+    afternoon: [
+        "☀️ 🎅 𝐆𝐨𝐨𝐝 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 🎁", 
+        "🌻 🎄 𝐇𝐚𝐩𝐩𝐲 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 ❄️", 
+        "☀️ 🎄 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 𝐃𝐞𝐥𝐢𝐠𝐡𝐭 🎅", 
+        "🎁🌞 𝐂𝐡𝐞𝐞𝐫𝐟𝐮𝐥 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 𝐆𝐫𝐞𝐞𝐭𝐢𝐧𝐠𝐬 🎄", 
+        "🎄✨ 𝐒𝐩𝐚𝐫𝐤𝐥𝐢𝐧𝐠 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 𝐖𝐢𝐬𝐡𝐞𝐬 🎅"
+    ],
+    evening: [
+        "🌅 🎄 𝐆𝐨𝐨𝐝 𝐄𝐯𝐞𝐧𝐢𝐧𝐠 ❄️", 
+        "🌇 🎁 𝐒𝐞𝐫𝐞𝐧𝐞 𝐄𝐯𝐞𝐧𝐢𝐧𝐠𝐬 🎄", 
+        "✨ 🎄 𝐄𝐯𝐞𝐧𝐢𝐧𝐠 𝐌𝐚𝐠𝐢𝐜 🎅", 
+        "🎄🌠 𝐓𝐰𝐢𝐥𝐢𝐠𝐡𝐭 𝐌𝐞𝐥𝐨𝐝𝐢𝐞𝐬 ❄️", 
+        "🎁🌇 𝐖𝐚𝐫𝐦 𝐄𝐯𝐞𝐧𝐢𝐧𝐠 𝐇𝐮𝐠𝐬 🎄"
+    ],
+    night: [
+        "🌙 🎅 𝐆𝐨𝐨𝐝 𝐍𝐢𝐠𝐡𝐭 🎄", 
+        "🌌 ❄️ 𝐃𝐫𝐞𝐚𝐦𝐲 𝐍𝐢𝐠𝐡𝐭𝐬 🎁", 
+        "✨ 🎄 𝐒𝐥𝐞𝐞𝐩 𝐓𝐢𝐠𝐡𝐭 🎅", 
+        "🎄🌙 𝐂𝐨𝐳𝐲 𝐍𝐢𝐠𝐡𝐭𝐭𝐢𝐦𝐞 𝐖𝐢𝐬𝐡𝐞𝐬 🎁", 
+        "🎁🌌 𝐒𝐭𝐚𝐫𝐫𝐲 𝐍𝐢𝐠𝐡𝐭 𝐒𝐞𝐫𝐞𝐧𝐚𝐝𝐞 🎄"
+    ]
 };
 
 // GitHub repo stats function
@@ -101,24 +125,24 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         await zk.sendMessage(dest, {
             image: { url: randomImage },
             caption: `
-╭━━━╮ 🤖 *𝐁𝐖𝐌 𝐗𝐌𝐃* 🤖
+╭━━━╮ 🎄 *𝐁𝐖𝐌 𝐗𝐌𝐃* 🎄
 ┃💻 Owner: Ibrahim Adams
 ┃📅 Date: ${date}
 ┃⏰ Time: ${temps}
 ┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
 
-${greeting}, ${nomAuteurMessage}
+${greeting} ${nomAuteurMessage},
 ${readmore}
 ${commandList}
 
 🎶 *Background Music*:
-Enjoy the experience with bwm xmd touch. 🤖✨
+Enjoy the experience with bwm xmd touch. 🎄✨
 `,
             contextInfo: {
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                    body: "Tap here to follow our channel",
+                    body: "🎄 Tap here to follow our channel 🎄",
                     thumbnailUrl: "https://files.catbox.moe/m9jm8o.jpeg",
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
@@ -137,7 +161,6 @@ Enjoy the experience with bwm xmd touch. 🤖✨
         repondre("Error generating menu: " + e.message);
     }
 });
-
 
 
 
