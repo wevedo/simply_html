@@ -1,88 +1,132 @@
+const { adams } = require("../Ibrahim/adams");
+const moment = require("moment-timezone");
+const axios = require("axios");
+const s = require(__dirname + "/../config");
+
+const more = String.fromCharCode(8206);
+const readmore = more.repeat(4001);
+
+// GitHub repo stats function
+const fetchGitHubStats = async () => {
+    try {
+        const repo = "Devibraah/BWM-XMD";
+        const response = await axios.get(`https://api.github.com/repos/${repo}`);
+        const forks = response.data.forks_count || 0;
+        const stars = response.data.stargazers_count || 0;
+        const totalUsers = (forks * 2) + (stars * 2);
+        return { forks, stars, totalUsers };
+    } catch (error) {
+        console.error("Error fetching GitHub stats:", error);
+        return { forks: 0, stars: 0, totalUsers: 0 };
+    }
+};
+
+// Menu image URLs
+const menuImages = [
+    "https://files.catbox.moe/h2ydge.jpg",
+    "https://files.catbox.moe/0xa925.jpg",
+    "https://files.catbox.moe/k13s7u.jpg"
+];
+
+// Function to get a random image for the menu
+const getRandomMenuImage = () => {
+    return menuImages[Math.floor(Math.random() * menuImages.length)];
+};
+
+// Audio URLs for background music
+const audioUrls = [
+    "https://files.catbox.moe/sxygdt.mp3",
+    "https://files.catbox.moe/zdti7y.wav",
+    "https://files.catbox.moe/nwreb4.mp3",
+    "https://files.catbox.moe/y1uawp.mp3",
+    "https://files.catbox.moe/x4h8us.mp3"
+];
+
+// Function to determine MIME type
+const getMimeType = (url) => {
+    return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+};
+
+// Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { repondre, prefixe } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
-    var coms = {};
+    let coms = {};
 
+    // Organize commands by category
     cm.map((com) => {
         const categoryUpper = com.categorie.toUpperCase();
         if (!coms[categoryUpper]) coms[categoryUpper] = [];
         coms[categoryUpper].push(com.nomCom);
     });
 
-    moment.tz.setDefault('${s.TZ}');
-    const date = moment().format('DD/MM/YYYY');
-    const temps = moment().format('HH:mm:ss');
+    moment.tz.setDefault(s.TZ || "Africa/Nairobi");
+    const temps = moment().format("HH:mm:ss");
+    const date = moment().format("DD/MM/YYYY");
     const hour = moment().hour();
-    let greeting = "🌌 Good Night";
-    if (hour >= 0 && hour <= 11) greeting = "🌅 Good Morning";
-    else if (hour >= 12 && hour <= 16) greeting = "🌞 Good Afternoon";
-    else if (hour >= 16 && hour <= 21) greeting = "🌇 Good Evening";
+
+    // Greeting based on time
+    let greeting = "Good night";
+    if (hour >= 0 && hour <= 11) greeting = "Good morning";
+    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
+    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Generate the command menu
+    // Prepare command list for caption
+    let commandList = "";
     const sortedCategories = Object.keys(coms).sort();
-    let readMoreCommands = `${readmore}\n`;
     sortedCategories.forEach((cat) => {
-        readMoreCommands += `\n🤖 *${cat}*:\n`;
+        commandList += `\n🔹 *${cat}*:\n`;
         coms[cat].forEach((cmd) => {
-            readMoreCommands += `   🔹 ${cmd}\n`;
+            commandList += `  - ${cmd}\n`;
         });
     });
 
-    // Final message with robotics style
-    let menuMsg = `
-┏━━━⚙️ *BWM XMD ROBOT* ⚙️━━━┓
-┃ ✨ *Hello, ${greeting}!* ✨
-┃
-┃ 🕰️ *Time:* ${temps}
-┃ 📅 *Date:* ${date}
-┃ 👥 *Daily Users:* ${formattedTotalUsers}
-┃ 🛠️ *Mode:* Public
-┃ 📌 *Prefix:* ${prefixe}
-┗━━━━━━━━━━━━━━━━━━━━━┛
-
-🌐 *Command Center:*
-Here are your categories. Click to explore more!
-
-${readMoreCommands}
-
-🎶 A special song awaits below! 🎵
-`;
+    const randomImage = getRandomMenuImage();
+    const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
     try {
-        const randomImage = getRandomMenuImage();
-        const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
-
-        // Send image with classic and robotics-styled caption
+        // Send image with styled caption
         await zk.sendMessage(dest, {
             image: { url: randomImage },
-            caption: menuMsg,
+            caption: `
+╭━━━╮ 🤖 *BWM XMD MENU* 🤖
+┃💻 Owner: Ibrahim Adams
+┃📅 Date: ${date}
+┃⏰ Time: ${temps}
+┃👥 Users Today: ${formattedTotalUsers}
+╰━━━╯
+
+${greeting}, here is the command list:
+${readmore}
+${commandList}
+
+🎶 *Background Music*:
+Enjoy the experience with a robotic touch.
+`,
             contextInfo: {
                 externalAdReply: {
-                    title: "🤖 BWM XMD Robot",
-                    body: "Explore the futuristic command center",
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗 - Robotic Menu",
+                    body: "Command Hub for Grown-ups",
                     thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                    showAdAttribution: true,
-                }
-            }
+                },
+            },
         });
 
-        // Send a robotics-themed audio message after the menu
+        // Play random audio
         await zk.sendMessage(dest, {
             audio: { url: randomAudio },
             mimetype: getMimeType(randomAudio),
             ptt: true,
-            caption: "🎵 Enjoy the futuristic vibe of BWM XMD!"
         });
     } catch (e) {
-        console.error("Error sending the robotics-styled menu:", e);
-        repondre("🚨 Error in generating the menu: " + e.message);
+        console.error("Error generating menu:", e);
+        repondre("Error generating menu: " + e.message);
     }
 });
-
 
 
 
