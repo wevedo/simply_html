@@ -132,7 +132,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
 
-${greeting},
+${greeting}
 ${readmore}
 ${commandList}
 
@@ -143,7 +143,7 @@ Enjoy the experience with bwm xmd touch. 🎄✨
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                     body: "🎄 Tap here to follow our channel 🎄",
-                    thumbnailUrl: "https://files.catbox.moe/m9jm8o.jpeg",
+                    thumbnailUrl: "https://files.catbox.moe/yl8lw6.webp",
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
                 },
