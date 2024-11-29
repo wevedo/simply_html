@@ -8,10 +8,10 @@ const readmore = more.repeat(4001);
 
 // Cool fonts for greetings
 const coolFonts = {
-    morning: "🌞 𝐆𝐨𝐨𝐝 𝐌𝐨𝐫𝐧𝐢𝐧𝐠",
-    afternoon: "☀️ 𝐆𝐨𝐨𝐝 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧",
-    evening: "🌅 𝐆𝐨𝐨𝐝 𝐄𝐯𝐞𝐧𝐢𝐧𝐠",
-    night: "🌙 𝐆𝐨𝐨𝐝 𝐍𝐢𝐠𝐡𝐭"
+    morning: ["🌞 𝐆𝐨𝐨𝐝 𝐌𝐨𝐫𝐧𝐢𝐧𝐠", "🌄 𝑹𝒊𝒔𝒆 & 𝑺𝒉𝒊𝒏𝒆", "🌅 𝐌𝐨𝐫𝐧𝐢𝐧𝐠 𝐕𝐢𝐛𝐞𝐬"],
+    afternoon: ["☀️ 𝐆𝐨𝐨𝐝 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧", "🌻 𝐇𝐚𝐩𝐩𝐲 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧", "☀️ 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 𝐃𝐞𝐥𝐢𝐠𝐡𝐭"],
+    evening: ["🌅 𝐆𝐨𝐨𝐝 𝐄𝐯𝐞𝐧𝐢𝐧𝐠", "🌇 𝐒𝐞𝐫𝐞𝐧𝐞 𝐄𝐯𝐞𝐧𝐢𝐧𝐠𝐬", "✨ 𝐄𝐯𝐞𝐧𝐢𝐧𝐠 𝐌𝐚𝐠𝐢𝐜"],
+    night: ["🌙 𝐆𝐨𝐨𝐝 𝐍𝐢𝐠𝐡𝐭", "🌌 𝐃𝐫𝐞𝐚𝐦𝐲 𝐍𝐢𝐠𝐡𝐭𝐬", "✨ 𝐒𝐥𝐞𝐞𝐩 𝐓𝐢𝐠𝐡𝐭"]
 };
 
 // GitHub repo stats function
@@ -57,7 +57,7 @@ const getMimeType = (url) => {
 
 // Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { repondre, prefixe } = commandeOptions;
+    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
@@ -74,10 +74,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const hour = moment().hour();
 
     // Greeting based on time
+    const getRandomGreeting = (greetings) => greetings[Math.floor(Math.random() * greetings.length)];
     let greeting = coolFonts.night;
-    if (hour >= 0 && hour <= 11) greeting = coolFonts.morning;
-    else if (hour >= 12 && hour <= 16) greeting = coolFonts.afternoon;
-    else if (hour >= 16 && hour <= 21) greeting = coolFonts.evening;
+    if (hour >= 0 && hour <= 11) greeting = getRandomGreeting(coolFonts.morning);
+    else if (hour >= 12 && hour <= 16) greeting = getRandomGreeting(coolFonts.afternoon);
+    else if (hour >= 16 && hour <= 21) greeting = getRandomGreeting(coolFonts.evening);
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
@@ -107,7 +108,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
 
-${greeting},
+${greeting}, ${nomAuteurMessage}
 ${readmore}
 ${commandList}
 
@@ -118,8 +119,9 @@ Enjoy the experience with bwm xmd touch. 🤖✨
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                     body: "Tap here to follow our channel",
-                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp",
+                    thumbnailUrl: "https://files.catbox.moe/m9jm8o.jpeg",
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                    showAdAttribution: true,
                 },
             },
         });
