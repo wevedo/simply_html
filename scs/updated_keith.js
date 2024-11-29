@@ -1,3 +1,4 @@
+/**
 const { adams } = require("../Ibrahim/adams");
 const { Sticker, StickerTypes, createSticker } = require('wa-sticker-formatter');
 const {
@@ -2165,7 +2166,19 @@ adams({
     repondre("Oops, there was an error.");
   }
 });
-*/
+
+
+
+
+/
+
+
+
+
+
+
+
+
 
 adams({
   'nomCom': 'apk',
@@ -2218,3 +2231,4 @@ adams({
     repondre("APK download failed. Please try again later.");
   }
 });
+**/
