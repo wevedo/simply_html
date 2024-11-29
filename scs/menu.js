@@ -132,7 +132,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
 
-${greeting} ${nomAuteurMessage},
+${greeting},
 ${readmore}
 ${commandList}
 
