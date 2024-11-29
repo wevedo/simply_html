@@ -131,8 +131,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃⏰ Time: ${temps}
 ┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
-
 ${greeting}
+
+
+
+🎄✨ Merry Christmas, ${nomAuteurMessage}✨🎄
 ${readmore}
 ${commandList}
 
