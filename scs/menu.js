@@ -55,9 +55,9 @@ const fetchGitHubStats = async () => {
 
 // Menu image URLs
 const menuImages = [
-    "https://files.catbox.moe/h2ydge.jpg",
-    "https://files.catbox.moe/0xa925.jpg",
-    "https://files.catbox.moe/k13s7u.jpg"
+    "https://files.catbox.moe/jsazt2.webp",
+    "https://files.catbox.moe/m0fnas.webp",
+    "https://files.catbox.moe/tzh3d1.webp"
 ];
 
 // Function to get a random image for the menu
