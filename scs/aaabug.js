@@ -1,3 +1,5 @@
+/**
+
 const { adams } = require("../Ibrahim/adams");
 const { delay, loading } = require("../Ibrahim/utils");
 const { bwmxmd1 } = require("../Ibrahim/ibraah1");
@@ -110,3 +112,4 @@ adams(
         }
     }
 );
+**/
