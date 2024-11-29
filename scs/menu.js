@@ -67,11 +67,11 @@ const getRandomMenuImage = () => {
 
 // Audio URLs for background music
 const audioUrls = [
-    "https://files.catbox.moe/sxygdt.mp3",
-    "https://files.catbox.moe/zdti7y.wav",
-    "https://files.catbox.moe/nwreb4.mp3",
-    "https://files.catbox.moe/y1uawp.mp3",
-    "https://files.catbox.moe/x4h8us.mp3"
+    "https://files.catbox.moe/2d07e2.mp3",
+    "https://files.catbox.moe/y1t6l2.mp3",
+    "https://files.catbox.moe/bdb10e.mp3",
+    "https://files.catbox.moe/to44lv.mp3",
+    "https://files.catbox.moe/hkug3v.mp3"
 ];
 
 // Function to determine MIME type
