@@ -39,9 +39,9 @@ const fetchGitHubStats = async () => {
 
 // Menu image URLs for normal and Christmas menus
 const menuImages = [
-    "https://files.catbox.moe/mphnzn.webp",
     "https://files.catbox.moe/7ux2i3.webp",
-    "https://files.catbox.moe/wpv967.webp"
+    "https://files.catbox.moe/mphnzn.webp",
+    "https://files.catbox.moe/s21y92.webp"
 ];
 const christmasMenuImages = [
     "https://files.catbox.moe/jsazt2.webp",
@@ -253,7 +253,7 @@ Enjoy the experience with bwm xmd touch. 🎄✨
                     image: { url: randomImage },
                     caption: `
 ╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
-┃🖐️ Hey: ${nomAuteurMessage}
+┃🙋‍♀️ Heyyy!: ${nomAuteurMessage}
 ┃💻 Owner: Ibrahim Adams
 ┃📅 Date: ${date}
 ┃⏰ Time: ${temps}
