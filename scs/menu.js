@@ -113,7 +113,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     let commandList = "";
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        commandList += `\n🔹 *${cat}*:\n`;
+        commandList += `\n🔸🔹 *${cat}*:\n`;
         coms[cat].forEach((cmd) => {
             commandList += `  - ${cmd}\n`;
         });
@@ -188,6 +188,15 @@ ${normalGreeting}
 ${readmore}
 ${commandList}
 `,
+            contextInfo: {
+                    externalAdReply: {
+                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                        body: "Tap here to follow our channel",
+                        thumbnailUrl: "https://files.catbox.moe/7ux2i3.webp",
+                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        showAdAttribution: true,
+                    },
+                },
             });
 
             // Play normal audio
@@ -256,7 +265,16 @@ ${normalGreeting}
 ${readmore}
 ${commandList}
 `,
-                });
+                contextInfo: {
+                    externalAdReply: {
+                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                        body: "Tap here to follow our channel",
+                        thumbnailUrl: "https://files.catbox.moe/7ux2i3.webp",
+                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        showAdAttribution: true,
+                    },
+                },
+            });
 
                 // Play normal audio
                 await zk.sendMessage(dest, {
