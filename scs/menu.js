@@ -51,11 +51,11 @@ const christmasMenuImages = [
 
 // Audio URLs for background music (Christmas and normal)
 const audioUrlsChristmas = [
-    "https://files.catbox.moe/2d07e2.mp3",
-    "https://files.catbox.moe/y1t6l2.mp3",
-    "https://files.catbox.moe/bdb10e.mp3",
-    "https://files.catbox.moe/to44lv.mp3",
-    "https://files.catbox.moe/hkug3v.mp3"
+    "https://files.catbox.moe/rtnvlg.mp3",
+    "https://files.catbox.moe/hacaa8.mp3",
+    "https://files.catbox.moe/fq4j1i.mp3",
+    "https://files.catbox.moe/o3ttb8.mp3",
+    "https://files.catbox.moe/otvqtm.mp3"
 ];
 
 const audioUrlsNormal = [
