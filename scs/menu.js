@@ -2,7 +2,6 @@ const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
-const conf = require("/../config");
 
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
@@ -129,7 +128,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const randomChristmasAudio = audioUrlsChristmas[Math.floor(Math.random() * audioUrlsChristmas.length)];
 
     // Check for MENUTYPE
-    const menuType = conf.MENUTYPE || ""; // Use conf.MENUTYPE or default to empty string
+    const menuType = s.MENUTYPE || ""; // Use conf.MENUTYPE or default to empty string
 
     try {
         if (menuType === "1") {
