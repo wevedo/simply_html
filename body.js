@@ -243,35 +243,23 @@ setInterval(async () => {
    
 
         
-// Store a record of callers to prevent multiple messages
-let callers = {};
-
 zk.ev.on("call", async (callData) => {
   if (conf.ANTICALL === 'yes') {
     const callId = callData[0].id;
     const callerId = callData[0].from;
 
-    // Check if the caller already received a message
-    if (!callers[callerId]) {
-      // Reject the call
-      await zk.rejectCall(callId, callerId);
+    // Reject the call
+    await zk.rejectCall(callId, callerId);
 
-      // Send a cool message
+    // Delay for 1 second before sending a message
+    setTimeout(async () => {
       await zk.sendMessage(callerId, {
         text: `🚫 *Call Rejected!*  
-Hi there, I’m *BWM XMD* 🤖. My owner is currently unavailable.  
-🕒 _Please try again later or send a message._  
-📞 _Repeated calls may result in blocking._`
+Hi there, I’m *BWM XMD* 🤖.  
+⚠️ My owner is unavailable at the moment.  
+Please try again later or leave a message. Cheers! 😊`
       });
-
-      // Mark the caller as notified
-      callers[callerId] = true;
-
-      // Clear the record after a while (e.g., 1 hour)
-      setTimeout(() => {
-        delete callers[callerId];
-      }, 3600000); // 1 hour in milliseconds
-    }
+    }, 1000); // 1-second delay
   }
 });
 
