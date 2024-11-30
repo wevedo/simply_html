@@ -1,4 +1,3 @@
-
 const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
@@ -201,9 +200,87 @@ ${commandList}
             // Randomly select menu type if blank
             const randomMenuType = Math.random() < 0.5 ? "1" : "2"; // 50% chance for each
 
+            if (randomMenuType === "1") {
+                // Send Christmas menu with greeting
+                await zk.sendMessage(dest, {
+                    image: { url: randomChristmasImage },
+                    caption: `
+╭━━━╮ 🎄 *𝐁𝐖𝐌 𝐗𝐌𝐃* 🎄
+┃💻 Owner: Ibrahim Adams
+┃📅 Date: ${date}
+┃⏰ Time: ${temps}
+┃👥 Bwm Users: ${formattedTotalUsers}
+╰━━━╯
 
-            
-            
+${greeting}
+
+🎄✨ Merry Christmas, ${nomAuteurMessage} ✨🎄
+${readmore}
+${commandList}
+
+🎶 *Background Music*:
+Enjoy the experience with bwm xmd touch. 🎄✨
+`,
+                    contextInfo: {
+                        externalAdReply: {
+                            title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                            body: "🎄 Tap here to follow our channel 🎄",
+                            thumbnailUrl: "https://files.catbox.moe/yl8lw6.webp",
+                            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                            showAdAttribution: true,
+                        },
+                    },
+                });
+
+                // Play Christmas audio
+                await zk.sendMessage(dest, {
+                    audio: { url: randomChristmasAudio },
+                    mimetype: getMimeType(randomChristmasAudio),
+                    ptt: true,
+                });
+            } else {
+                // Send Normal menu with greeting
+                await zk.sendMessage(dest, {
+                    image: { url: randomImage },
+                    caption: `
+╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
+┃🖐️ Hey: ${nomAuteurMessage}
+┃💻 Owner: Ibrahim Adams
+┃📅 Date: ${date}
+┃⏰ Time: ${temps}
+┃👥 Bwm Users: ${formattedTotalUsers}
+╰━━━╯
+
+${normalGreeting}
+
+${readmore}
+${commandList}
+`,
+                });
+
+                // Play normal audio
+                await zk.sendMessage(dest, {
+                    audio: { url: randomAudio },
+                    mimetype: getMimeType(randomAudio),
+                    ptt: true,
+                });
+            }
+        }
+    } catch (error) {
+        console.error("Error while sending the menu:", error);
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
        
                 
 
