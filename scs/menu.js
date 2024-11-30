@@ -1,3 +1,4 @@
+
 const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
@@ -127,11 +128,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const randomAudio = audioUrlsNormal[Math.floor(Math.random() * audioUrlsNormal.length)];
     const randomChristmasAudio = audioUrlsChristmas[Math.floor(Math.random() * audioUrlsChristmas.length)];
 
-    // Choose menu type
-    let menuType = 1; // Change this value (1 for Christmas, 2 for Normal, undefined for Random)
+    // Check for MENUTYPE
+    const menuType = conf.MENUTYPE || ""; // Use conf.MENUTYPE or default to empty string
 
     try {
-        if (menuType === 1) {
+        if (menuType === "1") {
             // Send Christmas menu with greeting
             await zk.sendMessage(dest, {
                 image: { url: randomChristmasImage },
@@ -156,7 +157,7 @@ Enjoy the experience with bwm xmd touch. 🎄✨
                     externalAdReply: {
                         title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                         body: "🎄 Tap here to follow our channel 🎄",
-                        thumbnailUrl: "https://files.catbox.moe/7ux2i3.webp",
+                        thumbnailUrl: "https://files.catbox.moe/yl8lw6.webp",
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                         showAdAttribution: true,
                     },
@@ -170,7 +171,7 @@ Enjoy the experience with bwm xmd touch. 🎄✨
                 ptt: true,
             });
 
-        } else if (menuType === 2) {
+        } else if (menuType === "2") {
             // Send Normal menu with greeting
             await zk.sendMessage(dest, {
                 image: { url: randomImage },
@@ -196,12 +197,15 @@ ${commandList}
                 mimetype: getMimeType(randomAudio),
                 ptt: true,
             });
-        }
-    } catch (e) {
-        console.error("Error generating menu:", e);
-        repondre("Error generating menu: " + e.message);
-    }
-});
+        } else {
+            // Randomly select menu type if blank
+            const randomMenuType = Math.random() < 0.5 ? "1" : "2"; // 50% chance for each
+
+
+            
+            
+       
+                
 
 
 
