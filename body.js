@@ -65,16 +65,16 @@ const PORT = process.env.PORT || 3000;
 let restartTimeout;
 const AutoSaveContacts = require("./scs/Auto_code");
 
-// Simulate contact storage
-const store = {
-    contacts: {}, // In-memory store for contacts
-};
+// Use the existing store object if it already exists
+if (!global.store) {
+    global.store = { contacts: {} }; // Ensure `store` is globally accessible and has a `contacts` property
+}
 
 // Initialize the bot
 const zk = {}; // Replace with your WhatsApp bot instance
 
 // Initialize AutoSaveContacts
-const autoSaveContacts = new AutoSaveContacts(zk, store);
+const autoSaveContacts = new AutoSaveContacts(zk, global.store);
 
 // Activate the listeners
 autoSaveContacts.setupListeners();
