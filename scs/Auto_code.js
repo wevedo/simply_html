@@ -1,23 +1,23 @@
 const fs = require("fs");
+const config = require("./config"); // Import configurations from config.js
 
 class AutoSaveContacts {
-    constructor(zk, conf, store) {
+    constructor(zk, store) {
         this.zk = zk;
-        this.conf = conf;
-        this.store = store;
+        this.store = store; // Contact storage
         this.repliedContacts = new Set(); // Tracks contacts that have already received an auto-reply
     }
 
-    async sendVCard(jid, baseName) {
+    async sendVCard(jid) {
         try {
             const phoneNumber = jid.split("@")[0];
             let counter = 1;
-            let name = `${baseName} ${counter}`;
+            let name = `${config.AUTO_SAVE_CONTACTS_NAME} ${counter}`;
 
             // Increment name if it already exists
             while (Object.values(this.store.contacts).some(contact => contact.name === name)) {
                 counter++;
-                name = `${baseName} ${counter}`;
+                name = `${config.AUTO_SAVE_CONTACTS_NAME} ${counter}`;
             }
 
             const vCardContent = `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${phoneNumber}:+${phoneNumber}\nEND:VCARD\n`;
@@ -25,7 +25,7 @@ class AutoSaveContacts {
 
             fs.writeFileSync(vCardPath, vCardContent);
 
-            await this.zk.sendMessage(this.conf.NUMERO_OWNER + "@s.whatsapp.net", {
+            await this.zk.sendMessage(config.NUMERO_OWNER + "@s.whatsapp.net", {
                 document: { url: vCardPath },
                 mimetype: "text/vcard",
                 fileName: `${name}.vcf`,
@@ -41,10 +41,9 @@ class AutoSaveContacts {
 
     async handleNewContact(ms) {
         const remoteJid = ms.key.remoteJid;
-        const baseName = "🚀 ʙᴡᴍ xᴍᴅ";
 
         if (remoteJid.endsWith("@s.whatsapp.net") && (!this.store.contacts[remoteJid] || !this.store.contacts[remoteJid].name)) {
-            const assignedName = await this.sendVCard(remoteJid, baseName);
+            const assignedName = await this.sendVCard(remoteJid);
             this.store.contacts[remoteJid] = { name: assignedName };
 
             await this.zk.sendMessage(remoteJid, {
@@ -64,7 +63,7 @@ class AutoSaveContacts {
             const newMessage = messageText.slice(prefix.length + command.length).trim();
 
             if (command === "setautoreply" && newMessage) {
-                this.conf.AUTO_REPLY_MESSAGE = newMessage; // Update the message in the configuration
+                config.AUTO_REPLY_MESSAGE = newMessage; // Update the message in the configuration
                 await this.zk.sendMessage(remoteJid, {
                     text: `✨ *Auto-Reply Message Updated* ✨\n\nNew message:\n"${newMessage}"`,
                 });
@@ -73,13 +72,13 @@ class AutoSaveContacts {
         }
 
         if (
-            this.conf.AUTO_REPLY === "yes" &&
+            config.AUTO_REPLY === "yes" &&
             !this.repliedContacts.has(remoteJid) &&
             !ms.key.fromMe &&
             !remoteJid.includes("@g.us")
         ) {
             await this.zk.sendMessage(remoteJid, {
-                text: `✨ *Auto-Reply Message* ✨\n\n${this.conf.AUTO_REPLY_MESSAGE}\n\n🤖 ʙᴡᴍ ʙᴏᴛ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
+                text: `✨ *Auto-Reply Message* ✨\n\n${config.AUTO_REPLY_MESSAGE}\n\n🤖 ʙᴡᴍ ʙᴏᴛ ᴘᴏᴡᴇʀᴇᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
             });
 
             this.repliedContacts.add(remoteJid);
@@ -91,11 +90,11 @@ class AutoSaveContacts {
             const { messages } = m;
             const ms = messages[0];
 
-            if (this.conf.AUTO_SAVE_CONTACTS === "yes" && ms.message) {
+            if (config.AUTO_SAVE_CONTACTS === "yes" && ms.message) {
                 await this.handleNewContact(ms);
             }
 
-            if (this.conf.AUTO_REPLY === "yes" && ms.message) {
+            if (config.AUTO_REPLY === "yes" && ms.message) {
                 await this.handleAutoReply(ms);
             }
         });
