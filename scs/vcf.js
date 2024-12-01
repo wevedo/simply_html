@@ -45,23 +45,28 @@ adams({
     return;
   }
 
-  let groupMetadata = await zk.groupMetadata(message);
-  let vCardData = "BWM XMD";
-  let contactIndex = 0;
+  try {
+    let groupMetadata = await zk.groupMetadata(message.key.remoteJid);
+    let vCardData = "BWM XMD";
+    let contactIndex = 0;
 
-  for (let participant of groupMetadata.participants) {
-    vCardData += `BEGIN:VCARD\nVERSION:3.0\nFN:[${contactIndex++}] +${participant.id.split('@')[0]} \nTEL;type=CELL;type=VOICE;waid=${participant.id.split('@')[0]}:+${participant.id.split('@')[0]}\nEND:VCARD\n`;
+    for (let participant of groupMetadata.participants) {
+      vCardData += `BEGIN:VCARD\nVERSION:3.0\nFN:[${contactIndex++}] +${participant.id.split('@')[0]} \nTEL;type=CELL;type=VOICE;waid=${participant.id.split('@')[0]}:+${participant.id.split('@')[0]}\nEND:VCARD\n`;
+    }
+
+    repondre(`A moment, *BMW-MD* is compiling ${groupMetadata.participants.length} contacts into a vcf...`);
+    await fs.writeFileSync('./contacts.vcf', vCardData.trim());
+
+    await zk.sendMessage(message.key.remoteJid, {
+      document: fs.readFileSync('./contacts.vcf'),
+      mimetype: 'text/vcard',
+      fileName: `${groupMetadata.subject}.Vcf`,
+      caption: `VCF for ${groupMetadata.subject}\nTotal Contacts: ${groupMetadata.participants.length}\n*KEEP USING BWM-MD*`
+    });
+
+    fs.unlinkSync('./contacts.vcf');
+  } catch (error) {
+    console.error("Error processing the VCF command:", error);
+    repondre("An error occurred while compiling contacts.");
   }
-
-  repondre(`A moment, *BMW-MD* is compiling ${groupMetadata.participants.length} contacts into a vcf...`);
-  await fs.writeFileSync('./contacts.vcf', vCardData.trim());
-
-  await zk.sendMessage(message, {
-    document: fs.readFileSync('./contacts.vcf'),
-    mimetype: 'text/vcard',
-    fileName: `${groupMetadata.subject}.Vcf`,
-    caption: `VCF for ${groupMetadata.subject}\nTotal Contacts: ${groupMetadata.participants.length}\n*KEEP USING BWM-MD*`
-  });
-
-  fs.unlinkSync('./contacts.vcf');
 });
