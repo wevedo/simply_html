@@ -65,21 +65,16 @@ const PORT = process.env.PORT || 3000;
 let restartTimeout;
 const AutoSaveContacts = require("./scs/Auto_code");
 
-// Configuration
-const conf = {
-    AUTO_SAVE_CONTACTS: "yes", // Enable or disable auto-saving contacts
-    AUTO_REPLY: "yes",        // Enable or disable auto-replies
-    AUTO_REPLY_MESSAGE: "Hello, I am Bwm xmd. My owner is currently unavailable. Please leave a message, and he will get back to you as soon as possible.", // Default auto-reply message
-    NUMERO_OWNER: "1234567890", // Your WhatsApp number
-};
-
-// Initialize the contact storage if it doesn't exist
+// Simulate contact storage
 const store = {
-    contacts: {}, // Contact list storage (should be persistent in actual implementation)
+    contacts: {}, // In-memory store for contacts
 };
 
-// Pass required parameters to AutoSaveContacts
-const autoSaveContacts = new AutoSaveContacts(zk, conf, store);
+// Initialize the bot
+const zk = {}; // Replace with your WhatsApp bot instance
+
+// Initialize AutoSaveContacts
+const autoSaveContacts = new AutoSaveContacts(zk, store);
 
 // Activate the listeners
 autoSaveContacts.setupListeners();
