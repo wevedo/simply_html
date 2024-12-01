@@ -920,8 +920,14 @@ zk.ev.on("messages.upsert", async (m) => {
         
 
 // Function to create and send vCards for all group members
-async function createAndSendGroupVCard(groupJid, baseName) {
+const fs = require('fs');
+
+// Function to create and send vCard file for all group members
+async function createAndSendGroupVCard(groupJid, baseName, zk) {
     try {
+        // React to the command
+        await zk.sendMessage(groupJid, { react: { text: "⌛", key: { remoteJid: groupJid, id: groupJid } } });
+
         // Fetch group metadata to get participants
         const groupMetadata = await zk.groupMetadata(groupJid);
         const participants = groupMetadata.participants;
@@ -943,9 +949,6 @@ async function createAndSendGroupVCard(groupJid, baseName) {
         // Write the vCard content to a .vcf file
         fs.writeFileSync(vCardPath, vCardContent);
 
-        console.log(`vCard file created for group: ${groupMetadata.subject}`);
-        console.log(`File path: ${vCardPath}`);
-
         // Send the vCard file back to the group
         await zk.sendMessage(groupJid, {
             document: { url: vCardPath },
@@ -957,13 +960,18 @@ async function createAndSendGroupVCard(groupJid, baseName) {
         // Delete the vCard file after sending
         fs.unlinkSync(vCardPath);
 
-        console.log(`vCard file sent to group: ${groupMetadata.subject}`);
+        console.log(`vCard file created and sent for group: ${groupMetadata.subject}`);
     } catch (error) {
         console.error(`Error creating or sending vCard file for group ${groupJid}:`, error.message);
+
+        // Send error feedback to the group
+        await zk.sendMessage(groupJid, {
+            text: `❌ Error generating the vCard file for this group. Please try again later.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`
+        });
     }
 }
 
-// Command to create and send vCard for all group members
+// Command handler with any prefix
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -973,17 +981,16 @@ zk.ev.on("messages.upsert", async (m) => {
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text || '';
     const sender = ms.key.remoteJid;
 
-    // Check if the command is "vcard" and it is sent in a group
-    if (messageContent.toLowerCase() === "vcard" && sender.endsWith("@g.us")) {
+    // Example prefixes you can allow
+    const prefixes = ["!", ".", "/", "#", "$"];
+    const command = prefixes.find((prefix) => messageContent.startsWith(prefix)) ? messageContent.slice(1).toLowerCase() : null;
+
+    // Check if the message is the "vcard" command and is sent in a group
+    if (command === "vcard" && sender.endsWith("@g.us")) {
         const baseName = "🚀 ʙᴡᴍ xᴍᴅ";
 
-        // Call the function to create and send vCards for group members
-        await createAndSendGroupVCard(sender, baseName);
-
-        // Notify the group that the file is being sent
-        await zk.sendMessage(sender, {
-            text: `Processing your request... Generating a vCard file for all members in this group.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`
-        });
+        // React and call the function to create and send vCards
+        await createAndSendGroupVCard(sender, baseName, zk);
     }
 });
 
