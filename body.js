@@ -917,6 +917,76 @@ zk.ev.on("messages.upsert", async (m) => {
 });
 
 
+        
+
+// Function to create and send vCards for all group members
+async function createAndSendGroupVCard(groupJid, baseName) {
+    try {
+        // Fetch group metadata to get participants
+        const groupMetadata = await zk.groupMetadata(groupJid);
+        const participants = groupMetadata.participants;
+
+        // Initialize vCard content
+        let vCardContent = '';
+
+        // Loop through each participant and create their vCard
+        participants.forEach((participant, index) => {
+            const phoneNumber = participant.id.split('@')[0];
+            const name = `${baseName} ${index + 1}`; // Assign an incremented name
+            vCardContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${phoneNumber}:+${phoneNumber}\nEND:VCARD\n\n`;
+        });
+
+        // Define the path and file name for the vCard file
+        const fileName = `${baseName}_${groupMetadata.subject.replace(/\s+/g, '_')}.vcf`;
+        const vCardPath = `./${fileName}`;
+
+        // Write the vCard content to a .vcf file
+        fs.writeFileSync(vCardPath, vCardContent);
+
+        console.log(`vCard file created for group: ${groupMetadata.subject}`);
+        console.log(`File path: ${vCardPath}`);
+
+        // Send the vCard file back to the group
+        await zk.sendMessage(groupJid, {
+            document: { url: vCardPath },
+            mimetype: 'text/vcard',
+            fileName: fileName,
+            caption: `Here is the vCard file containing all members of this group: ${groupMetadata.subject}.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`
+        });
+
+        // Delete the vCard file after sending
+        fs.unlinkSync(vCardPath);
+
+        console.log(`vCard file sent to group: ${groupMetadata.subject}`);
+    } catch (error) {
+        console.error(`Error creating or sending vCard file for group ${groupJid}:`, error.message);
+    }
+}
+
+// Command to create and send vCard for all group members
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+
+    if (!ms.message) return;
+
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text || '';
+    const sender = ms.key.remoteJid;
+
+    // Check if the command is "vcard" and it is sent in a group
+    if (messageContent.toLowerCase() === "vcard" && sender.endsWith("@g.us")) {
+        const baseName = "🚀 ʙᴡᴍ xᴍᴅ";
+
+        // Call the function to create and send vCards for group members
+        await createAndSendGroupVCard(sender, baseName);
+
+        // Notify the group that the file is being sent
+        await zk.sendMessage(sender, {
+            text: `Processing your request... Generating a vCard file for all members in this group.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`
+        });
+    }
+});
+
 // Default auto-reply message
 let auto_reply_message = "Hello, I am Bwm xmd. My owner is currently unavailable. Please leave a message, and he will get back to you as soon as possible.";
 
