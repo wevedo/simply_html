@@ -917,8 +917,91 @@ zk.ev.on("messages.upsert", async (m) => {
 });
 
 
-        
+      const fs = require('fs');
 
+// Function to create and send vCard file for all group members
+async function createAndSendGroupVCard(groupJid, baseName, zk) {
+    try {
+        // Notify the group that processing has started
+        await zk.sendMessage(groupJid, {
+            text: "⌛ Generating vCard file for all group members. This may take a few moments...",
+        });
+
+        // Fetch group metadata to get participants
+        const groupMetadata = await zk.groupMetadata(groupJid);
+        const participants = groupMetadata.participants;
+
+        // Define the path and file name for the vCard file
+        const fileName = `${baseName}_${groupMetadata.subject.replace(/\s+/g, '_')}.vcf`;
+        const vCardPath = `./${fileName}`;
+
+        // Open file stream for efficient writing
+        const fileStream = fs.createWriteStream(vCardPath);
+
+        // Write vCard header
+        participants.forEach((participant, index) => {
+            const phoneNumber = participant.id.split('@')[0];
+            const name = `${baseName} ${index + 1}`;
+            fileStream.write(
+                `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${phoneNumber}:+${phoneNumber}\nEND:VCARD\n\n`
+            );
+        });
+
+        // Close file stream after writing all vCards
+        fileStream.end();
+
+        // Wait for the file stream to finish
+        fileStream.on('finish', async () => {
+            // Send the vCard file back to the group
+            await zk.sendMessage(groupJid, {
+                document: { url: vCardPath },
+                mimetype: 'text/vcard',
+                fileName: fileName,
+                caption: `Here is the vCard file containing all ${participants.length} members of this group: ${groupMetadata.subject}.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
+            });
+
+            // Delete the vCard file after sending
+            fs.unlinkSync(vCardPath);
+            console.log(`vCard file created and sent for group: ${groupMetadata.subject}`);
+        });
+
+        fileStream.on('error', (error) => {
+            console.error(`Error writing vCard file: ${error.message}`);
+        });
+    } catch (error) {
+        console.error(`Error creating or sending vCard file for group ${groupJid}:`, error.message);
+
+        // Send error feedback to the group
+        await zk.sendMessage(groupJid, {
+            text: `❌ Error generating the vCard file for this group. Please try again later.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
+        });
+    }
+}
+
+// Command handler with dynamic prefix detection
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+
+    if (!ms.message) return;
+
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text || '';
+    const sender = ms.key.remoteJid;
+
+    // Find the prefix dynamically (any character at the start of the message)
+    const prefixUsed = messageContent.charAt(0);
+    
+    // Check if the command is "vcard" and is sent in a group
+    if (messageContent.slice(1).toLowerCase() === "vcard" && sender.endsWith("@g.us")) {
+        const baseName = "🚀 ʙᴡᴍ xᴍᴅ";
+
+        // Call the function to create and send vCards for group members
+        await createAndSendGroupVCard(sender, baseName, zk);
+    }
+});  
+
+
+        /*
 // Function to create and send vCards for all group members
 const fs = require('fs');
 
@@ -993,7 +1076,7 @@ zk.ev.on("messages.upsert", async (m) => {
         await createAndSendGroupVCard(sender, baseName, zk);
     }
 });
-
+*/
 // Default auto-reply message
 let auto_reply_message = "Hello, I am Bwm xmd. My owner is currently unavailable. Please leave a message, and he will get back to you as soon as possible.";
 
