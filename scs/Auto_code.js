@@ -1,6 +1,5 @@
 const fs = require("fs");
-const config = require("/../config"); // Import configurations from config.js
-
+const config = require(__dirname + "/../config");
 class AutoSaveContacts {
     constructor(zk, store) {
         this.zk = zk;
