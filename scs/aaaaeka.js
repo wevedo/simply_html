@@ -19,7 +19,7 @@ adams({
   }
 
   // Validate input
-  if (!arg[0] || !arg[0].includes('SESSION_ID=') || !arg[0].includes('NOMERO_OWNER=') || !arg[0].includes('herokuappname=')) {
+  if (!arg[0] || !arg[0].includes('SESSION_ID=') || !arg[0].includes('NUMERO_OWNER=') || !arg[0].includes('herokuappname=')) {
     return repondre(
       "📋 *Usage Instructions:*\n\n" +
       "To create a new app:\n" +
@@ -58,7 +58,7 @@ adams({
     await heroku.patch(`/apps/${newAppName}/config-vars`, {
       body: {
         SESSION_ID: sessionId,
-        NOMERO_OWNER: numeroOwner,
+        NUMERO_OWNER: numeroOwner,
         HEROKU_APP_NAME: newAppName
       }
     });
@@ -71,7 +71,7 @@ adams({
       text: `🎉 *Heroku App Created Successfully!*\n\n` +
             `🔧 *App Name:* ${newAppName}\n` +
             `🔑 *SESSION_ID:* ${sessionId}\n` +
-            `📞 *NOMERO_OWNER:* ${numeroOwner}\n\n` +
+            `📞 *NUMERO_OWNER:* ${numeroOwner}\n\n` +
             `🌐 *GitHub Repo Pushed Successfully!*\n\n` +
             `🔄 *App Dynos Restarted.*\n` +
             `✅ *Ready to Use!*`
