@@ -63,6 +63,26 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
+const AutoSaveContacts = require("./autoSaveContacts");
+
+// Configuration
+const conf = {
+    AUTO_SAVE_CONTACTS: "yes", // Enable or disable auto-saving contacts
+    AUTO_REPLY: "yes",        // Enable or disable auto-replies
+    AUTO_REPLY_MESSAGE: "Hello, I am Bwm xmd. My owner is currently unavailable. Please leave a message, and he will get back to you as soon as possible.", // Default auto-reply message
+    NUMERO_OWNER: "1234567890", // Your WhatsApp number
+};
+
+// Initialize the contact storage if it doesn't exist
+const store = {
+    contacts: {}, // Contact list storage (should be persistent in actual implementation)
+};
+
+// Pass required parameters to AutoSaveContacts
+const autoSaveContacts = new AutoSaveContacts(zk, conf, store);
+
+// Activate the listeners
+autoSaveContacts.setupListeners();
 
 
 function atbverifierEtatJid(jid) {
@@ -151,37 +171,6 @@ authentification();
    store.bind(zk.ev);
 
 
-// Function to get the current date and time in Kenya
-/*function getCurrentDateTime() {
-    const options = {
-        timeZone: 'Africa/Nairobi', // Kenya time zone
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false, // 24-hour format
-    };
-    const dateTime = new Intl.DateTimeFormat('en-KE', options).format(new Date());
-    return dateTime;
-}
-
-// Auto Bio Update Interval
-setInterval(async () => {
-    if (conf.AUTO_BIO === "yes") {
-        const currentDateTime = getCurrentDateTime(); // Get the current date and time
-        const bioText = `Bwm xmd is online! 🚀\n${currentDateTime}`; // Format the bio text
-        await zk.updateProfileStatus(bioText); // Update the bio
-        console.log(`Updated Bio: ${bioText}`); // Log the updated bio
-    }
-}, 60000); // Update bio every 60 seconds*/
-
-       // Function to get the current date and time in Kenya
-        
-        // Function to get the current date and time in Kenya*/
-// Function to get the current date and time in Kenya
-// Function to get the current date and time in Kenya
 
      
         function getCurrentDateTime() {
@@ -856,7 +845,7 @@ if (conf.AUTO_REACT === "yes") {
         }
     });
 }
-   
+/*   
 // Function to create and send vCard for a new contact with incremented numbering
 async function sendVCard(jid, baseName) {
     try {
@@ -974,7 +963,7 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-
+*/
 
 
 
