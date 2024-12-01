@@ -63,7 +63,7 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
-const AutoSaveContacts = require("./scs/Auto_code");
+/*const AutoSaveContacts = require("./scs/Auto_code");
 
 // Use the existing store object if it already exists
 if (!global.store) {
@@ -78,7 +78,7 @@ const autoSaveContacts = new AutoSaveContacts(zk, global.store);
 
 // Activate the listeners
 autoSaveContacts.setupListeners();
-
+*/
 
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
@@ -840,7 +840,7 @@ if (conf.AUTO_REACT === "yes") {
         }
     });
 }
-/*   
+
 // Function to create and send vCard for a new contact with incremented numbering
 async function sendVCard(jid, baseName) {
     try {
@@ -958,7 +958,7 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-*/
+
 
 
 
