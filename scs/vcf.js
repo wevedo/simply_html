@@ -32,7 +32,7 @@ adams({
   nomCom: 'vcf2',
   categorie: "Group",
   reaction: '⚪'
-}, async (client, message, context) => {
+}, async (zk, message, context) => {
   const { ms, repondre, verifGroupe, verifAdmin } = context;
 
   if (!verifAdmin) {
@@ -45,7 +45,7 @@ adams({
     return;
   }
 
-  let groupMetadata = await client.groupMetadata(message);
+  let groupMetadata = await zk.groupMetadata(message);
   let vCardData = "BWM XMD";
   let contactIndex = 0;
 
@@ -56,7 +56,7 @@ adams({
   repondre(`A moment, *BMW-MD* is compiling ${groupMetadata.participants.length} contacts into a vcf...`);
   await fs.writeFileSync('./contacts.vcf', vCardData.trim());
 
-  await client.sendMessage(message, {
+  await zk.sendMessage(message, {
     document: fs.readFileSync('./contacts.vcf'),
     mimetype: 'text/vcard',
     fileName: `${groupMetadata.subject}.Vcf`,
