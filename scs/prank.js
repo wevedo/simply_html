@@ -49,7 +49,7 @@ adams({ nomCom: "hack", categorie: "Fun", reaction: "💀" }, async (dest, zk, c
         }
 
         // Fake ending message
-        await repondre("💥💀 *SYSTEM FAILURE: CRITICAL ERROR!* 💀💥");
+        await repondre("💥💀 *VICTIM SYSTEM DOMOLISHED!* 💀💥");
     } catch (error) {
         console.error(error);
         return await repondre("_❌ An error occurred during the prank 😅_");
