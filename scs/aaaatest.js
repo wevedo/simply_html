@@ -1,7 +1,12 @@
-const { adams } = require("../Ibrahim/adams");
+const { default: makeWASocket, useSingleFileAuthState } = require("@adiwajshing/baileys");
 const moment = require("moment-timezone");
 const axios = require("axios");
-const s = require(__dirname + "/../config");
+
+// Initialize Baileys
+const { state, saveState } = useSingleFileAuthState("./auth_info.json");
+const sock = makeWASocket({
+    auth: state,
+});
 
 // Function to fetch GitHub stats
 const fetchGitHubStats = async () => {
@@ -18,60 +23,73 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Button menu handler
-adams({ nomCom: "me", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { repondre, nomAuteurMessage } = commandeOptions;
-    const { totalUsers } = await fetchGitHubStats();
-    const formattedTotalUsers = totalUsers.toLocaleString();
+// Handle incoming messages
+sock.ev.on("messages.upsert", async (message) => {
+    const msg = message.messages[0];
+    if (!msg.message) return;
+    const from = msg.key.remoteJid;
+    const buttonResponse = msg.message.buttonsResponseMessage;
 
-    const buttons = [
-        { buttonId: "viewCommands", buttonText: { displayText: "📜 View Commands" }, type: 1 },
-        { buttonId: "ping", buttonText: { displayText: "📶 Ping" }, type: 1 },
-        { buttonId: "repo", buttonText: { displayText: "📂 Repository" }, type: 1 },
-        { buttonId: "channel", buttonText: { displayText: "📢 Channel" }, type: 1 }
-    ];
+    // Check for button click responses
+    if (buttonResponse) {
+        const buttonId = buttonResponse.selectedButtonId;
 
-    const caption = `
+        switch (buttonId) {
+            case "viewCommands":
+                await sock.sendMessage(from, { text: "📜 Here are the available commands:\n1. Command A\n2. Command B" });
+                break;
+
+            case "ping":
+                const pingTime = Date.now();
+                await sock.sendMessage(from, { text: `📶 *Ping*: ${pingTime}ms` });
+                break;
+
+            case "repo":
+                await sock.sendMessage(from, { text: "📂 Repository: https://github.com/Devibraah/BWM-XMD" });
+                break;
+
+            case "channel":
+                await sock.sendMessage(from, { text: "📢 Channel: https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
+                break;
+
+            default:
+                await sock.sendMessage(from, { text: "❌ Unknown button selected." });
+        }
+    }
+
+    // If the message is a "menu" command
+    if (msg.message.conversation === "menu") {
+        const { totalUsers } = await fetchGitHubStats();
+        const formattedTotalUsers = totalUsers.toLocaleString();
+
+        const buttons = [
+            { buttonId: "viewCommands", buttonText: { displayText: "📜 View Commands" }, type: 1 },
+            { buttonId: "ping", buttonText: { displayText: "📶 Ping" }, type: 1 },
+            { buttonId: "repo", buttonText: { displayText: "📂 Repository" }, type: 1 },
+            { buttonId: "channel", buttonText: { displayText: "📢 Channel" }, type: 1 }
+        ];
+
+        const caption = `
 ╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
-┃🙋‍♂️ Heyy: ${nomAuteurMessage}
+┃🙋‍♂️ Heyy!
 ┃👥 Users: ${formattedTotalUsers}
 ┃✨ Select an option below:
 ╰━━━╯
 `;
 
-    // Send the menu with buttons
-    await zk.sendMessage(dest, {
-        text: caption,
-        buttons: buttons,
-        headerType: 1
-    });
+        await sock.sendMessage(from, {
+            text: caption,
+            buttons: buttons,
+            headerType: 1,
+        });
+    }
 });
 
-// Button response handler
-adams.on("button-click", async (dest, zk, buttonId) => {
-    try {
-        switch (buttonId) {
-            case "viewCommands":
-                await zk.sendMessage(dest, { text: "📜 Here are the available commands:\n1. Command A\n2. Command B" });
-                break;
-
-            case "ping":
-                const pingTime = Date.now();
-                await zk.sendMessage(dest, { text: `📶 *Ping*: ${pingTime}ms` });
-                break;
-
-            case "repo":
-                await zk.sendMessage(dest, { text: "📂 Repository: https://github.com/Devibraah/BWM-XMD" });
-                break;
-
-            case "channel":
-                await zk.sendMessage(dest, { text: "📢 Channel: https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
-                break;
-
-            default:
-                await zk.sendMessage(dest, { text: "❌ Unknown button selected." });
-        }
-    } catch (error) {
-        console.error("Error handling button response:", error);
+// Save auth state on disconnect
+sock.ev.on("connection.update", (update) => {
+    const { connection } = update;
+    if (connection === "close") {
+        console.log("Connection closed, reconnecting...");
+        makeWASocket();
     }
 });
