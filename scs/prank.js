@@ -14,9 +14,14 @@ adams({ nomCom: "hack", categorie: "Fun", reaction: "💀" }, async (dest, zk, c
         ];
 
         // Respond with loading animations
-        for (let i = 0; i < loadingSequence.length; i++) {
-            await repondre(loadingSequence[i]);
-            await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds
+        for (const message of loadingSequence) {
+            try {
+                await repondre(message);
+                await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds
+            } catch (animationError) {
+                console.error("Error sending loading message:", animationError);
+                // Continue to the next message to avoid stopping the prank
+            }
         }
 
         // Main prank message
@@ -39,19 +44,33 @@ adams({ nomCom: "hack", categorie: "Fun", reaction: "💀" }, async (dest, zk, c
         _💀 Script Executed by: Ibrahim Adams 💀_`;
 
         // Send the prank message
-        await repondre(hackedMessage);
+        try {
+            await repondre(hackedMessage);
+        } catch (mainMessageError) {
+            console.error("Error sending prank message:", mainMessageError);
+            return await repondre("_❌ An error occurred while sending the main prank message 😅_");
+        }
 
         // Final warning with fake countdown
         const countdown = ["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"];
-        for (let i = 0; i < countdown.length; i++) {
-            await repondre(`💣 _System Destruction in: ${countdown[i]} seconds..._ 💣`);
-            await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+        for (const seconds of countdown) {
+            try {
+                await repondre(`💣 _System Destruction in: ${seconds} seconds..._ 💣`);
+                await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
+            } catch (countdownError) {
+                console.error("Error during countdown:", countdownError);
+                // Allow the countdown to continue even if one message fails
+            }
         }
 
         // Fake ending message
-        await repondre("💥💀 *VICTIM SYSTEM DOMOLISHED!* 💀💥");
-    } catch (error) {
-        console.error(error);
-        return await repondre("_❌ An error occurred during the prank 😅_");
+        try {
+            await repondre("💥💀 *VICTIM SYSTEM DEMOLISHED!* 💀💥");
+        } catch (finalMessageError) {
+            console.error("Error sending final message:", finalMessageError);
+        }
+    } catch (globalError) {
+        console.error("Critical error in prank script:", globalError);
+        return await repondre("_❌ A critical error occurred during the prank 😅_");
     }
 });
