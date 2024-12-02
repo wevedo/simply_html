@@ -3,9 +3,6 @@ const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
 
-const more = String.fromCharCode(8206);
-const readmore = more.repeat(4001);
-
 // Function to fetch GitHub stats
 const fetchGitHubStats = async () => {
     try {
@@ -21,55 +18,25 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Main menu command
+// Button menu handler
 adams({ nomCom: "me", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
-    let { cm } = require(__dirname + "/../Ibrahim/adams");
-    let coms = {};
-
-    // Organize commands by category
-    cm.map((com) => {
-        const categoryUpper = com.categorie.toUpperCase();
-        if (!coms[categoryUpper]) coms[categoryUpper] = [];
-        coms[categoryUpper].push(com.nomCom);
-    });
-
-    moment.tz.setDefault(s.TZ || "Africa/Nairobi");
-    const temps = moment().format("HH:mm:ss");
-    const date = moment().format("DD/MM/YYYY");
-
+    const { repondre, nomAuteurMessage } = commandeOptions;
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Prepare command list for "View Commands" button
-    let commandList = "";
-    const sortedCategories = Object.keys(coms).sort();
-    sortedCategories.forEach((cat) => {
-        commandList += `\n🔸🔹 *${cat}*:\n`;
-        coms[cat].forEach((cmd) => {
-            commandList += `  - ${cmd}\n`;
-        });
-    });
-
-    // Button Menu Layout
     const buttons = [
-        { buttonId: "menu3_viewCommands", buttonText: { displayText: "📜 View Commands" }, type: 1 },
-        { buttonId: "menu3_ping", buttonText: { displayText: "📶 Ping" }, type: 1 },
-        { buttonId: "menu3_repo", buttonText: { displayText: "📂 Repository" }, type: 1 },
-        { buttonId: "menu3_channel", buttonText: { displayText: "📢 Channel" }, type: 1 }
+        { buttonId: "viewCommands", buttonText: { displayText: "📜 View Commands" }, type: 1 },
+        { buttonId: "ping", buttonText: { displayText: "📶 Ping" }, type: 1 },
+        { buttonId: "repo", buttonText: { displayText: "📂 Repository" }, type: 1 },
+        { buttonId: "channel", buttonText: { displayText: "📢 Channel" }, type: 1 }
     ];
 
-    // Menu Caption
     const caption = `
 ╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
 ┃🙋‍♂️ Heyy: ${nomAuteurMessage}
-┃💻 Owner: Ibrahim Adams
-┃📅 Date: ${date}
-┃⏰ Time: ${temps}
 ┃👥 Users: ${formattedTotalUsers}
+┃✨ Select an option below:
 ╰━━━╯
-
-✨ Please choose an option below ✨
 `;
 
     // Send the menu with buttons
@@ -78,61 +45,33 @@ adams({ nomCom: "me", categorie: "General" }, async (dest, zk, commandeOptions) 
         buttons: buttons,
         headerType: 1
     });
+});
 
-    // Listen for button responses in the "message" event
-    zk.on("message", async (message) => {
-        if (!message.buttonsResponseMessage) return;
-
-        const buttonId = message.buttonsResponseMessage.selectedButtonId;
+// Button response handler
+adams.on("button-click", async (dest, zk, buttonId) => {
+    try {
         switch (buttonId) {
-            case "menu3_viewCommands":
-                // Send command list by category
-                await zk.sendMessage(dest, {
-                    text: `📜 *Commands by Category*\n${readmore}${commandList}`
-                });
+            case "viewCommands":
+                await zk.sendMessage(dest, { text: "📜 Here are the available commands:\n1. Command A\n2. Command B" });
                 break;
 
-            case "menu3_ping":
-                // Respond with a ping message
-                const pingTime = Date.now() - message.timestamp * 1000;
-                await zk.sendMessage(dest, {
-                    text: `📶 *Ping*: ${pingTime}ms`
-                });
+            case "ping":
+                const pingTime = Date.now();
+                await zk.sendMessage(dest, { text: `📶 *Ping*: ${pingTime}ms` });
                 break;
 
-            case "menu3_repo":
-                // Send repository link
-                await zk.sendMessage(dest, {
-                    text: `📂 *Repository*\nAccess the code here:\nhttps://github.com/Devibraah/BWM-XMD`
-                });
+            case "repo":
+                await zk.sendMessage(dest, { text: "📂 Repository: https://github.com/Devibraah/BWM-XMD" });
                 break;
 
-            case "menu3_channel":
-                // Send channel link
-                await zk.sendMessage(dest, {
-                    text: `📢 *Channel*\nFollow our updates:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y`
-                });
+            case "channel":
+                await zk.sendMessage(dest, { text: "📢 Channel: https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
                 break;
 
             default:
-                // Default response for unknown buttons
-                await zk.sendMessage(dest, {
-                    text: "❌ Unknown button selected."
-                });
-                break;
+                await zk.sendMessage(dest, { text: "❌ Unknown button selected." });
         }
-
-        // Send an audio below for every button
-        const audioUrlsNormal = [
-            "https://files.catbox.moe/fm0rvl.mp3",
-            "https://files.catbox.moe/demlei.mp3",
-            "https://files.catbox.moe/3ka4td.m4a"
-        ];
-        const randomAudio = audioUrlsNormal[Math.floor(Math.random() * audioUrlsNormal.length)];
-        await zk.sendMessage(dest, {
-            audio: { url: randomAudio },
-            mimetype: randomAudio.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
-            ptt: true
-        });
-    });
+    } catch (error) {
+        console.error("Error handling button response:", error);
+    }
 });
