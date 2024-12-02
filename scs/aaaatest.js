@@ -79,9 +79,11 @@ adams({ nomCom: "me", categorie: "General" }, async (dest, zk, commandeOptions) 
         headerType: 1
     });
 
-    // Handle button responses
-    zk.on("button-response", async (btn) => {
-        const buttonId = btn.selectedButtonId;
+    // Listen for button responses in the "message" event
+    zk.on("message", async (message) => {
+        if (!message.buttonsResponseMessage) return;
+
+        const buttonId = message.buttonsResponseMessage.selectedButtonId;
         switch (buttonId) {
             case "menu3_viewCommands":
                 // Send command list by category
@@ -92,7 +94,7 @@ adams({ nomCom: "me", categorie: "General" }, async (dest, zk, commandeOptions) 
 
             case "menu3_ping":
                 // Respond with a ping message
-                const pingTime = Date.now() - zk.messageTimestamp * 1000;
+                const pingTime = Date.now() - message.timestamp * 1000;
                 await zk.sendMessage(dest, {
                     text: `📶 *Ping*: ${pingTime}ms`
                 });
