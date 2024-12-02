@@ -1,16 +1,16 @@
 const { adams } = require("../Ibrahim/adams");
 
-adams({ nomCom: "prank", categorie: "Fun", reaction: "💀" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "hack", categorie: "Fun", reaction: "💀" }, async (dest, zk, commandeOptions) => {
     const { repondre, arg, prefixe } = commandeOptions;
 
     try {
         // Loading animation sequence
         const loadingSequence = [
-            "_Establishing connection to servers..._",
-            "_Breaching security layers..._",
-            "_Injecting payload..._",
-            "_Accessing sensitive data..._",
-            "_Compiling files..._"
+            "⚡ _Connecting to encrypted servers..._ ⚡",
+            "🔐 _Bypassing multi-layer firewalls..._ 🔐",
+            "⚙️ _Injecting malicious payload..._ ⚙️",
+            "🛑 _Exploiting kernel vulnerabilities..._ 🛑",
+            "💣 _Uploading spyware to remote host..._ 💣"
         ];
 
         // Respond with loading animations
@@ -20,23 +20,23 @@ adams({ nomCom: "prank", categorie: "Fun", reaction: "💀" }, async (dest, zk, 
         }
 
         // Main prank message
-        const hackedMessage = `*🔓 SYSTEM BREACHED 🔓*
+        const hackedMessage = `*💀🔓 SYSTEM BREACHED 🔓💀*
         
-        _Target system compromised!_
+        ⚠️ _Critical security breach detected!_ ⚠️
         
-        ▄█▓▒░ SYSTEM LOG ░▒▓█▄
+        ▄█▓▒░ *SYSTEM LOG* ░▒▓█▄
         ${"█".repeat(30)}
-        🔴 *WhatsApp Chats* successfully forwarded!
-        🔴 *Contacts Synced to Remote Database!*
-        🔴 Injecting malware to \`/root/sys32/hack.js\`
+        🔴 *WhatsApp Chats* _exported to shadow network!_
+        🔴 *Contacts Synced to Deep Web Servers!*
+        🔴 _Injecting trojan into system: \`/root/sys32/critical.js\`_
         🔴 Device IMEI: *${Math.floor(100000000000000 + Math.random() * 900000000000000)}*
-        🔴 Starting webcam recording...
+        🔴 _Live Camera Stream Activated..._
         ${"█".repeat(30)}
         
-        ▄█▓▒░ HACKING COMPLETE ░▒▓█▄
-        _Do not try to restart your system. Remote monitoring enabled._
-        
-        _💀 Script By: Mr. Dark Code 💀_`;
+        *⚠️ WARNING ⚠️*  
+        _Your device is under remote surveillance. Do NOT attempt to reboot._
+
+        _💀 Script Executed by: Ibrahim Adams 💀_`;
 
         // Send the prank message
         await repondre(hackedMessage);
@@ -44,14 +44,14 @@ adams({ nomCom: "prank", categorie: "Fun", reaction: "💀" }, async (dest, zk, 
         // Final warning with fake countdown
         const countdown = ["10", "9", "8", "7", "6", "5", "4", "3", "2", "1"];
         for (let i = 0; i < countdown.length; i++) {
-            await repondre(`_System Self-Destruction in: ${countdown[i]}s_`);
+            await repondre(`💣 _System Destruction in: ${countdown[i]} seconds..._ 💣`);
             await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 1 second
         }
 
         // Fake ending message
-        await repondre("💀 *SYSTEM CORRUPTED!* 💀");
+        await repondre("💥💀 *SYSTEM FAILURE: CRITICAL ERROR!* 💀💥");
     } catch (error) {
         console.error(error);
-        return await repondre("_Une erreur s'est produite pendant la farce 😅_");
+        return await repondre("_❌ An error occurred during the prank 😅_");
     }
 });
