@@ -1294,11 +1294,11 @@ zk.ev.on("messages.upsert", async (m) => {
 
 
         
+const fs = require('fs/promises'); // Use the promises API for fs operations
+
 const audioMap = {
     "hey": "files/hey.wav",
     "hi": "files/hey.wav",
-    "hey": "files/hey.wav",
-    "he": "files/hey.wav",
     "hello": "files/hello.wav",
     "mambo": "files/hey.wav",
     "niaje": "files/hey.wav",
@@ -1315,52 +1315,27 @@ const audioMap = {
     "yoo": "files/mkuu.wav",
     "wazii": "files/mkuu.wav",
     "dev": "files/ibrahim.wav",
-    "ibraah": "files/ibrahim.wav",
-    "ibrah": "files/ibrahim.wav",
     "ibrahim": "files/ibrahim.wav",
-    "adams": "files/ibrahim.wav",
     "bot": "files/bwm.mp3",
     "bwm": "files/bwm.mp3",
-    "xmd": "files/bwm.mp3",
-    "bmw": "files/bwm.mp3",
-    "md": "files/bwm.mp3",
-    "whatsapp bot": "files/bwm.mp3",
-    "bmw md": "files/bwm.mp3",
     "evening": "files/goodevening.wav",
-    "goodevening": "files/goodevening.wav",
     "darling": "files/darling.wav",
     "dear": "files/darling.wav",
     "honey": "files/darling.wav",
     "beb": "files/darling.wav",
-    "mpenzi": "files/darling.wav",
     "afternoon": "files/goodafternoon.wav",
     "jion": "files/goodafternoon.wav",
     "kaka": "files/kaka.wav",
     "bro": "files/morio.mp3",
-    "ndugu": "files/kaka.wav",
     "morio": "files/morio.mp3",
-    "mzee": "files/morio.mp3",
-    "kijina": "files/mkuu.wav",
-    "mkuu": "files/mkuu.wav",
-     "ozah": "files/mkuu.wav",
-     "ozaah": "files/mkuu.wav",
-    "oyaah": "files/mkuu.wav",
-    "oyah": "files/mkuu.wav",
-
-
-
-
-
-    
-
 };
 
-// Utility to get audio file path for a message
+// Utility to get the audio file path for a message
 const getAudioForSentence = (sentence) => {
     const words = sentence.split(/\s+/); // Split sentence into words
     for (const word of words) {
-        const audioFile = audioMap[word.toLowerCase()]; // Check each word in sentence
-        if (audioFile) return audioFile; // Return first matched audio file
+        const audioFile = audioMap[word.toLowerCase()]; // Check each word in the sentence
+        if (audioFile) return audioFile; // Return the first matched audio file
     }
     return null; // Return null if no match
 };
@@ -1375,7 +1350,7 @@ if (conf.AUDIO_REPLY === "yes") {
 
             for (const message of messages) {
                 if (!message.key || !message.key.remoteJid) continue; // Ignore invalid messages
-                
+
                 const conversationText = message?.message?.conversation || "";
                 const audioFile = getAudioForSentence(conversationText);
 
@@ -1388,7 +1363,7 @@ if (conf.AUDIO_REPLY === "yes") {
                         await zk.sendMessage(message.key.remoteJid, {
                             audio: { url: audioFile },
                             mimetype: "audio/mp4",
-                            ptt: true
+                            ptt: true, // Set to true for voice note style
                         });
 
                         console.log(`Audio reply sent: ${audioFile}`);
@@ -1407,7 +1382,6 @@ if (conf.AUDIO_REPLY === "yes") {
         }
     });
 }
-  
         
         /*// Required Libraries
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
