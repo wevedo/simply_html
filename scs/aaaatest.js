@@ -20,64 +20,95 @@ const fetchGitHubStats = async () => {
 
 // Button menu handler
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { repondre, nomAuteurMessage } = commandeOptions;
+    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
+    let coms = {};
+
+    // Organize commands by category
+    cm.map((com) => {
+        const categoryUpper = com.categorie.toUpperCase();
+        if (!coms[categoryUpper]) coms[categoryUpper] = [];
+        coms[categoryUpper].push(com.nomCom);
+    });
+
+    moment.tz.setDefault(s.TZ || "Africa/Nairobi");
+    const temps = moment().format("HH:mm:ss");
+    const date = moment().format("DD/MM/YYYY");
+    const hour = moment().hour();
+
+    const getRandomGreeting = (greetings) => greetings[Math.floor(Math.random() * greetings.length)];
+    let greeting = coolFonts.night;
+    let normalGreeting = normalCoolFonts.night;
+
+    if (hour >= 0 && hour <= 11) {
+        greeting = getRandomGreeting(coolFonts.morning);
+        normalGreeting = getRandomGreeting(normalCoolFonts.morning);
+    } else if (hour >= 12 && hour <= 16) {
+        greeting = getRandomGreeting(coolFonts.afternoon);
+        normalGreeting = getRandomGreeting(normalCoolFonts.afternoon);
+    } else if (hour >= 16 && hour <= 21) {
+        greeting = getRandomGreeting(coolFonts.evening);
+        normalGreeting = getRandomGreeting(normalCoolFonts.evening);
+    }
+
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
+    const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
+
+    // Buttons setup
     const buttons = [
-        { buttonId: "viewCommands", buttonText: { displayText: "📜 View Commands" }, type: 1 },
-        { buttonId: "ping", buttonText: { displayText: "📶 Ping" }, type: 1 },
-        { buttonId: "repo", buttonText: { displayText: "📂 Repository" }, type: 1 },
-        { buttonId: "channel", buttonText: { displayText: "📢 Channel" }, type: 1 }
+        {
+            buttonId: "channel_link",
+            buttonText: { displayText: "📣 Open Channel" },
+            type: 1,
+        },
+        {
+            buttonId: "repo_link",
+            buttonText: { displayText: "🔗 GitHub Repo" },
+            type: 1,
+        },
     ];
 
-    const caption = `
+    const buttonMessage = {
+        image: { url: randomImage },
+        caption: `
 ╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
-┃🙋‍♂️ Heyy: ${nomAuteurMessage}
-┃👥 Users: ${formattedTotalUsers}
-┃✨ Select an option below:
+┃🙋‍♀️ Heyyy!: ${nomAuteurMessage}
+┃💻 Owner: Ibrahim Adams
+┃📅 Date: ${date}
+┃⏰ Time: ${temps}
+┃👥 Bwm Users: ${formattedTotalUsers}
 ╰━━━╯
 
-If you don't see buttons, please type one of the options below:
-1️⃣ View Commands
-2️⃣ 📶 Ping
-3️⃣ 📂 Repository
-4️⃣ 📢 Channel
-`;
+${normalGreeting}
 
-    // Send the menu with buttons and fallback text
-    await zk.sendMessage(dest, {
-        text: caption,
-        buttons: buttons,
-        headerType: 1
-    });
-});
+${readmore}
+Tap one of the buttons below to open the channel or GitHub repo.
+`,
+        footer: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+        buttons,
+        headerType: 4,
+    };
 
-// Button response handler
-adams.on("button-click", async (dest, zk, buttonId) => {
     try {
-        switch (buttonId) {
-            case "viewCommands":
-                await zk.sendMessage(dest, { text: "📜 Here are the available commands:\n1. Command A\n2. Command B" });
-                break;
+        await zk.sendMessage(dest, buttonMessage);
 
-            case "ping":
-                const pingTime = Date.now();
-                await zk.sendMessage(dest, { text: `📶 *Ping*: ${pingTime}ms` });
-                break;
+        // Handle button actions
+        zk.on("message", async (msg) => {
+            const { buttonId } = msg;
 
-            case "repo":
-                await zk.sendMessage(dest, { text: "📂 Repository: https://github.com/Devibraah/BWM-XMD" });
-                break;
-
-            case "channel":
-                await zk.sendMessage(dest, { text: "📢 Channel: https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
-                break;
-
-            default:
-                await zk.sendMessage(dest, { text: "❌ Unknown button selected." });
-        }
+            if (buttonId === "channel_link") {
+                await zk.sendMessage(dest, {
+                    text: "📣 Here is the channel link:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                });
+            } else if (buttonId === "repo_link") {
+                await zk.sendMessage(dest, {
+                    text: "🔗 Here is the GitHub repository link:\nhttps://github.com/Devibraah/BWM-XMD",
+                });
+            }
+        });
     } catch (error) {
-        console.error("Error handling button response:", error);
+        console.error("Error while sending the menu with buttons:", error);
     }
 });
