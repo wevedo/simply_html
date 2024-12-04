@@ -31,8 +31,8 @@ const fetchGitHubStats = async () => {
 
 // Menu video URLs for Christmas
 const christmasMenuVideos = [
-    "https://files.catbox.moe/xyz123.mp4", // Add your video URL here
-    "https://files.catbox.moe/abc456.mp4", // Add more video URLs
+    "https://files.catbox.moe/ecsul7.mp4", // Add your video URL here
+    "https://files.catbox.moe/ecsul7.mp4", // Add more video URLs
 ];
 
 // Function to determine MIME type
