@@ -6,7 +6,7 @@ const s = require(__dirname + "/../config");
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
 
-// Fonts for greetings
+// Cool fonts for greetings (used in both Christmas and Normal menus)
 const coolFonts = {
     morning: ["🌄 🎅 𝑹𝒊𝒔𝒆 & 𝑺𝒉𝒊𝒏𝒆 🎁"],
     afternoon: ["☀️ 🎅 𝐆𝐨𝐨𝐝 𝐀𝐟𝐭𝐞𝐫𝐧𝐨𝐨𝐧 🎁"],
@@ -29,33 +29,21 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Function to send dynamic menu
-const sendMenu = async (zk, dest, nomAuteurMessage, commandList, greeting, totalUsers) => {
-    const date = moment().format("DD/MM/YYYY");
-    const temps = moment().format("HH:mm:ss");
-    await zk.sendMessage(dest, {
-        text: `
-╭━━━╮ 🎄 *𝐁𝐖𝐌 𝐗𝐌𝐃* 🎄
-┃💻 Owner: Ibrahim Adams
-┃📅 Date: ${date}
-┃⏰ Time: ${temps}
-┃👥 BWM Users: ${totalUsers}
-╰━━━╯
+// Menu video URLs for Christmas
+const christmasMenuVideos = [
+    "https://files.catbox.moe/xyz123.mp4", // Add your video URL here
+    "https://files.catbox.moe/abc456.mp4", // Add more video URLs
+];
 
-${greeting}
-
-Reply with the number:
-1.0 - Commands by Category
-2.0 - Bot Repository Info
-3.0 - WhatsApp Channel
-`,
-    });
+// Function to determine MIME type
+const getMimeType = (url) => {
+    return url.endsWith(".mp4") ? "video/mp4" : "audio/mpeg";
 };
 
 // Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { nomAuteurMessage } = commandeOptions;
-    const { cm } = require(__dirname + "/../Ibrahim/adams");
+    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
     // Organize commands by category
@@ -65,80 +53,77 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         coms[categoryUpper].push(com.nomCom);
     });
 
-    const { totalUsers } = await fetchGitHubStats();
+    moment.tz.setDefault(s.TZ || "Africa/Nairobi");
+    const temps = moment().format("HH:mm:ss");
+    const date = moment().format("DD/MM/YYYY");
     const hour = moment().hour();
-    const greeting =
-        hour < 12
-            ? coolFonts.morning[0]
-            : hour < 18
-            ? coolFonts.afternoon[0]
-            : hour < 22
-            ? coolFonts.evening[0]
-            : coolFonts.night[0];
 
-    // Generate the command list
+    // Greeting logic
+    const getRandomGreeting = (greetings) => greetings[Math.floor(Math.random() * greetings.length)];
+    let greeting = coolFonts.night;
+
+    // Set greeting based on time
+    if (hour >= 0 && hour <= 11) {
+        greeting = getRandomGreeting(coolFonts.morning);
+    } else if (hour >= 12 && hour <= 16) {
+        greeting = getRandomGreeting(coolFonts.afternoon);
+    } else if (hour >= 16 && hour <= 21) {
+        greeting = getRandomGreeting(coolFonts.evening);
+    }
+
+    const { totalUsers } = await fetchGitHubStats();
+    const formattedTotalUsers = totalUsers.toLocaleString();
+
+    // Prepare command list for caption
     let commandList = "";
-    Object.keys(coms)
-        .sort()
-        .forEach((cat) => {
-            commandList += `\n🔸🔹 *${cat}*:\n`;
-            coms[cat].forEach((cmd) => {
-                commandList += `  - ${cmd}\n`;
-            });
+    const sortedCategories = Object.keys(coms).sort();
+    sortedCategories.forEach((cat) => {
+        commandList += `\n🔸🔹 *${cat}*:\n`;
+        coms[cat].forEach((cmd) => {
+            commandList += `  - ${cmd}\n`;
         });
+    });
 
-    await sendMenu(zk, dest, nomAuteurMessage, commandList, greeting, totalUsers);
-});
+    // Randomly select a video
+    const randomChristmasVideo = christmasMenuVideos[Math.floor(Math.random() * christmasMenuVideos.length)];
 
-// Reply handler for numbers
-adams({ replyType: true }, async (dest, zk, commandeOptions) => {
-    const { message, nomAuteurMessage } = commandeOptions;
-    const responseText = message.body.trim();
-
-    if (responseText === "1.0") {
-        // Commands by Category
-        const { cm } = require(__dirname + "/../Ibrahim/adams");
-        let coms = {};
-
-        cm.map((com) => {
-            const categoryUpper = com.categorie.toUpperCase();
-            if (!coms[categoryUpper]) coms[categoryUpper] = [];
-            coms[categoryUpper].push(com.nomCom);
-        });
-
-        let commandList = "";
-        Object.keys(coms)
-            .sort()
-            .forEach((cat) => {
-                commandList += `\n🔸🔹 *${cat}*:\n`;
-                coms[cat].forEach((cmd) => {
-                    commandList += `  - ${cmd}\n`;
-                });
-            });
-
-        await zk.sendMessage(dest, { text: `📋 *Commands by Category*:\n${commandList}` });
-    } else if (responseText === "2.0") {
-        // Bot Repository Info
-        const { forks, stars } = await fetchGitHubStats();
+    try {
+        // Send Christmas menu with greeting and video
         await zk.sendMessage(dest, {
-            text: `
-📦 *BWM XMD Repository Info*
-⭐ Stars: ${stars}
-🍴 Forks: ${forks}
-🔗 [GitHub Repo](https://github.com/Devibraah/BWM-XMD)
-            `,
+            image: { url: "https://files.catbox.moe/jsazt2.webp" }, // Replace with your Christmas image URL
+            caption: `
+╭━━━╮ 🎄 *𝐁𝐖𝐌 𝐗𝐌𝐃* 🎄
+┃💻 Owner: Ibrahim Adams
+┃📅 Date: ${date}
+┃⏰ Time: ${temps}
+┃👥 Bwm Users: ${formattedTotalUsers}
+╰━━━╯
+
+${greeting}
+
+🎥 *Special Video Below:* 
+`,
         });
-    } else if (responseText === "3.0") {
-        // WhatsApp Channel
+
+        // Send the video
         await zk.sendMessage(dest, {
-            text: `
-📢 *WhatsApp Channel Info*
-Join our channel for updates and more:
-🔗 [WhatsApp Channel](https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y)
-            `,
+            video: { url: randomChristmasVideo },
+            caption: `
+🎄✨ Merry Christmas, ${nomAuteurMessage} ✨🎄
+
+${readmore}
+${commandList}
+`,
+            mimetype: getMimeType(randomChristmasVideo),
         });
-    } else {
-        // Invalid Response
-        await zk.sendMessage(dest, { text: `❌ Invalid option! Please reply with a valid number.` });
+
+        // Play Christmas audio
+        await zk.sendMessage(dest, {
+            audio: { url: "https://files.catbox.moe/rtnvlg.mp3" }, // Replace with Christmas audio URL
+            mimetype: getMimeType("https://files.catbox.moe/rtnvlg.mp3"),
+            ptt: true,
+        });
+    } catch (error) {
+        console.error("Error while sending the menu:", error);
     }
 });
