@@ -29,10 +29,10 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Menu video URLs for Christmas
-const christmasMenuVideos = [
-    "https://files.catbox.moe/ecsul7.mp4", // Add your video URL here
-    "https://files.catbox.moe/ecsul7.mp4", // Add more video URLs
+// Menu GIF URLs for Christmas
+const christmasMenuGifs = [
+    "https://files.catbox.moe/ecsul7.mp4", // You can replace with a GIF URL instead of video URL
+    "https://files.catbox.moe/ecsul7.mp4", // Add more GIF URLs
 ];
 
 // Function to determine MIME type
@@ -84,11 +84,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         });
     });
 
-    // Randomly select a video
-    const randomChristmasVideo = christmasMenuVideos[Math.floor(Math.random() * christmasMenuVideos.length)];
+    // Randomly select a GIF (instead of a video)
+    const randomChristmasGif = christmasMenuGifs[Math.floor(Math.random() * christmasMenuGifs.length)];
 
     try {
-        // Send Christmas menu with greeting, video and image
+        // Send the image with the GIF in the caption (both in one message)
         await zk.sendMessage(dest, {
             image: { url: "https://files.catbox.moe/jsazt2.webp" }, // Replace with your Christmas image URL
             caption: `
@@ -101,22 +101,26 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
 ${greeting}
 
-🎥 *Special Video Below:* 
+🎥 *Special GIF Below:* 
 ${readmore}
+
+*Commands:*
 ${commandList}
+
+GIF Link: ${randomChristmasGif}
 `,
         });
 
-        // Send the video as part of the message
+        // Send the GIF (this will be displayed in the same message)
         await zk.sendMessage(dest, {
-            video: { url: randomChristmasVideo },
+            video: { url: randomChristmasGif },
             caption: `
 🎄✨ Merry Christmas, ${nomAuteurMessage} ✨🎄
 
 ${readmore}
 ${commandList}
 `,
-            mimetype: getMimeType(randomChristmasVideo),
+            mimetype: "video/mp4", // If it's an MP4 or GIF, set the appropriate MIME type
         });
 
         // Play Christmas audio
