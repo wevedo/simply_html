@@ -1,26 +1,70 @@
 const { adams } = require("../Ibrahim/adams");
+const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
+const os = require("os");
 const moment = require("moment-timezone");
-const axios = require("axios");
+const axios = require('axios');
 const s = require(__dirname + "/../config");
 
-// Function to fetch GitHub stats
+const more = String.fromCharCode(8206);
+const readmore = more.repeat(4001);
+const BaseUrl = process.env.GITHUB_GIT;
+const adamsapikey = process.env.BOT_OWNER;
+const runtime = function (seconds) { 
+    seconds = Number(seconds); 
+    var d = Math.floor(seconds / (3600 * 24)); 
+    var h = Math.floor((seconds % (3600 * 24)) / 3600); 
+    var m = Math.floor((seconds % 3600) / 60); 
+    var s = Math.floor(seconds % 60); 
+    var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " d, ") : ""; 
+    var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " h, ") : ""; 
+    var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " m, ") : ""; 
+    var sDisplay = s > 0 ? s + (s == 1 ? " second" : " s") : ""; 
+    return dDisplay + hDisplay + mDisplay + sDisplay; 
+};
+
+// GitHub repo data function
 const fetchGitHubStats = async () => {
     try {
-        const repo = "Devibraah/BWM-XMD";
+        const repo = 'Devibraah/BWM-XMD';
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const forks = response.data.forks_count || 0;
-        const stars = response.data.stargazers_count || 0;
+        const forks = response.data.forks_count;
+        const stars = response.data.stargazers_count;
         const totalUsers = (forks * 2) + (stars * 2);
         return { forks, stars, totalUsers };
     } catch (error) {
         console.error("Error fetching GitHub stats:", error);
-        return { forks: 0, stars: 0, totalUsers: 0 };
+        return { forks: 0, stars: 0, totalUsers: 0 }; 
     }
 };
 
-// Button menu handler
+const audioUrls = [
+    "https://files.catbox.moe/fm0rvl.mp3",
+    "https://files.catbox.moe/demlei.mp3",
+    "https://files.catbox.moe/3ka4td.m4a",
+    "https://files.catbox.moe/zm8edu.m4a",
+    "https://files.catbox.moe/6ztgwg.mp3"
+];
+
+// Array of menu image URLs
+const menuImages = [
+    "https://files.catbox.moe/h2ydge.jpg",
+    "https://files.catbox.moe/0xa925.jpg",
+    "https://files.catbox.moe/k13s7u.jpg"
+];
+
+// Function to get a random image for the menu
+const getRandomMenuImage = () => {
+    return menuImages[Math.floor(Math.random() * menuImages.length)];
+};
+
+// Function to determine the MIME type based on the file extension
+const getMimeType = (url) => {
+    return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
+};
+
+// New menu for number-based replies
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { repondre, nomAuteurMessage, body } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
@@ -31,84 +75,73 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         coms[categoryUpper].push(com.nomCom);
     });
 
-    moment.tz.setDefault(s.TZ || "Africa/Nairobi");
-    const temps = moment().format("HH:mm:ss");
-    const date = moment().format("DD/MM/YYYY");
-    const hour = moment().hour();
+    const sortedCategories = Object.keys(coms).sort();
+    let commandList = "";
 
-    const getRandomGreeting = (greetings) => greetings[Math.floor(Math.random() * greetings.length)];
-    let greeting = coolFonts.night;
-    let normalGreeting = normalCoolFonts.night;
+    // Prepare command list
+    sortedCategories.forEach((cat) => {
+        commandList += `\n🔸🔹 *${cat}*:\n`;
+        coms[cat].forEach((cmd) => {
+            commandList += `  - ${cmd}\n`;
+        });
+    });
 
-    if (hour >= 0 && hour <= 11) {
-        greeting = getRandomGreeting(coolFonts.morning);
-        normalGreeting = getRandomGreeting(normalCoolFonts.morning);
-    } else if (hour >= 12 && hour <= 16) {
-        greeting = getRandomGreeting(coolFonts.afternoon);
-        normalGreeting = getRandomGreeting(normalCoolFonts.afternoon);
-    } else if (hour >= 16 && hour <= 21) {
-        greeting = getRandomGreeting(coolFonts.evening);
-        normalGreeting = getRandomGreeting(normalCoolFonts.evening);
-    }
-
-    const { totalUsers } = await fetchGitHubStats();
-    const formattedTotalUsers = totalUsers.toLocaleString();
-
-    const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
-
-    // Buttons setup
-    const buttons = [
-        {
-            buttonId: "channel_link",
-            buttonText: { displayText: "📣 Open Channel" },
-            type: 1,
-        },
-        {
-            buttonId: "repo_link",
-            buttonText: { displayText: "🔗 GitHub Repo" },
-            type: 1,
-        },
-    ];
-
-    const buttonMessage = {
-        image: { url: randomImage },
-        caption: `
-╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
-┃🙋‍♀️ Heyyy!: ${nomAuteurMessage}
-┃💻 Owner: Ibrahim Adams
-┃📅 Date: ${date}
-┃⏰ Time: ${temps}
-┃👥 Bwm Users: ${formattedTotalUsers}
+    // Define responses based on the reply body
+    try {
+        if (body.trim() === "1.0") {
+            // Display commands in categories
+            await zk.sendMessage(dest, {
+                text: `
+╭━━━╮ *𝐁𝐖𝐌 𝐂𝐨𝐦𝐦𝐚𝐧𝐝𝐬*
+┃👥 User: ${nomAuteurMessage}
 ╰━━━╯
 
-${normalGreeting}
-
-${readmore}
-Tap one of the buttons below to open the channel or GitHub repo.
+*Commands by Category:*
+${commandList}
 `,
-        footer: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-        buttons,
-        headerType: 4,
-    };
+            });
+        } else if (body.trim() === "2.0") {
+            // Display bot's GitHub repository
+            await zk.sendMessage(dest, {
+                text: `
+╭━━━╮ *𝐁𝐖𝐌 𝐆𝐢𝐭𝐇𝐮𝐛 𝐑𝐞𝐩𝐨*
+┃👥 User: ${nomAuteurMessage}
+╰━━━╯
 
-    try {
-        await zk.sendMessage(dest, buttonMessage);
+📂 *Repository*: [BWM XMD GitHub](https://github.com/Devibraah/BWM-XMD)
+📈 *Description*: Stay updated with all the bot’s features!
+`,
+            });
+        } else if (body.trim() === "3.0") {
+            // Display WhatsApp channel link
+            await zk.sendMessage(dest, {
+                text: `
+╭━━━╮ *𝐖𝐡𝐚𝐭𝐬𝐀𝐩𝐩 𝐂𝐡𝐚𝐧𝐧𝐞𝐥*
+┃👥 User: ${nomAuteurMessage}
+╰━━━╯
 
-        // Handle button actions
-        zk.on("message", async (msg) => {
-            const { buttonId } = msg;
+🎉 *Join the Channel*: 
+[WhatsApp Channel](https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y)
+Stay updated with announcements and features!
+`,
+            });
+        } else {
+            // Invalid response
+            await zk.sendMessage(dest, {
+                text: `
+╭━━━╮ *𝐁𝐖𝐌 𝐌𝐞𝐧𝐮*
+┃👥 User: ${nomAuteurMessage}
+╰━━━╯
 
-            if (buttonId === "channel_link") {
-                await zk.sendMessage(dest, {
-                    text: "📣 Here is the channel link:\nhttps://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                });
-            } else if (buttonId === "repo_link") {
-                await zk.sendMessage(dest, {
-                    text: "🔗 Here is the GitHub repository link:\nhttps://github.com/Devibraah/BWM-XMD",
-                });
-            }
-        });
+*Invalid option!*
+Please reply with one of the following:
+1️⃣ *1.0* - View commands by category.
+2️⃣ *2.0* - View the bot's GitHub repository.
+3️⃣ *3.0* - Get the WhatsApp channel link.
+`,
+            });
+        }
     } catch (error) {
-        console.error("Error while sending the menu with buttons:", error);
+        console.error("Error processing menu reply:", error);
     }
 });
