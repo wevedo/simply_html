@@ -62,8 +62,8 @@ const getMimeType = (url) => {
     return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
 };
 
-// New menu for number-based replies
-adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+// New menu for nuber-based replies
+adams({ nomCom: "men", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { repondre, nomAuteurMessage, body } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
