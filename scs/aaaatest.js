@@ -88,7 +88,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const randomChristmasVideo = christmasMenuVideos[Math.floor(Math.random() * christmasMenuVideos.length)];
 
     try {
-        // Send Christmas menu with greeting and video
+        // Send Christmas menu with greeting, video and image
         await zk.sendMessage(dest, {
             image: { url: "https://files.catbox.moe/jsazt2.webp" }, // Replace with your Christmas image URL
             caption: `
@@ -102,10 +102,12 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ${greeting}
 
 🎥 *Special Video Below:* 
+${readmore}
+${commandList}
 `,
         });
 
-        // Send the video
+        // Send the video as part of the message
         await zk.sendMessage(dest, {
             video: { url: randomChristmasVideo },
             caption: `
