@@ -123,62 +123,49 @@ async function authentification() {
     }
 }
 authentification();
-const store = baileys_1.makeInMemoryStore({
+const store = (0, baileys_1.makeInMemoryStore)({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
-
 setTimeout(() => {
-    authentification();
-
     async function main() {
-        try {
-            const { version, isLatest } = await baileys_1.fetchLatestBaileysVersion();
-            const { state, saveCreds } = await baileys_1.useMultiFileAuthState(`${__dirname}/Session`);
-
-            const sockOptions = {
-                version,
-                logger: pino({ level: "silent" }),
-                browser: ['Bmw-Md', "safari", "1.0.0"],
-                printQRInTerminal: false,
-                fireInitQueries: false,
-                shouldSyncHistoryMessage: true,
-                downloadHistory: true,
-                syncFullHistory: true,
-                generateHighQualityLinkPreview: true,
-                markOnlineOnConnect: false,
-                keepAliveIntervalMs: 30_000,
-                auth: {
-                    creds: state.creds,
-                    keys: baileys_1.makeCacheableSignalKeyStore(state.keys, logger),
-                },
-                getMessage: async (key) => {
-                    if (store) {
-                        const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
-                        return msg?.message || undefined;
-                    }
-                    return {
-                        conversation: 'An Error Occurred, Repeat Command!',
-                    };
-                },
-            };
-
-            const zk = baileys_1.default(sockOptions);
-            store.bind(zk.ev);
-
-            // Additional setup or event handling can go here
-        } catch (error) {
-            console.error("Error initializing main function:", error.message);
-        }
-    }
-
-    main();
-}, 0);
+        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
+        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Jsonfile");
+        const sockOptions = {
+            version,
+            logger: pino({ level: "silent" }),
+            browser: ['Bmw-Md', "safari", "1.0.0"],
+            printQRInTerminal: true,
+            fireInitQueries: false,
+            shouldSyncHistoryMessage: true,
+            downloadHistory: true,
+            syncFullHistory: true,
+            generateHighQualityLinkPreview: true,
+            markOnlineOnConnect: false,
+            keepAliveIntervalMs: 30_000,
+            /* auth: state*/ auth: {
+                creds: state.creds,
+                /** caching makes the store faster to send/recv messages */
+                keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
+            },
+            //////////
+            getMessage: async (key) => {
+                if (store) {
+                    const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
+                    return msg.message || undefined;
+                }
+                return {
+                    conversation: 'An Error Occurred, Repeat Command!'
+                };
+            }
+            ///////
+        };
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+  setInterval(() => { store.writeToFile("store.json"); }, 3000);
+        zk.ev.on("messages.upsert", async (m) => {
 
 
-     
         function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
