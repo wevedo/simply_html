@@ -79,7 +79,51 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
- authentification();
+ 
+function atbverifierEtatJid(jid) {
+    if (!jid.endsWith('@s.whatsapp.net')) {
+        console.error('Invalid JID format:', jid);
+        return false;
+    }
+    console.log('JID verified:', jid);
+    return true;
+}
+
+const zlib = require('zlib');
+
+async function authentification() {
+    try {
+        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
+            console.log("Session connected...");
+            // Split the session string into header and Base64 data
+            const [header, b64data] = conf.session.split(';;;'); 
+
+            // Validate the session format
+            if (header === "BWM-XMD" && b64data) {
+                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
+                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
+                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
+            } else {
+                throw new Error("Invalid session format");
+            }
+        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
+            console.log("Updating existing session...");
+            const [header, b64data] = conf.session.split(';;;'); 
+
+            if (header === "BWM-XMD" && b64data) {
+                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
+                let decompressedData = zlib.gunzipSync(compressedData);
+                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
+            } else {
+                throw new Error("Invalid session format");
+            }
+        }
+    } catch (e) {
+        console.log("Session Invalid: " + e.message);
+        return;
+    }
+}
+authentification();
 
 const store = baileys_1.makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" }),
@@ -133,50 +177,6 @@ setTimeout(() => {
 
     main(); // Start the main bot logic
 });
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Invalid JID format:', jid);
-        return false;
-    }
-    console.log('JID verified:', jid);
-    return true;
-}
-
-const zlib = require('zlib');
-
-async function authentification() {
-    try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Session connected...");
-            // Split the session string into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            // Validate the session format
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
-            } else {
-                throw new Error("Invalid session format");
-            }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
-            }
-        }
-    } catch (e) {
-        console.log("Session Invalid: " + e.message);
-        return;
-    }
-}
-
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
