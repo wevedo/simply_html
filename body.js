@@ -44,21 +44,30 @@ const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter')
 const { verifierEtatJid , recupererActionJid } = require("./lib/antilien");
 let evt = require(__dirname + "/Ibrahim/adams");
 const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./lib/banUser");
+// Global Error Handling
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Optional: Exit process if needed
+    // process.exit(1);
+});
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // Optional: Exit process if needed
+    // process.exit(1);
+});
 
-async function rateLimitedSendMessage(zk, remoteJid, message) {
-    try {
-        await delay(2000); // Add a 2-second delay to reduce request frequency
-        await zk.sendMessage(remoteJid, message);
-    } catch (err) {
-        console.error("Error sending message:", err.message);
-        if (err.output?.statusCode === 429) {
-            console.log("Rate limit hit, waiting 10 seconds...");
-            await delay(10000); // Wait 10 seconds before retrying
-        }
+// Enhanced error handling for Baileys
+zk.ev.on('error', (error) => {
+    if (error.output?.statusCode === 429 || error.message.includes('rate-overlimit')) {
+        console.warn('Rate limit exceeded. Delaying requests...');
+        setTimeout(() => {
+            console.log('Resuming operations after rate limit delay...');
+        }, 10000); // 10-second delay
+    } else {
+        console.error('Baileys Error:', error);
     }
-}
+});
 
 const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./lib/banGroup");
 const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = require("./lib/onlyAdmin");
@@ -79,23 +88,38 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
-/*const AutoSaveContacts = require("./scs/Auto_code");
+function start() {
+  console.log("Starting the process...");
 
-// Use the existing store object if it already exists
-if (!global.store) {
-    global.store = { contacts: {} }; // Ensure `store` is globally accessible and has a `contacts` property
+  // Add any custom logic here
+  // For demonstration, we will just log a message
+
+  // Simulate an error or an event that should trigger a restart
+  setTimeout(() => {
+    console.log("Simulating process...");
+
+    // Simulate an error that forces a restart
+    restart();
+  }, 5000); // Simulate after 5 seconds
+
+  // Restart the process after the specified time
+  function restart() {
+    console.log("Process on course...");
+
+    // Clear any previous restart timeout
+    if (restartTimeout) {
+      clearTimeout(restartTimeout);
+    }
+
+    // Restart the process by calling the start function again
+    restartTimeout = setTimeout(() => {
+      start();
+    }, 1000); // Restart after 1 second delay
+  }
 }
 
-// Initialize the bot
-const zk = {}; // Replace with your WhatsApp bot instance
-
-// Initialize AutoSaveContacts
-const autoSaveContacts = new AutoSaveContacts(zk, global.store);
-
-// Activate the listeners
-autoSaveContacts.setupListeners();
-*/
-
+// Start the process
+start();
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
         console.error('Invalid JID format:', jid);
