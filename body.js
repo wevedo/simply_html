@@ -78,7 +78,6 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
-let restartTimeout;
  
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
@@ -124,7 +123,6 @@ async function authentification() {
     }
 }
 authentification();
-
 const store = baileys_1.makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
@@ -134,14 +132,14 @@ setTimeout(() => {
 
     async function main() {
         try {
-            const { version } = await baileys_1.fetchLatestBaileysVersion();
-            const { state, saveCreds } = await baileys_1.useMultiFileAuthState(__dirname + "/Session");
+            const { version, isLatest } = await baileys_1.fetchLatestBaileysVersion();
+            const { state, saveCreds } = await baileys_1.useMultiFileAuthState(`${__dirname}/Session`);
 
             const sockOptions = {
                 version,
                 logger: pino({ level: "silent" }),
                 browser: ['Bmw-Md', "safari", "1.0.0"],
-                printQRInTerminal: false, // Disable QR code output in terminal
+                printQRInTerminal: false,
                 fireInitQueries: false,
                 shouldSyncHistoryMessage: true,
                 downloadHistory: true,
@@ -154,29 +152,27 @@ setTimeout(() => {
                     keys: baileys_1.makeCacheableSignalKeyStore(state.keys, logger),
                 },
                 getMessage: async (key) => {
-                    try {
-                        if (store) {
-                            const msg = await store.loadMessage(key.remoteJid, key.id);
-                            return msg?.message || undefined;
-                        }
-                    } catch {
-                        return { conversation: "An Error Occurred, Repeat Command!" };
+                    if (store) {
+                        const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
+                        return msg?.message || undefined;
                     }
+                    return {
+                        conversation: 'An Error Occurred, Repeat Command!',
+                    };
                 },
             };
 
-            const sock = baileys_1.default(sockOptions);
-            store.bind(sock.ev);
+            const zk = baileys_1.default(sockOptions);
+            store.bind(zk.ev);
 
-            // Additional logic or silent handlers can go here
-
-        } catch {
-            // Handle any initialization errors silently
+            // Additional setup or event handling can go here
+        } catch (error) {
+            console.error("Error initializing main function:", error.message);
         }
     }
 
-    main(); // Start the main bot logic
-});
+    main();
+}, 0);
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
