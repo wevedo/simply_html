@@ -2432,22 +2432,21 @@ zk.ev.on('group-participants.update', async (group) => {
                     console.log('redemarrage sur le coup de l\'erreur  ',raisonDeconnexion) ;         
                     //repondre("* Redémarrage du bot en cour ...*");
 
-                                const {exec}=require("child_process") ;
+                                const { exec } = require("child_process");
 
-                                exec("pm2 restart all");            
-                }
-                // sleep(50000)
-                console.log("hum " + connection);
-                main(); //console.log(session)
-            }
-        });
-        //fin événement connexion
-        //événement authentification 
-        zk.ev.on("creds.update", saveCreds);
-        //fin événement authentification 
-        //
-        /** ************* */
-        //fonctions utiles
+exec("pm2 restart all");
+
+// Ensure this line is placed in the correct block or context
+console.log("hum " + connection);
+
+main(); // Uncomment this line if you need the `main` function to run
+// console.log(session);
+
+// Event: Connection
+zk.ev.on("creds.update", saveCreds);
+
+// Additional helper functions (if any) can be placed here
+// ...
         zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
             let quoted = message.msg ? message.msg : message;
             let mime = (message.msg || message).mimetype || '';
