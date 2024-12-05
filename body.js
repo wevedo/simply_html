@@ -2406,11 +2406,41 @@ zk.ev.on('group-participants.update', async (group) => {
             } catch (deleteError) {
                 console.error(`Failed to delete message ${messageId}:`, deleteError);
             }
-        }, 300000); // 5 minutes
+        }, 100000); // 5 minutes
 
     } catch (error) {
         console.error('Error sending message:', error);
     }
+} else if (connection === "close") {
+    let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
+    if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
+        console.log('Session id error, rescan again...');
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionClosed) {
+        console.log('!!! connexion fermée, reconnexion en cours ...');
+        main();
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionLost) {
+try {
+    // Send the message
+    const sentMessage = await zk.sendMessage(zk.user.id, { text: cmsg });
+
+    // Extract message details for deletion
+    const messageId = sentMessage.key.id;
+    const remoteJid = sentMessage.key.remoteJid;
+
+    // Schedule message deletion after 5 minutes
+    setTimeout(async () => {
+        try {
+            await zk.deleteMessage(remoteJid, messageId);
+            console.log(`Message ${messageId} deleted successfully.`);
+        } catch (deleteError) {
+            console.error(`Failed to delete message ${messageId}:`, deleteError);
+        }
+    }, 300000); // 5 minutes
+
+} catch (error) {
+    console.error('Error sending message:', error);
+}
+
 } else if (connection === "close") {
     let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
     if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
@@ -2439,79 +2469,71 @@ zk.ev.on('group-participants.update', async (group) => {
 
 // Auth event listener
 zk.ev.on("creds.update", saveCreds);
-        zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
-            let quoted = message.msg ? message.msg : message;
-            let mime = (message.msg || message).mimetype || '';
-            let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
-            const stream = await (0, baileys_1.downloadContentFromMessage)(quoted, messageType);
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
-            }
-            let type = await FileType.fromBuffer(buffer);
-            let trueFileName = './' + filename + '.' + type.ext;
-            // save to file
-            await fs.writeFileSync(trueFileName, buffer);
-            return trueFileName;
-        };
 
+zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
+    let quoted = message.msg ? message.msg : message;
+    let mime = (message.msg || message).mimetype || '';
+    let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
+    const stream = await baileys_1.downloadContentFromMessage(quoted, messageType);
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+        buffer = Buffer.concat([buffer, chunk]);
+    }
+    let type = await FileType.fromBuffer(buffer);
+    let trueFileName = './' + filename + '.' + type.ext;
+    // save to file
+    await fs.writeFileSync(trueFileName, buffer);
+    return trueFileName;
+};
 
-        zk.awaitForMessage = async (options = {}) =>{
-            return new Promise((resolve, reject) => {
-                if (typeof options !== 'object') reject(new Error('Options must be an object'));
-                if (typeof options.sender !== 'string') reject(new Error('Sender must be a string'));
-                if (typeof options.chatJid !== 'string') reject(new Error('ChatJid must be a string'));
-                if (options.timeout && typeof options.timeout !== 'number') reject(new Error('Timeout must be a number'));
-                if (options.filter && typeof options.filter !== 'function') reject(new Error('Filter must be a function'));
-        
-                const timeout = options?.timeout || undefined;
-                const filter = options?.filter || (() => true);
-                let interval = undefined
-        
-                /**
-                 * 
-                 * @param {{messages: Baileys.proto.IWebMessageInfo[], type: Baileys.MessageUpsertType}} data 
-                 */
-                let listener = (data) => {
-                    let { type, messages } = data;
-                    if (type == "notify") {
-                        for (let message of messages) {
-                            const fromMe = message.key.fromMe;
-                            const chatId = message.key.remoteJid;
-                            const isGroup = chatId.endsWith('@g.us');
-                            const isStatus = chatId == 'status@broadcast';
-        
-                            const sender = fromMe ? zk.user.id.replace(/:.*@/g, '@') : (isGroup || isStatus) ? message.key.participant.replace(/:.*@/g, '@') : chatId;
-                            if (sender == options.sender && chatId == options.chatJid && filter(message)) {
-                                zk.ev.off('messages.upsert', listener);
-                                clearTimeout(interval);
-                                resolve(message);
-                            }
-                        }
+zk.awaitForMessage = async (options = {}) => {
+    return new Promise((resolve, reject) => {
+        if (typeof options !== 'object') reject(new Error('Options must be an object'));
+        if (typeof options.sender !== 'string') reject(new Error('Sender must be a string'));
+        if (typeof options.chatJid !== 'string') reject(new Error('ChatJid must be a string'));
+        if (options.timeout && typeof options.timeout !== 'number') reject(new Error('Timeout must be a number'));
+        if (options.filter && typeof options.filter !== 'function') reject(new Error('Filter must be a function'));
+
+        const timeout = options?.timeout || undefined;
+        const filter = options?.filter || (() => true);
+        let interval = undefined;
+
+        let listener = (data) => {
+            let { type, messages } = data;
+            if (type == "notify") {
+                for (let message of messages) {
+                    const fromMe = message.key.fromMe;
+                    const chatId = message.key.remoteJid;
+                    const isGroup = chatId.endsWith('@g.us');
+                    const isStatus = chatId == 'status@broadcast';
+
+                    const sender = fromMe ? zk.user.id.replace(/:.*@/g, '@') : (isGroup || isStatus) ? message.key.participant.replace(/:.*@/g, '@') : chatId;
+                    if (sender == options.sender && chatId == options.chatJid && filter(message)) {
+                        zk.ev.off('messages.upsert', listener);
+                        clearTimeout(interval);
+                        resolve(message);
                     }
                 }
-                zk.ev.on('messages.upsert', listener);
-                if (timeout) {
-                    interval = setTimeout(() => {
-                        zk.ev.off('messages.upsert', listener);
-                        reject(new Error('Timeout'));
-                    }, timeout);
-                }
-            });
+            }
+        };
+        zk.ev.on('messages.upsert', listener);
+        if (timeout) {
+            interval = setTimeout(() => {
+                zk.ev.off('messages.upsert', listener);
+                reject(new Error('Timeout'));
+            }, timeout);
         }
-
-
-
-        // fin fonctions utiles
-        /** ************* */
-        return zk;
-    }
-    let fichier = require.resolve(__filename);
-    fs.watchFile(fichier, () => {
-        fs.unwatchFile(fichier);
-        console.log(`mise à jour ${__filename}`);
-        delete require.cache[fichier];
-        require(fichier);
     });
-    main();
-}, 5000);
+};
+
+// Watch file for changes and reload
+let fichier = require.resolve(__filename);
+fs.watchFile(fichier, () => {
+    fs.unwatchFile(fichier);
+    console.log(`File updated: ${__filename}`);
+    delete require.cache[fichier];
+    require(fichier);
+});
+
+// Start the bot
+main();
