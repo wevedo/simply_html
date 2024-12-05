@@ -94,7 +94,7 @@ function start() {
 
   // Restart the process after the specified time
   function restart() {
-    console.log("Process on course...");
+    console.log("Bwm xmd is running well ✅");
 
     // Clear any previous restart timeout
     if (restartTimeout) {
@@ -2359,42 +2359,59 @@ zk.ev.on('group-participants.update', async (group) => {
 
                 await activateCrons();
                 
-                if((conf.DP).toLowerCase() === 'yes') {     
+                if ((conf.DP).toLowerCase() === 'yes') {     
+    let cmsg = `
+    ╔═════ ❖ •✦
+    ║   SYSTEM ACTIVE
+    ╚═════ ❖ •✦
+    ║ Prefix: [ ${prefixe} ]
+    ║ Mode: ${md}
+    ║ Version: 7.0.8
+    ║ Bot Name: BWM XMD
+    ║ Owner: Sir Ibrahim Adams
+    ╚═════ ❖ •✦
+    ╭───────────────━⊷
 
-                let cmsg =` ⁠⁠⁠⁠
-╔═════ ❖ •✦
-║   SYSTEM ACTIVE
-╚═════ ❖ •✦
-║ Prefix: [ ${prefixe} ]
-║ Mode: ${md}
-║ Version: 7.0.8
-║ Bot Name: BWM XMD
-║ Owner: Sir Ibrahim Adams
-╚═════ ❖ •✦
-╭───────────────━⊷
+    *Stay Updated in our channel*
+     
+    > https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
+    
+    *Heroku App Configuration*
+     
+    *Your Heroku App Name*
+    > ${herokuAppName}
+    
+    *Visit Heroku App*
+    > ${herokuAppLink}
+    
+    *Owner Number*
+    > ${botOwner}
+    
+    ╰───────────────━⊷
+    `;
 
-*Stay Updated in our channel*
- 
-> https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
+    try {
+        // Send the message and capture the sent message details
+        const sentMessage = await zk.sendMessage(zk.user.id, { text: cmsg });
 
-*Heroku App Configuration*
- 
-*Your Heroku App Name*
-> ${herokuAppName}
+        // Extract necessary details to delete the message later
+        const messageId = sentMessage.key.id;
+        const remoteJid = sentMessage.key.remoteJid;
 
-*Visit Heroku App*
-> ${herokuAppLink}
-
-*Owner Number*
-> ${botOwner}
-
-╰───────────────━⊷
-                
-                 `;
-                    
-                await zk.sendMessage(zk.user.id, { text: cmsg });
-                }
+        // Schedule deletion of the message after 5 minutes (300,000 ms)
+        setTimeout(async () => {
+            try {
+                await zk.deleteMessage(remoteJid, messageId);
+                console.log(`Message ${messageId} deleted successfully.`);
+            } catch (deleteError) {
+                console.error(`Failed to delete message ${messageId}:`, deleteError);
             }
+        }, 100000); // 5 minutes in milliseconds
+
+    } catch (sendError) {
+        console.error('Failed to send message:', sendError);
+    }
+}
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
                 if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
