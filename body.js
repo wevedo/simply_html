@@ -79,7 +79,6 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
-function start() {
  function start() {
   console.log("🚀 Starting the process...");
   console.log("🛠️ Initializing tasks...\n");
