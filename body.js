@@ -129,7 +129,7 @@ const store = (0, baileys_1.makeInMemoryStore)({
 setTimeout(() => {
     async function main() {
         const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
-        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Jsonfile");
+        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Session");
         const sockOptions = {
             version,
             logger: pino({ level: "silent" }),
