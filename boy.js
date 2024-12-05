@@ -44,30 +44,20 @@ const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter')
 const { verifierEtatJid , recupererActionJid } = require("./lib/antilien");
 let evt = require(__dirname + "/Ibrahim/adams");
 const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./lib/banUser");
-// Global Error Handling
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    // Optional: Exit process if needed
-    // process.exit(1);
-});
 
-process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
-    // Optional: Exit process if needed
-    // process.exit(1);
-});
-
-// Enhanced error handling for Baileys
-zk.ev.on('error', (error) => {
-    if (error.output?.statusCode === 429 || error.message.includes('rate-overlimit')) {
-        console.warn('Rate limit exceeded. Delaying requests...');
-        setTimeout(() => {
-            console.log('Resuming operations after rate limit delay...');
-        }, 10000); // 10-second delay
-    } else {
-        console.error('Baileys Error:', error);
+async function safeGroupMetadata(queryFunction, groupId) {
+    try {
+        return await queryFunction(groupId);
+    } catch (error) {
+        if (error instanceof Boom && error.output.payload.message === 'rate-overlimit') {
+            console.log('Rate limit hit. Retrying after 10 seconds...');
+            await new Promise(res => setTimeout(res, 10000)); // Delay
+            return await safeGroupMetadata(queryFunction, groupId); // Retry
+        } else {
+            throw error; // Rethrow for other errors
+        }
     }
-});
+}
 
 const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./lib/banGroup");
 const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = require("./lib/onlyAdmin");
