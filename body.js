@@ -79,7 +79,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
 function start() {
-  console.log("Bwm xmd running smoothly 🎡");
+  console.log("Bwm xmd is running smoothly 🎡");
 
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
