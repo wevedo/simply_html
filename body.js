@@ -2430,22 +2430,15 @@ zk.ev.on('group-participants.update', async (group) => {
         main();
     } else {
         console.log('Redémarrage sur le coup de l\'erreur ', raisonDeconnexion);         
-        const {exec}=require("child_process") ;
+        const { exec } = require("child_process");
+        exec("pm2 restart all");
+    }
+    console.log("Connection status: " + connection);
+    main();
+}
 
-                                exec("pm2 restart all");            
-                }
-                // sleep(50000)
-                console.log("hum " + connection);
-                main(); //console.log(session)
-            }
-        });
-        //fin événement connexion
-        //événement authentification 
-        zk.ev.on("creds.update", saveCreds);
-        //fin événement authentification 
-        //
-        /** ************* */
-        //fonctions utiles
+// Auth event listener
+zk.ev.on("creds.update", saveCreds);
         zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
             let quoted = message.msg ? message.msg : message;
             let mime = (message.msg || message).mimetype || '';
