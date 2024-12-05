@@ -79,37 +79,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
 function start() {
-  console.log("logs running smoothly 🎡");
+  console.log("Bwm xmd running smoothly 🎡");
 
-  // Add any custom logic here
-  // For demonstration, we will just log a message
-
-  // Simulate an error or an event that should trigger a restart
-  setTimeout(() => {
-    console.log("Simulating process...");
-
-    // Simulate an error that forces a restart
-    restart();
-  }, 5000); // Simulate after 5 seconds
-
-  // Restart the process after the specified time
-  function restart() {
-    console.log("Bwm xmd is running well ✅");
-
-    // Clear any previous restart timeout
-    if (restartTimeout) {
-      clearTimeout(restartTimeout);
-    }
-
-    // Restart the process by calling the start function again
-    restartTimeout = setTimeout(() => {
-      start();
-    }, 1000); // Restart after 1 second delay
-  }
-}
-
-// Start the process
-start();
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
         console.error('Invalid JID format:', jid);
@@ -2391,20 +2362,9 @@ zk.ev.on('group-participants.update', async (group) => {
     
  `;
                     
-                   // Send the message and capture the sent message's ID
-    const sentMessage = await zk.sendMessage(zk.user.id, { text: cmsg });
-
-    // Set a timeout to delete the message after 1 minute (60000ms)
-    setTimeout(async () => {
-        try {
-            // Delete the sent message using its key
-            await zk.sendMessage(zk.user.id, { delete: sentMessage.key });
-            console.log('STARTING_BOT_MESSAGE deleted successfully.');
-        } catch (error) {
-            console.error('Error deleting STARTING_BOT_MESSAGE:', error);
-        }
-    }, 60000);
-}
+                   await zk.sendMessage(zk.user.id, { text: cmsg });
+                }
+            }
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
                 if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
@@ -2432,21 +2392,22 @@ zk.ev.on('group-participants.update', async (group) => {
                     console.log('redemarrage sur le coup de l\'erreur  ',raisonDeconnexion) ;         
                     //repondre("* Redémarrage du bot en cour ...*");
 
-                                const { exec } = require("child_process");
+                                const {exec}=require("child_process") ;
 
-exec("pm2 restart all");
-
-// Ensure this line is placed in the correct block or context
-console.log("hum " + connection);
-
-main(); // Uncomment this line if you need the `main` function to run
-// console.log(session);
-
-// Event: Connection
-zk.ev.on("creds.update", saveCreds);
-
-// Additional helper functions (if any) can be placed here
-// ...
+                                exec("pm2 restart all");            
+                }
+                // sleep(50000)
+                console.log("hum " + connection);
+                main(); //console.log(session)
+            }
+        });
+        //fin événement connexion
+        //événement authentification 
+        zk.ev.on("creds.update", saveCreds);
+        //fin événement authentification 
+        //
+        /** ************* */
+        //fonctions utiles
         zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
             let quoted = message.msg ? message.msg : message;
             let mime = (message.msg || message).mimetype || '';
