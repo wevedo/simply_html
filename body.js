@@ -80,7 +80,43 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
 function start() {
-  console.log("Bwm xmd is running smoothly 🎡");
+ function start() {
+  console.log("🚀 Starting the process...");
+  console.log("🛠️ Initializing tasks...\n");
+
+  // Simulate process loop
+  processLoop();
+
+  // Main process logic
+  function processLoop() {
+    console.log("⚙️ Process running... ⏳");
+
+    // Simulate an ongoing process
+    setTimeout(() => {
+      const randomEvent = Math.random();
+
+      if (randomEvent < 0.8) {
+        console.log("✅ Task completed successfully! Moving to the next task...\n");
+        processLoop(); // Continue process
+      } else {
+        console.log("⚠️ An event occurred! Handling without restart... 🛡️\n");
+        handleEvent();
+      }
+    }, 3000); // Process interval (3 seconds)
+  }
+
+  // Handle events or errors gracefully
+  function handleEvent() {
+    console.log("🔧 Attempting to resolve the issue...");
+    setTimeout(() => {
+      console.log("🎉 Issue resolved! Resuming tasks...\n");
+      processLoop(); // Resume process
+    }, 2000); // Error handling duration (2 seconds)
+  }
+}
+
+// Start the enhanced process
+start();
 
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
