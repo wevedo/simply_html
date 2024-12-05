@@ -2329,40 +2329,40 @@ zk.ev.on('group-participants.update', async (group) => {
                 console.log("Commands Installation Completed ✅");
 
                 await activateCrons();
+                    if((conf.DP).toLowerCase() === 'yes') {     
+
+                let cmsg =` ⁠⁠⁠⁠
+╔═════ ❖ •✦
+║   SYSTEM ACTIVE
+╚═════ ❖ •✦
+║ Prefix: [ ${prefixe} ]
+║ Mode: ${md}
+║ Version: 7.0.8
+║ Bot Name: BWM XMD
+║ Owner: Sir Ibrahim Adams
+╚═════ ❖ •✦
+╭───────────────━⊷
+
+*Stay Updated in our channel*
+ 
+> https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
+
+*Heroku App Configuration*
+ 
+*Your Heroku App Name*
+> ${herokuAppName}
+
+*Visit Heroku App*
+> ${herokuAppLink}
+
+*Owner Number*
+> ${botOwner}
+
+╰───────────────━⊷
                 
-                if ((conf.DP).toLowerCase() === 'yes') {     
-    let cmsg = `
-    ╔═════ ❖ •✦
-    ║   SYSTEM ACTIVE
-    ╚═════ ❖ •✦
-    ║ Prefix: [ ${prefixe} ]
-    ║ Mode: ${md}
-    ║ Version: 7.0.8
-    ║ Bot Name: BWM XMD
-    ║ Owner: Sir Ibrahim Adams
-    ╚═════ ❖ •✦
-    ╭───────────────━⊷
-
-    *Stay Updated in our channel*
-     
-    > https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
-
-    *Heroku App Configuration*
-     
-    *Your Heroku App Name*
-    > ${herokuAppName}
-
-    *Visit Heroku App*
-    > ${herokuAppLink}
-
-    *Owner Number*
-    > ${botOwner}
-
-    ╰───────────────━⊷
-    
- `;
+                 `;
                     
-                   await zk.sendMessage(zk.user.id, { text: cmsg });
+                await zk.sendMessage(zk.user.id, { text: cmsg });
                 }
             }
             else if (connection == "close") {
