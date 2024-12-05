@@ -2391,35 +2391,6 @@ zk.ev.on('group-participants.update', async (group) => {
     `;
 
     try {
-        // Send the message
-        const sentMessage = await zk.sendMessage(zk.user.id, { text: cmsg });
-
-        // Extract message details for deletion
-        const messageId = sentMessage.key.id;
-        const remoteJid = sentMessage.key.remoteJid;
-
-        // Schedule message deletion after 5 minutes
-        setTimeout(async () => {
-            try {
-                await zk.deleteMessage(remoteJid, messageId);
-                console.log(`Message ${messageId} deleted successfully.`);
-            } catch (deleteError) {
-                console.error(`Failed to delete message ${messageId}:`, deleteError);
-            }
-        }, 100000); // 5 minutes
-
-    } catch (error) {
-        console.error('Error sending message:', error);
-    }
-} else if (connection === "close") {
-    let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
-    if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
-        console.log('Session id error, rescan again...');
-    } else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionClosed) {
-        console.log('!!! connexion fermée, reconnexion en cours ...');
-        main();
-    } else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionLost) {
-try {
     // Send the message
     const sentMessage = await zk.sendMessage(zk.user.id, { text: cmsg });
 
@@ -2470,6 +2441,7 @@ try {
 // Auth event listener
 zk.ev.on("creds.update", saveCreds);
 
+// Media download function
 zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
     let quoted = message.msg ? message.msg : message;
     let mime = (message.msg || message).mimetype || '';
@@ -2486,6 +2458,7 @@ zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension 
     return trueFileName;
 };
 
+// Await message handler
 zk.awaitForMessage = async (options = {}) => {
     return new Promise((resolve, reject) => {
         if (typeof options !== 'object') reject(new Error('Options must be an object'));
@@ -2526,7 +2499,7 @@ zk.awaitForMessage = async (options = {}) => {
     });
 };
 
-// Watch file for changes and reload
+// File watcher to auto-reload script
 let fichier = require.resolve(__filename);
 fs.watchFile(fichier, () => {
     fs.unwatchFile(fichier);
