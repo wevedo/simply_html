@@ -79,44 +79,60 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
- function start() {
-  console.log("🚀 Starting the process...");
-  console.log("🛠️ Initializing tasks...\n");
+ authentification();
 
-  // Simulate process loop
-  processLoop();
+const store = baileys_1.makeInMemoryStore({
+    logger: pino().child({ level: "silent", stream: "store" }),
+});
 
-  // Main process logic
-  function processLoop() {
-    console.log("⚙️ Process running... ⏳");
+setTimeout(() => {
+    authentification();
 
-    // Simulate an ongoing process
-    setTimeout(() => {
-      const randomEvent = Math.random();
+    async function main() {
+        try {
+            const { version } = await baileys_1.fetchLatestBaileysVersion();
+            const { state, saveCreds } = await baileys_1.useMultiFileAuthState(__dirname + "/Session");
 
-      if (randomEvent < 0.8) {
-        console.log("✅ Task completed successfully! Moving to the next task...\n");
-        processLoop(); // Continue process
-      } else {
-        console.log("⚠️ An event occurred! Handling without restart... 🛡️\n");
-        handleEvent();
-      }
-    }, 3000); // Process interval (3 seconds)
-  }
+            const sockOptions = {
+                version,
+                logger: pino({ level: "silent" }),
+                browser: ['Bmw-Md', "safari", "1.0.0"],
+                printQRInTerminal: false, // Disable QR code output in terminal
+                fireInitQueries: false,
+                shouldSyncHistoryMessage: true,
+                downloadHistory: true,
+                syncFullHistory: true,
+                generateHighQualityLinkPreview: true,
+                markOnlineOnConnect: false,
+                keepAliveIntervalMs: 30_000,
+                auth: {
+                    creds: state.creds,
+                    keys: baileys_1.makeCacheableSignalKeyStore(state.keys, logger),
+                },
+                getMessage: async (key) => {
+                    try {
+                        if (store) {
+                            const msg = await store.loadMessage(key.remoteJid, key.id);
+                            return msg?.message || undefined;
+                        }
+                    } catch {
+                        return { conversation: "An Error Occurred, Repeat Command!" };
+                    }
+                },
+            };
 
-  // Handle events or errors gracefully
-  function handleEvent() {
-    console.log("🔧 Attempting to resolve the issue...");
-    setTimeout(() => {
-      console.log("🎉 Issue resolved! Resuming tasks...\n");
-      processLoop(); // Resume process
-    }, 2000); // Error handling duration (2 seconds)
-  }
-}
+            const sock = baileys_1.default(sockOptions);
+            store.bind(sock.ev);
 
-// Start the enhanced process
-start();
+            // Additional logic or silent handlers can go here
 
+        } catch {
+            // Handle any initialization errors silently
+        }
+    }
+
+    main(); // Start the main bot logic
+});
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
         console.error('Invalid JID format:', jid);
@@ -160,44 +176,6 @@ async function authentification() {
         return;
     }
 }
-authentification();
-const store = (0, baileys_1.makeInMemoryStore)({
-    logger: pino().child({ level: "silent", stream: "store" }),
-});
-setTimeout(() => {
-authentification();
-    async function main() {
-        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
-        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Session");
-        const sockOptions = {
-            version,
-            logger: pino({ level: "silent" }),
-            browser: ['Bmw-Md', "safari", "1.0.0"],
-            printQRInTerminal: true,
-            fireInitQueries: false,
-            shouldSyncHistoryMessage: true,
-            downloadHistory: true,
-            syncFullHistory: true,
-            generateHighQualityLinkPreview: true,
-            markOnlineOnConnect: false,
-            keepAliveIntervalMs: 30_000,
-            /* auth: state*/ auth: {
-                creds: state.creds,
-                /** caching makes the store faster to send/recv messages */
-                keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
-            },
-            //////////
-            getMessage: async (key) => {
-                if (store) {
-                    const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
-                    return msg.message || undefined;
-                }
-                return {
-                    conversation: 'An Error Occurred, Repeat Command!'
-                };
-            }
-                };
-
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
