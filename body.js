@@ -263,7 +263,7 @@ Please try again later or leave a message. Cheers! 😊`
 });
 
      // Utility function for delay
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+//const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // Track the last reaction time to prevent overflow
 let lastReactionTime = 0;
