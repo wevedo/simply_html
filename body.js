@@ -79,7 +79,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 let restartTimeout;
 function start() {
-  console.log("Starting the process...");
+  console.log("logs running smoothly 🎡");
 
   // Add any custom logic here
   // For demonstration, we will just log a message
