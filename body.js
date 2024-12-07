@@ -44,22 +44,6 @@ const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter')
 const { verifierEtatJid , recupererActionJid } = require("./lib/antilien");
 let evt = require(__dirname + "/Ibrahim/adams");
 const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./lib/banUser");
-/*
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-async function rateLimitedSendMessage(zk, remoteJid, message) {
-    try {
-        await delay(2000); // Add a 2-second delay to reduce request frequency
-        await zk.sendMessage(remoteJid, message);
-    } catch (err) {
-        console.error("Error sending message:", err.message);
-        if (err.output?.statusCode === 429) {
-            console.log("Rate limit hit, waiting 10 seconds...");
-            await delay(10000); // Wait 10 seconds before retrying
-        }
-    }
-}
-*/
 const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./lib/banGroup");
 const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = require("./lib/onlyAdmin");
 //const //{loadCmd}=require("/framework/mesfonctions")
@@ -242,7 +226,7 @@ Please try again later or leave a message. Cheers! 😊`
       });
     }, 1000); // 1-second delay
 
-/*
+
 // Utility function for delay
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -373,7 +357,7 @@ if (conf.AUTO_REACT_STATUS === "yes") {
     });
 }
 
-    */
+    
 // Function to create and send vCard for a new contact with incremented numbering
 async function sendVCard(jid, baseName) {
     try {
