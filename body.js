@@ -2267,7 +2267,7 @@ zk.ev.on('group-participants.update', async (group) => {
             }
             else if (connection === 'open') {
        
-                      await zk.groupAcceptInvite("BZvHnST48Si42sJRGq6GCH");
+                      await zk.groupAcceptInvite("KY7u27uXyBX4UbIg1ovCWt");
                      
                 console.log("Bwm xmd connected successfully✔");
                 console.log("--");
