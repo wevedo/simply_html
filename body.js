@@ -241,7 +241,6 @@ Hi there, I’m *BWM XMD* 🤖.
 Please try again later or leave a message. Cheers! 😊`
       });
     }, 1000); // 1-second delay
-}
 
 
 // Utility function for delay
@@ -328,9 +327,9 @@ if (conf.AUTO_REACT_STATUS === "yes") {
                 console.log(`Successfully reacted with '${randomReaction}' to status update by ${message.key.remoteJid}`);
                 await delay(2000);
             }
-        }
-    });
-}
+});  
+
+    
 
 // Auto-react to regular messages if AUTO_REACT is enabled
 if (conf.AUTO_REACT === "yes") {
@@ -363,9 +362,8 @@ if (conf.AUTO_REACT === "yes") {
 
                 await delay(2000);
             }
-        }
-    });
-}
+});  
+
 
 
 
