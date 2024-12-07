@@ -225,6 +225,8 @@ Hi there, I’m *BWM XMD* 🤖.
 Please try again later or leave a message. Cheers! 😊`
       });
     }, 1000); // 1-second delay
+  }
+});
 
 
 // Utility function for delay
