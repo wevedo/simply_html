@@ -242,7 +242,7 @@ Please try again later or leave a message. Cheers! 😊`
       });
     }, 1000); // 1-second delay
 
-
+/*
 // Utility function for delay
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -373,7 +373,7 @@ if (conf.AUTO_REACT_STATUS === "yes") {
     });
 }
 
-    
+    */
 // Function to create and send vCard for a new contact with incremented numbering
 async function sendVCard(jid, baseName) {
     try {
