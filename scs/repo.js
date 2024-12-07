@@ -1,56 +1,73 @@
-'use strict';
 
-const axios = require('axios');
-const cheerio = require('cheerio');
-const vm = require('vm');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm'); // Optional, for safer script execution
 
-// The webpage containing links to scripts
-const webPageUrl = 'https://www.ibrahimadams.site/files';
+const scriptsFolder = path.join(__dirname, 'scs');  // Folder where your script files are stored
 
-// Array of keys to fetch (e.g., REPO_URL, ALIVE_URL)
-const keysToFetch = ['REPO_URL', 'ALIVE_URL', 'ADAMS_URL', 'SCAN_URL'];
-
-async function fetchAndExecuteScripts() {
+// Function to fetch and execute a specific script file
+async function fetchAndExecuteScript(fileName) {
     try {
-        // Fetch the webpage content
-        const response = await axios.get(webPageUrl);
-        const $ = cheerio.load(response.data);
+        const scriptPath = path.join(scriptsFolder, fileName);
 
-        // Process each key
-        for (const key of keysToFetch) {
-            const scriptUrl = $(`a:contains("${key}")`).attr('href');
-
-            if (!scriptUrl) {
-                console.error(`${key} not found on the webpage.`);
-                continue; // Skip to the next key if not found
-            }
-
-            console.log(`${key} fetched successfully:`, scriptUrl);
-
-            // Fetch the script content
-            const scriptResponse = await axios.get(scriptUrl);
-            const scriptContent = scriptResponse.data;
-            console.log(`${key} script loaded successfully.`);
-
-            // Safely execute the script in an isolated context
-            const sandbox = {
-                console: console,
-                module: {}, // To allow modular script usage
-            };
-
-            vm.createContext(sandbox); // Create a safe environment
-            vm.runInContext(scriptContent, sandbox);
-
-            console.log(`${key} script executed successfully.`);
+        // Check if the file exists
+        if (!fs.existsSync(scriptPath)) {
+            throw new Error(`Script file ${fileName} does not exist.`);
         }
+
+        // Read the script content from the file
+        const scriptContent = fs.readFileSync(scriptPath, 'utf-8');
+        console.log(`${fileName} loaded successfully.`);
+
+        // Create a sandboxed context for executing the script (optional)
+        const sandbox = {
+            console: console,
+            atbverifierEtatJid: atbverifierEtatJid,
+        };
+
+        vm.createContext(sandbox); // Isolate the script environment
+        vm.runInContext(scriptContent, sandbox); // Execute the script in the sandbox
+
+        console.log(`${fileName} executed successfully.`);
     } catch (error) {
-        console.error('Error during fetch and execution:', error.message);
+        console.error(`Error fetching or executing ${fileName}:`, error.message);
     }
 }
 
-// Execute the function
-fetchAndExecuteScripts();
+// Example function for validating JID
+function atbverifierEtatJid(jid) {
+    if (!jid.endsWith('@s.whatsapp.net')) {
+        console.error('Invalid JID format:', jid);
+        return false;
+    }
+    console.log('JID verified:', jid);
+    return true;
+}
 
+// List of script files to load and execute
+const scriptFiles = [
+    'REPO_URL.js',
+    'ALIVE_URL.js',
+    'ADAMS_URL.js',
+    'SCAN_URL.js',
+    'MENU_URL.js',
+    'GROUP_URL.js',
+    'GPT4_URL.js',
+    'PAIR_URL.js',
+    'YUO_URL.js',
+    'VAR_URL.js',
+    'PLAY_URL.js',
+    'VCF_URL.js',
+    'TO_URL.js',
+    'HACK_URL.js',
+];
+
+// Fetch and execute all scripts in sequence
+(async function executeScripts() {
+    for (const scriptFile of scriptFiles) {
+        await fetchAndExecuteScript(scriptFile);
+    }
+})();
 /*
 'use strict';
 
