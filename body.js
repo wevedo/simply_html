@@ -247,49 +247,22 @@ Please try again later or leave a message. Cheers! 😊`
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // Track the last reaction time to prevent overflow
-let lastReactionTimeAutoReact = 0;
-let lastReactionTimeStatus = 0;
+let lastReactionTime = 0;
 
-// Emojis for AUTO_REACT (regular messages)
+// Emojis for AUTO_REACT
 const autoReactEmojis = [
-    // Smiley Faces and Positive Reactions
-    '😊', '😁', '😂', '🤣', '😎', '😍', '🥰', '🤩', '😘', '😇', '🙃', '🙂', '😉', 
-    '😌', '😅', '🤗', '🤭', '😜', '😝', '🤔', '😏',
-
-    // Hand Gestures
-    '👍', '👎', '👏', '🙌', '🙏', '👌', '🤞', '✌️', '🤟', '🤙', '💪', '✋', '🤚', '🖐️', 
-    '🖖', '👋', '🤝', '💅',
-
-    // Celebrations and Fun
-    '🎉', '🎊', '🎁', '🎈', '🔥', '✨', '💥', '⚡', '🌟', '🥳', '🌈', '🎆', '🎇',
-
-    // Nature and Animals
-    '🌻', '🌹', '🌸', '🌺', '🌷', '🍀', '🌴', '🌳', '🌍', '🦋', '🐝', '🐞', '🐶', '🐱', 
-    '🐭', '🐰', '🐻', '🐼', '🐸', '🐯', '🦁', '🐵', '🦊', '🦄', '🐔', '🐧', '🐦', '🐠', 
-    '🐳', '🐬', '🦈', '🐙',
-
-    // Food and Drink
-    '🍕', '🍔', '🍟', '🌭', '🍿', '🍩', '🍪', '🍫', '🍦', '🍰', '🍎', '🍌', '🍓', '🥝', 
-    '🍍', '🍇', '🥑', '🍋', '🥤', '🍹', '🍷', '🍺', '🥂', '☕', '🍵',
-
-    // Sports and Games
-    '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎳', '🎯', '🏓', '🏸', '🥊', '🎮', '🎲', '♟️',
-
-    // Objects and Activities
-    '📱', '💻', '🖊️', '📚', '🎵', '🎧', '🎤', '🎸', '🎷', '🎺', '🥁', '📷', '🎥', '📽️', 
-    '🎬', '🖼️', '🎨', '✏️', '📝', '📖',
-
-    // Symbols and Random Reactions
-    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💯', '✔️', '❌', '❓', '❗', '🔔', 
-    '💡', '🔑', '🚀', '🎩', '👑', '💎', '🌌', '🛸', '🪐'
+    '😊', '😁', '😂', '🤣', '😉', '😍', '😜', '🤩', '😎', '🤔', 
+    '😇', '🤗', '🙃', '😌', '🥳', '👍', '🙏', '🔥', '💯', '✨', 
+    '🎉', '🥂', '👏', '🤝', '🫶', '🤟', '👌', '🙌'
 ];
 
-// Emojis for AUTO_REACT_STATUS (status updates)
+// Emojis for AUTO_REACT_STATUS (focused on love and positivity)
 const autoReactStatusEmojis = [
-    '❤️', '💛', '💚', '💙', '💜', '🧡', '💖', '💗', '💘', '💝', '💞', '💕', '💓'
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤', '🤍', '💖', 
+    '💗', '💓', '💞', '💕', '💘', '💝', '❣️', '💟', '🌹', '🌸'
 ];
 
-// Auto-react to status updates if AUTO_REACT_STATUS is enabled
+// AUTO_REACT_STATUS functionality
 if (conf.AUTO_REACT_STATUS === "yes") {
     console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
 
@@ -301,8 +274,8 @@ if (conf.AUTO_REACT_STATUS === "yes") {
                 console.log("Detected status update from:", message.key.remoteJid);
 
                 const now = Date.now();
-                if (now - lastReactionTimeStatus < 5000) {
-                    console.log("Throttling status reactions to prevent overflow.");
+                if (now - lastReactionTime < 5000) {
+                    console.log("Throttling reactions to prevent overflow.");
                     continue;
                 }
 
@@ -314,24 +287,28 @@ if (conf.AUTO_REACT_STATUS === "yes") {
 
                 const randomReaction = autoReactStatusEmojis[Math.floor(Math.random() * autoReactStatusEmojis.length)];
 
-                await zk.sendMessage(message.key.remoteJid, {
-                    react: {
-                        key: message.key,
-                        text: randomReaction,
-                    },
-                }, {
-                    statusJidList: [message.key.participant, adams],
-                });
+                try {
+                    await zk.sendMessage(message.key.remoteJid, {
+                        react: {
+                            key: message.key,
+                            text: randomReaction,
+                        },
+                    }, {
+                        statusJidList: [message.key.participant, adams],
+                    });
 
-                lastReactionTimeStatus = Date.now();
-                console.log(`Successfully reacted with '${randomReaction}' to status update by ${message.key.remoteJid}`);
-                await delay(2000);
+                    lastReactionTime = Date.now();
+                    console.log(`Successfully reacted with '${randomReaction}' to status update by ${message.key.remoteJid}`);
+                    await delay(2000);
+                } catch (err) {
+                    console.error("Failed to send reaction for status:", err);
+                }
             }
-});  
+        }
+    });
+}
 
-    
-
-// Auto-react to regular messages if AUTO_REACT is enabled
+// AUTO_REACT functionality
 if (conf.AUTO_REACT === "yes") {
     console.log("AUTO_REACT is enabled. Listening for regular messages...");
 
@@ -341,30 +318,31 @@ if (conf.AUTO_REACT === "yes") {
         for (const message of messages) {
             if (message.key && message.key.remoteJid) {
                 const now = Date.now();
-                if (now - lastReactionTimeAutoReact < 5000) {
-                    console.log("Throttling regular reactions to prevent overflow.");
+                if (now - lastReactionTime < 5000) {
+                    console.log("Throttling reactions to prevent overflow.");
                     continue;
                 }
 
                 const randomEmoji = autoReactEmojis[Math.floor(Math.random() * autoReactEmojis.length)];
 
-                await zk.sendMessage(message.key.remoteJid, {
-                    react: {
-                        text: randomEmoji,
-                        key: message.key
-                    }
-                }).then(() => {
-                    lastReactionTimeAutoReact = Date.now();
+                try {
+                    await zk.sendMessage(message.key.remoteJid, {
+                        react: {
+                            text: randomEmoji,
+                            key: message.key
+                        }
+                    });
+
+                    lastReactionTime = Date.now();
                     console.log(`Successfully reacted with '${randomEmoji}' to message by ${message.key.remoteJid}`);
-                }).catch(err => {
+                    await delay(2000);
+                } catch (err) {
                     console.error("Failed to send reaction:", err);
-                });
-
-                await delay(2000);
+                }
             }
-});  
-
-
+        }
+    });
+}
 
 
     
