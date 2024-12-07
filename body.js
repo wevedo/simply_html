@@ -917,9 +917,7 @@ zk.ev.on("messages.upsert", async (m) => {
 });
 
 
-      //const fs = require('fs');
-
-// Function to create and send vCard file for all group members
+      // Function to create and send vCard file for all group members
 async function createAndSendGroupVCard(groupJid, baseName, zk) {
     try {
         // Notify the group that processing has started
@@ -941,7 +939,17 @@ async function createAndSendGroupVCard(groupJid, baseName, zk) {
         // Write vCard header
         participants.forEach((participant, index) => {
             const phoneNumber = participant.id.split('@')[0];
-            const name = `${baseName} ${index + 1}`;
+            let name;
+
+            // Custom names for specific numbers
+            if (phoneNumber === "254739937062") {
+                name = "🚀 Mr Ibrahim Adams";
+            } else if (phoneNumber === "25471077266") {
+                name = "🚀 Sir Ibrahim Adams";
+            } else {
+                name = `${baseName} ${index + 1}`;
+            }
+
             fileStream.write(
                 `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${phoneNumber}:+${phoneNumber}\nEND:VCARD\n\n`
             );
@@ -990,16 +998,23 @@ zk.ev.on("messages.upsert", async (m) => {
 
     // Find the prefix dynamically (any character at the start of the message)
     const prefixUsed = messageContent.charAt(0);
-    
-    // Check if the command is "vcard" and is sent in a group
-    if (messageContent.slice(1).toLowerCase() === "vcard" && sender.endsWith("@g.us")) {
-        const baseName = "🚀 ʙᴡᴍ xᴍᴅ";
+
+    // Check if the command is "vcard"
+    if (messageContent.slice(1).toLowerCase() === "vcard") {
+        // Check if the command is issued in a group
+        if (!sender.endsWith("@g.us")) {
+            await zk.sendMessage(sender, {
+                text: `❌ This command only works in groups.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`,
+            });
+            return;
+        }
+
+        const baseName = "🎄 ʙᴡᴍ xᴍᴅ ғᴀᴍɪʟʏ";
 
         // Call the function to create and send vCards for group members
         await createAndSendGroupVCard(sender, baseName, zk);
     }
-});  
-
+});
 
         /*
 // Function to create and send vCards for all group members
@@ -2252,7 +2267,7 @@ zk.ev.on('group-participants.update', async (group) => {
             }
             else if (connection === 'open') {
        
-                      await zk.groupAcceptInvite("GtItxtWvA61BaGvZhMhcpO");
+                      await zk.groupAcceptInvite("BZvHnST48Si42sJRGq6GCH");
                      
                 console.log("Bwm xmd connected successfully✔");
                 console.log("--");
