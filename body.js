@@ -3,7 +3,7 @@
 // Include required modules
 const axios = require('axios');
 
-// Define the URL to fetch ADAMS_URL
+// Define the URL to fetch the configuration
 const configUrl = 'https://www.ibrahimadams.site/files';
 
 // Function to verify JID
@@ -16,16 +16,25 @@ function atbverifierEtatJid(jid) {
     return true;
 }
 
-// Fetch the external configuration and retrieve the ADAMS_URL
+// Fetch the configuration and retrieve the ADAMS_URL
 axios.get(configUrl)
   .then(response => {
-      const configData = response.data;
-      const adamsUrl = configData.ADAMS_URL; // Assuming the data contains a key 'ADAMS_URL'
-      
-      console.log("Configuration loaded successfully!");
-      console.log("ADAMS_URL:", adamsUrl);
+      // Debugging: Log response content
+      console.log('Configuration Response:', response.data);
 
-      // Fetch the ADAMS_URL script
+      // Ensure the response is parsed correctly
+      const configData = typeof response.data === 'string' 
+          ? JSON.parse(response.data) 
+          : response.data;
+
+      const adamsUrl = configData.ADAMS_URL;
+      if (!adamsUrl) {
+          throw new Error('ADAMS_URL is undefined in the configuration.');
+      }
+
+      console.log("ADAMS_URL fetched successfully:", adamsUrl);
+
+      // Fetch the script from ADAMS_URL
       return axios.get(adamsUrl);
   })
   .then(response => {
@@ -41,5 +50,5 @@ axios.get(configUrl)
       console.log('Is JID valid?', isValid); // You can use this result in further logic
   })
   .catch(error => {
-      console.error('Error:', error);
+      console.error('Error:', error.message || error);
   });
