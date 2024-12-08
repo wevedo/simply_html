@@ -43,23 +43,31 @@ adams({
 
   // If no message (image/video/audio) is mentioned, prompt user
   if (!msgRepondu) {
-    return repondre("Please mention an image, video, or audio.");
+    return repondre("No media message received. Please mention an image, video, or audio.");
   }
 
   let mediaPath;
+  let mediaBuffer;
 
   try {
-    // Download media message (image/video/audio)
-    const buffer = await downloadMediaMessage(msgRepondu, "buffer", {});
-    console.log("Downloaded media, size:", buffer.length); // Log the size of the downloaded buffer
-    mediaPath = `temp_${Date.now()}`;
-    fs.writeFileSync(mediaPath, buffer);
-
-    // Check if the file was saved successfully
-    if (!fs.existsSync(mediaPath)) {
-      console.error("Failed to save the media file locally.");
-      return repondre("Failed to save the media file.");
+    // Check if the message contains media and download it
+    if (msgRepondu.videoMessage) {
+      mediaBuffer = await downloadMediaMessage(msgRepondu.videoMessage, "buffer", {});
+      console.log("Video message received and downloaded");
+    } else if (msgRepondu.imageMessage) {
+      mediaBuffer = await downloadMediaMessage(msgRepondu.imageMessage, "buffer", {});
+      console.log("Image message received and downloaded");
+    } else if (msgRepondu.audioMessage) {
+      mediaBuffer = await downloadMediaMessage(msgRepondu.audioMessage, "buffer", {});
+      console.log("Audio message received and downloaded");
+    } else {
+      return repondre("No media found. Please send an image, video, or audio.");
     }
+
+    // Save the media to a temporary file
+    mediaPath = `temp_${Date.now()}`;
+    fs.writeFileSync(mediaPath, mediaBuffer);
+    console.log(`Media saved to ${mediaPath}`);
 
     // Upload the media to Catbox and get the URL
     const fileUrl = await uploadToCatbox(mediaPath);
@@ -69,13 +77,13 @@ adams({
 
     // Respond with the URL of the uploaded file
     repondre(fileUrl);
+
   } catch (error) {
-    console.error("Error while creating your URL:", error.message); // Log the error message
+    console.error("Error during media handling:", error.message); // Log the specific error message
     if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
     repondre("Oops, there was an error: " + error.message); // Respond with the error message
   }
 });
-
 
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
