@@ -14,13 +14,16 @@ async function uploadToCatbox(filePath) {
     throw new Error("File does not exist");
   }
   try {
+    console.log(`Uploading ${filePath} to Catbox...`);
     const uploadResult = await catbox.uploadFile({ path: filePath });
     if (uploadResult) {
+      console.log(`Upload successful: ${uploadResult}`);
       return uploadResult;
     } else {
       throw new Error("Error retrieving file link");
     }
   } catch (error) {
+    console.error("Error during Catbox upload:", error);
     throw new Error(String(error));
   }
 }
@@ -33,26 +36,23 @@ adams({
 }, async (groupId, client, context) => {
   const { msgRepondu, repondre } = context;
 
-  // If no message (image/video/audio) is mentioned, prompt user
   if (!msgRepondu) {
     return repondre("Please mention an image, video, or audio.");
   }
 
   let mediaPath;
-
   try {
-    // Check if the message contains media and download it
+    console.log("Downloading media...");
     const buffer = await downloadMediaMessage(msgRepondu, "buffer", {});
     mediaPath = `temp_${Date.now()}`;
     fs.writeFileSync(mediaPath, buffer);
+    console.log(`Media saved to ${mediaPath}`);
 
-    // Upload the media to Catbox and get the URL
     const fileUrl = await uploadToCatbox(mediaPath);
 
-    // Delete the local media file after upload
     fs.unlinkSync(mediaPath);
+    console.log("Temporary file deleted");
 
-    // Respond with the URL of the uploaded file
     repondre(fileUrl);
   } catch (error) {
     console.error("Error while creating your URL:", error);
