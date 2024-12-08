@@ -40,23 +40,12 @@ adams({
 
   let mediaPath;
 
-  // Check if the message contains a video
-  if (msgRepondu.videoMessage) {
-    mediaPath = await client.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
-  }
-  // Check if the message contains an image
-  else if (msgRepondu.imageMessage) {
-    mediaPath = await client.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
-  }
-  // Check if the message contains an audio file
-  else if (msgRepondu.audioMessage) {
-    mediaPath = await client.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
-  } else {
-    // If no media (image, video, or audio) is found, prompt user
-    return repondre("Please mention an image, video, or audio.");
-  }
-
   try {
+    // Check if the message contains media and download it
+    const buffer = await downloadMediaMessage(msgRepondu, "buffer", {});
+    mediaPath = `temp_${Date.now()}`;
+    fs.writeFileSync(mediaPath, buffer);
+
     // Upload the media to Catbox and get the URL
     const fileUrl = await uploadToCatbox(mediaPath);
 
@@ -67,10 +56,10 @@ adams({
     repondre(fileUrl);
   } catch (error) {
     console.error("Error while creating your URL:", error);
+    if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
     repondre("Oops, there was an error.");
   }
 });
-
 
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
