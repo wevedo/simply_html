@@ -1,30 +1,33 @@
-const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const ffmpeg = require("fluent-ffmpeg");
+const fs = require('fs');
+const axios = require('axios');
+const FormData = require('form-data');
 const { adams } = require("../Ibrahim/adams");
-const { Catbox } = require("node-catbox");
-const fs = require('fs-extra');
 
-// Initialize Catbox
-const catbox = new Catbox();
-
-// Function to upload a file to Catbox and return the URL
+// Function to upload file to Catbox
 async function uploadToCatbox(filePath) {
   if (!fs.existsSync(filePath)) {
     throw new Error("File does not exist");
   }
+
+  const form = new FormData();
+  form.append('file', fs.createReadStream(filePath));
+
   try {
-    console.log(`Uploading ${filePath} to Catbox...`);
-    const uploadResult = await catbox.uploadFile({ path: filePath });
-    if (uploadResult) {
-      console.log(`Upload successful: ${uploadResult}`);
-      return uploadResult;
+    console.log("Uploading file to Catbox...");
+    const response = await axios.post('https://catbox.moe/user/api.php', form, {
+      headers: form.getHeaders(),
+    });
+    
+    if (response.data && response.data.includes('https://')) {
+      console.log(`File uploaded successfully: ${response.data}`);
+      return response.data;
     } else {
-      throw new Error("Error retrieving file link");
+      throw new Error("Failed to get a valid response from Catbox");
     }
   } catch (error) {
-    console.error("Error during Catbox upload:", error);
-    throw new Error(String(error));
+    console.error("Error during upload:", error);
+    throw new Error("Error uploading file to Catbox.");
   }
 }
 
@@ -36,23 +39,26 @@ adams({
 }, async (groupId, client, context) => {
   const { msgRepondu, repondre } = context;
 
+  // If no message (image/video/audio) is mentioned, prompt user
   if (!msgRepondu) {
     return repondre("Please mention an image, video, or audio.");
   }
 
   let mediaPath;
+
   try {
-    console.log("Downloading media...");
+    // Download media message (image/video/audio)
     const buffer = await downloadMediaMessage(msgRepondu, "buffer", {});
     mediaPath = `temp_${Date.now()}`;
     fs.writeFileSync(mediaPath, buffer);
-    console.log(`Media saved to ${mediaPath}`);
 
+    // Upload the media to Catbox and get the URL
     const fileUrl = await uploadToCatbox(mediaPath);
 
+    // Delete the local media file after upload
     fs.unlinkSync(mediaPath);
-    console.log("Temporary file deleted");
 
+    // Respond with the URL of the uploaded file
     repondre(fileUrl);
   } catch (error) {
     console.error("Error while creating your URL:", error);
@@ -60,6 +66,7 @@ adams({
     repondre("Oops, there was an error.");
   }
 });
+
 
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
