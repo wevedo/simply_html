@@ -84,7 +84,7 @@ adams({
         body: `${video.title} | ⏱️ ${video.timestamp}`,
         thumbnailUrl: video.thumbnail, // Full thumbnail from search result
         mediaType: 1, // Indicate this is an image
-        renderLargerThumbnail: true, // Display large thumbnail
+        renderLargerThumbnail: false, // Display large thumbnail
         sourceUrl: WhatsAppChannelURL, // Channel link
         showAdAttribution: true, // Attribution
       },
