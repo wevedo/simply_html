@@ -7,7 +7,7 @@ const fs = require("fs");
 adams(
   {
     nomCom: "reboot",
-    categorie: "Mods",
+    categorie: "control",
     reaction: "👨🏿‍💼",
   },
   async (dest, z, com) => {
