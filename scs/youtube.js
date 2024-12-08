@@ -96,7 +96,7 @@ adams({
   // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'video/mp4',
+    mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
         title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
@@ -131,7 +131,7 @@ adams({
   // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'video/mp4',
+    mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
         title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
