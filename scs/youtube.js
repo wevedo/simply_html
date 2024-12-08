@@ -42,6 +42,7 @@ async function downloadMedia(url, type) {
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
 // Video Command
+// Video Command
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -53,26 +54,39 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No videos found. Try another name.");
 
-  repondre(`*Bwm xmd is downloading ${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
+  const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
+  await zk.sendMessage(dest, {
+    text: responseMessage,
+    contextInfo: {
+      mentionedJid: [dest.sender || ""],
+      externalAdReply: {
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        mediaType: 1,
+        renderLargerThumbnail: false,
+      },
+    },
+    quoted: ms,
+  });
 
   const videoDlUrl = await downloadMedia(video.url, 'mp4');
   if (!videoDlUrl) return repondre("Failed to download the video.");
 
-  // Send the video with a full thumbnail
   await zk.sendMessage(dest, {
     video: { url: videoDlUrl },
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-        body: `${video.title} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
-        mediaType: 1, // Indicate this is an image
-        renderLargerThumbnail: false, // Display large thumbnail
-        sourceUrl: WhatsAppChannelURL, // Channel link
-        showAdAttribution: true, // Attribution
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        mediaType: 1,
+        renderLargerThumbnail: true,
       },
-    }
+    },
   }, { quoted: ms });
 });
 
@@ -88,26 +102,39 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No audio found. Try another name.");
 
-  repondre(`*Bwm xmd is downloading ${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
+  const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
+  await zk.sendMessage(dest, {
+    text: responseMessage,
+    contextInfo: {
+      mentionedJid: [dest.sender || ""],
+      externalAdReply: {
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        mediaType: 1,
+        renderLargerThumbnail: false,
+      },
+    },
+    quoted: ms,
+  });
 
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
 
-  // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-        body: `${video.title} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
-        mediaType: 1, // Indicate this is an image
-        renderLargerThumbnail: true, // Display large thumbnail
-        sourceUrl: WhatsAppChannelURL, // Channel link
-        showAdAttribution: true, // Attribution
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        mediaType: 1,
+        renderLargerThumbnail: true,
       },
-    }
+    },
   }, { quoted: ms });
 });
 
@@ -123,31 +150,41 @@ adams({
   const video = await searchYouTube(arg.join(" "));
   if (!video) return repondre("No audio found. Try another name.");
 
-  repondre(`*Bwm xmd is downloading ${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
+  const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
+  await zk.sendMessage(dest, {
+    text: responseMessage,
+    contextInfo: {
+      mentionedJid: [dest.sender || ""],
+      externalAdReply: {
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        mediaType: 1,
+        renderLargerThumbnail: false,
+      },
+    },
+    quoted: ms,
+  });
 
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
 
-  // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-        body: `${video.title} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
-        mediaType: 1, // Indicate this is an image
-        renderLargerThumbnail: true, // Display large thumbnail
-        sourceUrl: WhatsAppChannelURL, // Channel link
-        showAdAttribution: true, // Attribution
+        title: video.title,
+        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail,
+        sourceUrl: WhatsAppChannelURL,
+        mediaType: 1,
+        renderLargerThumbnail: true,
       },
-    }
+    },
   }, { quoted: ms });
 });
-
-
-
 
 
 
