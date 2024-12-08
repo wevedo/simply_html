@@ -19,6 +19,8 @@ async function uploadToCatbox(filePath) {
       headers: form.getHeaders(),
     });
     
+    console.log("Catbox response:", response.data); // Log the response to check
+
     if (response.data && response.data.includes('https://')) {
       console.log(`File uploaded successfully: ${response.data}`);
       return response.data;
@@ -26,7 +28,7 @@ async function uploadToCatbox(filePath) {
       throw new Error("Failed to get a valid response from Catbox");
     }
   } catch (error) {
-    console.error("Error during upload:", error);
+    console.error("Error during upload:", error.message); // Log the specific error message
     throw new Error("Error uploading file to Catbox.");
   }
 }
@@ -49,8 +51,15 @@ adams({
   try {
     // Download media message (image/video/audio)
     const buffer = await downloadMediaMessage(msgRepondu, "buffer", {});
+    console.log("Downloaded media, size:", buffer.length); // Log the size of the downloaded buffer
     mediaPath = `temp_${Date.now()}`;
     fs.writeFileSync(mediaPath, buffer);
+
+    // Check if the file was saved successfully
+    if (!fs.existsSync(mediaPath)) {
+      console.error("Failed to save the media file locally.");
+      return repondre("Failed to save the media file.");
+    }
 
     // Upload the media to Catbox and get the URL
     const fileUrl = await uploadToCatbox(mediaPath);
@@ -61,9 +70,9 @@ adams({
     // Respond with the URL of the uploaded file
     repondre(fileUrl);
   } catch (error) {
-    console.error("Error while creating your URL:", error);
+    console.error("Error while creating your URL:", error.message); // Log the error message
     if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
-    repondre("Oops, there was an error.");
+    repondre("Oops, there was an error: " + error.message); // Respond with the error message
   }
 });
 
