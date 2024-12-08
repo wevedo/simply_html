@@ -66,6 +66,7 @@ adams({
         sourceUrl: WhatsAppChannelURL,
         mediaType: 1,
         renderLargerThumbnail: false,
+        showAdAttribution: true, // Attribution
       },
     },
     quoted: ms,
@@ -115,6 +116,7 @@ adams({
         sourceUrl: WhatsAppChannelURL,
         mediaType: 1,
         renderLargerThumbnail: false,
+        showAdAttribution: true, // Attribution
       },
     },
     quoted: ms,
@@ -134,6 +136,7 @@ adams({
         sourceUrl: WhatsAppChannelURL,
         mediaType: 1,
         renderLargerThumbnail: true,
+        showAdAttribution: true, // Attribution
       },
     },
   }, { quoted: ms });
@@ -163,6 +166,7 @@ adams({
         sourceUrl: WhatsAppChannelURL,
         mediaType: 1,
         renderLargerThumbnail: false,
+        showAdAttribution: true, // Attribution
       },
     },
     quoted: ms,
@@ -182,6 +186,7 @@ adams({
         sourceUrl: WhatsAppChannelURL,
         mediaType: 1,
         renderLargerThumbnail: true,
+        showAdAttribution: true, // Attribution
       },
     },
   }, { quoted: ms });
