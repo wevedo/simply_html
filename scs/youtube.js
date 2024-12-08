@@ -1,14 +1,21 @@
 
-require('dotenv').config(); // Load environment variables
 const { adams } = require("../Ibrahim/adams");
 const yts = require('yt-search');
 const axios = require('axios');
 
-// Hardcoded API values
-const BaseUrl = "https://apis.ibrahimadams.us.kg";
-const adamsapikey = "ibraah-tech";
+// Hardcoded API Configurations
+const BaseUrl = 'https://apis.ibrahimadams.us.kg';
+const adamsapikey = 'ibraah-tech';
 
-// YouTube search function
+// Validate Config
+function validateConfig() {
+  if (!BaseUrl || !adamsapikey) {
+    throw new Error("Configuration error: Missing BaseUrl or API key.");
+  }
+}
+validateConfig();
+
+// YouTube Search Function
 async function searchYouTube(query) {
   try {
     const search = await yts(query);
@@ -19,7 +26,7 @@ async function searchYouTube(query) {
   }
 }
 
-// Function to download media
+// Download Media Function
 async function downloadMedia(url, type) {
   try {
     const endpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
@@ -31,6 +38,7 @@ async function downloadMedia(url, type) {
   }
 }
 
+// WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
 // Video Command
@@ -50,18 +58,20 @@ adams({
   const videoDlUrl = await downloadMedia(video.url, 'mp4');
   if (!videoDlUrl) return repondre("Failed to download the video.");
 
+  // Send the video with a full thumbnail
   await zk.sendMessage(dest, {
     video: { url: videoDlUrl },
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
-        mediaType: 2,
-        thumbnail: video.thumbnail, // Use video thumbnail
-        sourceUrl: WhatsAppChannelURL,
-        showAdAttribution: true
-      }
+        title: `🌟 Message from: ${video.author.name}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`,
+        body: `${video.title} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
+        mediaType: 1, // Indicate this is an image
+        renderLargerThumbnail: true, // Display large thumbnail
+        sourceUrl: WhatsAppChannelURL, // Channel link
+        showAdAttribution: true, // Attribution
+      },
     }
   }, { quoted: ms });
 });
@@ -83,22 +93,58 @@ adams({
   const audioDlUrl = await downloadMedia(video.url, 'mp3');
   if (!audioDlUrl) return repondre("Failed to download the audio.");
 
+  // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4',
+    mimetype: 'audio/mpeg',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp} | 🔗 ${video.url}`,
-        mediaType: 2,
-        thumbnail: video.thumbnail, // Use video thumbnail
-        sourceUrl: WhatsAppChannelURL,
-        showAdAttribution: true
-      }
+        title: `🌟 Message from: ${video.author.name}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`,
+        body: `${video.title} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
+        mediaType: 1, // Indicate this is an image
+        renderLargerThumbnail: true, // Display large thumbnail
+        sourceUrl: WhatsAppChannelURL, // Channel link
+        showAdAttribution: true, // Attribution
+      },
     }
   }, { quoted: ms });
 });
 
+// Song Command (Similar to Play)
+adams({
+  nomCom: "song",
+  categorie: "Download",
+  reaction: "🎧"
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg } = commandeOptions;
+  if (!arg[0]) return repondre("Please insert a song name.");
+
+  const video = await searchYouTube(arg.join(" "));
+  if (!video) return repondre("No audio found. Try another name.");
+
+  repondre(`*Bwm xmd is downloading ${video.title}* | 👤 *${video.author.name}* | ⏱️ *${video.timestamp}*`);
+
+  const audioDlUrl = await downloadMedia(video.url, 'mp3');
+  if (!audioDlUrl) return repondre("Failed to download the audio.");
+
+  // Send the audio with a full thumbnail
+  await zk.sendMessage(dest, {
+    audio: { url: audioDlUrl },
+    mimetype: 'audio/mpeg',
+    contextInfo: {
+      externalAdReply: {
+        title: `🌟 Message from: ${video.author.name}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`,
+        body: `${video.title} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
+        mediaType: 1, // Indicate this is an image
+        renderLargerThumbnail: true, // Display large thumbnail
+        sourceUrl: WhatsAppChannelURL, // Channel link
+        showAdAttribution: true, // Attribution
+      },
+    }
+  }, { quoted: ms });
+});
 
 
 
