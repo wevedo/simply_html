@@ -74,22 +74,23 @@ adams({
   const videoDlUrl = await downloadMedia(video.url, 'mp4');
   if (!videoDlUrl) return repondre("Failed to download the video.");
 
+  // Send the video with a full thumbnail
   await zk.sendMessage(dest, {
     video: { url: videoDlUrl },
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        mediaType: 1,
-        renderLargerThumbnail: true,
+        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
+        body: `${video.title} | ⏱️ ${video.timestamp}`,
+        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
+        mediaType: 1, // Indicate this is an image
+        renderLargerThumbnail: true, // Display large thumbnail
+        sourceUrl: WhatsAppChannelURL, // Channel link
+        showAdAttribution: true, // Attribution
       },
-    },
+    }
   }, { quoted: ms });
 });
-
 // Play Command
 adams({
   nomCom: "play",
@@ -127,7 +128,7 @@ adams({
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
+        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
         body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
@@ -175,7 +176,7 @@ adams({
     mimetype: 'audio/mp4',
     contextInfo: {
       externalAdReply: {
-        title: video.title,
+        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
         body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
         thumbnailUrl: video.thumbnail,
         sourceUrl: WhatsAppChannelURL,
