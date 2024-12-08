@@ -64,11 +64,11 @@ adams({
     mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: `🌟 Message from: ${video.author.name}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`,
+        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
         body: `${video.title} | ⏱️ ${video.timestamp}`,
         thumbnailUrl: video.thumbnail, // Full thumbnail from search result
         mediaType: 1, // Indicate this is an image
-        renderLargerThumbnail: true, // Display large thumbnail
+        renderLargerThumbnail: false, // Display large thumbnail
         sourceUrl: WhatsAppChannelURL, // Channel link
         showAdAttribution: true, // Attribution
       },
@@ -96,10 +96,10 @@ adams({
   // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'audio/mpeg',
+    mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: `🌟 Message from: ${video.author.name}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`,
+        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
         body: `${video.title} | ⏱️ ${video.timestamp}`,
         thumbnailUrl: video.thumbnail, // Full thumbnail from search result
         mediaType: 1, // Indicate this is an image
@@ -131,10 +131,10 @@ adams({
   // Send the audio with a full thumbnail
   await zk.sendMessage(dest, {
     audio: { url: audioDlUrl },
-    mimetype: 'audio/mpeg',
+    mimetype: 'video/mp4',
     contextInfo: {
       externalAdReply: {
-        title: `🌟 Message from: ${video.author.name}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`,
+        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
         body: `${video.title} | ⏱️ ${video.timestamp}`,
         thumbnailUrl: video.thumbnail, // Full thumbnail from search result
         mediaType: 1, // Indicate this is an image
