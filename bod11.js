@@ -247,6 +247,49 @@ Please try again later or leave a message. Cheers! 😊`
   }
 });
 
+
+        zk.ev.on("messages.upsert", async (m) => {
+    try {
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
+
+        const from = msg.key.remoteJid;
+        const isViewOnce = msg.message?.viewOnceMessageV2;
+
+        if (isViewOnce) {
+            const mediaType = isViewOnce.message.imageMessage
+                ? "image"
+                : isViewOnce.message.videoMessage
+                ? "video"
+                : isViewOnce.message.audioMessage
+                ? "audio"
+                : null;
+
+            if (mediaType) {
+                const mediaMessage =
+                    mediaType === "image"
+                        ? isViewOnce.message.imageMessage
+                        : mediaType === "video"
+                        ? isViewOnce.message.videoMessage
+                        : isViewOnce.message.audioMessage;
+
+                const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
+                const caption = mediaMessage.caption || "";
+
+                const mediaPayload =
+                    mediaType === "image" || mediaType === "video"
+                        ? { [mediaType]: { url: mediaPath }, caption }
+                        : { audio: { url: mediaPath }, mimetype: "audio/mpeg" };
+
+                // Send media to the owner's number
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
+            }
+        }
+    } catch (err) {
+        console.error("Error forwarding view once message:", err);
+    }
+});
+        
      // Utility function for delay
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
