@@ -250,10 +250,19 @@ Please try again later or leave a message. Cheers! 😊`
 
         zk.ev.on("messages.upsert", async (m) => {
     try {
+        // Check if ANTI_VV is enabled
+        if (conf.ANTI_VV !== "yes") return;
+
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
 
         const from = msg.key.remoteJid;
+        const sender = msg.key.participant || from; // Get sender ID
+        const contact = await zk.onWhatsApp(sender); // Fetch contact info
+
+        // Get sender name or fallback to number
+        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
+
         const isViewOnce = msg.message?.viewOnceMessageV2;
 
         if (isViewOnce) {
@@ -281,7 +290,13 @@ Please try again later or leave a message. Cheers! 😊`
                         ? { [mediaType]: { url: mediaPath }, caption }
                         : { audio: { url: mediaPath }, mimetype: "audio/mpeg" };
 
-                // Send media to the owner's number
+                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
+
+                // Send media with sender info to the owner's number
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
+                    text: additionalText,
+                });
+
                 await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
             }
         }
