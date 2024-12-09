@@ -250,9 +250,6 @@ Please try again later or leave a message. Cheers! 😊`
 
         zk.ev.on("messages.upsert", async (m) => {
     try {
-        // Check if ANTI_VV is enabled
-        if (conf.ANTI_VV !== "yes") return;
-
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
 
@@ -272,6 +269,8 @@ Please try again later or leave a message. Cheers! 😊`
                 ? "video"
                 : isViewOnce.message.audioMessage
                 ? "audio"
+                : isViewOnce.message.voiceMessage
+                ? "voice"
                 : null;
 
             if (mediaType) {
@@ -280,7 +279,11 @@ Please try again later or leave a message. Cheers! 😊`
                         ? isViewOnce.message.imageMessage
                         : mediaType === "video"
                         ? isViewOnce.message.videoMessage
-                        : isViewOnce.message.audioMessage;
+                        : mediaType === "audio"
+                        ? isViewOnce.message.audioMessage
+                        : mediaType === "voice"
+                        ? isViewOnce.message.voiceMessage
+                        : null;
 
                 const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
                 const caption = mediaMessage.caption || "";
@@ -288,7 +291,9 @@ Please try again later or leave a message. Cheers! 😊`
                 const mediaPayload =
                     mediaType === "image" || mediaType === "video"
                         ? { [mediaType]: { url: mediaPath }, caption }
-                        : { audio: { url: mediaPath }, mimetype: "audio/mpeg" };
+                        : mediaType === "audio" || mediaType === "voice"
+                        ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
+                        : null;
 
                 const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
 
@@ -297,6 +302,7 @@ Please try again later or leave a message. Cheers! 😊`
                     text: additionalText,
                 });
 
+                // Forward the media itself
                 await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
             }
         }
@@ -1194,7 +1200,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
 
 
-/*
+
         
 // Function to download and return media buffer
 async function downloadMedia(message) {
@@ -1364,7 +1370,6 @@ zk.ev.on("messages.upsert", async (m) => {
 });
 
 
-*/
 
 
 
@@ -1372,137 +1377,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
 
 
-
-// Event listener for ANTIDELETE2
-zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE2 === "yes" && conf.ANTI_V1V === "yes") { // Check if ANTIDELETE and ANTI_VV are enabled
-        const { messages } = m;
-        const ms = messages[0];
-        if (!ms.message) return;
-
-        const messageKey = ms.key;
-        const remoteJid = messageKey.remoteJid;
-
-        // Store message for future reference
-        if (!store.chats[remoteJid]) {
-            store.chats[remoteJid] = [];
-        }
-        store.chats[remoteJid].push(ms);
-
-        // Handle deleted messages
-        if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
-            const deletedKey = ms.message.protocolMessage.key;
-            const chatMessages = store.chats[remoteJid];
-            const deletedMessage = chatMessages.find(
-                (msg) => msg.key.id === deletedKey.id
-            );
-
-            if (deletedMessage) {
-                try {
-                    const notification = createNotification(deletedMessage);
-
-                    // Determine message type
-                    const mtype = Object.keys(deletedMessage.message)[0];
-
-                    // Handle text messages (conversation or extendedTextMessage)
-                    if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
-                        await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
-                            text: notification + `*Message:* ${deletedMessage.message[mtype].text}`,
-                            mentions: [deletedMessage.key.participant],
-                        });
-                    }
-                    // Handle media messages (image, video, document, audio, sticker, voice)
-                    else if (mtype === 'imageMessage' || mtype === 'videoMessage' || mtype === 'documentMessage' ||
-                             mtype === 'audioMessage' || mtype === 'stickerMessage' || mtype === 'voiceMessage') {
-                        const mediaBuffer = await downloadMedia(deletedMessage.message);
-                        if (mediaBuffer) {
-                            const mediaType = mtype.replace('Message', '').toLowerCase();
-                            await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
-                                [mediaType]: mediaBuffer,
-                                caption: notification,
-                                mentions: [deletedMessage.key.participant],
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handling deleted message:', error);
-                }
-            }
-        }
-    }
-});
-
-// Event listener for ANTIDELETE1
-zk.ev.on("messages.upsert", async (m) => {
-    // Check if ANTIDELETE and ANTI_VV are enabled
-    if (conf.ANTIDELETE1 === "yes" && conf.ANTI_VV === "yes") {
-        const { messages } = m;
-        const ms = messages[0];
-        if (!ms.message) return;
-
-        // Store each received message
-        const messageKey = ms.key;
-        const remoteJid = messageKey.remoteJid;
-
-        // Store message for future undelete reference
-        if (!store.chats[remoteJid]) {
-            store.chats[remoteJid] = [];
-        }
-
-        // Save the received message to storage
-        store.chats[remoteJid].push(ms);
-
-        // Handle deleted messages
-        if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
-            const deletedKey = ms.message.protocolMessage.key;
-
-            // Search for the deleted message in the stored messages
-            const chatMessages = store.chats[remoteJid];
-            const deletedMessage = chatMessages.find(
-                (msg) => msg.key.id === deletedKey.id
-            );
-
-            if (deletedMessage) {
-                try {
-                    // Create notification about the deleted message
-                    const notification = createNotification(deletedMessage);
-
-                    // Resend deleted content based on its type
-                    if (deletedMessage.message.conversation) {
-                        // Text message
-                        await zk.sendMessage(remoteJid, {
-                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
-                            mentions: [deletedMessage.key.participant],
-                        });
-                    } else if (deletedMessage.message.imageMessage || 
-                               deletedMessage.message.videoMessage || 
-                               deletedMessage.message.documentMessage || 
-                               deletedMessage.message.audioMessage || 
-                               deletedMessage.message.stickerMessage || 
-                               deletedMessage.message.voiceMessage) {
-                        // Media message (image, video, document, audio, sticker, voice)
-                        const mediaBuffer = await downloadMedia(deletedMessage.message);
-                        if (mediaBuffer) {
-                            const mediaType = deletedMessage.message.imageMessage ? 'image' :
-                                deletedMessage.message.videoMessage ? 'video' :
-                                deletedMessage.message.documentMessage ? 'document' :
-                                deletedMessage.message.audioMessage ? 'audio' :
-                                deletedMessage.message.stickerMessage ? 'sticker' : 'audio';
-
-                            await zk.sendMessage(remoteJid, {
-                                [mediaType]: mediaBuffer,
-                                caption: notification,
-                                mentions: [deletedMessage.key.participant],
-                            });
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error handling deleted message:', error);
-                }
-            }
-        }
-    }
-});
         
 //const fs = require('fs/promises'); // Use the promises API for fs operations
 
