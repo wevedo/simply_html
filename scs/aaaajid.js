@@ -9,53 +9,46 @@ const conf = require("../config");
 const { default: axios } = require('axios');
 
 
+adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg, verifGroupe, infosGroupe, nomGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
 
-adams({ nomCom: "ji", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg, verifGroupe, nomGroupe, infosGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
-
-  // Check if the command is in a group
   if (!verifGroupe) { 
-    repondre("✋🏿 ✋🏿 This command is reserved for groups ❌"); 
+    repondre("✋🏿 ✋🏿 This command is reserved for groups ❌\n\n" +
+             "Instructions:\n" +
+             "1️⃣ Use this command in a group chat.\n" +
+             "2️⃣ Command format: `senttoall <your message>`\n" +
+             "Example: `senttoall Hello team!`");
     return; 
   }
 
-  let membresGroupe = verifGroupe ? await infosGroupe.participants : [];
-  let messageToSend = arg && arg.trim() ? arg : null;
-
-  if (!messageToSend) {
-    // No message provided, send interaction prompt
-    zk.sendMessage(dest, { text: "👋🏿 Hello! Please type `.jid` followed by your message to tag everyone in the group." }, { quoted: ms });
+  if (!arg || arg.trim() === '') {
+    repondre("❌ You need to include a message. Example: `senttoall Hello everyone!`");
     return;
   }
 
+  const message = arg.join(' ');
+  const membresGroupe = verifGroupe ? await infosGroupe.participants : [];
+
   if (verifAdmin || superUser) {
-    // Admins or super users can execute the action
-    for (const membre of membresGroupe) {
-      // Send message to each member privately
-      await zk.sendMessage(membre.id, { text: `🔰 *Group*: ${nomGroupe}\n👤 *From*: ${nomAuteurMessage}\n📜 *Message*: ${messageToSend}` });
-    }
-
-    // Send tag message in the group
-    let tagMessage = `
-╭─────────────━┈⊷ 
-│🔰 *BMW MD TAG*
-╰─────────────━┈⊷
-👥 *Group*: ${nomGroupe}
-👤 *From*: ${nomAuteurMessage}
-📜 *Message*: ${messageToSend}
-\n`;
-
-    let emoji = ['🦴', '👀', '😮‍💨', '❌', '✔️', '😇', '⚙️', '🔧', '🎊', '😡', '🙏🏿', '⛔️', '$', '😟', '🥵', '🐅'];
-    let random = Math.floor(Math.random() * emoji.length);
+    repondre("🚀 Sending your message to all group members' DMs...");
 
     for (const membre of membresGroupe) {
-      tagMessage += `${emoji[random]}      @${membre.id.split("@")[0]}\n`;
+      const userJid = membre.id;
+
+      try {
+        // Send message to the member's DM
+        await zk.sendMessage(userJid, { 
+          text: `🔰 *Message from ${nomAuteurMessage} in ${nomGroupe}*\n\n${message}` 
+        });
+      } catch (error) {
+        console.error(`Failed to send message to ${userJid}:`, error);
+      }
     }
 
-    zk.sendMessage(dest, { text: tagMessage, mentions: membresGroupe.map((i) => i.id) }, { quoted: ms });
+    zk.sendMessage(dest, { 
+      text: `✅ Your message has been sent to all members' DMs.` 
+    }, { quoted: ms });
   } else {
-    // Not an admin
-    repondre('Command reserved for admins');
+    repondre("❌ This command is reserved for group admins.");
   }
 });
-
