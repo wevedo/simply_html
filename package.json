@@ -5,8 +5,7 @@
   "main": "body.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"node body.js\" \"node app.js\"",
-     "restart": "npm run start"
+    "start": "concurrently \"node body.js\" \"node app.js\",
     "c": "tsc"
   },
   "keywords": [
