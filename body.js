@@ -91,38 +91,75 @@ function atbverifierEtatJid(jid) {
 
 const zlib = require('zlib');
 
-async function authentification() {
+/**
+ * Processes and validates session data.
+ * @param {string} session - The session string in the format "Bwmxmd_session;;;<Base64 data>".
+ * @param {string} sessionFilePath - Path to save the session credentials file.
+ */
+async function processSessionData(session, sessionFilePath) {
     try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Session connected...");
-            // Split the session string into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            // Validate the session format
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
-            } else {
-                throw new Error("Invalid session format");
-            }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
-            }
+        if (!session || typeof session !== "string") {
+            throw new Error("Session data is missing or invalid.");
         }
+
+        // Split the session string into header and Base64 data
+        const [header, b64data] = session.split(';;;');
+
+        // Validate session format
+        if (header !== "Bwmxmd_session" || !b64data) {
+            throw new Error("Invalid session format.");
+        }
+
+        // Decode and decompress the session data
+        const compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Replace truncated indicator
+        const decompressedData = zlib.gunzipSync(compressedData); // Decompress session data
+
+        // Save the session data to the file
+        fs.writeFileSync(sessionFilePath, decompressedData, "utf8");
+        console.log("Session data successfully processed and saved.");
     } catch (e) {
-        console.log("Session Invalid: " + e.message);
-        return;
+        console.error("Failed to process session data:", e.message);
+        throw e; // Optionally re-throw for higher-level handling
     }
 }
+
+/**
+ * Manages the session authentication flow.
+ * @param {string} session - The session string from configuration.
+ */
+async function authentification(session) {
+    const sessionFilePath = path.join(__dirname, "Session", "creds.json");
+
+    try {
+        // Ensure the session directory exists
+        const sessionDir = path.dirname(sessionFilePath);
+        if (!fs.existsSync(sessionDir)) {
+            fs.mkdirSync(sessionDir, { recursive: true });
+        }
+
+        // Handle new or updated sessions
+        if (!fs.existsSync(sessionFilePath)) {
+            console.log("No session file found. Creating a new session...");
+            await processSessionData(session, sessionFilePath);
+        } else if (session !== "zokk") {
+            console.log("Updating existing session...");
+            await processSessionData(session, sessionFilePath);
+        } else {
+            console.log("Session data unchanged. No updates applied.");
+        }
+    } catch (e) {
+        console.error("Session authentication failed:", e.message);
+    }
+}
+
+// Example usage with a mock configuration
+const conf = {
+    session: "Bwmxmd_session;;;<Base64_encoded_data_here>" // Replace with the actual session string
+};
+
+(async () => {
+    await authentification(conf.session);
+})();
 authentification();
 const store = (0, baileys_1.makeInMemoryStore)({
     logger: pino().child({ level: "silent", stream: "store" }),
