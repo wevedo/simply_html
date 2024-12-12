@@ -89,47 +89,51 @@ function atbverifierEtatJid(jid) {
     return true;
 }
 
+
 const zlib = require('zlib');
 
 async function authentification() {
     try {
-        // Define the session file path
         const sessionFilePath = __dirname + "/Session/creds.json";
 
+        // Check if a session file does not exist
         if (!fs.existsSync(sessionFilePath)) {
-            console.log("Session connected...");
-
-            // Split the session string into header and session token
-            const [header, token] = conf.session.split(';;;');
+            console.log("Creating new session...");
+            
+            // Extract header and Base64-encoded session data
+            const [header, b64data] = conf.session.split(';;;');
 
             // Validate the session format
-            if (header === "Bwmxmd_session" && token) {
-                // Simulate fetching the session data using the token (replace this with actual logic, e.g., database lookup)
-                const compressedData = Buffer.from(sessions[token], 'base64'); // Decode the stored Base64 data
-                const decompressedData = zlib.gunzipSync(compressedData); // Decompress the session data
-                fs.writeFileSync(sessionFilePath, decompressedData, "utf8"); // Save to file
+            if (header === "Bwmxmd_session" && b64data) {
+                const compressedData = Buffer.from(b64data, 'base64'); // Decode Base64 data
+                const decompressedData = zlib.gunzipSync(compressedData); // Decompress session data
+                fs.writeFileSync(sessionFilePath, decompressedData, "utf8"); // Save to creds.json
             } else {
-                throw new Error("Invalid session format");
+                throw new Error("Invalid session format.");
             }
-        } else if (fs.existsSync(sessionFilePath) && conf.session !== "zokk") {
+        } 
+        
+        // Update session file if the session string is different
+        else if (fs.existsSync(sessionFilePath) && conf.session !== "zokk") {
             console.log("Updating existing session...");
 
-            const [header, token] = conf.session.split(';;;');
+            const [header, b64data] = conf.session.split(';;;');
 
-            if (header === "Bwmxmd_session" && token) {
-                // Simulate fetching the updated session data using the token
-                const compressedData = Buffer.from(sessions[token], 'base64');
-                const decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(sessionFilePath, decompressedData, "utf8");
+            if (header === "Bwmxmd_session" && b64data) {
+                const compressedData = Buffer.from(b64data, 'base64'); // Decode Base64 data
+                const decompressedData = zlib.gunzipSync(compressedData); // Decompress session data
+                fs.writeFileSync(sessionFilePath, decompressedData, "utf8"); // Update creds.json
             } else {
-                throw new Error("Invalid session format");
+                throw new Error("Invalid session format.");
             }
         }
     } catch (e) {
         console.log("Session Invalid: " + e.message);
-        return;
+        throw e; // Throw error for further handling
     }
-        }
+}
+
+module.exports = { authentification };
 
 authentification();
 const store = (0, baileys_1.makeInMemoryStore)({
