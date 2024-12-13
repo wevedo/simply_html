@@ -2335,13 +2335,10 @@ zk.ev.on('group-participants.update', async (group) => {
         zk.ev.on("connection.update", async (con) => {
             const { lastDisconnect, connection } = con;
             if (connection === "connecting") {
-                console.log("bwm xmd is connecting in your account...");
+                console.log("ℹ️ Bwm xmd is connecting...");
             }
             else if (connection === 'open') {
-       
-                      await zk.groupAcceptInvite("KY7u27uXyBX4UbIg1ovCWt");
-                     
-                console.log("Bwm xmd connected successfully✔");
+                console.log("✅ Bwm xmd Connected to WhatsApp!");
                 console.log("--");
                 await (0, baileys_1.delay)(200);
                 console.log("------");
