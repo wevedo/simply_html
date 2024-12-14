@@ -49,6 +49,7 @@ async function downloadMedia(url, type) {
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 // Video Command
+// Video Command
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -76,12 +77,6 @@ adams({
           mediaType: 1,
           renderLargerThumbnail: false,
         },
-        location: {
-          degreesLatitude: 0.0, // Example values; auto-generated
-          degreesLongitude: 0.0,
-          name: "BWM XMD Download Center",
-          address: "Worldwide",
-        }
       },
       quoted: ms,
     });
@@ -89,6 +84,18 @@ adams({
     const videoDlUrl = await downloadMedia(video.url, 'mp4');
     if (!videoDlUrl) return repondre("Failed to download the video.");
 
+    // Send a location message
+    await zk.sendMessage(dest, {
+      location: {
+        degreesLatitude: -1.2921, // Example latitude (Nairobi)
+        degreesLongitude: 36.8219, // Example longitude
+        name: "BWM XMD Download Center",
+        address: "Nairobi, Kenya",
+      },
+      contextInfo: { quotedMessage: { conversation: "Location shared for download center." } },
+    });
+
+    // Send the video
     await zk.sendMessage(dest, {
       video: { url: videoDlUrl },
       mimetype: 'video/mp4',
@@ -102,12 +109,6 @@ adams({
           renderLargerThumbnail: false,
           sourceUrl: WhatsAppChannelURL,
         },
-        location: {
-          degreesLatitude: 0.0, // Example values; auto-generated
-          degreesLongitude: 0.0,
-          name: "BWM XMD Download Center",
-          address: "Worldwide",
-        }
       }
     }, { quoted: ms });
 
@@ -116,7 +117,6 @@ adams({
     repondre("An error occurred while processing your request. Please try again.");
   }
 });
-
 // Play Command
 adams({
   nomCom: "play",
