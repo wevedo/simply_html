@@ -26,7 +26,7 @@ async function searchYouTube(query) {
     return search.videos.length > 0 ? search.videos[0] : null;
   } catch (error) {
     console.error('YouTube Search Error:', error.message);
-    return null;
+    throw new Error('Failed to search YouTube. Please try again.');
   }
 }
 
@@ -35,29 +35,33 @@ async function downloadMedia(url, type) {
   try {
     const endpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
     const { data } = await axios.get(endpoint);
-    return data.status === 200 && data.success ? data.result.download_url : null;
+    if (data.status === 200 && data.success) {
+      return data.result.download_url;
+    } else {
+      throw new Error(data.message || 'Download failed.');
+    }
   } catch (error) {
     console.error(`API Error (${type}):`, error.message);
-    return null;
+    throw new Error(`Failed to download ${type}. Please try again.`);
   }
 }
 
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-// General Command Handler Template
-async function handleCommand(dest, zk, commandeOptions, type) {
+// Video Command
+adams({
+  nomCom: "video",
+  categorie: "Search",
+  reaction: "🎥"
+}, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
 
-  if (!arg[0]) {
-    return repondre(`Please insert a ${type === 'mp4' ? 'song/video' : 'song'} name.`);
-  }
-
+  if (!arg[0]) return repondre("Please insert a song/video name.");
+  
   try {
     const video = await searchYouTube(arg.join(" "));
-    if (!video) {
-      return repondre("No results found. Try another name.");
-    }
+    if (!video) return repondre("No videos found. Try another name.");
 
     const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
     await zk.sendMessage(dest, {
@@ -67,72 +71,94 @@ async function handleCommand(dest, zk, commandeOptions, type) {
         externalAdReply: {
           title: video.title,
           body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-          thumbnail: video.thumbnail, // Thumbnail included in the context
-          sourceUrl: video.url, // Direct YouTube URL
+          thumbnailUrl: video.thumbnail,
+          sourceUrl: WhatsAppChannelURL,
           mediaType: 1,
-          renderLargerThumbnail: true,
-          showAdAttribution: true, // Attribution
+          renderLargerThumbnail: false,
+          showAdAttribution: true,
         },
       },
       quoted: ms,
     });
 
-    const mediaUrl = await downloadMedia(video.url, type);
-    if (!mediaUrl) {
-      return repondre("Failed to download the requested media. Please try again later.");
-    }
+    const videoDlUrl = await downloadMedia(video.url, 'mp4');
+    if (!videoDlUrl) return repondre("Failed to download the video.");
 
-    const messageOptions = {
+    await zk.sendMessage(dest, {
+      video: { url: videoDlUrl },
+      mimetype: 'video/mp4',
       contextInfo: {
         externalAdReply: {
           title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
           body: `${video.title} | ⏱️ ${video.timestamp}`,
-          thumbnail: video.thumbnail, // Full thumbnail from search result
-          sourceUrl: WhatsAppChannelURL, // Channel link
+          thumbnailUrl: video.thumbnail,
           mediaType: 1,
-          renderLargerThumbnail: true,
+          renderLargerThumbnail: false,
+          sourceUrl: WhatsAppChannelURL,
           showAdAttribution: true,
         },
-      },
-    };
+      }
+    }, { quoted: ms });
 
-    if (type === 'mp4') {
-      await zk.sendMessage(dest, { video: { url: mediaUrl }, mimetype: 'video/mp4', ...messageOptions }, { quoted: ms });
-    } else {
-      await zk.sendMessage(dest, { audio: { url: mediaUrl }, mimetype: 'audio/mp4', ...messageOptions }, { quoted: ms });
-    }
   } catch (error) {
-    console.error(`Error in ${type} command:`, error.message);
-    return repondre("An error occurred while processing your request. Please try again later.");
+    console.error('Video Command Error:', error.message);
+    repondre("An error occurred while processing your request. Please try again.");
   }
-}
-
-// Video Command
-adams({
-  nomCom: "video",
-  categorie: "Search",
-  reaction: "🎥"
-}, (dest, zk, commandeOptions) => handleCommand(dest, zk, commandeOptions, 'mp4'));
+});
 
 // Play Command
 adams({
   nomCom: "play",
   categorie: "Download",
   reaction: "🎧"
-}, (dest, zk, commandeOptions) => handleCommand(dest, zk, commandeOptions, 'mp3'));
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg } = commandeOptions;
 
-// Song Command (Similar to Play)
-adams({
-  nomCom: "song",
-  categorie: "Download",
-  reaction: "🎧"
-}, (dest, zk, commandeOptions) => handleCommand(dest, zk, commandeOptions, 'mp3'));
+  if (!arg[0]) return repondre("Please insert a song name.");
+  
+  try {
+    const video = await searchYouTube(arg.join(" "));
+    if (!video) return repondre("No audio found. Try another name.");
 
-// Global Error Handlers
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error.message);
-});
+    const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
+    await zk.sendMessage(dest, {
+      text: responseMessage,
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        externalAdReply: {
+          title: video.title,
+          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          sourceUrl: WhatsAppChannelURL,
+          mediaType: 1,
+          renderLargerThumbnail: false,
+          showAdAttribution: true,
+        },
+      },
+      quoted: ms,
+    });
 
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection:', reason);
+    const audioDlUrl = await downloadMedia(video.url, 'mp3');
+    if (!audioDlUrl) return repondre("Failed to download the audio.");
+
+    await zk.sendMessage(dest, {
+      audio: { url: audioDlUrl },
+      mimetype: 'audio/mp4',
+      contextInfo: {
+        externalAdReply: {
+          title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
+          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          sourceUrl: WhatsAppChannelURL,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
+        },
+      },
+    }, { quoted: ms });
+
+  } catch (error) {
+    console.error('Play Command Error:', error.message);
+    repondre("An error occurred while processing your request. Please try again.");
+  }
 });
