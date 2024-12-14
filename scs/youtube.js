@@ -25,7 +25,7 @@ async function searchYouTube(query) {
     const search = await yts(query);
     return search.videos.length > 0 ? search.videos[0] : null;
   } catch (error) {
-    console.error('YouTube Search Error:', error);
+    console.error('YouTube Search Error:', error.message);
     return null;
   }
 }
@@ -37,7 +37,7 @@ async function downloadMedia(url, type) {
     const { data } = await axios.get(endpoint);
     return data.status === 200 && data.success ? data.result.download_url : null;
   } catch (error) {
-    console.error(`API Error (${type}):`, error);
+    console.error(`API Error (${type}):`, error.message);
     return null;
   }
 }
@@ -45,153 +45,94 @@ async function downloadMedia(url, type) {
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-// Video Command
+// General Command Handler Template
+async function handleCommand(dest, zk, commandeOptions, type) {
+  const { ms, repondre, arg } = commandeOptions;
+
+  if (!arg[0]) {
+    return repondre(`Please insert a ${type === 'mp4' ? 'song/video' : 'song'} name.`);
+  }
+
+  try {
+    const video = await searchYouTube(arg.join(" "));
+    if (!video) {
+      return repondre("No results found. Try another name.");
+    }
+
+    const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
+    await zk.sendMessage(dest, {
+      text: responseMessage,
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        externalAdReply: {
+          title: video.title,
+          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          thumbnail: video.thumbnail, // Thumbnail included in the context
+          sourceUrl: video.url, // Direct YouTube URL
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          showAdAttribution: true, // Attribution
+        },
+      },
+      quoted: ms,
+    });
+
+    const mediaUrl = await downloadMedia(video.url, type);
+    if (!mediaUrl) {
+      return repondre("Failed to download the requested media. Please try again later.");
+    }
+
+    const messageOptions = {
+      contextInfo: {
+        externalAdReply: {
+          title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
+          body: `${video.title} | ⏱️ ${video.timestamp}`,
+          thumbnail: video.thumbnail, // Full thumbnail from search result
+          sourceUrl: WhatsAppChannelURL, // Channel link
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
+        },
+      },
+    };
+
+    if (type === 'mp4') {
+      await zk.sendMessage(dest, { video: { url: mediaUrl }, mimetype: 'video/mp4', ...messageOptions }, { quoted: ms });
+    } else {
+      await zk.sendMessage(dest, { audio: { url: mediaUrl }, mimetype: 'audio/mp4', ...messageOptions }, { quoted: ms });
+    }
+  } catch (error) {
+    console.error(`Error in ${type} command:`, error.message);
+    return repondre("An error occurred while processing your request. Please try again later.");
+  }
+}
+
 // Video Command
 adams({
   nomCom: "video",
   categorie: "Search",
   reaction: "🎥"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-  if (!arg[0]) return repondre("Please insert a song/video name.");
+}, (dest, zk, commandeOptions) => handleCommand(dest, zk, commandeOptions, 'mp4'));
 
-  const video = await searchYouTube(arg.join(" "));
-  if (!video) return repondre("No videos found. Try another name.");
-
-  const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
-  await zk.sendMessage(dest, {
-    text: responseMessage,
-    contextInfo: {
-      mentionedJid: [dest.sender || ""],
-      externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        mediaType: 1,
-        renderLargerThumbnail: false,
-        showAdAttribution: true, // Attribution
-      },
-    },
-    quoted: ms,
-  });
-
-  const videoDlUrl = await downloadMedia(video.url, 'mp4');
-  if (!videoDlUrl) return repondre("Failed to download the video.");
-
-  // Send the video with a full thumbnail
-  await zk.sendMessage(dest, {
-    video: { url: videoDlUrl },
-    mimetype: 'video/mp4',
-    contextInfo: {
-      externalAdReply: {
-        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-        body: `${video.title} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail, // Full thumbnail from search result
-        mediaType: 1, // Indicate this is an image
-        renderLargerThumbnail: false, // Display large thumbnail
-        sourceUrl: WhatsAppChannelURL, // Channel link
-        showAdAttribution: true, // Attribution
-      },
-    }
-  }, { quoted: ms });
-});
 // Play Command
 adams({
   nomCom: "play",
   categorie: "Download",
   reaction: "🎧"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-  if (!arg[0]) return repondre("Please insert a song name.");
-
-  const video = await searchYouTube(arg.join(" "));
-  if (!video) return repondre("No audio found. Try another name.");
-
-  const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
-  await zk.sendMessage(dest, {
-    text: responseMessage,
-    contextInfo: {
-      mentionedJid: [dest.sender || ""],
-      externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        mediaType: 1,
-        renderLargerThumbnail: false,
-        showAdAttribution: true, // Attribution
-      },
-    },
-    quoted: ms,
-  });
-
-  const audioDlUrl = await downloadMedia(video.url, 'mp3');
-  if (!audioDlUrl) return repondre("Failed to download the audio.");
-
-  await zk.sendMessage(dest, {
-    audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4',
-    contextInfo: {
-      externalAdReply: {
-        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        mediaType: 1,
-        renderLargerThumbnail: true,
-        showAdAttribution: true, // Attribution
-      },
-    },
-  }, { quoted: ms });
-});
+}, (dest, zk, commandeOptions) => handleCommand(dest, zk, commandeOptions, 'mp3'));
 
 // Song Command (Similar to Play)
 adams({
   nomCom: "song",
   categorie: "Download",
   reaction: "🎧"
-}, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
-  if (!arg[0]) return repondre("Please insert a song name.");
+}, (dest, zk, commandeOptions) => handleCommand(dest, zk, commandeOptions, 'mp3'));
 
-  const video = await searchYouTube(arg.join(" "));
-  if (!video) return repondre("No audio found. Try another name.");
+// Global Error Handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error.message);
+});
 
-  const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
-  await zk.sendMessage(dest, {
-    text: responseMessage,
-    contextInfo: {
-      mentionedJid: [dest.sender || ""],
-      externalAdReply: {
-        title: video.title,
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        mediaType: 1,
-        renderLargerThumbnail: false,
-        showAdAttribution: true, // Attribution
-      },
-    },
-    quoted: ms,
-  });
-
-  const audioDlUrl = await downloadMedia(video.url, 'mp3');
-  if (!audioDlUrl) return repondre("Failed to download the audio.");
-
-  await zk.sendMessage(dest, {
-    audio: { url: audioDlUrl },
-    mimetype: 'audio/mp4',
-    contextInfo: {
-      externalAdReply: {
-        title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-        body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-        thumbnailUrl: video.thumbnail,
-        sourceUrl: WhatsAppChannelURL,
-        mediaType: 1,
-        renderLargerThumbnail: true,
-        showAdAttribution: true, // Attribution
-      },
-    },
-  }, { quoted: ms });
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
 });
