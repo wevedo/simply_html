@@ -48,7 +48,6 @@ async function downloadMedia(url, type) {
 
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
-
 // Video Command
 adams({
   nomCom: "video",
@@ -68,6 +67,7 @@ adams({
       text: responseMessage,
       contextInfo: {
         mentionedJid: [dest.sender || ""],
+        quotedMessage: { conversation: "Requesting your video download..." }, // Quoted message
         externalAdReply: {
           title: video.title,
           body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
@@ -75,8 +75,13 @@ adams({
           sourceUrl: WhatsAppChannelURL,
           mediaType: 1,
           renderLargerThumbnail: false,
-          showAdAttribution: true,
         },
+        location: {
+          degreesLatitude: 0.0, // Example values; auto-generated
+          degreesLongitude: 0.0,
+          name: "BWM XMD Download Center",
+          address: "Worldwide",
+        }
       },
       quoted: ms,
     });
@@ -88,6 +93,7 @@ adams({
       video: { url: videoDlUrl },
       mimetype: 'video/mp4',
       contextInfo: {
+        quotedMessage: { conversation: `Here is your video: ${video.title}` }, // Quoted message for sending video
         externalAdReply: {
           title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
           body: `${video.title} | ⏱️ ${video.timestamp}`,
@@ -95,8 +101,13 @@ adams({
           mediaType: 1,
           renderLargerThumbnail: false,
           sourceUrl: WhatsAppChannelURL,
-          showAdAttribution: true,
         },
+        location: {
+          degreesLatitude: 0.0, // Example values; auto-generated
+          degreesLongitude: 0.0,
+          name: "BWM XMD Download Center",
+          address: "Worldwide",
+        }
       }
     }, { quoted: ms });
 
@@ -125,6 +136,7 @@ adams({
       text: responseMessage,
       contextInfo: {
         mentionedJid: [dest.sender || ""],
+        quotedMessage: { conversation: "Requesting your audio download..." }, // Quoted message
         externalAdReply: {
           title: video.title,
           body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
@@ -132,8 +144,13 @@ adams({
           sourceUrl: WhatsAppChannelURL,
           mediaType: 1,
           renderLargerThumbnail: false,
-          showAdAttribution: true,
         },
+        location: {
+          degreesLatitude: 0.0, // Example values; auto-generated
+          degreesLongitude: 0.0,
+          name: "BWM XMD Download Center",
+          address: "Worldwide",
+        }
       },
       quoted: ms,
     });
@@ -145,15 +162,21 @@ adams({
       audio: { url: audioDlUrl },
       mimetype: 'audio/mp4',
       contextInfo: {
+        quotedMessage: { conversation: `Here is your audio: ${video.title}` }, // Quoted message for sending audio
         externalAdReply: {
           title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          body: `${video.title} | ⏱️ ${video.timestamp}`,
           thumbnailUrl: video.thumbnail,
-          sourceUrl: WhatsAppChannelURL,
           mediaType: 1,
           renderLargerThumbnail: true,
-          showAdAttribution: true,
+          sourceUrl: WhatsAppChannelURL,
         },
+        location: {
+          degreesLatitude: 0.0, // Example values; auto-generated
+          degreesLongitude: 0.0,
+          name: "BWM XMD Download Center",
+          address: "Worldwide",
+        }
       },
     }, { quoted: ms });
 
