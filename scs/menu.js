@@ -47,7 +47,7 @@ const fetchGitHubStats = async () => {
 
 // Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { prefixe, nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
@@ -72,28 +72,25 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Prepare command list for caption
-    let commandList = "";
+    // Prepare command list for the menu
+    let sections = [];
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        commandList += `\n🔹 *${cat}*:\n`;
-        coms[cat].forEach((cmd) => {
-            commandList += `  - ${cmd}\n`;
+        const commands = coms[cat].map((cmd) => ({
+            title: `${prefixe}${cmd}`,
+            rowId: `${prefixe}${cmd}`,
+            description: `Run the ${cmd} command`
+        }));
+        sections.push({
+            title: `🔹 ${cat} Commands`,
+            rows: commands
         });
     });
 
-    // Interactive menu buttons
-    const buttons = [
-        { buttonId: `${prefixe}help`, buttonText: { displayText: "Help" }, type: 1 },
-        { buttonId: `${prefixe}about`, buttonText: { displayText: "About" }, type: 1 },
-        { buttonId: `${prefixe}feedback`, buttonText: { displayText: "Feedback" }, type: 1 }
-    ];
-
-    // Send menu message
+    // Send menu message as a list
     try {
         await zk.sendMessage(dest, {
-            image: { url: selectedTheme.image },
-            caption: `
+            text: `
 ╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
 ┃👋 Hey, ${nomAuteurMessage}!
 ┃💻 Owner: Ibrahim Adams
@@ -106,20 +103,16 @@ ${selectedTheme.greeting}
 ⭐ *Quote of the Day*: "${selectedTheme.quote}"
 
 ${readmore}
-${commandList}
-`,
-            buttons,
-            footer: "Choose an option below:",
-            headerType: 4 // For images + buttons
+Explore the commands below!`,
+            footer: "BWM XMD - Powered by Ibrahim Adams",
+            title: "📜 *Main Menu*",
+            buttonText: "📋 View Commands",
+            sections
         });
     } catch (error) {
         console.error("Error while sending the menu:", error);
     }
 });
-
-
-
-
 
 
 
