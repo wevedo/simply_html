@@ -48,8 +48,6 @@ async function downloadMedia(url, type) {
 
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
-// Video Command
-// Video Command
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -68,47 +66,43 @@ adams({
       text: responseMessage,
       contextInfo: {
         mentionedJid: [dest.sender || ""],
-        quotedMessage: { conversation: "Requesting your video download..." }, // Quoted message
         externalAdReply: {
           title: video.title,
           body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
           thumbnailUrl: video.thumbnail,
           sourceUrl: WhatsAppChannelURL,
-          mediaType: 1,
-          renderLargerThumbnail: false,
+          mediaType: 1,  // For video or image
+          renderLargerThumbnail: true,  // Show a larger thumbnail
         },
+        forwardingScore: 1,  // Forwarding score
+        isForwarded: false,  // Mark as not forwarded
+        messageId: 'custom-message-id', // Custom message ID for referencing
+        participant: dest.sender,  // Participant who initiated the message
       },
-      quoted: ms,
+      quoted: ms,  // Quoting the previous message
     });
 
     const videoDlUrl = await downloadMedia(video.url, 'mp4');
     if (!videoDlUrl) return repondre("Failed to download the video.");
 
-    // Send a location message
-    await zk.sendMessage(dest, {
-      location: {
-        degreesLatitude: -1.2921, // Example latitude (Nairobi)
-        degreesLongitude: 36.8219, // Example longitude
-        name: "BWM XMD Download Center",
-        address: "Nairobi, Kenya",
-      },
-      contextInfo: { quotedMessage: { conversation: "Location shared for download center." } },
-    });
-
-    // Send the video
     await zk.sendMessage(dest, {
       video: { url: videoDlUrl },
       mimetype: 'video/mp4',
+      caption: `*${video.title}*\n👤 Author: ${video.author.name}\n⏱️ Duration: ${video.timestamp}`,
       contextInfo: {
-        quotedMessage: { conversation: `Here is your video: ${video.title}` }, // Quoted message for sending video
         externalAdReply: {
-          title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
-          body: `${video.title} | ⏱️ ${video.timestamp}`,
-          thumbnailUrl: video.thumbnail,
-          mediaType: 1,
-          renderLargerThumbnail: false,
-          sourceUrl: WhatsAppChannelURL,
+          title: `📍 ${video.title}`,
+          body: `👤 ${video.author.name}\n⏱️ ${video.timestamp}`,
+          mediaType: 2,  // Video type
+          thumbnailUrl: video.thumbnail,  // Thumbnail image
+          renderLargerThumbnail: true,  // Display large thumbnail
+          sourceUrl: WhatsAppChannelURL, // Clickable URL for your channel
         },
+        forwardingScore: 1,  // Forwarding score
+        isForwarded: true,  // Mark as forwarded
+        messageId: 'custom-video-message-id', // Custom message ID for referencing
+        participant: dest.sender,  // Indicate the participant who initiated the message
+        timestamp: Date.now(),  // Custom timestamp for the message
       }
     }, { quoted: ms });
 
