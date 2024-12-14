@@ -82,15 +82,18 @@ adams({
           thumbnailUrl: video.thumbnail,
           sourceUrl: WhatsAppChannelURL,
           mediaType: 1,  // For video or image
-          renderLargerThumbnail: true,  // Show a larger thumbnail
+          renderLargerThumbnail: true,  // Show a larger thumbnail in the message
+          showAdAttribution: false,    // Removed to avoid attribution box
         },
-        forwardingScore: 1,  // Forwarding score
-        isForwarded: true,  // Mark as forwarded
-        messageId: 'custom-message-id', // Custom message ID for referencing
-        participant: dest.sender,  // Participant who initiated the message
-        customText: "🚀 Forwarded from CEO Ibrahim Adams 🚀", // Custom forward text
+        forwardingScore: 999,  // Increased forwarding score
+        isForwarded: true,     // Mark as forwarded
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '',   // Leave empty or use a specific Jid
+          newsletterName: "Bwm xmd Updates 🚀", // Your cool message here
+          serverMessageId: 143, // Example ID, adjust if needed
+        },
       },
-      quoted: ms,  // Quoting the previous message
+      quoted: ms,
     });
 
     const videoDlUrl = await downloadMedia(video.url, 'mp4');
@@ -105,16 +108,17 @@ adams({
           title: `📍 ${video.title}`,
           body: `👤 ${video.author.name}\n⏱️ ${video.timestamp}`,
           mediaType: 2,  // Video type
-          thumbnailUrl: video.thumbnail,  // Thumbnail image
+          thumbnailUrl: video.thumbnail,  // Show thumbnail image
           renderLargerThumbnail: true,  // Display large thumbnail
           sourceUrl: WhatsAppChannelURL, // Clickable URL for your channel
         },
-        forwardingScore: 1,  // Forwarding score
-        isForwarded: true,  // Mark as forwarded
-        messageId: 'custom-video-message-id', // Custom message ID for referencing
-        participant: dest.sender,  // Indicate the participant who initiated the message
-        timestamp: Date.now(),  // Custom timestamp for the message
-        customText: "🚀 Forwarded from CEO Ibrahim Adams 🚀", // Custom forward text
+        forwardingScore: 999,  // Increased score for forward likelihood
+        isForwarded: true,     // Mark as forwarded
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '',   // Leave empty or use a specific Jid
+          newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
+          serverMessageId: 143, // Example ID, adjust if needed
+        },
       }
     }, { quoted: ms });
 
