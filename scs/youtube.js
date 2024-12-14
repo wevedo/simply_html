@@ -83,12 +83,12 @@ adams({
           sourceUrl: WhatsAppChannelURL,
           mediaType: 1,  // For video or image
           renderLargerThumbnail: true,  // Show a larger thumbnail in the message
-          showAdAttribution: false,    // Removed to avoid attribution box
+          showAdAttribution: true,    // Removed to avoid attribution box
         },
         forwardingScore: 999,  // Increased forwarding score
-        isForwarded: true,     // Mark as forwarded
+        isForwarded: false,     // Mark as forwarded
         forwardedNewsletterMessageInfo: {
-          newsletterJid: '',   // Leave empty or use a specific Jid
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y@s.whatsapp.net',   // Leave empty or use a specific Jid
           newsletterName: "Bwm xmd Updates 🚀", // Your cool message here
           serverMessageId: 143, // Example ID, adjust if needed
         },
@@ -115,7 +115,7 @@ adams({
         forwardingScore: 999,  // Increased score for forward likelihood
         isForwarded: true,     // Mark as forwarded
         forwardedNewsletterMessageInfo: {
-          newsletterJid: '',   // Leave empty or use a specific Jid
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y@s.whatsapp.net',   // Leave empty or use a specific Jid
           newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
           serverMessageId: 143, // Example ID, adjust if needed
         },
