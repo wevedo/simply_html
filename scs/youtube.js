@@ -115,7 +115,7 @@ adams({
         forwardingScore: 999,  // Increased score for forward likelihood
         isForwarded: true,     // Mark as forwarded
         forwardedNewsletterMessageInfo: {
-          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y@s.whatsapp.net',   // Leave empty or use a specific Jid
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',   // Leave empty or use a specific Jid
           newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
           serverMessageId: 143, // Example ID, adjust if needed
         },
