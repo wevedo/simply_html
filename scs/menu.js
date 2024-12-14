@@ -6,7 +6,7 @@ const s = require(__dirname + "/../config");
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
 
-// Dynamic themes based on the time of day
+// Dynamic themes based on time of day
 const themes = {
     morning: {
         greeting: "🌅 Good Morning! Start Fresh ☕",
@@ -28,6 +28,20 @@ const themes = {
         image: "https://files.catbox.moe/galaxy_night.webp",
         quote: "Dream big. Tomorrow is another chance to chase your goals."
     }
+};
+
+// Background songs
+const audioUrls = [
+    "https://files.catbox.moe/fm0rvl.mp3",
+    "https://files.catbox.moe/demlei.mp3",
+    "https://files.catbox.moe/3ka4td.m4a",
+    "https://files.catbox.moe/zm8edu.m4a",
+    "https://files.catbox.moe/6ztgwg.mp3"
+];
+
+// Determine MIME type
+const getMimeType = (url) => {
+    return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
 };
 
 // Fetch GitHub repository stats
@@ -73,50 +87,48 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const formattedTotalUsers = totalUsers.toLocaleString();
 
     // Prepare command list for the menu
-    let sections = [];
+    let menuText = `╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*\n`;
+    menuText += `┃👋 *Hey, ${nomAuteurMessage}!*\n`;
+    menuText += `┃💻 *Owner:* Ibrahim Adams\n`;
+    menuText += `┃📅 *Date:* ${date}\n`;
+    menuText += `┃⏰ *Time:* ${time}\n`;
+    menuText += `┃👥 *Users:* ${formattedTotalUsers}\n`;
+    menuText += `╰━━━╯\n\n`;
+
+    menuText += `🌟 ${selectedTheme.greeting}\n`;
+    menuText += `⭐ *Quote of the Day:* "${selectedTheme.quote}"\n`;
+    menuText += `${readmore}\n`;
+
+    // Categorize and list commands
+    menuText += `*Available Commands:*\n`;
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        const commands = coms[cat].map((cmd) => ({
-            title: `${prefixe}${cmd}`,
-            rowId: `${prefixe}${cmd}`,
-            description: `Run the ${cmd} command`
-        }));
-        sections.push({
-            title: `🔹 ${cat} Commands`,
-            rows: commands
+        menuText += `\n📚 *${cat}*\n`;
+        coms[cat].forEach((cmd) => {
+            menuText += `- ${prefixe}${cmd}\n`;
         });
     });
 
-    // Send menu message as a list
+    // Randomly select an audio file
+    const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+
+    // Send the stylish menu
     try {
         await zk.sendMessage(dest, {
-            text: `
-╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
-┃👋 Hey, ${nomAuteurMessage}!
-┃💻 Owner: Ibrahim Adams
-┃📅 Date: ${date}
-┃⏰ Time: ${time}
-┃👥 Users: ${formattedTotalUsers}
-╰━━━╯
+            image: { url: selectedTheme.image },
+            caption: menuText,
+        });
 
-${selectedTheme.greeting}
-⭐ *Quote of the Day*: "${selectedTheme.quote}"
-
-${readmore}
-Explore the commands below!`,
-            footer: "BWM XMD - Powered by Ibrahim Adams",
-            title: "📜 *Main Menu*",
-            buttonText: "📋 View Commands",
-            sections
+        // Play background audio
+        await zk.sendMessage(dest, {
+            audio: { url: randomAudio },
+            mimetype: getMimeType(randomAudio),
+            ptt: false, // Not a voice note
         });
     } catch (error) {
         console.error("Error while sending the menu:", error);
     }
 });
-
-
-
-
 
        
                 
