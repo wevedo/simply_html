@@ -6,42 +6,28 @@ const s = require(__dirname + "/../config");
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
 
-// Dynamic themes based on time of day
+// Dynamic themes based on the time of day
 const themes = {
     morning: {
         greeting: "🌅 Good Morning! Start Fresh ☕",
-        image: "https://files.catbox.moe/nature_morning.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
         quote: "Every sunrise is an invitation to brighten someone's day."
     },
     afternoon: {
         greeting: "☀️ Good Afternoon! Keep Going 💪",
-        image: "https://files.catbox.moe/nature_afternoon.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
         quote: "The journey of a thousand miles begins with a single step."
     },
     evening: {
         greeting: "🌆 Good Evening! Unwind and Relax ✨",
-        image: "https://files.catbox.moe/galaxy_evening.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
         quote: "Success is not final, failure is not fatal. It is the courage to continue that counts."
     },
     night: {
         greeting: "🌙 Good Night! Recharge for Tomorrow 🌌",
-        image: "https://files.catbox.moe/galaxy_night.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
         quote: "Dream big. Tomorrow is another chance to chase your goals."
     }
-};
-
-// Background songs
-const audioUrls = [
-    "https://files.catbox.moe/fm0rvl.mp3",
-    "https://files.catbox.moe/demlei.mp3",
-    "https://files.catbox.moe/3ka4td.m4a",
-    "https://files.catbox.moe/zm8edu.m4a",
-    "https://files.catbox.moe/6ztgwg.mp3"
-];
-
-// Determine MIME type
-const getMimeType = (url) => {
-    return url.endsWith(".wav") ? "audio/wav" : "audio/mpeg";
 };
 
 // Fetch GitHub repository stats
@@ -87,51 +73,43 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const formattedTotalUsers = totalUsers.toLocaleString();
 
     // Prepare command list for the menu
-    let menuText = `╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*\n`;
-    menuText += `┃👋 *Hey, ${nomAuteurMessage}!*\n`;
-    menuText += `┃💻 *Owner:* Ibrahim Adams\n`;
-    menuText += `┃📅 *Date:* ${date}\n`;
-    menuText += `┃⏰ *Time:* ${time}\n`;
-    menuText += `┃👥 *Users:* ${formattedTotalUsers}\n`;
-    menuText += `╰━━━╯\n\n`;
-
-    menuText += `🌟 ${selectedTheme.greeting}\n`;
-    menuText += `⭐ *Quote of the Day:* "${selectedTheme.quote}"\n`;
-    menuText += `${readmore}\n`;
-
-    // Categorize and list commands
-    menuText += `*Available Commands:*\n`;
+    let sections = [];
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        menuText += `\n📚 *${cat}*\n`;
-        coms[cat].forEach((cmd) => {
-            menuText += `- ${prefixe}${cmd}\n`;
+        const commands = coms[cat].map((cmd) => ({
+            title: `${prefixe}${cmd}`,
+            rowId: `${prefixe}${cmd}`,
+            description: `Run the ${cmd} command`
+        }));
+        sections.push({
+            title: `🔹 ${cat} Commands`,
+            rows: commands
         });
     });
 
-    // Randomly select an audio file
-    const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
-
-    // Send the stylish menu
+    // Send menu message as a list
     try {
         await zk.sendMessage(dest, {
-            image: { url: selectedTheme.image },
-            caption: menuText,
-        });
+            text: `
+╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
+┃👋 Hey, ${nomAuteurMessage}!
+┃💻 Owner: Ibrahim Adams
+┃📅 Date: ${date}
+┃⏰ Time: ${time}
+┃👥 Users: ${formattedTotalUsers}
+╰━━━╯
 
-        // Play background audio
-        await zk.sendMessage(dest, {
-            audio: { url: randomAudio },
-            mimetype: getMimeType(randomAudio),
-            ptt: false, // Not a voice note
+${selectedTheme.greeting}
+⭐ *Quote of the Day*: "${selectedTheme.quote}"
+
+${readmore}
+Explore the commands below!`,
+            footer: "BWM XMD - Powered by Ibrahim Adams",
+            title: "📜 *Main Menu*",
+            buttonText: "📋 View Commands",
+            sections
         });
     } catch (error) {
         console.error("Error while sending the menu:", error);
     }
 });
-
-       
-                
-
-
-
