@@ -12,19 +12,19 @@ const hour = moment().hour();
 const themes = {
     morning: {
         greeting: "🌞 Good Morning!",
-        image: "https://files.catbox.moe/nature_morning.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
     },
     afternoon: {
         greeting: "☀️ Good Afternoon!",
-        image: "https://files.catbox.moe/nature_afternoon.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
     },
     evening: {
         greeting: "🌅 Good Evening!",
-        image: "https://files.catbox.moe/galaxy_evening.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
     },
     night: {
         greeting: "🌌 Good Night!",
-        image: "https://files.catbox.moe/galaxy_night.webp",
+        image: "https://files.catbox.moe/7ux2i3.webp",
     }
 };
 
