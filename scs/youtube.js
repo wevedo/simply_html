@@ -48,6 +48,16 @@ async function downloadMedia(url, type) {
 
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
+
+
+  
+
+
+  
+      
+      
+      
+        
 adams({
   nomCom: "video",
   categorie: "Search",
@@ -75,9 +85,10 @@ adams({
           renderLargerThumbnail: true,  // Show a larger thumbnail
         },
         forwardingScore: 1,  // Forwarding score
-        isForwarded: false,  // Mark as not forwarded
+        isForwarded: true,  // Mark as forwarded
         messageId: 'custom-message-id', // Custom message ID for referencing
         participant: dest.sender,  // Participant who initiated the message
+        customText: "🚀 Forwarded from CEO Ibrahim Adams 🚀", // Custom forward text
       },
       quoted: ms,  // Quoting the previous message
     });
@@ -103,6 +114,7 @@ adams({
         messageId: 'custom-video-message-id', // Custom message ID for referencing
         participant: dest.sender,  // Indicate the participant who initiated the message
         timestamp: Date.now(),  // Custom timestamp for the message
+        customText: "🚀 Forwarded from CEO Ibrahim Adams 🚀", // Custom forward text
       }
     }, { quoted: ms });
 
