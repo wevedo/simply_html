@@ -2,6 +2,8 @@ const { adams } = require("../Ibrahim/adams");
 const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
+// Replace this with your channel JID
+const NEWSLETTER_JID = "2547XXXXXXXX@g.us"; // Replace with your actual channel JID
 
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
@@ -60,13 +62,15 @@ const fetchGitHubStats = async () => {
 };
 
 // Main menu command
+
+// Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { prefixe, nomAuteurMessage } = commandeOptions;
+    let { prefixe, nomAuteurMessage, m } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
     // Organize commands by category
-    cm.map((com) => {
+    cm.forEach((com) => {
         const categoryUpper = com.categorie.toUpperCase();
         if (!coms[categoryUpper]) coms[categoryUpper] = [];
         coms[categoryUpper].push(com.nomCom);
@@ -86,37 +90,42 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Prepare command list for the menu
-    let menuText = `╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*\n`;
-    menuText += `┃👋 *Hey, ${nomAuteurMessage}!*\n`;
-    menuText += `┃💻 *Owner:* Ibrahim Adams\n`;
-    menuText += `┃📅 *Date:* ${date}\n`;
-    menuText += `┃⏰ *Time:* ${time}\n`;
-    menuText += `┃👥 *Users:* ${formattedTotalUsers}\n`;
-    menuText += `╰━━━╯\n\n`;
+    // Stylish Menu Header
+    let menuText = `${symbols.header} *𝐁𝐖𝐌 𝐗𝐌𝐃 - 𝐌𝐄𝐍𝐔*\n`;
+    menuText += `${symbols.separator} *Owner:* Ibrahim Adams\n`;
+    menuText += `${symbols.separator} *Date:* ${date}\n`;
+    menuText += `${symbols.separator} *Time:* ${time}\n`;
+    menuText += `${symbols.separator} *Users:* ${formattedTotalUsers}\n`;
+    menuText += `${symbols.separator} *Newsletter:* https://wa.me/${NEWSLETTER_JID}\n`;
+    menuText += `${symbols.footer} ${selectedTheme.greeting}\n\n`;
 
-    menuText += `🌟 ${selectedTheme.greeting}\n`;
-    menuText += `⭐ *Quote of the Day:* "${selectedTheme.quote}"\n`;
-    menuText += `${readmore}\n`;
-
-    // Categorize and list commands
-    menuText += `*Available Commands:*\n`;
+    // List commands category by category
     const sortedCategories = Object.keys(coms).sort();
-    sortedCategories.forEach((cat) => {
-        menuText += `\n📚 *${cat}*\n`;
-        coms[cat].forEach((cmd) => {
-            menuText += `- ${prefixe}${cmd}\n`;
+    sortedCategories.forEach((category) => {
+        menuText += `${symbols.category} *${category}*\n`;
+        coms[category].forEach((cmd) => {
+            menuText += `  ${symbols.command} ${prefixe}${cmd}\n`;
         });
+        menuText += `${readmore}\n`; // Add spacing between categories
     });
 
     // Randomly select an audio file
     const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
-    // Send the stylish menu
+    // Send the menu with image and metadata
     try {
         await zk.sendMessage(dest, {
             image: { url: selectedTheme.image },
             caption: menuText,
+            mentions: [m.sender],
+        }, {
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: NEWSLETTER_JID,
+                newsletterName: "BWM XMD",
+                serverMessageId: "143",
+            },
         });
 
         // Play background audio
@@ -128,7 +137,4 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     } catch (error) {
         console.error("Error while sending the menu:", error);
     }
-});
-
-       
-                
+});                
