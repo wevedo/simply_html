@@ -7,29 +7,30 @@ adams({nomCom: "ok", categorie: "General", reaction: "🤲🏿"}, async (dest, z
         return repondre("*Reply to a view-once media message.*");
     }
 
-    // Check if the replied message is a view-once message
     if (msgRepondu.viewOnceMessageV2) {
         try {
             const sender = msgRepondu.key.participant || msgRepondu.key.remoteJid; // Get the sender's ID
             const senderName = (await zk.onWhatsApp(sender))[0]?.notify || sender.split("@")[0]; // Get sender name or fallback to number
             
+            let mediaPath, caption;
+
             // Handle image messages
             if (msgRepondu.viewOnceMessageV2.message.imageMessage) {
-                const image = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.imageMessage);
-                const caption = msgRepondu.viewOnceMessageV2.message.imageMessage.caption || "";
-
+                caption = msgRepondu.viewOnceMessageV2.message.imageMessage.caption || "";
+                mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.imageMessage);
+                console.log("Image downloaded to:", mediaPath); // Debugging log
                 await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                    image: { url: image },
+                    image: { url: mediaPath },
                     caption: `*Forwarded View-Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}\n\n${caption}`
                 });
             }
             // Handle video messages
             else if (msgRepondu.viewOnceMessageV2.message.videoMessage) {
-                const video = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.videoMessage);
-                const caption = msgRepondu.viewOnceMessageV2.message.videoMessage.caption || "";
-
+                caption = msgRepondu.viewOnceMessageV2.message.videoMessage.caption || "";
+                mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.videoMessage);
+                console.log("Video downloaded to:", mediaPath); // Debugging log
                 await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                    video: { url: video },
+                    video: { url: mediaPath },
                     caption: `*Forwarded View-Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}\n\n${caption}`
                 });
             } else {
@@ -38,7 +39,7 @@ adams({nomCom: "ok", categorie: "General", reaction: "🤲🏿"}, async (dest, z
 
             repondre("*View-once message forwarded successfully!*");
         } catch (err) {
-            console.error("Error forwarding view-once message:", err);
+            console.error("Error details:", err); // Log full error details
             repondre("*Failed to forward the view-once message.*");
         }
     } else {
