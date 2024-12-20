@@ -263,61 +263,37 @@ Please try again later or leave a message. Cheers! 😊`
         // Extract sender name or fallback to "Unknown"
         const senderName = contact?.[0]?.notify || "Unknown";
 
-        // Check if the message is a view-once message
-        const isViewOnce = msg.message?.viewOnceMessage?.message;
-
-        if (isViewOnce) {
-            // Determine the type of media in the view-once message
-            const mediaType = isViewOnce.imageMessage
-                ? "image"
-                : isViewOnce.videoMessage
-                ? "video"
-                : isViewOnce.audioMessage
-                ? "audio"
-                : isViewOnce.voiceMessage
-                ? "voice"
-                : null;
-
-            if (mediaType) {
-                const mediaMessage =
-                    mediaType === "image"
-                        ? isViewOnce.imageMessage
-                        : mediaType === "video"
-                        ? isViewOnce.videoMessage
-                        : mediaType === "audio"
-                        ? isViewOnce.audioMessage
-                        : mediaType === "voice"
-                        ? isViewOnce.voiceMessage
-                        : null;
-
-                // Download and save the media
-                const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
-                const caption = mediaMessage.caption || "";
-
-                // Construct media payload
-                const mediaPayload =
-                    mediaType === "image" || mediaType === "video"
-                        ? { [mediaType]: { url: mediaPath }, caption }
-                        : mediaType === "audio" || mediaType === "voice"
-                        ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
-                        : null;
-
-                // Construct sender information text
-                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}`;
-
-                // Send the media and additional info to the owner's number
-                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", { text: additionalText });
-                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
-            } else {
-                // Handle unsupported media types
-                await zk.sendMessage(from, { text: "Unsupported view-once media type." }, { quoted: msg });
-            }
-        } else {
-            // If the message is not a view-once message
-            await zk.sendMessage(from, { text: "This is not a view-once message." }, { quoted: msg });
+        // Ensure the message is a view-once message
+        const viewOnceContent = msg.message?.viewOnceMessage?.message;
+        if (!viewOnceContent) {
+            return zk.sendMessage(from, { text: "This message is not a view-once message." }, { quoted: msg });
         }
+
+        // Determine the media type and handle accordingly
+        let mediaPayload;
+        let caption = "";
+
+        if (viewOnceContent.imageMessage) {
+            const image = await zk.downloadAndSaveMediaMessage(viewOnceContent.imageMessage);
+            caption = viewOnceContent.imageMessage.caption || "";
+            mediaPayload = { image: { url: image }, caption };
+        } else if (viewOnceContent.videoMessage) {
+            const video = await zk.downloadAndSaveMediaMessage(viewOnceContent.videoMessage);
+            caption = viewOnceContent.videoMessage.caption || "";
+            mediaPayload = { video: { url: video }, caption };
+        } else {
+            // Unsupported media type
+            return zk.sendMessage(from, { text: "Unsupported view-once media type." }, { quoted: msg });
+        }
+
+        // Additional text with sender info
+        const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}`;
+
+        // Send the additional text and media to the owner's number
+        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", { text: additionalText });
+        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
     } catch (err) {
-        console.error("Error processing view-once message:", err);
+        console.error("Error handling view-once message:", err);
     }
 });
 
