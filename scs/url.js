@@ -14,11 +14,11 @@ async function uploadToCatbox(Path) {
 
     try {
         const response = await catbox.uploadFile({
-            path: Path
+            path: Path // Provide the path to the file
         });
 
         if (response) {
-            return response;
+            return response; // returns the uploaded file URL
         } else {
             throw new Error("Error retrieving the file link");
         }
@@ -67,9 +67,10 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
         const outputPath = `${mediaPath}.mp3`;
 
         try {
+            // Convert audio to MP3 format
             await convertToMp3(mediaPath, outputPath);
-            fs.unlinkSync(mediaPath);
-            mediaPath = outputPath;
+            fs.unlinkSync(mediaPath); // Remove the original audio file
+            mediaPath = outputPath; // Update the path to the converted MP3 file
         } catch (error) {
             console.error("Error converting audio to MP3:", error);
             repondre('Failed to process the audio file.');
@@ -82,19 +83,39 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 
     try {
         const catboxUrl = await uploadToCatbox(mediaPath);
-        fs.unlinkSync(mediaPath);
+        fs.unlinkSync(mediaPath); // Remove the local file after uploading
 
-        const responseText = `Here is your ${mediaType} URL: ${catboxUrl}`;
+        // Respond with the URL based on media type
+        let title, body;
+
+        switch (mediaType) {
+            case 'image':
+                title = "BWM XMD - Image URL";
+                body = "Click to view or copy the link";
+                break;
+            case 'video':
+                title = "BWM XMD - Video URL";
+                body = "Click to view or copy the link";
+                break;
+            case 'audio':
+                title = "BWM XMD - Audio URL";
+                body = "Click to view or copy the link";
+                break;
+            default:
+                repondre('An unknown error occurred.');
+                return;
+        }
+
         await zk.sendMessage(origineMessage.key.remoteJid, {
-            text: responseText,
+            text: `Here is your ${mediaType} URL:\n${catboxUrl}`,
             contextInfo: {
                 externalAdReply: {
-                    title: "BWM XMD File URL",
-                    body: "Click here to view the file or copy the URL below.",
-                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your bot profile photo URL
-                    sourceUrl: catboxUrl,
+                    title: title,
+                    body: body,
+                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
+                    sourceUrl: catboxUrl, // Link to the uploaded file
                     mediaType: 1,
-                    showAdAttribution: true,
+                    showAdAttribution: true, // Verified badge
                 },
             },
         });
@@ -103,7 +124,6 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
         repondre('Oops, an error occurred.');
     }
 });
-
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
    const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
