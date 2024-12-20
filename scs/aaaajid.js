@@ -21,12 +21,13 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest
     return; 
   }
 
-  if (!arg || arg.trim() === '') {
+  // Ensure arg is a valid input
+  if (!arg || (Array.isArray(arg) && arg.join(' ').trim() === '')) {
     repondre("❌ You need to include a message. Example: `senttoall Hello everyone!`");
     return;
   }
 
-  const message = arg.join(' ');
+  const message = Array.isArray(arg) ? arg.join(' ').trim() : arg.trim();
   const membresGroupe = verifGroupe ? await infosGroupe.participants : [];
 
   if (verifAdmin || superUser) {
