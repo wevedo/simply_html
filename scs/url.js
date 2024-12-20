@@ -1,89 +1,111 @@
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const fs = require('fs');
-const axios = require('axios');
-const FormData = require('form-data');
+const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
 const { adams } = require("../Ibrahim/adams");
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const fs = require("fs-extra");
+const ffmpeg = require("fluent-ffmpeg");
+const { Catbox } = require('node-catbox');
 
-// Function to upload file to Catbox
-async function uploadToCatbox(filePath) {
-  if (!fs.existsSync(filePath)) {
-    throw new Error("File does not exist");
-  }
+const catbox = new Catbox();
 
-  const form = new FormData();
-  form.append('file', fs.createReadStream(filePath));
-
-  try {
-    console.log("Uploading file to Catbox...");
-    const response = await axios.post('https://catbox.moe/user/api.php', form, {
-      headers: form.getHeaders(),
-    });
-    
-    console.log("Catbox response:", response.data); // Log the response to check
-
-    if (response.data && response.data.includes('https://')) {
-      console.log(`File uploaded successfully: ${response.data}`);
-      return response.data;
-    } else {
-      throw new Error("Failed to get a valid response from Catbox");
+async function uploadToCatbox(Path) {
+    if (!fs.existsSync(Path)) {
+        throw new Error("File does not exist");
     }
-  } catch (error) {
-    console.error("Error during upload:", error.message); // Log the specific error message
-    throw new Error("Error uploading file to Catbox.");
-  }
+
+    try {
+        const response = await catbox.uploadFile({
+            path: Path // Provide the path to the file
+        });
+
+        if (response) {
+            return response; // returns the uploaded file URL
+        } else {
+            throw new Error("Error retrieving the file link");
+        }
+    } catch (err) {
+        throw new Error(String(err));
+    }
 }
 
-// Command to upload image, video, or audio file
-adams({
-  'nomCom': 'url',       // Command to trigger the function
-  'categorie': "General", // Command category
-  'reaction': '👨🏿‍💻'    // Reaction to use on command
-}, async (groupId, client, context) => {
-  const { msgRepondu, repondre } = context;
+async function convertToMp3(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .toFormat("mp3")
+            .on("error", (err) => reject(err))
+            .on("end", () => resolve(outputPath))
+            .save(outputPath);
+    });
+}
 
-  // If no message (image/video/audio) is mentioned, prompt user
-  if (!msgRepondu) {
-    return repondre("No media message received. Please mention an image, video, or audio.");
-  }
+adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+    const { msgRepondu, repondre } = commandeOptions;
 
-  let mediaPath;
-  let mediaBuffer;
-
-  try {
-    // Check if the message contains media and download it
-    if (msgRepondu.videoMessage) {
-      mediaBuffer = await downloadMediaMessage(msgRepondu.videoMessage, "buffer", {});
-      console.log("Video message received and downloaded");
-    } else if (msgRepondu.imageMessage) {
-      mediaBuffer = await downloadMediaMessage(msgRepondu.imageMessage, "buffer", {});
-      console.log("Image message received and downloaded");
-    } else if (msgRepondu.audioMessage) {
-      mediaBuffer = await downloadMediaMessage(msgRepondu.audioMessage, "buffer", {});
-      console.log("Audio message received and downloaded");
-    } else {
-      return repondre("No media found. Please send an image, video, or audio.");
+    if (!msgRepondu) {
+        repondre('Please reply to an image, video, or audio file.');
+        return;
     }
 
-    // Save the media to a temporary file
-    mediaPath = `temp_${Date.now()}`;
-    fs.writeFileSync(mediaPath, mediaBuffer);
-    console.log(`Media saved to ${mediaPath}`);
+    let mediaPath, mediaType;
 
-    // Upload the media to Catbox and get the URL
-    const fileUrl = await uploadToCatbox(mediaPath);
+    if (msgRepondu.videoMessage) {
+        const videoSize = msgRepondu.videoMessage.fileLength;
 
-    // Delete the local media file after upload
-    fs.unlinkSync(mediaPath);
+        if (videoSize > 50 * 1024 * 1024) {
+            repondre('The video is too long. Please send a smaller video.');
+            return;
+        }
 
-    // Respond with the URL of the uploaded file
-    repondre(fileUrl);
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        mediaType = 'video';
+    } else if (msgRepondu.imageMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
+        mediaType = 'image';
+    } else if (msgRepondu.audioMessage) {
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        mediaType = 'audio';
 
-  } catch (error) {
-    console.error("Error during media handling:", error.message); // Log the specific error message
-    if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
-    repondre("Oops, there was an error: " + error.message); // Respond with the error message
-  }
+        const outputPath = `${mediaPath}.mp3`;
+
+        try {
+            // Convert audio to MP3 format
+            await convertToMp3(mediaPath, outputPath);
+            fs.unlinkSync(mediaPath); // Remove the original audio file
+            mediaPath = outputPath; // Update the path to the converted MP3 file
+        } catch (error) {
+            console.error("Error converting audio to MP3:", error);
+            repondre('Failed to process the audio file.');
+            return;
+        }
+    } else {
+        repondre('Unsupported media type. Reply with an image, video, or audio file.');
+        return;
+    }
+
+    try {
+        const catboxUrl = await uploadToCatbox(mediaPath);
+        fs.unlinkSync(mediaPath); // Remove the local file after uploading
+
+        // Respond with the URL based on media type
+        switch (mediaType) {
+            case 'image':
+                repondre(`Here is your image URL:\n${catboxUrl}`);
+                break;
+            case 'video':
+                repondre(`Here is your video URL:\n${catboxUrl}`);
+                break;
+            case 'audio':
+                repondre(`Here is your audio URL (MP3):\n${catboxUrl}`);
+                break;
+            default:
+                repondre('An unknown error occurred.');
+                break;
+        }
+    } catch (error) {
+        console.error('Error while creating your URL:', error);
+        repondre('Oops, an error occurred.');
+    }
 });
+
 
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
