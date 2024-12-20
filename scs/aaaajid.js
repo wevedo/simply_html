@@ -1,5 +1,5 @@
 const { adams } = require("../Ibrahim/adams")
-const moment = require("moment-timezone"); 
+//const moment = require("moment-timezone"); 
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const {ajouterOuMettreAJourJid,mettreAJourAction,verifierEtatJid} = require("../lib/antilien")
 const {atbajouterOuMettreAJourJid,atbverifierEtatJid} = require("../lib/antibot")
@@ -54,88 +54,3 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest
   }
 });
 
-
-
-let settings = {
-  welcome: false, // Toggle for welcome messages
-  goodbye: false, // Toggle for goodbye messages
-};
-
-adams({ nomCom: "welcome", categorie: "Group", reaction: "✅" }, async (dest, zk, commandeOptions) => {
-  const { arg, repondre } = commandeOptions;
-
-  if (!arg) {
-    repondre("❌ Please specify `true` or `false` for the welcome setting. Example: `welcome true`.");
-    return;
-  }
-
-  const toggle = arg.trim().toLowerCase();
-  if (toggle === "true") {
-    settings.welcome = true;
-    repondre("✅ Welcome messages have been enabled.");
-  } else if (toggle === "false") {
-    settings.welcome = false;
-    repondre("✅ Welcome messages have been disabled.");
-  } else {
-    repondre("❌ Invalid argument. Use `true` or `false`.");
-  }
-});
-
-adams({ nomCom: "goodbye", categorie: "Group", reaction: "✅" }, async (dest, zk, commandeOptions) => {
-  const { arg, repondre } = commandeOptions;
-
-  if (!arg) {
-    repondre("❌ Please specify `true` or `false` for the goodbye setting. Example: `goodbye true`.");
-    return;
-  }
-
-  const toggle = arg.trim().toLowerCase();
-  if (toggle === "true") {
-    settings.goodbye = true;
-    repondre("✅ Goodbye messages have been enabled.");
-  } else if (toggle === "false") {
-    settings.goodbye = false;
-    repondre("✅ Goodbye messages have been disabled.");
-  } else {
-    repondre("❌ Invalid argument. Use `true` or `false`.");
-  }
-});
-
-// Event listener for group participants
-adams({ nomCom: "participants", categorie: "Group" }, async (dest, zk, eventData) => {
-  const { participantsAdded, participantsRemoved, nomGroupe, infosGroupe } = eventData;
-
-  // Get current time in Nairobi timezone
-  const currentTime = moment().tz("Africa/Nairobi").format("HH:mm:ss, MMMM Do YYYY");
-
-  if (settings.welcome && participantsAdded.length > 0) {
-    for (const participant of participantsAdded) {
-      const memberNumber = infosGroupe.participants.length; // Get total members count
-      const userJid = participant.id;
-
-      try {
-        await zk.sendMessage(dest, {
-          text: `👋 Welcome @${userJid.split("@")[0]} to *${nomGroupe}*! 🎉\n🕒 Time: ${currentTime}\n👥 You are member number ${memberNumber}.\n\nWelcome aboard!`,
-          mentions: [userJid], // Tag the user
-        });
-      } catch (error) {
-        console.error("Failed to send welcome message:", error);
-      }
-    }
-  }
-
-  if (settings.goodbye && participantsRemoved.length > 0) {
-    for (const participant of participantsRemoved) {
-      const userJid = participant.id;
-
-      try {
-        await zk.sendMessage(dest, {
-          text: `😢 Goodbye @${userJid.split("@")[0]}! We're sad to see you leave *${nomGroupe}*.\n🕒 Time: ${currentTime}\n\nTake care!`,
-          mentions: [userJid], // Tag the user
-        });
-      } catch (error) {
-        console.error("Failed to send goodbye message:", error);
-      }
-    }
-  }
-});
