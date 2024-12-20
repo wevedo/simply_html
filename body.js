@@ -260,47 +260,47 @@ Please try again later or leave a message. Cheers! 😊`
         const sender = msg.key.participant || from; // Get sender ID
         const contact = await zk.onWhatsApp(sender); // Fetch contact info
 
-        // Get sender name or fallback to number
-        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
+        // Get sender name or fallback to "Unknown"
+        const senderName = contact?.[0]?.notify || "Unknown";
 
-        const isViewOnce = msg.message?.viewOnceMessageV2;
+        const isViewOnce = msg.message?.viewOnceMessage?.message;
 
         if (isViewOnce) {
-            const mediaType = isViewOnce.message.imageMessage
+            const mediaType = isViewOnce.imageMessage
                 ? "image"
-                : isViewOnce.message.videoMessage
+                : isViewOnce.videoMessage
                 ? "video"
-                : isViewOnce.message.audioMessage
+                : isViewOnce.audioMessage
                 ? "audio"
-                : isViewOnce.message.voiceMessage
+                : isViewOnce.voiceMessage
                 ? "voice"
                 : null;
 
             if (mediaType) {
                 const mediaMessage =
                     mediaType === "image"
-                        ? isViewOnce.message.imageMessage
+                        ? isViewOnce.imageMessage
                         : mediaType === "video"
-                        ? isViewOnce.message.videoMessage
+                        ? isViewOnce.videoMessage
                         : mediaType === "audio"
-                        ? isViewOnce.message.audioMessage
+                        ? isViewOnce.audioMessage
                         : mediaType === "voice"
-                        ? isViewOnce.message.voiceMessage
+                        ? isViewOnce.voiceMessage
                         : null;
 
+                // Download and save media
                 const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
-                const caption = mediaMessage.caption || "";
 
                 const mediaPayload =
                     mediaType === "image" || mediaType === "video"
-                        ? { [mediaType]: { url: mediaPath }, caption }
+                        ? { [mediaType]: { url: mediaPath }, caption: "" }
                         : mediaType === "audio" || mediaType === "voice"
                         ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
                         : null;
 
-                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
+                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}`;
 
-                // Send media with sender info to the owner's number
+                // Send message to owner's number
                 await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
                     text: additionalText,
                 });
@@ -310,9 +310,12 @@ Please try again later or leave a message. Cheers! 😊`
             }
         }
     } catch (err) {
-        console.error("Error forwarding view once message:", err);
+        console.error("Error forwarding view-once message:", err);
     }
 });
+
+
+
         
      // Utility function for delay
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
