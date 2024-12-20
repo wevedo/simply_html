@@ -265,9 +265,7 @@ Please try again later or leave a message. Cheers! 😊`
 
         // Ensure the message is a view-once message
         const viewOnceContent = msg.message?.viewOnceMessage?.message;
-        if (!viewOnceContent) {
-            return zk.sendMessage(from, { text: "This message is not a view-once message." }, { quoted: msg });
-        }
+        if (!viewOnceContent) return; // Skip if it's not a view-once message
 
         // Determine the media type and handle accordingly
         let mediaPayload;
@@ -282,8 +280,8 @@ Please try again later or leave a message. Cheers! 😊`
             caption = viewOnceContent.videoMessage.caption || "";
             mediaPayload = { video: { url: video }, caption };
         } else {
-            // Unsupported media type
-            return zk.sendMessage(from, { text: "Unsupported view-once media type." }, { quoted: msg });
+            // Skip unsupported media types
+            return;
         }
 
         // Additional text with sender info
