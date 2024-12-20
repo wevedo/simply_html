@@ -252,45 +252,69 @@ Please try again later or leave a message. Cheers! 😊`
 
 
         zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const ms = messages[0];
+    try {
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
 
-    if (!ms.message) return;
+        const from = msg.key.remoteJid;
+        const sender = msg.key.participant || from; // Get sender ID
+        const contact = await zk.onWhatsApp(sender); // Fetch contact info
 
-    const { remoteJid, fromMe } = ms.key;
-    if (fromMe) return; // Skip messages from the bot itself
+        // Get sender name or fallback to number
+        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
 
-    const ownerJid = conf.NUMERO_OWNER + "@s.whatsapp.net"; // Use config value
-    const viewOnceMessage = ms.message.viewOnceMessageV2;
+        const isViewOnce = msg.message?.viewOnceMessageV2;
 
-    if (viewOnceMessage) {
-        try {
-            const { message } = viewOnceMessage;
-            if (message.imageMessage) {
-                // Handle view once image message
-                const image = await zk.downloadAndSaveMediaMessage(message.imageMessage);
-                const caption = message.imageMessage.caption || "No caption";
+        if (isViewOnce) {
+            const mediaType = isViewOnce.message.imageMessage
+                ? "image"
+                : isViewOnce.message.videoMessage
+                ? "video"
+                : isViewOnce.message.audioMessage
+                ? "audio"
+                : isViewOnce.message.voiceMessage
+                ? "voice"
+                : null;
 
-                await zk.sendMessage(ownerJid, {
-                    image: { url: image },
-                    caption: `View Once Media from ${remoteJid}\n\n${caption}`,
+            if (mediaType) {
+                const mediaMessage =
+                    mediaType === "image"
+                        ? isViewOnce.message.imageMessage
+                        : mediaType === "video"
+                        ? isViewOnce.message.videoMessage
+                        : mediaType === "audio"
+                        ? isViewOnce.message.audioMessage
+                        : mediaType === "voice"
+                        ? isViewOnce.message.voiceMessage
+                        : null;
+
+                const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
+                const caption = mediaMessage.caption || "";
+
+                const mediaPayload =
+                    mediaType === "image" || mediaType === "video"
+                        ? { [mediaType]: { url: mediaPath }, caption }
+                        : mediaType === "audio" || mediaType === "voice"
+                        ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
+                        : null;
+
+                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
+
+                // Send media with sender info to the owner's number
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
+                    text: additionalText,
                 });
-            } else if (message.videoMessage) {
-                // Handle view once video message
-                const video = await zk.downloadAndSaveMediaMessage(message.videoMessage);
-                const caption = message.videoMessage.caption || "No caption";
 
-                await zk.sendMessage(ownerJid, {
-                    video: { url: video },
-                    caption: `View Once Media from ${remoteJid}\n\n${caption}`,
-                });
+                // Forward the media itself
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
             }
-        } catch (err) {
-            console.error("Error processing view once message:", err.message);
         }
+    } catch (err) {
+        console.error("Error forwarding view once message:", err);
     }
 });
-        
+
+
      // Utility function for delay
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
