@@ -260,26 +260,22 @@ Please try again later or leave a message. Cheers! 😊`
         const sender = msg.key.participant || from; // Get sender ID
         const contact = await zk.onWhatsApp(sender); // Fetch contact info
 
-        // Extract sender name or fallback to "Unknown"
-        const senderName = contact?.[0]?.notify || "Unknown";
+        // Extract sender name or fallback to number
+        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
 
-        // Ensure the message is a view-once message
-        const viewOnceMessage = msg.message?.viewOnceMessage?.message;
-        if (!viewOnceMessage) return; // Skip if it's not a view-once message
+        const viewOnceMessage = msg.message?.viewOnceMessageV2?.message;
+        if (!viewOnceMessage) return; // Skip if not a view-once message
 
-        // Determine the media type and download media
-        let mediaPayload;
-        let caption = "";
-        let mediaPath;
-
+        // Determine the media type
+        let mediaPayload, caption = "";
         if (viewOnceMessage.imageMessage) {
-            mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.imageMessage);
+            const buffer = await zk.downloadMediaMessage(viewOnceMessage.imageMessage);
             caption = viewOnceMessage.imageMessage.caption || "";
-            mediaPayload = { image: { url: mediaPath }, caption };
+            mediaPayload = { image: buffer, caption };
         } else if (viewOnceMessage.videoMessage) {
-            mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.videoMessage);
+            const buffer = await zk.downloadMediaMessage(viewOnceMessage.videoMessage);
             caption = viewOnceMessage.videoMessage.caption || "";
-            mediaPayload = { video: { url: mediaPath }, caption };
+            mediaPayload = { video: buffer, caption };
         } else {
             return; // Skip unsupported media types
         }
@@ -287,7 +283,7 @@ Please try again later or leave a message. Cheers! 😊`
         // Prepare additional text with sender info
         const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}`;
 
-        // Send the text and media to the owner's number
+        // Send the additional text and media to the owner's number
         await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", { text: additionalText });
         await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
 
@@ -295,7 +291,6 @@ Please try again later or leave a message. Cheers! 😊`
         console.error("Error forwarding view-once message:", err);
     }
 });
-
 
         
      // Utility function for delay
