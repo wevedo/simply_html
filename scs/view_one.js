@@ -18,7 +18,7 @@ adams({nomCom: "ok", categorie: "General", reaction: "🤲🏿"}, async (dest, z
                 const image = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.imageMessage);
                 const caption = msgRepondu.viewOnceMessageV2.message.imageMessage.caption || "";
 
-                await zk.sendMessage(process.env.NUMERO_OWNER + "@s.whatsapp.net", {
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
                     image: { url: image },
                     caption: `*Forwarded View-Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}\n\n${caption}`
                 });
@@ -28,7 +28,7 @@ adams({nomCom: "ok", categorie: "General", reaction: "🤲🏿"}, async (dest, z
                 const video = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.videoMessage);
                 const caption = msgRepondu.viewOnceMessageV2.message.videoMessage.caption || "";
 
-                await zk.sendMessage(process.env.NUMERO_OWNER + "@s.whatsapp.net", {
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
                     video: { url: video },
                     caption: `*Forwarded View-Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}\n\n${caption}`
                 });
@@ -45,7 +45,6 @@ adams({nomCom: "ok", categorie: "General", reaction: "🤲🏿"}, async (dest, z
         return repondre("*The replied message is not a view-once message.*");
     }
 });
-
 
 adams({nomCom:"vv",categorie:"General",reaction:"🤪"},async(dest,zk,commandeOptions)=>{
 
