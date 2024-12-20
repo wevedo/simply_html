@@ -107,7 +107,7 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
     }
 });
 
-
+/*
 
 adams(
   { nomCom: "sticker", categorie: "Conversion", reaction: "👨🏿‍💻" },
@@ -274,7 +274,7 @@ mediamsg = msgRepondu.videoMessage
 });
 
 
-
+*/
 adams({ nomCom: "write", categorie: "Conversion", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
   const { ms, msgRepondu, arg, repondre, nomAuteurMessage } = commandeOptions;
 
