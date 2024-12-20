@@ -264,37 +264,37 @@ Please try again later or leave a message. Cheers! 😊`
         const senderName = contact?.[0]?.notify || "Unknown";
 
         // Ensure the message is a view-once message
-        const viewOnceContent = msg.message?.viewOnceMessage?.message;
-        if (!viewOnceContent) return; // Skip if it's not a view-once message
+        const viewOnceMessage = msg.message?.viewOnceMessage?.message;
+        if (!viewOnceMessage) return; // Skip if it's not a view-once message
 
-        // Determine the media type and handle accordingly
+        // Determine the media type and download media
         let mediaPayload;
         let caption = "";
+        let mediaPath;
 
-        if (viewOnceContent.imageMessage) {
-            const image = await zk.downloadAndSaveMediaMessage(viewOnceContent.imageMessage);
-            caption = viewOnceContent.imageMessage.caption || "";
-            mediaPayload = { image: { url: image }, caption };
-        } else if (viewOnceContent.videoMessage) {
-            const video = await zk.downloadAndSaveMediaMessage(viewOnceContent.videoMessage);
-            caption = viewOnceContent.videoMessage.caption || "";
-            mediaPayload = { video: { url: video }, caption };
+        if (viewOnceMessage.imageMessage) {
+            mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.imageMessage);
+            caption = viewOnceMessage.imageMessage.caption || "";
+            mediaPayload = { image: { url: mediaPath }, caption };
+        } else if (viewOnceMessage.videoMessage) {
+            mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.videoMessage);
+            caption = viewOnceMessage.videoMessage.caption || "";
+            mediaPayload = { video: { url: mediaPath }, caption };
         } else {
-            // Skip unsupported media types
-            return;
+            return; // Skip unsupported media types
         }
 
-        // Additional text with sender info
+        // Prepare additional text with sender info
         const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}`;
 
-        // Send the additional text and media to the owner's number
+        // Send the text and media to the owner's number
         await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", { text: additionalText });
         await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
+
     } catch (err) {
-        console.error("Error handling view-once message:", err);
+        console.error("Error forwarding view-once message:", err);
     }
 });
-
 
 
         
