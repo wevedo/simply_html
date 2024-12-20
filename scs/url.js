@@ -14,11 +14,11 @@ async function uploadToCatbox(Path) {
 
     try {
         const response = await catbox.uploadFile({
-            path: Path // Provide the path to the file
+            path: Path
         });
 
         if (response) {
-            return response; // returns the uploaded file URL
+            return response;
         } else {
             throw new Error("Error retrieving the file link");
         }
@@ -67,10 +67,9 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
         const outputPath = `${mediaPath}.mp3`;
 
         try {
-            // Convert audio to MP3 format
             await convertToMp3(mediaPath, outputPath);
-            fs.unlinkSync(mediaPath); // Remove the original audio file
-            mediaPath = outputPath; // Update the path to the converted MP3 file
+            fs.unlinkSync(mediaPath);
+            mediaPath = outputPath;
         } catch (error) {
             console.error("Error converting audio to MP3:", error);
             repondre('Failed to process the audio file.');
@@ -82,65 +81,28 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
     }
 
     try {
-    const catboxUrl = await uploadToCatbox(mediaPath);
-    fs.unlinkSync(mediaPath); // Remove the local file after uploading
+        const catboxUrl = await uploadToCatbox(mediaPath);
+        fs.unlinkSync(mediaPath);
 
-    // Respond with the URL based on media type
-    switch (mediaType) {
-        case 'image':
-            await zk.sendMessage(origineMessage.key.remoteJid, {
-                text: `Here is your image URL:\n${catboxUrl}`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: "BWM XMD - Image URL",
-                        body: "Click to view or copy the link",
-                        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
-                        sourceUrl: catboxUrl, // Link to the uploaded file
-                        mediaType: 1,
-                        showAdAttribution: true, // Verified badge
-                    },
+        const responseText = `Here is your ${mediaType} URL: ${catboxUrl}`;
+        await zk.sendMessage(origineMessage.key.remoteJid, {
+            text: responseText,
+            contextInfo: {
+                externalAdReply: {
+                    title: "BWM XMD File URL",
+                    body: "Click here to view the file or copy the URL below.",
+                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with your bot profile photo URL
+                    sourceUrl: catboxUrl,
+                    mediaType: 1,
+                    showAdAttribution: true,
                 },
-            });
-            break;
-        case 'video':
-            await zk.sendMessage(origineMessage.key.remoteJid, {
-                text: `Here is your video URL:\n${catboxUrl}`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: "BWM XMD - Video URL",
-                        body: "Click to view or copy the link",
-                        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
-                        sourceUrl: catboxUrl, // Link to the uploaded file
-                        mediaType: 1,
-                        showAdAttribution: true,
-                    },
-                },
-            });
-            break;
-        case 'audio':
-            await zk.sendMessage(origineMessage.key.remoteJid, {
-                text: `Here is your audio URL (MP3):\n${catboxUrl}`,
-                contextInfo: {
-                    externalAdReply: {
-                        title: "BWM XMD - Audio URL",
-                        body: "Click to view or copy the link",
-                        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
-                        sourceUrl: catboxUrl, // Link to the uploaded file
-                        mediaType: 1,
-                        showAdAttribution: true,
-                    },
-                },
-            });
-            break;
-        default:
-            repondre('An unknown error occurred.');
-            break;
+            },
+        });
+    } catch (error) {
+        console.error('Error while creating your URL:', error);
+        repondre('Oops, an error occurred.');
     }
-} catch (error) {
-    console.error('Error while creating your URL:', error);
-    repondre('Oops, an error occurred.');
-}
-
+});
 
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
