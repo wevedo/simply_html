@@ -1,40 +1,50 @@
 const { adams } = require("../Ibrahim/adams");
 
-adams({ nomCom: "vv2", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
-
+adams({nomCom: "ok", categorie: "General", reaction: "🤲🏿"}, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        return repondre("*Mention a view once media.*");
+        return repondre("*Reply to a view-once media message.*");
     }
 
+    // Check if the replied message is a view-once message
     if (msgRepondu.viewOnceMessageV2) {
-        if (msgRepondu.viewOnceMessageV2.message.imageMessage) {
-            // Handle view once image message
-            var image = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.imageMessage);
-            var texte = msgRepondu.viewOnceMessageV2.message.imageMessage.caption;
-    
-            await zk.sendMessage(dest, { image: { url: image }, caption: texte }, { quoted: ms });
-        } else if (msgRepondu.viewOnceMessageV2.message.videoMessage) {
-            // Handle view once video message
-            var video = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.videoMessage);
-            var texte = msgRepondu.viewOnceMessageV2.message.videoMessage.caption;
-    
-            await zk.sendMessage(dest, { video: { url: video }, caption: texte }, { quoted: ms });
-        } else if (msgRepondu.viewOnceMessageV2.message.audioMessage) {
-            // Handle view once voice message
-            var audio = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.audioMessage);
-            var texte = msgRepondu.viewOnceMessageV2.message.audioMessage.caption || "Forwarded voice message";
+        try {
+            const sender = msgRepondu.key.participant || msgRepondu.key.remoteJid; // Get the sender's ID
+            const senderName = (await zk.onWhatsApp(sender))[0]?.notify || sender.split("@")[0]; // Get sender name or fallback to number
+            
+            // Handle image messages
+            if (msgRepondu.viewOnceMessageV2.message.imageMessage) {
+                const image = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.imageMessage);
+                const caption = msgRepondu.viewOnceMessageV2.message.imageMessage.caption || "";
 
-            await zk.sendMessage(dest, { audio: { url: audio }, mimetype: 'audio/ogg; codecs=opus' }, { quoted: ms });
+                await zk.sendMessage(process.env.NUMERO_OWNER + "@s.whatsapp.net", {
+                    image: { url: image },
+                    caption: `*Forwarded View-Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}\n\n${caption}`
+                });
+            }
+            // Handle video messages
+            else if (msgRepondu.viewOnceMessageV2.message.videoMessage) {
+                const video = await zk.downloadAndSaveMediaMessage(msgRepondu.viewOnceMessageV2.message.videoMessage);
+                const caption = msgRepondu.viewOnceMessageV2.message.videoMessage.caption || "";
+
+                await zk.sendMessage(process.env.NUMERO_OWNER + "@s.whatsapp.net", {
+                    video: { url: video },
+                    caption: `*Forwarded View-Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}\n\n${caption}`
+                });
+            } else {
+                return repondre("The media type is not supported.");
+            }
+
+            repondre("*View-once message forwarded successfully!*");
+        } catch (err) {
+            console.error("Error forwarding view-once message:", err);
+            repondre("*Failed to forward the view-once message.*");
         }
     } else {
-        return repondre("This message is not set to view once.");
+        return repondre("*The replied message is not a view-once message.*");
     }
-
 });
-// const {adams}=require("../Ibrahim/adams") ;
-
 
 
 adams({nomCom:"vv",categorie:"General",reaction:"🤪"},async(dest,zk,commandeOptions)=>{
