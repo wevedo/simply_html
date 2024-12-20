@@ -86,45 +86,33 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
         fs.unlinkSync(mediaPath); // Remove the local file after uploading
 
         // Respond with the URL based on media type
-        let title, body;
-
         switch (mediaType) {
             case 'image':
-                title = "BWM XMD - Image URL";
-                body = "Click to view or copy the link";
+                repondre(`Here is your image URL:\n${catboxUrl}`);
                 break;
             case 'video':
-                title = "BWM XMD - Video URL";
-                body = "Click to view or copy the link";
+                repondre(`Here is your video URL:\n${catboxUrl}`);
                 break;
             case 'audio':
-                title = "BWM XMD - Audio URL";
-                body = "Click to view or copy the link";
+                repondre(`Here is your audio URL (MP3):\n${catboxUrl}`);
                 break;
             default:
                 repondre('An unknown error occurred.');
-                return;
+                break;
         }
-
-        await zk.sendMessage(origineMessage.key.remoteJid, {
-            text: `Here is your ${mediaType} URL:\n${catboxUrl}`,
-            contextInfo: {
-                externalAdReply: {
-                    title: title,
-                    body: body,
-                    thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
-                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Link to the uploaded file
-                    mediaType: 1,
-                    showAdAttribution: true, // Verified badge
-                },
-            },
-        });
     } catch (error) {
         console.error('Error while creating your URL:', error);
         repondre('Oops, an error occurred.');
     }
 });
 
+
+
+
+
+
+   
+            
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
    const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
 
