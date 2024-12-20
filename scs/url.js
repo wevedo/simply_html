@@ -82,29 +82,64 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
     }
 
     try {
-        const catboxUrl = await uploadToCatbox(mediaPath);
-        fs.unlinkSync(mediaPath); // Remove the local file after uploading
+    const catboxUrl = await uploadToCatbox(mediaPath);
+    fs.unlinkSync(mediaPath); // Remove the local file after uploading
 
-        // Respond with the URL based on media type
-        switch (mediaType) {
-            case 'image':
-                repondre(`Here is your image URL:\n${catboxUrl}`);
-                break;
-            case 'video':
-                repondre(`Here is your video URL:\n${catboxUrl}`);
-                break;
-            case 'audio':
-                repondre(`Here is your audio URL (MP3):\n${catboxUrl}`);
-                break;
-            default:
-                repondre('An unknown error occurred.');
-                break;
-        }
-    } catch (error) {
-        console.error('Error while creating your URL:', error);
-        repondre('Oops, an error occurred.');
+    // Respond with the URL based on media type
+    switch (mediaType) {
+        case 'image':
+            await zk.sendMessage(origineMessage.key.remoteJid, {
+                text: `Here is your image URL:\n${catboxUrl}`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: "BWM XMD - Image URL",
+                        body: "Click to view or copy the link",
+                        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
+                        sourceUrl: catboxUrl, // Link to the uploaded file
+                        mediaType: 1,
+                        showAdAttribution: true, // Verified badge
+                    },
+                },
+            });
+            break;
+        case 'video':
+            await zk.sendMessage(origineMessage.key.remoteJid, {
+                text: `Here is your video URL:\n${catboxUrl}`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: "BWM XMD - Video URL",
+                        body: "Click to view or copy the link",
+                        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
+                        sourceUrl: catboxUrl, // Link to the uploaded file
+                        mediaType: 1,
+                        showAdAttribution: true,
+                    },
+                },
+            });
+            break;
+        case 'audio':
+            await zk.sendMessage(origineMessage.key.remoteJid, {
+                text: `Here is your audio URL (MP3):\n${catboxUrl}`,
+                contextInfo: {
+                    externalAdReply: {
+                        title: "BWM XMD - Audio URL",
+                        body: "Click to view or copy the link",
+                        thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
+                        sourceUrl: catboxUrl, // Link to the uploaded file
+                        mediaType: 1,
+                        showAdAttribution: true,
+                    },
+                },
+            });
+            break;
+        default:
+            repondre('An unknown error occurred.');
+            break;
     }
-});
+} catch (error) {
+    console.error('Error while creating your URL:', error);
+    repondre('Oops, an error occurred.');
+}
 
 
 
