@@ -113,7 +113,7 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
                     title: title,
                     body: body,
                     thumbnailUrl: "https://files.catbox.moe/fxcksg.webp", // Replace with a suitable thumbnail URL
-                    sourceUrl: catboxUrl, // Link to the uploaded file
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Link to the uploaded file
                     mediaType: 1,
                     showAdAttribution: true, // Verified badge
                 },
