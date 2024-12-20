@@ -1,4 +1,5 @@
 const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
+//const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const { adams } = require("../Ibrahim/adams");
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const fs = require("fs-extra");
@@ -108,99 +109,97 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 
 
 
+adams(
+  { nomCom: "sticker", categorie: "Conversion", reaction: "👨🏿‍💻" },
+  async (origineMessage, zk, commandeOptions) => {
+    let { ms, mtype, arg, repondre, nomAuteurMessage } = commandeOptions;
 
-adams({nomCom:"sticker",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
+    // Check if message type is valid for sticker conversion
+    const isImage = mtype === "imageMessage";
+    const isVideo = mtype === "videoMessage";
+    const tagImage = mtype === "extendedTextMessage" && JSON.stringify(ms.message).includes("imageMessage");
+    const tagVideo = mtype === "extendedTextMessage" && JSON.stringify(ms.message).includes("videoMessage");
 
-let {ms,mtype,arg,repondre,nomAuteurMessage}=commandeOptions
-  var txt=JSON.stringify(ms.message)
+    const generateFileName = (ext) => `${Math.floor(Math.random() * 10000)}${ext}`;
+    const stickerFileName = generateFileName(".webp");
 
-  var mime=mtype === "imageMessage" || mtype === "videoMessage";
-  var tagImage = mtype==="extendedTextMessage" && txt.includes("imageMessage")
-  var tagVideo = mtype==="extendedTextMessage" && txt.includes("videoMessage")
+    try {
+      let buffer = Buffer.from([]);
+      let downloadFilePath;
 
-const alea = (ext) => {
-  return `${Math.floor(Math.random() * 10000)}${ext}`;};
+      if (isImage || tagImage) {
+        downloadFilePath = ms.message.imageMessage || 
+          ms.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
 
+        if (!downloadFilePath) {
+          repondre("No image found to convert to sticker!");
+          return;
+        }
 
-  const stickerFileName = alea(".webp");
+        const media = await downloadContentFromMessage(downloadFilePath, "image");
+        for await (const chunk of media) {
+          buffer = Buffer.concat([buffer, chunk]);
+        }
 
+        const sticker = new Sticker(buffer, {
+          pack: "Bwm xmd",
+          author: nomAuteurMessage,
+          type: arg.includes("crop") || arg.includes("c") ? StickerTypes.CROPPED : StickerTypes.FULL,
+          quality: 100,
+        });
 
-            // image
-  if (mtype === "imageMessage" ||tagImage) {
-    let downloadFilePath;
-    if (ms.message.imageMessage) {
-      downloadFilePath = ms.message.imageMessage;
-    } else {
-      // picture mentioned
-      downloadFilePath =
-        ms.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage;
-    }
-    // picture
-    const media = await downloadContentFromMessage(downloadFilePath, "image");
-    let buffer = Buffer.from([]);
-    for await (const elm of media) {
-      buffer = Buffer.concat([buffer, elm]);
-    }
+        await sticker.toFile(stickerFileName);
 
-    sticker = new Sticker(buffer, {
-      pack:"Bwm xmd" ,
-      author: nomAuteurMessage,
-      type:
-        arg.includes("crop") || arg.includes("c")
-          ? StickerTypes.CROPPED
-          : StickerTypes.FULL,
-      quality: 100,
-    });
-  } else if (mtype === "videoMessage" || tagVideo) {
-    // videos
-    let downloadFilePath;
-    if (ms.message.videoMessage) {
-      downloadFilePath = ms.message.videoMessage;
-    } else {
-      downloadFilePath =
-        ms.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage;
-    }
-    const stream = await downloadContentFromMessage(downloadFilePath, "video");
-    let buffer = Buffer.from([]);
-    for await (const elm of stream) {
-      buffer = Buffer.concat([buffer, elm]);
-    }
+      } else if (isVideo || tagVideo) {
+        downloadFilePath = ms.message.videoMessage || 
+          ms.message.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
 
-    sticker = new Sticker(buffer, {
-      pack:"Beltah-Md", // pack stick
-      author:  nomAuteurMessage, // name of the author of the stick
-      type:
-        arg.includes("-r") || arg.includes("-c")
-          ? StickerTypes.CROPPED
-          : StickerTypes.FULL,
-      quality: 40,
-    });
-  } else {
-    repondre("Please mention an image or video!");
-    return;
-  }
+        if (!downloadFilePath) {
+          repondre("No video found to convert to sticker!");
+          return;
+        }
 
-  await sticker.toFile(stickerFileName);
-  await zk.sendMessage(
-    origineMessage,
-    {
-      sticker: fs.readFileSync(stickerFileName),
-    },
-    { quoted: ms }
-  );
+        const stream = await downloadContentFromMessage(downloadFilePath, "video");
+        for await (const chunk of stream) {
+          buffer = Buffer.concat([buffer, chunk]);
+        }
 
-try{
-  fs.unlinkSync(stickerFileName)
-}catch(e){console.log(e)}
+        const sticker = new Sticker(buffer, {
+          pack: "Bwm xmd",
+          author: nomAuteurMessage,
+          type: arg.includes("-r") || arg.includes("-c") ? StickerTypes.CROPPED : StickerTypes.FULL,
+          quality: 40,
+        });
 
+        await sticker.toFile(stickerFileName);
 
+      } else {
+        repondre("Please mention an image or video!");
+        return;
+      }
 
+      // Send the sticker
+      await zk.sendMessage(
+        origineMessage,
+        { sticker: fs.readFileSync(stickerFileName) },
+        { quoted: ms }
+      );
 
-
-  
+    } catch (error) {
+      console.error("Error converting to sticker:", error);
+      repondre("An error occurred while converting to sticker. Please try again.");
+    } finally {
+      // Clean up temporary file
+      try {
+        if (fs.existsSync(stickerFileName)) {
+          fs.unlinkSync(stickerFileName);
+        }
+      } catch (cleanupError) {
+        console.error("Error cleaning up sticker file:", cleanupError);
+     }
 });
 
-   
+
             
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
    const {ms , msgRepondu,arg,repondre,nomAuteurMessage} = commandeOptions ;
