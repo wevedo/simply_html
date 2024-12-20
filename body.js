@@ -252,62 +252,42 @@ Please try again later or leave a message. Cheers! 😊`
 
 
         zk.ev.on("messages.upsert", async (m) => {
-    try {
-        const msg = m.messages[0];
-        if (!msg.message || msg.key.fromMe) {
-            console.log("Skipping bot's own message");
-            return; // Skip bot's own messages
+    const { messages } = m;
+    const ms = messages[0];
+
+    if (!ms.message) return;
+
+    const { remoteJid, fromMe } = ms.key;
+    if (fromMe) return; // Skip messages from the bot itself
+
+    const ownerJid = conf.NUMERO_OWNER + "@s.whatsapp.net"; // Use config value
+    const viewOnceMessage = ms.message.viewOnceMessageV2;
+
+    if (viewOnceMessage) {
+        try {
+            const { message } = viewOnceMessage;
+            if (message.imageMessage) {
+                // Handle view once image message
+                const image = await zk.downloadAndSaveMediaMessage(message.imageMessage);
+                const caption = message.imageMessage.caption || "No caption";
+
+                await zk.sendMessage(ownerJid, {
+                    image: { url: image },
+                    caption: `View Once Media from ${remoteJid}\n\n${caption}`,
+                });
+            } else if (message.videoMessage) {
+                // Handle view once video message
+                const video = await zk.downloadAndSaveMediaMessage(message.videoMessage);
+                const caption = message.videoMessage.caption || "No caption";
+
+                await zk.sendMessage(ownerJid, {
+                    video: { url: video },
+                    caption: `View Once Media from ${remoteJid}\n\n${caption}`,
+                });
+            }
+        } catch (err) {
+            console.error("Error processing view once message:", err.message);
         }
-
-        const from = msg.key.remoteJid;
-        const sender = msg.key.participant || from; // Get sender ID
-        const contact = await zk.onWhatsApp(sender); // Fetch contact info
-
-        // Get sender name or fallback to number
-        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
-        console.log(`Received message from: ${senderName} (${sender})`);
-
-        const viewOnceMessage = msg.message?.viewOnceMessageV2?.message;
-        if (!viewOnceMessage) {
-            console.log("This is not a view-once message, skipping.");
-            return; // Skip if it's not a view-once message
-        }
-
-        console.log("Processing view-once message...");
-        
-        // Determine the media type and handle accordingly
-        let mediaPayload, caption = "";
-        if (viewOnceMessage.imageMessage) {
-            console.log("Detected an image message.");
-            const buffer = await zk.downloadMediaMessage(viewOnceMessage.imageMessage);
-            caption = viewOnceMessage.imageMessage.caption || "";
-            mediaPayload = { image: buffer, caption };
-        } else if (viewOnceMessage.videoMessage) {
-            console.log("Detected a video message.");
-            const buffer = await zk.downloadMediaMessage(viewOnceMessage.videoMessage);
-            caption = viewOnceMessage.videoMessage.caption || "";
-            mediaPayload = { video: buffer, caption };
-        } else {
-            console.log("Unsupported media type, skipping.");
-            return; // Skip unsupported media types
-        }
-
-        // Log media and sender info
-        console.log(`Media type: ${viewOnceMessage.imageMessage ? "image" : "video"}`);
-        console.log(`Caption: ${caption}`);
-
-        // Prepare additional text with sender info
-        const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}`;
-
-        // Send the additional text and media to the owner's number
-        console.log(`Forwarding message to: ${conf.NUMERO_OWNER + "@s.whatsapp.net"}`);
-        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", { text: additionalText });
-        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
-
-        console.log("View once message successfully forwarded.");
-
-    } catch (err) {
-        console.error("Error forwarding view-once message:", err);
     }
 });
         
