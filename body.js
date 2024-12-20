@@ -256,57 +256,47 @@ Please try again later or leave a message. Cheers! 😊`
         const msg = m.messages[0];
         if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
 
+        console.log("Received Message:", JSON.stringify(msg, null, 2));
+
         const from = msg.key.remoteJid;
         const sender = msg.key.participant || from; // Get sender ID
         const contact = await zk.onWhatsApp(sender); // Fetch contact info
 
-        // Get sender name or fallback to number
         const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
 
-        const isViewOnce = msg.message?.viewOnceMessageV2;
-
+        const isViewOnce = msg.message?.viewOnceMessageV2?.message;
         if (isViewOnce) {
-            const mediaType = isViewOnce.message.imageMessage
+            console.log("View Once Message Detected:", JSON.stringify(isViewOnce, null, 2));
+
+            const mediaType = isViewOnce.imageMessage
                 ? "image"
-                : isViewOnce.message.videoMessage
+                : isViewOnce.videoMessage
                 ? "video"
-                : isViewOnce.message.audioMessage
-                ? "audio"
-                : isViewOnce.message.voiceMessage
-                ? "voice"
                 : null;
+
+            console.log("Media Type:", mediaType);
 
             if (mediaType) {
                 const mediaMessage =
-                    mediaType === "image"
-                        ? isViewOnce.message.imageMessage
-                        : mediaType === "video"
-                        ? isViewOnce.message.videoMessage
-                        : mediaType === "audio"
-                        ? isViewOnce.message.audioMessage
-                        : mediaType === "voice"
-                        ? isViewOnce.message.voiceMessage
-                        : null;
+                    mediaType === "image" ? isViewOnce.imageMessage : isViewOnce.videoMessage;
 
-                const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
-                const caption = mediaMessage.caption || "";
+                try {
+                    const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage, "viewOnce");
+                    console.log("Media Path:", mediaPath);
 
-                const mediaPayload =
-                    mediaType === "image" || mediaType === "video"
-                        ? { [mediaType]: { url: mediaPath }, caption }
-                        : mediaType === "audio" || mediaType === "voice"
-                        ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
-                        : null;
+                    const caption = mediaMessage.caption || "";
+                    const mediaPayload = {
+                        [mediaType]: { url: mediaPath },
+                        caption,
+                    };
 
-                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
+                    const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
 
-                // Send media with sender info to the owner's number
-                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                    text: additionalText,
-                });
-
-                // Forward the media itself
-                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
+                    await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", { text: additionalText });
+                    await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
+                } catch (err) {
+                    console.error("Error downloading view once media:", err);
+                }
             }
         }
     } catch (err) {
