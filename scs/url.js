@@ -109,7 +109,96 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 
 
 
+zokou({nomCom:"sticker",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
 
+let {ms,mtype,arg,repondre,nomAuteurMessage}=commandeOptions
+  var txt=JSON.stringify(ms.message)
+
+  var mime=mtype === "imageMessage" || mtype === "videoMessage";
+  var tagImage = mtype==="extendedTextMessage" && txt.includes("imageMessage")
+  var tagVideo = mtype==="extendedTextMessage" && txt.includes("videoMessage")
+
+const alea = (ext) => {
+  return `${Math.floor(Math.random() * 10000)}${ext}`;};
+
+
+  const stickerFileName = alea(".webp");
+
+
+            // image
+  if (mtype === "imageMessage" ||tagImage) {
+    let downloadFilePath;
+    if (ms.message.imageMessage) {
+      downloadFilePath = ms.message.imageMessage;
+    } else {
+      // picture mentioned
+      downloadFilePath =
+        ms.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage;
+    }
+    // picture
+    const media = await downloadContentFromMessage(downloadFilePath, "image");
+    let buffer = Buffer.from([]);
+    for await (const elm of media) {
+      buffer = Buffer.concat([buffer, elm]);
+    }
+
+    sticker = new Sticker(buffer, {
+      pack:"Bwm xmd" ,
+      author: nomAuteurMessage,
+      type:
+        arg.includes("crop") || arg.includes("c")
+          ? StickerTypes.CROPPED
+          : StickerTypes.FULL,
+      quality: 100,
+    });
+  } else if (mtype === "videoMessage" || tagVideo) {
+    // videos
+    let downloadFilePath;
+    if (ms.message.videoMessage) {
+      downloadFilePath = ms.message.videoMessage;
+    } else {
+      downloadFilePath =
+        ms.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage;
+    }
+    const stream = await downloadContentFromMessage(downloadFilePath, "video");
+    let buffer = Buffer.from([]);
+    for await (const elm of stream) {
+      buffer = Buffer.concat([buffer, elm]);
+    }
+
+    sticker = new Sticker(buffer, {
+      pack:"Beltah-Md", // pack stick
+      author:  nomAuteurMessage, // name of the author of the stick
+      type:
+        arg.includes("-r") || arg.includes("-c")
+          ? StickerTypes.CROPPED
+          : StickerTypes.FULL,
+      quality: 40,
+    });
+  } else {
+    repondre("Please mention an image or video!");
+    return;
+  }
+
+  await sticker.toFile(stickerFileName);
+  await zk.sendMessage(
+    origineMessage,
+    {
+      sticker: fs.readFileSync(stickerFileName),
+    },
+    { quoted: ms }
+  );
+
+try{
+  fs.unlinkSync(stickerFileName)
+}catch(e){console.log(e)}
+
+
+
+
+
+  
+});
 
    
             
