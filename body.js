@@ -2210,7 +2210,7 @@ zk.ev.on('group-participants.update', async (group) => {
     try {
         ppgroup = await zk.profilePictureUrl(group.id, 'image');
     } catch {
-        ppgroup = ''; // Default to no profile picture
+        ppgroup = ''; // Default to no profile picture if none is available
     }
 
     const metadata = await zk.groupMetadata(group.id);
@@ -2229,6 +2229,7 @@ zk.ev.on('group-participants.update', async (group) => {
 
                     let membres = group.participants;
 
+                    // Constructing the message with member index
                     for (let membre of membres) {
                         let memberIndex = metadata.participants.findIndex((p) => p.id === membre) + 1;
                         msg += `\n👋 *Hello* @${membre.split("@")[0]}, it's great to have you here! \n📌 *You are member number*: ${memberIndex} in this group.\n\n`;
@@ -2236,7 +2237,11 @@ zk.ev.on('group-participants.update', async (group) => {
 
                     msg += `✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
 
-                    zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
+                    // Send welcome message with profile picture
+                    await zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
+
+                    console.log("Welcome message sent successfully.");
+
                 } catch (error) {
                     console.error('Error sending welcome message:', error);
                 }
@@ -2258,7 +2263,10 @@ zk.ev.on('group-participants.update', async (group) => {
 
                 msg += `\nWe hope to see you again someday! 🌟`;
 
-                zk.sendMessage(group.id, { text: msg, mentions: membres });
+                // Send goodbye message
+                await zk.sendMessage(group.id, { text: msg, mentions: membres });
+
+                console.log("Goodbye message sent successfully.");
             }
         }
 
@@ -2282,6 +2290,8 @@ zk.ev.on('group-participants.update', async (group) => {
                     text: `@${(group.author).split("@")[0]} has violated the anti-promotion rule, therefore both ${group.author.split("@")[0]} and @${(group.participants[0]).split("@")[0]} have been removed from administrative rights.`,
                     mentions: [group.author, group.participants[0]],
                 });
+
+                console.log("Anti-promotion action executed successfully.");
             }
         }
 
@@ -2306,13 +2316,14 @@ zk.ev.on('group-participants.update', async (group) => {
                     text: `@${(group.author).split("@")[0]} has violated the anti-demotion rule by removing @${(group.participants[0]).split("@")[0]}. Consequently, he has been stripped of administrative rights.`,
                     mentions: [group.author, group.participants[0]],
                 });
+
+                console.log("Anti-demotion action executed successfully.");
             }
         }
     } catch (e) {
         console.error('Error in group-participants.update:', e);
     }
 });
-
 /******** fin d'evenement groupe update *************************/
 
 
