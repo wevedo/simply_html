@@ -2191,7 +2191,7 @@ try {
         //fin événement message
 
 /******** evenement groupe update ****************/
-const { recupevents } = require('./lib/welcome');
+const { recupevents } = require('./bdd/welcome');
 
 zk.ev.on('group-participants.update', async (group) => {
     console.log(group);
@@ -2203,44 +2203,33 @@ zk.ev.on('group-participants.update', async (group) => {
         ppgroup = '';
     }
 
-    try {
-        const metadata = await zk.groupMetadata(group.id);
+    const metadata = await zk.groupMetadata(group.id);
 
-        if (group.action === 'add' && (await recupevents(group.id, "welcome")) === 'on') {
-            let msg = `*🌟 WELCOME TO ${metadata.subject} 🌟*\n\n`;
-            msg += `🖐️ *Hello New Member(s):*\n`;
+    if (group.action == 'add' && (await recupevents(group.id, "welcome")) == 'on') {
+        let msg = `🎉 *BWM XMD WELCOME MESSAGE!* 🎉`;
+        let membres = group.participants;
 
-            let membres = group.participants;
-            for (let membre of membres) {
-                msg += `❒ *Hey* @${membre.split("@")[0]}! Welcome to the group. 🎉\n`;
-                msg += `📞 *Your Number*: ${membre.split("@")[0]}\n`;
-            }
-
-            msg += `\n✨ *Feel free to participate and make this group lively!* 😊`;
-
-            zk.sendMessage(group.id, { 
-                image: { url: ppgroup }, 
-                caption: msg, 
-                mentions: membres 
-            });
-        } else if (group.action === 'remove' && (await recupevents(group.id, "goodbye")) === 'on') {
-            let msg = `*🚪 Goodbye Message*\n\n`;
-
-            let membres = group.participants;
-            for (let membre of membres) {
-                msg += `❒ @${membre.split("@")[0]} has left the group.\n`;
-                msg += `📞 *His Number*: ${membre.split("@")[0]}\n`;
-            }
-
-            msg += `\n🙏 *We hope to see them again someday.*`;
-
-            zk.sendMessage(group.id, { text: msg, mentions: membres });
+        for (let membre of membres) {
+            let memberIndex = metadata.participants.findIndex((p) => p.id === membre) + 1;
+            msg += `\n👋 *Hello* @${membre.split("@")[0]}, it's great to have you here! \n📌 *You are member number*: ${memberIndex} in this group.\n\n`;
         }
-    } catch (err) {
-        console.error("Error handling group participants update:", err);
+
+        msg += `✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
+
+        zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
+    } else if (group.action == 'remove' && (await recupevents(group.id, "goodbye")) == 'on') {
+        let msg = `💔 *Farewell to Our Friend(s)* 💔\n\n`;
+
+        let membres = group.participants;
+        for (let membre of membres) {
+            msg += `@${membre.split("@")[0]} has left the group.\n`;
+        }
+
+        msg += `\nWe hope to see you again someday! 🌟`;
+
+        zk.sendMessage(group.id, { text: msg, mentions: membres });
     }
 });
-
         } else if (group.action == 'promote' && (await recupevents(group.id, "antipromote") == 'on') ) {
             //  console.log(zk.user.id)
           if (group.author == metadata.owner || group.author  == conf.NUMERO_OWNER + '@s.whatsapp.net' || group.author == decodeJid(zk.user.id)  || group.author == group.participants[0]) { console.log('Cas de superUser je fais rien') ;return ;} ;
