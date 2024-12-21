@@ -2191,7 +2191,7 @@ try {
         //fin événement message
 
 /******** evenement groupe update ****************/
-const { recupevents } = require('./lib/welcome'); 
+const { recupevents } = require('./bdd/welcome');
 
 zk.ev.on('group-participants.update', async (group) => {
     console.log(group);
@@ -2206,25 +2206,40 @@ zk.ev.on('group-participants.update', async (group) => {
     try {
         const metadata = await zk.groupMetadata(group.id);
 
-        if (group.action == 'add' && (await recupevents(group.id, "welcome") == 'on')) {
-            let msg = `*BWM XMD WELCOME MESSAGE*`;
-            let membres = group.participants;
-            for (let membre of membres) {
-                msg += ` \n❒ *Hey* 🖐️ @${membre.split("@")[0]} WELCOME TO OUR GROUP. \n\n`;
-            }
-
-            msg += `❒ *READ THE GROUP DESCRIPTION TO AVOID GETTING REMOVED* `;
-
-            zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
-        } else if (group.action == 'remove' && (await recupevents(group.id, "goodbye") == 'on')) {
-            let msg = `One of our member have left the group;\n`;
+        if (group.action === 'add' && (await recupevents(group.id, "welcome")) === 'on') {
+            let msg = `*🌟 WELCOME TO ${metadata.subject} 🌟*\n\n`;
+            msg += `🖐️ *Hello New Member(s):*\n`;
 
             let membres = group.participants;
             for (let membre of membres) {
-                msg += `@${membre.split("@")[0]}\n`;
+                msg += `❒ *Hey* @${membre.split("@")[0]}! Welcome to the group. 🎉\n`;
+                msg += `📞 *Your Number*: ${membre.split("@")[0]}\n`;
             }
+
+            msg += `\n✨ *Feel free to participate and make this group lively!* 😊`;
+
+            zk.sendMessage(group.id, { 
+                image: { url: ppgroup }, 
+                caption: msg, 
+                mentions: membres 
+            });
+        } else if (group.action === 'remove' && (await recupevents(group.id, "goodbye")) === 'on') {
+            let msg = `*🚪 Goodbye Message*\n\n`;
+
+            let membres = group.participants;
+            for (let membre of membres) {
+                msg += `❒ @${membre.split("@")[0]} has left the group.\n`;
+                msg += `📞 *His Number*: ${membre.split("@")[0]}\n`;
+            }
+
+            msg += `\n🙏 *We hope to see them again someday.*`;
 
             zk.sendMessage(group.id, { text: msg, mentions: membres });
+        }
+    } catch (err) {
+        console.error("Error handling group participants update:", err);
+    }
+});
 
         } else if (group.action == 'promote' && (await recupevents(group.id, "antipromote") == 'on') ) {
             //  console.log(zk.user.id)
