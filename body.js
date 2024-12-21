@@ -257,50 +257,60 @@ Please try again later or leave a message. Cheers! 😊`
         if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
 
         const from = msg.key.remoteJid;
+        const sender = msg.key.participant || from; // Get sender ID
+        const contact = await zk.onWhatsApp(sender); // Fetch contact info
 
-        // Check if the message is a "view once" message
-        if (msg.message?.viewOnceMessageV2) {
-            const viewOnce = msg.message.viewOnceMessageV2;
-            let mediaType, mediaMessage;
+        // Get sender name or fallback to number
+        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
 
-            // Determine the type of media
-            if (viewOnce.message.imageMessage) {
-                mediaType = "image";
-                mediaMessage = viewOnce.message.imageMessage;
-            } else if (viewOnce.message.videoMessage) {
-                mediaType = "video";
-                mediaMessage = viewOnce.message.videoMessage;
-            } else {
-                console.error("Unsupported view once media type.");
-                return;
-            }
+        const isViewOnce = msg.message?.viewOnceMessageV2;
 
-            try {
-                // Attempt to download the media
+        if (isViewOnce) {
+            const mediaType = isViewOnce.message.imageMessage
+                ? "image"
+                : isViewOnce.message.videoMessage
+                ? "video"
+                : isViewOnce.message.audioMessage
+                ? "audio"
+                : isViewOnce.message.voiceMessage
+                ? "voice"
+                : null;
+
+            if (mediaType) {
+                const mediaMessage =
+                    mediaType === "image"
+                        ? isViewOnce.message.imageMessage
+                        : mediaType === "video"
+                        ? isViewOnce.message.videoMessage
+                        : mediaType === "audio"
+                        ? isViewOnce.message.audioMessage
+                        : mediaType === "voice"
+                        ? isViewOnce.message.voiceMessage
+                        : null;
+
                 const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
-                console.log(`Media downloaded successfully: ${mediaPath}`);
-
                 const caption = mediaMessage.caption || "";
-                const mediaPayload = {
-                    [mediaType]: { url: mediaPath },
-                    caption: caption + `\n\n*Forwarded View Once ${mediaType}*`,
-                };
 
-                // Send the downloaded media
-                await zk.sendMessage(
-                    conf.NUMERO_OWNER + "@s.whatsapp.net",
-                    mediaPayload,
-                    { quoted: msg }
-                );
-            } catch (downloadError) {
-                console.error("Error downloading view once media:", downloadError);
+                const mediaPayload =
+                    mediaType === "image" || mediaType === "video"
+                        ? { [mediaType]: { url: mediaPath }, caption }
+                        : mediaType === "audio" || mediaType === "voice"
+                        ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
+                        : null;
 
-                // Log the view-once message content for debugging
-                console.log("View once message content:", JSON.stringify(viewOnce, null, 2));
+                const additionalText = `*Forwarded View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
+
+                // Send media with sender info to the owner's number
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
+                    text: additionalText,
+                });
+
+                // Forward the media itself
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", mediaPayload, { quoted: msg });
             }
         }
     } catch (err) {
-        console.error("Error processing view once message:", err);
+        console.error("Error forwarding view once message:", err);
     }
 });
 
