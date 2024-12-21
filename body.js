@@ -2191,7 +2191,7 @@ try {
         //fin événement message
 
 /******** evenement groupe update ****************/
-const { recupevents } = require('./bdd/welcome');
+const { recupevents } = require('./lib/welcome');
 
 zk.ev.on('group-participants.update', async (group) => {
     console.log(group);
