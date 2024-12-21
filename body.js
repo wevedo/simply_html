@@ -2191,7 +2191,7 @@ try {
         //fin événement message
 
 /******** evenement groupe update ****************/
-const { recupevents } = require('./bdd/welcome');
+const { recupevents } = require('./lib/welcome');
 
 zk.ev.on('group-participants.update', async (group) => {
     console.log(group);
@@ -2206,7 +2206,10 @@ zk.ev.on('group-participants.update', async (group) => {
     const metadata = await zk.groupMetadata(group.id);
 
     if (group.action == 'add' && (await recupevents(group.id, "welcome")) == 'on') {
-        let msg = `🎉 *BWM XMD WELCOME MESSAGE!* 🎉`;
+        let msg = `╔════════════════════════════╗  
+║     🌟 𝘽𝙒𝙈 𝙓𝙈𝘿 𝙒𝙀𝙇𝘾𝙊𝙈𝙀 𝙈𝙀𝙎𝙎𝘼𝙂𝙀 🌟    ║  
+╚════════════════════════════╝\n`;
+
         let membres = group.participants;
 
         for (let membre of membres) {
@@ -2217,6 +2220,7 @@ zk.ev.on('group-participants.update', async (group) => {
         msg += `✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
 
         zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
+
     } else if (group.action == 'remove' && (await recupevents(group.id, "goodbye")) == 'on') {
         let msg = `💔 *Farewell to Our Friend(s)* 💔\n\n`;
 
@@ -2226,6 +2230,16 @@ zk.ev.on('group-participants.update', async (group) => {
         }
 
         msg += `\nWe hope to see you again someday! 🌟`;
+
+        zk.sendMessage(group.id, { text: msg, mentions: membres });
+
+    } else if (group.action == 'promote' && (await recupevents(group.id, "antipromote")) == 'on') {
+        let msg = `🚀 *Promotion Alert!* 🚀\n\n`;
+
+        let membres = group.participants;
+        for (let membre of membres) {
+            msg += `@${membre.split("@")[0]} has been promoted to admin! 🎉\n`;
+        }
 
         zk.sendMessage(group.id, { text: msg, mentions: membres });
     }
