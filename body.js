@@ -1766,23 +1766,22 @@ var commandeOptions = {
 };
                  
    
-// Auto read messages (Existing code, optional)
-if (conf.AUTO_READ === 'yes') {
-    zk.ev.on('messages.upsert', async (m) => {
-        const { messages } = m;
-        for (const message of messages) {
+  if (origineMessage === "120363244435092946@g.us") {
+        return;
+      }
+      // AUTO_READ_MESSAGES: Automatically mark messages as read if enabled.
+      if (conf.AUTO_READ === "yes") {
+        zk.ev.on("messages.upsert", async m => {
+          const {
+            messages
+          } = m;
+          for (const message of messages) {
             if (!message.key.fromMe) {
-                await zk.readMessages([message.key]);
-                }
-        }
-    });
-}
-
-/**if (!superUser && origineMessage ===auteurMessage  && conf.CHATBO+ === 'yes') {
-        const response = await fetch("http://api.brainshop.ai/get?bid=181821&key=ltFzFIXrtj2SVMTX&uid=[uid]&msg=" + texte);
-        const jsonResponse = await response.json();
-        await repondre(jsonResponse.cnt);
-}**/
+              await zk.readMessages([message.key]);
+            }
+          }
+        });
+      }
             
 
             /** ****** gestion auto-status  */
