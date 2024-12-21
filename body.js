@@ -2204,81 +2204,112 @@ try {
 const { recupevents } = require('./lib/welcome');
 
 zk.ev.on('group-participants.update', async (group) => {
-    console.log(group);
+    console.log('Group participants update triggered:', group);
 
     let ppgroup;
     try {
         ppgroup = await zk.profilePictureUrl(group.id, 'image');
     } catch {
-        ppgroup = '';
+        ppgroup = ''; // Default to no profile picture
     }
 
     const metadata = await zk.groupMetadata(group.id);
 
     try {
-        if (group.action == 'add' && (await recupevents(group.id, "welcome")) == 'on') {
-            let msg = `╔════════════════════════════╗  
+        // Handle Welcome Message
+        if (group.action == 'add') {
+            const welcomeStatus = await recupevents(group.id, "welcome");
+            console.log('Welcome status:', welcomeStatus);
+
+            if (welcomeStatus == 'on') {
+                try {
+                    let msg = `╔════════════════════════════╗  
 ║     🌟 𝘽𝙒𝙈 𝙓𝙈𝘿 𝙒𝙀𝙇𝘾𝙊𝙈𝙀 𝙈𝙀𝙎𝙎𝘼𝙂𝙀 🌟    ║  
 ╚════════════════════════════╝\n`;
 
-            let membres = group.participants;
+                    let membres = group.participants;
 
-            for (let membre of membres) {
-                let memberIndex = metadata.participants.findIndex((p) => p.id === membre) + 1;
-                msg += `\n👋 *Hello* @${membre.split("@")[0]}, it's great to have you here! \n📌 *You are member number*: ${memberIndex} in this group.\n\n`;
+                    for (let membre of membres) {
+                        let memberIndex = metadata.participants.findIndex((p) => p.id === membre) + 1;
+                        msg += `\n👋 *Hello* @${membre.split("@")[0]}, it's great to have you here! \n📌 *You are member number*: ${memberIndex} in this group.\n\n`;
+                    }
+
+                    msg += `✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
+
+                    zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
+                } catch (error) {
+                    console.error('Error sending welcome message:', error);
+                }
             }
+        }
 
-            msg += `✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
+        // Handle Goodbye Message
+        else if (group.action == 'remove') {
+            const goodbyeStatus = await recupevents(group.id, "goodbye");
+            console.log('Goodbye status:', goodbyeStatus);
 
-            zk.sendMessage(group.id, { image: { url: ppgroup }, caption: msg, mentions: membres });
+            if (goodbyeStatus == 'on') {
+                let msg = `💔 *Farewell to Our Friend(s)* 💔\n\n`;
 
-        } else if (group.action == 'remove' && (await recupevents(group.id, "goodbye")) == 'on') {
-            let msg = `💔 *Farewell to Our Friend(s)* 💔\n\n`;
+                let membres = group.participants;
+                for (let membre of membres) {
+                    msg += `@${membre.split("@")[0]} has left the group.\n`;
+                }
 
-            let membres = group.participants;
-            for (let membre of membres) {
-                msg += `@${membre.split("@")[0]} has left the group.\n`;
+                msg += `\nWe hope to see you again someday! 🌟`;
+
+                zk.sendMessage(group.id, { text: msg, mentions: membres });
             }
+        }
 
-            msg += `\nWe hope to see you again someday! 🌟`;
+        // Handle Anti-Promotion Rule
+        else if (group.action == 'promote') {
+            const antipromoteStatus = await recupevents(group.id, "antipromote");
+            console.log('Anti-promotion status:', antipromoteStatus);
 
-            zk.sendMessage(group.id, { text: msg, mentions: membres });
+            if (antipromoteStatus == 'on') {
+                if (group.author === metadata.owner || 
+                    group.author === conf.NUMERO_OWNER + '@s.whatsapp.net' || 
+                    group.author === decodeJid(zk.user.id) || 
+                    group.author === group.participants[0]) {
+                    console.log('Cas de superUser je fais rien');
+                    return;
+                }
 
-        } else if (group.action == 'promote' && (await recupevents(group.id, "antipromote")) == 'on') {
-            if (group.author === metadata.owner || 
-                group.author === conf.NUMERO_OWNER + '@s.whatsapp.net' || 
-                group.author === decodeJid(zk.user.id) || 
-                group.author === group.participants[0]) {
-                console.log('Cas de superUser je fais rien');
-                return;
+                await zk.groupParticipantsUpdate(group.id, [group.author, group.participants[0]], "demote");
+
+                zk.sendMessage(group.id, {
+                    text: `@${(group.author).split("@")[0]} has violated the anti-promotion rule, therefore both ${group.author.split("@")[0]} and @${(group.participants[0]).split("@")[0]} have been removed from administrative rights.`,
+                    mentions: [group.author, group.participants[0]],
+                });
             }
+        }
 
-            await zk.groupParticipantsUpdate(group.id, [group.author, group.participants[0]], "demote");
+        // Handle Anti-Demotion Rule
+        else if (group.action == 'demote') {
+            const antidemoteStatus = await recupevents(group.id, "antidemote");
+            console.log('Anti-demotion status:', antidemoteStatus);
 
-            zk.sendMessage(group.id, {
-                text: `@${(group.author).split("@")[0]} has violated the anti-promotion rule, therefore both ${group.author.split("@")[0]} and @${(group.participants[0]).split("@")[0]} have been removed from administrative rights.`,
-                mentions: [group.author, group.participants[0]],
-            });
+            if (antidemoteStatus == 'on') {
+                if (group.author === metadata.owner || 
+                    group.author === conf.NUMERO_OWNER + '@s.whatsapp.net' || 
+                    group.author === decodeJid(zk.user.id) || 
+                    group.author === group.participants[0]) {
+                    console.log('Cas de superUser je fais rien');
+                    return;
+                }
 
-        } else if (group.action == 'demote' && (await recupevents(group.id, "antidemote")) == 'on') {
-            if (group.author === metadata.owner || 
-                group.author === conf.NUMERO_OWNER + '@s.whatsapp.net' || 
-                group.author === decodeJid(zk.user.id) || 
-                group.author === group.participants[0]) {
-                console.log('Cas de superUser je fais rien');
-                return;
+                await zk.groupParticipantsUpdate(group.id, [group.author], "demote");
+                await zk.groupParticipantsUpdate(group.id, [group.participants[0]], "promote");
+
+                zk.sendMessage(group.id, {
+                    text: `@${(group.author).split("@")[0]} has violated the anti-demotion rule by removing @${(group.participants[0]).split("@")[0]}. Consequently, he has been stripped of administrative rights.`,
+                    mentions: [group.author, group.participants[0]],
+                });
             }
-
-            await zk.groupParticipantsUpdate(group.id, [group.author], "demote");
-            await zk.groupParticipantsUpdate(group.id, [group.participants[0]], "promote");
-
-            zk.sendMessage(group.id, {
-                text: `@${(group.author).split("@")[0]} has violated the anti-demotion rule by removing @${(group.participants[0]).split("@")[0]}. Consequently, he has been stripped of administrative rights.`,
-                mentions: [group.author, group.participants[0]],
-            });
         }
     } catch (e) {
-        console.error(e);
+        console.error('Error in group-participants.update:', e);
     }
 });
 
