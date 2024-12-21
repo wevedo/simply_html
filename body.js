@@ -2211,7 +2211,7 @@ zk.ev.on('group-participants.update', async (group) => {
         ppgroup = await zk.profilePictureUrl(group.id, 'image');
     } catch (error) {
         // Fallback if profile picture URL is not available
-        ppgroup = 'https://ibb.co/7SKY0tg';
+        ppgroup = 'https://files.catbox.moe/aqjm03.jpg';
     }
 
     try {
@@ -2219,15 +2219,18 @@ zk.ev.on('group-participants.update', async (group) => {
 
         // Handle welcome message when a member joins the group
         if (group.action === 'add' && (await recupevents(group.id, "welcome")) === 'on') {
-            let msg = `👋 Hello,`;
+            let msg = `╔════════════════════════════╗  
+║     🌟 𝘽𝙒𝙈 𝙓𝙈𝘿 𝙒𝙀𝙇𝘾𝙊𝙈𝙀 𝙈𝙀𝙎𝙎𝘼𝙂𝙀 🌟    ║  
+╚════════════════════════════╝\n`;
             let membres = group.participants;
 
-            // Add each member who joined to the welcome message
-            for (let membre of membres) {
-                msg += `\n*Welcome to Our Official Group, @${membre.split("@")[0]}!*`;
+            // Add each member who joined to the welcome message, including their member number
+            for (let i = 0; i < membres.length; i++) {
+                let memberIndex = metadata.participants.findIndex((p) => p.id === membres[i]) + 1;
+                msg += `\n👋 *Hello* @${membres[i].split("@")[0]}, *You are member number*: ${memberIndex} in this group! 🎉\n`;
             }
 
-            msg += `\n\nYou might want to read the group Description to avoid getting removed...`;
+            msg += `\n✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
 
             // Send welcome message with the group profile picture
             await zk.sendMessage(group.id, {
@@ -2241,7 +2244,7 @@ zk.ev.on('group-participants.update', async (group) => {
 
         // Handle goodbye message when a member leaves the group
         else if (group.action === 'remove' && (await recupevents(group.id, "goodbye")) === 'on') {
-            let msg = `💔 One or more members left the group:\n`;
+            let msg = `💔 One of our members left the group:\n`;
             let membres = group.participants;
 
             // Add each member who left the group to the goodbye message
