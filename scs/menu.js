@@ -29,12 +29,25 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Menu assets
-const menuImages = [
+// Menu images and thumbnail URLs (Sema images)
+const semaImages = [
+    "https://files.catbox.moe/9glg18.js",
+    "https://files.catbox.moe/13i93y.jpeg",
+    "https://files.catbox.moe/2696sn.jpeg",
+    "https://files.catbox.moe/soj3q4.jpeg",
+    "https://files.catbox.moe/bddwnw.jpeg",
+    "https://files.catbox.moe/fwy93d.jpeg",
+    "https://files.catbox.moe/dd93hl.jpg",
+    "https://files.catbox.moe/omgszj.jpg",
     "https://files.catbox.moe/sf6xgk.jpg",
     "https://files.catbox.moe/nwvoq3.jpg",
-    "https://files.catbox.moe/omgszj.jpg",
+    "https://files.catbox.moe/x9cezb.jpg",
 ];
+
+// Select random image for both `menuImages` and `thumbnailUrl`
+const randomSemaImage = () => semaImages[Math.floor(Math.random() * semaImages.length)];
+
+// Audio URLs
 const audioUrls = [
     "https://files.catbox.moe/p9mww2.mp3",
     "https://files.catbox.moe/4rnxdx.mp3",
@@ -77,11 +90,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     sortedCategories.forEach((cat) => {
         if (cat === "ABU") {
             // Apply arrow with readmore before "Abu"
-            commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;  // Add arrow and readmore before Abu
+            commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;
         } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
-            commandList += `${readmore}\n📂 *${cat}*:\n\n`;  // Apply readmore before "Download" and "GitHub"
+            commandList += `${readmore}\n📂 *${cat}*:\n\n`;
         } else {
-            commandList += `\n📂 *${cat}*:\n\n`;  // No readmore before other categories
+            commandList += `\n📂 *${cat}*:\n\n`;
         }
         
         let categoryCommands = coms[cat];
@@ -93,14 +106,12 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     });
 
     // Select random assets
-    const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
+    const randomImage = randomSemaImage(); // Random menu image
+    const thumbnailUrl = randomSemaImage(); // Random thumbnail image
     const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
     // Footer to be added at the end
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
-
-    // Large thumbnail for the ad
-    const thumbnailUrl = "https://files.catbox.moe/dd93hl.jpg"; // Replace with a large image URL
 
     // Send menu
     try {
@@ -123,10 +134,10 @@ ${commandList}${footer}
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                     body: "Tap here to join our official channel!",
-                    thumbnailUrl: thumbnailUrl, // Large image thumbnail
+                    thumbnailUrl: thumbnailUrl,
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
-                    mediaType: 1, // Set to 1 for large media (image)
+                    mediaType: 1,
                     renderLargerThumbnail: true, 
                 },
             },
