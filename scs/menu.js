@@ -3,15 +3,15 @@ const moment = require("moment-timezone");
 const axios = require("axios");
 const s = require(__dirname + "/../config");
 
-// Unicode separator for cleaner layout
-const separator = "\n━━━━━━━━━━━━━━\n";
+const more = String.fromCharCode(8206);
+const readmore = more.repeat(4001);
 
-// Stylish greeting fonts
-const coolFonts = {
-    morning: ["🌅 Rise and Shine ✨"],
-    afternoon: ["🌞 Good Afternoon ✨"],
-    evening: ["🌌 Good Evening 🌟"],
-    night: ["🌙 Sleep Tight 🌙"],
+// Dynamic greetings
+const greetings = {
+    morning: "🌄 Good Morning! Let's kickstart your day!",
+    afternoon: "☀️ Good Afternoon! Stay productive!",
+    evening: "🌆 Good Evening! Time to relax!",
+    night: "🌙 Good Night! See you tomorrow!",
 };
 
 // GitHub repo stats function
@@ -29,31 +29,28 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Audio URLs for background music
-const audioUrls = [
-    "https://files.catbox.moe/fm0rvl.mp3",
-    "https://files.catbox.moe/demlei.mp3",
-    "https://files.catbox.moe/3ka4td.m4a",
-    "https://files.catbox.moe/zm8edu.m4a",
-    "https://files.catbox.moe/6ztgwg.mp3",
-];
-
-// New menu images
+// Menu assets
 const menuImages = [
-    "https://files.catbox.moe/7ux2i3.webp",
-    "https://files.catbox.moe/mphnzn.webp",
-    "https://files.catbox.moe/s21y92.webp",
+    "https://files.catbox.moe/newmenu1.webp",
+    "https://files.catbox.moe/newmenu2.webp",
+    "https://files.catbox.moe/newmenu3.webp",
+];
+const audioUrls = [
+    "https://files.catbox.moe/newaudio1.mp3",
+    "https://files.catbox.moe/newaudio2.mp3",
+    "https://files.catbox.moe/newaudio3.mp3",
 ];
 
+// Determine MIME type
 const getMimeType = (url) => (url.endsWith(".wav") ? "audio/wav" : "audio/mpeg");
 
 // Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
-    // Organize commands
+    // Organize commands by category
     cm.map((com) => {
         const categoryUpper = com.categorie.toUpperCase();
         if (!coms[categoryUpper]) coms[categoryUpper] = [];
@@ -61,67 +58,65 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     });
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
-    const temps = moment().format("HH:mm:ss");
     const date = moment().format("DD/MM/YYYY");
+    const time = moment().format("HH:mm:ss");
     const hour = moment().hour();
 
-    // Greeting logic
-    const getRandomGreeting = (greetings) => greetings[Math.floor(Math.random() * greetings.length)];
-    let greeting = coolFonts.night;
-    if (hour >= 0 && hour <= 11) {
-        greeting = getRandomGreeting(coolFonts.morning);
-    } else if (hour >= 12 && hour <= 16) {
-        greeting = getRandomGreeting(coolFonts.afternoon);
-    } else if (hour >= 16 && hour <= 21) {
-        greeting = getRandomGreeting(coolFonts.evening);
-    }
+    // Determine greeting based on time
+    let greeting = greetings.night;
+    if (hour >= 5 && hour < 12) greeting = greetings.morning;
+    else if (hour >= 12 && hour < 18) greeting = greetings.afternoon;
+    else if (hour >= 18 && hour <= 22) greeting = greetings.evening;
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Prepare command list
+    // Prepare command list with readmore after each category
     let commandList = "";
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        commandList += `${separator}🔹 *${cat}* 🔹${separator}`;
-        coms[cat].forEach((cmd) => {
-            commandList += `- ${cmd}\n`;
-        });
+        commandList += `\n📂 *${cat}*:\n\n`;
+        let categoryCommands = coms[cat];
+        for (let i = 0; i < categoryCommands.length; i++) {
+            commandList += `🟢 ${categoryCommands[i]}   `;
+            if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
+        }
+        commandList += `\n${readmore}`; // Add readmore after each category
     });
 
-    // Randomly select menu image and audio
+    // Select random assets
     const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
     const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
+    // Send menu
     try {
-        // Menu with dynamic quick action buttons
         await zk.sendMessage(dest, {
+            image: { url: randomImage },
             caption: `
-╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
-┃🙋‍♀️ *Hello*: ${nomAuteurMessage}
-┃💻 *Owner*: Ibrahim Adams
-┃📅 *Date*: ${date}
-┃⏰ *Time*: ${temps}
-┃👥 *Users*: ${formattedTotalUsers}
+╭━━━╮ 
+┃  𝐁𝐖𝐌 𝐗𝐌𝐃 𝐌𝐄𝐍𝐔
+┃ 📅 *Date*: ${date}
+┃ ⏰ *Time*: ${time}
+┃ 👥 *Users*: ${formattedTotalUsers}
 ╰━━━╯
 
 ${greeting}
-${separator}
-*Available Commands:*
-${commandList}
 
-✨ *Enjoy a seamless experience with BWM-XMD!* ✨
-            `,
-            image: { url: randomImage },
-            footer: "🔗 Powered by BWM-XMD",
-            templateButtons: [
-                { index: 1, quickReplyButton: { displayText: "📄 Info", id: `${prefixe}info` } },
-                { index: 2, quickReplyButton: { displayText: "ℹ️ Help", id: `${prefixe}help` } },
-                { index: 3, quickReplyButton: { displayText: "ℹ️ About Us", id: `${prefixe}about` } },
-            ],
+> ©Ibrahim Adams
+${commandList}
+`,
+            contextInfo: {
+                externalAdReply: {
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗 𝗖𝗵𝗮𝗻𝗻𝗲𝗹",
+                    body: "Tap here to join our official channel!",
+                    thumbnailUrl: "https://files.catbox.moe/7ux2i3.webp",
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                    showAdAttribution: true,
+                },
+            },
         });
 
-        // Play audio background
+        // Send audio for ambiance
         await zk.sendMessage(dest, {
             audio: { url: randomAudio },
             mimetype: getMimeType(randomAudio),
