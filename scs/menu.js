@@ -31,14 +31,14 @@ const fetchGitHubStats = async () => {
 
 // Menu assets
 const menuImages = [
-    "https://files.catbox.moe/newmenu1.webp",
-    "https://files.catbox.moe/newmenu2.webp",
-    "https://files.catbox.moe/newmenu3.webp",
+    "https://files.catbox.moe/z0k3jv.jpg",
+    "https://files.catbox.moe/z0k3jv.jpg",
+    "https://files.catbox.moe/z0k3jv.jpg",
 ];
 const audioUrls = [
-    "https://files.catbox.moe/newaudio1.mp3",
-    "https://files.catbox.moe/newaudio2.mp3",
-    "https://files.catbox.moe/newaudio3.mp3",
+    "https://files.catbox.moe/p9mww2.mp3",
+    "https://files.catbox.moe/4rnxdx.mp3",
+    "https://files.catbox.moe/sila3e.mp3",
 ];
 
 // Determine MIME type
