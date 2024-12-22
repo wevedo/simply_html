@@ -76,8 +76,8 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
         if (cat === "ABU") {
-            commandList += `╰┈➤ ❝ *Fast readmore about ${cat}* ❞\n\n`;  // Apply readmore with cool arrow and quote for "Abu"
-            commandList += `${readmore}\n📂 *${cat}*:\n\n`;
+            // Apply arrow with readmore before "Abu"
+            commandList += `╰┈➤ ${readmore}\n📂 *${cat}*:\n\n`;  // Add arrow and readmore before Abu
         } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
             commandList += `${readmore}\n📂 *${cat}*:\n\n`;  // Apply readmore before "Download" and "GitHub"
         } else {
@@ -99,9 +99,8 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     // Footer to be added at the end
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
 
-    // Choose thumbnail size (large or small)
-    const thumbnailUrl = "https://files.catbox.moe/dd93hl.jpg"; // Default large thumbnail
-    const isLargeThumbnail = true; // Change this flag to false for smaller thumbnail
+    // Large thumbnail for the ad
+    const thumbnailUrl = "https://files.catbox.moe/dd93hl.jpg"; // Replace with a large image URL
 
     // Send menu
     try {
@@ -124,10 +123,10 @@ ${commandList}${footer}
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗 𝗖𝗵𝗮𝗻𝗻𝗲𝗹",
                     body: "Tap here to join our official channel!",
-                    thumbnailUrl: thumbnailUrl,
+                    thumbnailUrl: thumbnailUrl, // Large image thumbnail
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
-                    mediaType: isLargeThumbnail ? 1 : 0, // 1 for large, 0 for small
+                    mediaType: 1, // Set to 1 for large media (image)
                 },
             },
         });
