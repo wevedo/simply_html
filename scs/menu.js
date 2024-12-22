@@ -17,7 +17,7 @@ const greetings = {
 // GitHub repo stats function
 const fetchGitHubStats = async () => {
     try {
-        const repo = "Devibraah/BWM-XMD";
+        const repo = "devibrah/NORMAL-BOT";
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
         const forks = response.data.forks_count || 0;
         const stars = response.data.stargazers_count || 0;
