@@ -96,7 +96,6 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     try {
         // Menu with dynamic quick action buttons
         await zk.sendMessage(dest, {
-            image: { url: randomImage },
             caption: `
 ╭━━━╮ *𝐁𝐖𝐌 𝐗𝐌𝐃*
 ┃🙋‍♀️ *Hello*: ${nomAuteurMessage}
@@ -113,22 +112,13 @@ ${commandList}
 
 ✨ *Enjoy a seamless experience with BWM-XMD!* ✨
             `,
+            image: { url: randomImage },
             footer: "🔗 Powered by BWM-XMD",
-            buttons: [
-                { buttonId: `${prefixe}info`, buttonText: { displayText: "📄 Info" }, type: 1 },
-                { buttonId: `${prefixe}help`, buttonText: { displayText: "ℹ️ Help" }, type: 1 },
-                { buttonId: `${prefixe}about`, buttonText: { displayText: "ℹ️ About Us" }, type: 1 },
+            templateButtons: [
+                { index: 1, quickReplyButton: { displayText: "📄 Info", id: `${prefixe}info` } },
+                { index: 2, quickReplyButton: { displayText: "ℹ️ Help", id: `${prefixe}help` } },
+                { index: 3, quickReplyButton: { displayText: "ℹ️ About Us", id: `${prefixe}about` } },
             ],
-            headerType: 4,
-            contextInfo: {
-                externalAdReply: {
-                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                    body: "Tap here to join the experience!",
-                    thumbnailUrl: randomImage,
-                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                    showAdAttribution: true,
-                },
-            },
         });
 
         // Play audio background
