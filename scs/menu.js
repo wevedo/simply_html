@@ -77,7 +77,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     sortedCategories.forEach((cat) => {
         if (cat === "ABU") {
             // Apply arrow with readmore before "Abu"
-            commandList += `╰┈➤ ${readmore}\n📂 *${cat}*:\n\n`;  // Add arrow and readmore before Abu
+            commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;  // Add arrow and readmore before Abu
         } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
             commandList += `${readmore}\n📂 *${cat}*:\n\n`;  // Apply readmore before "Download" and "GitHub"
         } else {
@@ -113,15 +113,14 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃ ⏰ *Time*: ${time}
 ┃ 👥 *Users*: ${formattedTotalUsers}
 ╰━━━╯
+~${greeting}~
 
-${greeting}
-
-> ©Ibrahim Adams
+> ©Ibrahim Adams\n\n
 ${commandList}${footer}
 `,
             contextInfo: {
                 externalAdReply: {
-                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗 𝗖𝗵𝗮𝗻𝗻𝗲𝗹",
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                     body: "Tap here to join our official channel!",
                     thumbnailUrl: thumbnailUrl, // Large image thumbnail
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
