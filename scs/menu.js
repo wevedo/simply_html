@@ -31,9 +31,9 @@ const fetchGitHubStats = async () => {
 
 // Menu assets
 const menuImages = [
-    "https://files.catbox.moe/z0k3jv.jpg",
-    "https://files.catbox.moe/z0k3jv.jpg",
-    "https://files.catbox.moe/z0k3jv.jpg",
+    "https://files.catbox.moe/sf6xgk.jpg",
+    "https://files.catbox.moe/nwvoq3.jpg",
+    "https://files.catbox.moe/omgszj.jpg",
 ];
 const audioUrls = [
     "https://files.catbox.moe/p9mww2.mp3",
@@ -71,17 +71,24 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Prepare command list with readmore after each category
+    // Prepare command list with readmore before specific categories
     let commandList = "";
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        commandList += `\n📂 *${cat}*:\n\n`;
+        if (cat === "ABU") {
+            commandList += `${readmore}\n📂 *${cat}*:\n\n`;  // Apply readmore before the "Abu" category
+        } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
+            commandList += `${readmore}\n📂 *${cat}*:\n\n`;  // Apply readmore before "download" and "github" sections
+        } else {
+            commandList += `\n📂 *${cat}*:\n\n`;  // No readmore before other categories
+        }
+        
         let categoryCommands = coms[cat];
         for (let i = 0; i < categoryCommands.length; i++) {
             commandList += `🟢 ${categoryCommands[i]}   `;
             if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
         }
-        commandList += `\n${readmore}`; // Add readmore after each category
+        commandList += `\n`; // Add spacing after commands
     });
 
     // Select random assets
@@ -109,7 +116,7 @@ ${commandList}
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗 𝗖𝗵𝗮𝗻𝗻𝗲𝗹",
                     body: "Tap here to join our official channel!",
-                    thumbnailUrl: "https://files.catbox.moe/7ux2i3.webp",
+                    thumbnailUrl: "https://files.catbox.moe/x9cezb.jpg",
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
                 },
