@@ -107,13 +107,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         await zk.sendMessage(dest, {
             image: { url: randomImage },
             caption: `
-╭─────╮
+╭┈┈┈┈╮
 │  ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
-├─────┤
-│ Date: ${date}   
-│ Time: ${time}   
-│ Users: ${formattedTotalUsers} 
-╰─────╯
+├┈┈┈┈❘
+│ 🔱 Date: ${date}
+│ ⏳ Time: ${time}
+│ ⚡ Users: ${formattedTotalUsers}
+╰┈┈┈┈╯
 ${greeting}
 
 > ©Ibrahim Adams\n\n
