@@ -81,20 +81,30 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Prepare command list
+        // Prepare command list with readmore before specific categories
     let commandList = "";
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        commandList += `\n📂 *${cat}*:\n\n`;
-        coms[cat].forEach((cmd, i) => {
-            commandList += `🟢 ${cmd}   `;
-            if ((i + 1) % 3 === 0) commandList += `\n`;
-        });
-        commandList += `\n`;
+        if (cat === "ABU") {
+            // Apply arrow with readmore before "Abu"
+            commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;
+        } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
+            commandList += `${readmore}\n📂 *${cat}*:\n\n`;
+        } else {
+            commandList += `\n📂 *${cat}*:\n\n`;
+        }
+        
+        let categoryCommands = coms[cat];
+        for (let i = 0; i < categoryCommands.length; i++) {
+            commandList += `🟢 ${categoryCommands[i]}   `;
+            if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
+        }
+        commandList += `\n`; // Add spacing after commands
     });
 
     // Select assets
     const image = randomImage();
+    const image1 = randomImage();
     const audio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
     const menuType = s.MENUTYPE || (Math.random() < 0.5 ? "1" : "2"); // Randomly pick if blank
@@ -105,7 +115,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         if (menuType === "1") {
             // Menu Type 1
             await zk.sendMessage(dest, {
-                image: { url: image },
+                image: { url: image1 },
                 caption: `
 ╭┈┈┈┈┈╮
 │  ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
