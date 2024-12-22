@@ -127,6 +127,7 @@ ${commandList}${footer}
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
                     mediaType: 1, // Set to 1 for large media (image)
+                    renderLargerThumbnail: true, 
                 },
             },
         });
