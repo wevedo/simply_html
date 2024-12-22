@@ -17,7 +17,7 @@ const greetings = {
 // GitHub repo stats function
 const fetchGitHubStats = async () => {
     try {
-        const repo = "devibrah/NORMAL-BOT";
+        const repo = "devibraah/BWM-XMD";
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
         const forks = response.data.forks_count || 0;
         const stars = response.data.stargazers_count || 0;
@@ -112,7 +112,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ├┈┈┈┈➤
 │ 🔱 Date: ${date}
 │ ⏳ Time: ${time}
-│ ⚡ Users: ${formattedTotalUsers}
+│ ⚡ Users: 1${formattedTotalUsers}
 ╰┈┈┈┈┈╯
 ${greeting}
 
