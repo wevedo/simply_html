@@ -149,7 +149,7 @@ ${commandList}${footer}
 ┃ ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
 ┃📅 Date: ${date}
 ┃⏰ Time: ${time}
-┃👥 Users: ${formattedTotalUsers}
+┃👥 Users: 1${formattedTotalUsers}
 ╰───❖
 ${greeting}
 
