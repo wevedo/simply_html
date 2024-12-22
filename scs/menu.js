@@ -143,7 +143,7 @@ ${commandList}${footer}
         } else {
             // Menu Type 2
             await zk.sendMessage(dest, {
-                image: { url: image },
+                image: { url: image1 },
                 caption: `
 ╭───❖
 ┃ ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
@@ -157,13 +157,14 @@ ${greeting}
 ${commandList}${footer}
 `,
                 contextInfo: {
-                    externalAdReply: {
-                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                        body: "Check out the channel!",
-                        thumbnailUrl: image,
-                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        showAdAttribution: true,
-                        renderLargerThumbnail: true, // For Menu Type 2
+                externalAdReply: {
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                    body: "Tap here to join our official channel!",
+                    thumbnailUrl: image,
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                    showAdAttribution: true,
+                    mediaType: 1,
+                    renderLargerThumbnail: true, 
                     },
                 },
             });
