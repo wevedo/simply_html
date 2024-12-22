@@ -95,13 +95,16 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
     const randomAudio = audioUrls[Math.floor(Math.random() * audioUrls.length)];
 
+    // Footer to be added at the end
+    const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
+
     // Send menu
     try {
         await zk.sendMessage(dest, {
             image: { url: randomImage },
             caption: `
 ╭━━━╮ 
-┃  𝐁𝐖𝐌 𝐗𝐌𝐃 𝐌𝐄𝐍𝐔
+┃  ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
 ┃ 📅 *Date*: ${date}
 ┃ ⏰ *Time*: ${time}
 ┃ 👥 *Users*: ${formattedTotalUsers}
@@ -110,7 +113,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ${greeting}
 
 > ©Ibrahim Adams
-${commandList}
+${commandList}${footer}
 `,
             contextInfo: {
                 externalAdReply: {
