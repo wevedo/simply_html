@@ -31,7 +31,6 @@ const fetchGitHubStats = async () => {
 
 // Menu images and thumbnail URLs (Sema images)
 const semaImages = [
-    "https://files.catbox.moe/9glg18.js",
     "https://files.catbox.moe/13i93y.jpeg",
     "https://files.catbox.moe/2696sn.jpeg",
     "https://files.catbox.moe/soj3q4.jpeg",
