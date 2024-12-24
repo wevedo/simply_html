@@ -1,4 +1,4 @@
-const { adams } = require("../Ibrahim/adams");
+/**const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 
 // Hardcoded API Configurations
@@ -80,6 +80,83 @@ adams({
 
   } catch (error) {
     console.error('TikTok Command Error:', error.message);
+    repondre("An error occurred while processing your request. Please try again.");
+  }
+});
+**/
+
+
+
+
+
+
+
+
+
+const ffmpeg = require("fluent-ffmpeg");
+const fs = require("fs");
+const yts = require("yt-search");
+
+// Command Handler
+adams({
+  nomCom: "find",
+  categorie: "Utility",
+  reaction: "🔍"
+}, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, quotedMessage } = commandeOptions;
+
+  // Ensure the command is a reply to a media file
+  if (!quotedMessage || !(quotedMessage.video || quotedMessage.audio)) {
+    return repondre("Please reply to a video or audio with this command.");
+  }
+
+  try {
+    // Download the media file
+    const mediaMessage = quotedMessage.video || quotedMessage.audio;
+    const mediaPath = await zk.downloadMediaMessage(mediaMessage, "buffer");
+    const tempFilePath = `./temp_media_${Date.now()}.${mediaMessage.mimetype.split('/')[1]}`;
+    
+    // Save the media to a temporary file
+    fs.writeFileSync(tempFilePath, mediaPath);
+
+    // Extract media information using ffmpeg
+    ffmpeg.ffprobe(tempFilePath, async (err, metadata) => {
+      if (err) {
+        console.error("FFprobe Error:", err.message);
+        return repondre("Failed to extract media information. Please try again.");
+      }
+
+      // Parse metadata
+      const format = metadata.format;
+      const streams = metadata.streams[0];
+      const duration = Math.floor(format.duration / 60) + "m " + Math.floor(format.duration % 60) + "s";
+
+      // Search for the song/video on YouTube
+      const query = format.tags?.title || "Unknown Media";
+      const searchResults = await yts(query);
+      const video = searchResults.videos[0]; // Get the first video result
+
+      const mediaInfo = `
+        *Media Information:*
+        🎵 Title: ${video?.title || "Unknown"}
+        👤 Owner: ${video?.author.name || "Unknown"}
+        ⏱️ Duration: ${duration}
+        📂 File Name: ${format.filename || "Unknown"}
+        📄 Format: ${format.format_name} (${format.format_long_name})
+        📶 Codec: ${streams.codec_name || "Unknown"}
+        📦 Size: ${(format.size / (1024 * 1024)).toFixed(2)} MB
+        🛠️ Bitrate: ${(format.bit_rate / 1000).toFixed(2)} kbps
+        🌐 YouTube URL: ${video?.url || "Not Found"}
+      `.trim();
+
+      // Send media information
+      await zk.sendMessage(dest, { text: mediaInfo }, { quoted: ms });
+
+      // Clean up temporary file
+      fs.unlinkSync(tempFilePath);
+    });
+  } catch (error) {
+    console.error("Find Command Error:", error.message);
     repondre("An error occurred while processing your request. Please try again.");
   }
 });
