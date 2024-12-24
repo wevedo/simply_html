@@ -119,10 +119,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
                 caption: `
 ╭┈┈┈┈┈╮
 │  ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
-├┈┈┈┈➤
-│ 🔱 Date: ${date}
-│ ⏳ Time: ${time}
-│ ⚡ Users: 1${formattedTotalUsers}
+├┈┈┈┈•➤
+│ 🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
+│ 📆 ᴅᴀᴛᴇ: ${date}
+│ ⏰ ᴛɪᴍᴇ: ${time}
+│ 👪 ʙᴡᴍ ᴜsᴇʀs: 1${formattedTotalUsers}
 ╰┈┈┈┈┈╯
 ${greeting}
 
@@ -146,10 +147,11 @@ ${commandList}${footer}
                 image: { url: image1 },
                 caption: `
 ╭───❖
-┃ ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
-┃📅 Date: ${date}
-┃⏰ Time: ${time}
-┃👥 Users: 1${formattedTotalUsers}
+┃🚀 ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
+┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
+┃📅 ᴅᴀᴛᴇ: ${date}
+┃⏰ ᴛɪᴍᴇ: ${time}
+┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${formattedTotalUsers}
 ╰───❖
 ${greeting}
 
