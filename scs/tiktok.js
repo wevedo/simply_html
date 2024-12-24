@@ -103,39 +103,37 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, quotedMessage } = commandeOptions;
 
-  // Debug the quotedMessage structure
-  console.log("Quoted Message:", quotedMessage);
-
-  // Detect video or audio in the reply
-  const mediaMessage = quotedMessage?.message?.videoMessage || quotedMessage?.message?.audioMessage;
-  if (!mediaMessage) {
+  // Ensure the command is a reply to a media file
+  if (!quotedMessage || !(quotedMessage.message?.videoMessage || quotedMessage.message?.audioMessage)) {
     return repondre("Please reply to a video or audio with this command.");
   }
 
   try {
+    // Detect video or audio in the replied message
+    const mediaMessage = quotedMessage.message.videoMessage || quotedMessage.message.audioMessage;
+
     // Download the media file
-    const mediaPath = await zk.downloadMediaMessage(quotedMessage);
-    if (!mediaPath) {
-      return repondre("Failed to download media. Please try again.");
-    }
-
+    const mediaBuffer = await zk.downloadMediaMessage(quotedMessage);
     const tempFilePath = `./temp_media_${Date.now()}.tmp`;
-    fs.writeFileSync(tempFilePath, mediaPath);
 
-    // Extract media information
+    // Save the media to a temporary file
+    fs.writeFileSync(tempFilePath, mediaBuffer);
+
+    // Extract media information using ffmpeg
     ffmpeg.ffprobe(tempFilePath, async (err, metadata) => {
       if (err) {
         console.error("FFprobe Error:", err.message);
         return repondre("Failed to extract media information. Please try again.");
       }
 
+      // Parse metadata
       const format = metadata.format;
       const duration = Math.floor(format.duration / 60) + "m " + Math.floor(format.duration % 60) + "s";
       const query = format.tags?.title || "Unknown Media";
 
-      // Search YouTube
+      // Search for the song/video on YouTube
       const searchResults = await yts(query);
-      const video = searchResults.videos[0];
+      const video = searchResults.videos[0]; // Get the first video result
 
       const mediaInfo = `
         *Media Information:*
@@ -148,7 +146,10 @@ adams({
         🌐 YouTube URL: ${video?.url || "Not Found"}
       `.trim();
 
+      // Send media information
       await zk.sendMessage(dest, { text: mediaInfo }, { quoted: ms });
+
+      // Clean up temporary file
       fs.unlinkSync(tempFilePath);
     });
   } catch (error) {
