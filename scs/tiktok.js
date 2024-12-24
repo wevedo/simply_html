@@ -94,6 +94,7 @@ const { adams } = require("../Ibrahim/adams");
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const yts = require("yt-search");
+const { exec } = require("child_process");
 
 // Command Handler
 adams({
@@ -103,7 +104,7 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, quotedMessage } = commandeOptions;
 
-  // Ensure the command is a reply to a media file
+  // Ensure the command is a reply to a media file (audio or video)
   if (!quotedMessage || !(quotedMessage.message?.videoMessage || quotedMessage.message?.audioMessage)) {
     return repondre("Please reply to a video or audio with this command.");
   }
@@ -146,7 +147,6 @@ adams({
         🌐 YouTube URL: ${video?.url || "Not Found"}
       `.trim();
 
-      // Send media information
       await zk.sendMessage(dest, { text: mediaInfo }, { quoted: ms });
 
       // Clean up temporary file
