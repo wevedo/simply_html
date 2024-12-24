@@ -82,9 +82,7 @@ adams({
     console.error('TikTok Command Error:', error.message);
     repondre("An error occurred while processing your request. Please try again.");
   }
-});
-**/
-
+*/
 
 
 
@@ -105,36 +103,39 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, quotedMessage } = commandeOptions;
 
-  // Ensure the command is a reply to a media file
-  if (!quotedMessage || !(quotedMessage.video || quotedMessage.audio)) {
+  // Debug the quotedMessage structure
+  console.log("Quoted Message:", quotedMessage);
+
+  // Detect video or audio in the reply
+  const mediaMessage = quotedMessage?.message?.videoMessage || quotedMessage?.message?.audioMessage;
+  if (!mediaMessage) {
     return repondre("Please reply to a video or audio with this command.");
   }
 
   try {
     // Download the media file
-    const mediaMessage = quotedMessage.video || quotedMessage.audio;
-    const mediaPath = await zk.downloadMediaMessage(mediaMessage, "buffer");
-    const tempFilePath = `./temp_media_${Date.now()}.${mediaMessage.mimetype.split('/')[1]}`;
-    
-    // Save the media to a temporary file
+    const mediaPath = await zk.downloadMediaMessage(quotedMessage);
+    if (!mediaPath) {
+      return repondre("Failed to download media. Please try again.");
+    }
+
+    const tempFilePath = `./temp_media_${Date.now()}.tmp`;
     fs.writeFileSync(tempFilePath, mediaPath);
 
-    // Extract media information using ffmpeg
+    // Extract media information
     ffmpeg.ffprobe(tempFilePath, async (err, metadata) => {
       if (err) {
         console.error("FFprobe Error:", err.message);
         return repondre("Failed to extract media information. Please try again.");
       }
 
-      // Parse metadata
       const format = metadata.format;
-      const streams = metadata.streams[0];
       const duration = Math.floor(format.duration / 60) + "m " + Math.floor(format.duration % 60) + "s";
-
-      // Search for the song/video on YouTube
       const query = format.tags?.title || "Unknown Media";
+
+      // Search YouTube
       const searchResults = await yts(query);
-      const video = searchResults.videos[0]; // Get the first video result
+      const video = searchResults.videos[0];
 
       const mediaInfo = `
         *Media Information:*
@@ -143,16 +144,11 @@ adams({
         ⏱️ Duration: ${duration}
         📂 File Name: ${format.filename || "Unknown"}
         📄 Format: ${format.format_name} (${format.format_long_name})
-        📶 Codec: ${streams.codec_name || "Unknown"}
         📦 Size: ${(format.size / (1024 * 1024)).toFixed(2)} MB
-        🛠️ Bitrate: ${(format.bit_rate / 1000).toFixed(2)} kbps
         🌐 YouTube URL: ${video?.url || "Not Found"}
       `.trim();
 
-      // Send media information
       await zk.sendMessage(dest, { text: mediaInfo }, { quoted: ms });
-
-      // Clean up temporary file
       fs.unlinkSync(tempFilePath);
     });
   } catch (error) {
