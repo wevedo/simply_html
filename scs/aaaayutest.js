@@ -1,17 +1,7 @@
 const { adams } = require("../Ibrahim/adams");
 const yts = require('yt-search');
 const axios = require('axios');
-
-// Updated BaseUrl
-const BaseUrl = 'https://deliriussapi-oficial.vercel.app';
-
-// Validate Config
-function validateConfig() {
-  if (!BaseUrl) {
-    throw new Error("Configuration error: Missing BaseUrl.");
-  }
-}
-validateConfig();
+const cheerio = require('cheerio');
 
 // YouTube Search Function
 async function searchYouTube(query) {
@@ -24,19 +14,22 @@ async function searchYouTube(query) {
   }
 }
 
-// Download Media Function
-async function downloadMedia(url, type) {
+// Scrape Download URL from ssyoutube
+async function scrapeDownloadUrl(videoUrl) {
   try {
-    const endpoint = `${BaseUrl}/yt${type}?url=${encodeURIComponent(url)}`;
-    const { data } = await axios.get(endpoint);
-    if (data.status === 200 && data.success) {
-      return data.result.download_url;
-    } else {
-      throw new Error(data.message || 'Download failed.');
+    const response = await axios.get(`https://ssyoutube.com/en789Jb/${encodeURIComponent(videoUrl)}`);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    // Scrape the first download link
+    const downloadUrl = $('a.link-download').attr('href');
+    if (!downloadUrl) {
+      throw new Error('Failed to scrape download URL.');
     }
+    return downloadUrl;
   } catch (error) {
-    console.error(`API Error (${type}):`, error.message);
-    throw new Error(`Failed to download ${type}. Please try again.`);
+    console.error('Scraping Error:', error.message);
+    throw new Error('Failed to retrieve download URL. Please try again.');
   }
 }
 
@@ -44,19 +37,19 @@ async function downloadMedia(url, type) {
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
 adams({
-  nomCom: "vide",
+  nomCom: "video",
   categorie: "Search",
   reaction: "🎥"
 }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
 
   if (!arg[0]) return repondre("Please insert a song/video name.");
-  
+
   try {
     const video = await searchYouTube(arg.join(" "));
     if (!video) return repondre("No videos found. Try another name.");
 
-    const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
+    const responseMessage = `*Bwm xmd is processing ${video.title}*`;
     await zk.sendMessage(dest, {
       text: responseMessage,
       contextInfo: {
@@ -68,20 +61,14 @@ adams({
           sourceUrl: WhatsAppChannelURL,
           mediaType: 1,
           renderLargerThumbnail: true,
-          showAdAttribution: true,
         },
         forwardingScore: 999,
         isForwarded: false,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y@s.whatsapp.net',
-          newsletterName: "Bwm xmd Updates 🚀",
-          serverMessageId: 143,
-        },
       },
       quoted: ms,
     });
 
-    const videoDlUrl = await downloadMedia(video.url, 'mp4');
+    const videoDlUrl = await scrapeDownloadUrl(video.url);
     if (!videoDlUrl) return repondre("Failed to download the video.");
 
     await zk.sendMessage(dest, {
@@ -99,11 +86,6 @@ adams({
         },
         forwardingScore: 999,
         isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',
-          newsletterName: "Bwm xmd Updates 🚀",
-          serverMessageId: 143,
-        },
       }
     }, { quoted: ms });
 
