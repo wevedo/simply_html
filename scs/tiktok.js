@@ -52,6 +52,7 @@ adams({
   if (!arg[0] || !arg[0].startsWith("https://")) {
     return repondre("Please provide a valid TikTok URL.");
   }
+  
 
   try {
     const tiktokUrl = arg[0];
