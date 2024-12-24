@@ -35,12 +35,13 @@ const menuImages = [
     "https://files.catbox.moe/2696sn.jpeg",
     "https://files.catbox.moe/soj3q4.jpeg",
     "https://files.catbox.moe/bddwnw.jpeg",
-    "https://files.catbox.moe/fwy93d.jpeg",
+    "https://files.catbox.moe/f6zee8.jpeg",
     "https://files.catbox.moe/dd93hl.jpg",
     "https://files.catbox.moe/omgszj.jpg",
     "https://files.catbox.moe/sf6xgk.jpg",
     "https://files.catbox.moe/nwvoq3.jpg",
-    "https://files.catbox.moe/x9cezb.jpg",
+    "https://files.catbox.moe/040de7.jpeg",
+    "https://files.catbox.moe/3qkejj.jpeg",
 ];
 
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
