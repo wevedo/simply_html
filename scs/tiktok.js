@@ -43,7 +43,7 @@ async function fetchTikTokMedia(url) {
 
 // WhatsApp Command Integration
 adams({
-  nomCom: "tikto",
+  nomCom: "tikt",
   categorie: "Download",
   reaction: "🌍"
 }, async (dest, zk, commandeOptions) => {
