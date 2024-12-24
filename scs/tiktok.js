@@ -92,7 +92,7 @@ adams({
 
 
 
-
+const { adams } = require("../Ibrahim/adams");
 const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const yts = require("yt-search");
