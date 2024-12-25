@@ -103,7 +103,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
                     thumbnailUrl: "https://files.catbox.moe/hegdag.jpg",
                     sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
                     mediaType: 1,
-                    rendersmallThumbnail: true
+                    renderLargerThumbnail: true
                 }
             }
         });
@@ -111,7 +111,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         // Send audio with caption
         await zk.sendMessage(dest, { 
             audio: { 
-                url: "https://files.catbox.moe/6yi2gf.mp3" // Replace with your audio URL
+                url: "https://files.catbox.moe/bewdug.mp3" // Replace with your audio URL
             }, 
             mimetype: 'audio/mp4', 
             ptt: false, // Set to true if you want it as a voice note
