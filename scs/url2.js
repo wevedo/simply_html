@@ -1,94 +1,67 @@
-const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
 const { adams } = require("../Ibrahim/adams");
+const yts = require("yt-search");
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const fs = require("fs-extra");
 const ffmpeg = require("fluent-ffmpeg");
-const yts = require('yt-search');
 
-async function convertToMp3(inputPath, outputPath) {
-    return new Promise((resolve, reject) => {
-        ffmpeg(inputPath)
-            .toFormat("mp3")
-            .on("error", (err) => reject(err))
-            .on("end", () => resolve(outputPath))
-            .save(outputPath);
-    });
-}
-
-async function getYouTubeInfo(query) {
+async function searchYouTubeInfo(query) {
     try {
-        const searchResults = await yts(query);
-        if (!searchResults || !searchResults.videos.length) {
-            throw new Error('No video found matching the query.');
+        const results = await yts(query);
+        if (!results || !results.videos.length) {
+            throw new Error("No results found on YouTube.");
         }
 
-        const video = searchResults.videos[0]; // Get the top result
+        const video = results.videos[0]; // Get the top result
         return {
             title: video.title,
-            owner: video.author.name,
-            url: video.url,
-            views: video.views,
+            author: video.author.name,
             duration: video.timestamp,
         };
-    } catch (err) {
-        throw new Error('Error fetching video info: ' + err.message);
+    } catch (error) {
+        console.error("Error searching YouTube:", error);
+        throw new Error("Failed to retrieve video information.");
     }
 }
 
-adams({ nomCom: "inf", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+adams({ nomCom: "info", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        repondre('Please reply to a video or audio file.');
+        repondre("Please reply to a video or audio file.");
         return;
     }
 
-    let mediaPath, mediaType;
+    let mediaPath;
 
-    if (msgRepondu.videoMessage) {
-        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
-        mediaType = 'video';
-    } else if (msgRepondu.audioMessage) {
-        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
-        mediaType = 'audio';
-
-        const outputPath = `${mediaPath}.mp3`;
-
+    if (msgRepondu.videoMessage || msgRepondu.audioMessage) {
         try {
-            // Convert audio to MP3 format
-            await convertToMp3(mediaPath, outputPath);
-            fs.unlinkSync(mediaPath); // Remove the original audio file
-            mediaPath = outputPath; // Update the path to the converted MP3 file
+            mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage || msgRepondu.audioMessage);
+
+            const outputPath = `${mediaPath}.mp3`;
+            await new Promise((resolve, reject) => {
+                ffmpeg(mediaPath)
+                    .toFormat("mp3")
+                    .on("end", resolve)
+                    .on("error", reject)
+                    .save(outputPath);
+            });
+
+            // Simulating filename or metadata extraction for query (you may replace this with real logic)
+            const query = "sample query based on file content"; // Replace with metadata extraction logic
+            const videoInfo = await searchYouTubeInfo(query);
+
+            repondre(
+                `*${videoInfo.title}*\n👤 Author: ${videoInfo.author}\n⏱️ Duration: ${videoInfo.duration}`
+            );
         } catch (error) {
-            console.error("Error converting audio to MP3:", error);
-            repondre('Failed to process the audio file.');
-            return;
+            console.error("Error processing media:", error);
+            repondre("An error occurred while processing the file.");
+        } finally {
+            if (mediaPath && fs.existsSync(mediaPath)) {
+                fs.unlinkSync(mediaPath);
+            }
         }
     } else {
-        repondre('Unsupported media type. Reply with a video or audio file.');
-        return;
-    }
-
-    try {
-        // Use the file name as the query
-        const fileName = mediaPath.split('/').pop();
-        const query = fileName.replace(/\.[^/.]+$/, ''); // Remove file extension
-
-        const videoInfo = await getYouTubeInfo(query);
-
-        repondre(
-            `YouTube Video Info:\n` +
-            `Title: ${videoInfo.title}\n` +
-            `Owner: ${videoInfo.owner}\n` +
-            `Duration: ${videoInfo.duration}\n` +
-            `Views: ${videoInfo.views}\n` +
-            `URL: ${videoInfo.url}`
-        );
-
-        // Clean up the temporary file
-        fs.unlinkSync(mediaPath);
-    } catch (error) {
-        console.error('Error fetching YouTube info:', error);
-        repondre('Failed to fetch video information.');
+        repondre("Unsupported media type. Reply with a video or audio file.");
     }
 });
