@@ -23,7 +23,7 @@ async function searchYouTubeInfo(query) {
     }
 }
 
-adams({ nomCom: "info", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+adams({ nomCom: "inf", categorie: "General", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
