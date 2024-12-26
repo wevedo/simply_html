@@ -48,9 +48,13 @@ const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.lengt
 
 // Audio URLs
 const audioUrls = [
-    "https://files.catbox.moe/p9mww2.mp3",
-    "https://files.catbox.moe/4rnxdx.mp3",
-    "https://files.catbox.moe/sila3e.mp3",
+    "https://files.catbox.moe/3n8pog.mp3",
+    "https://files.catbox.moe/l4mnwr.mp3",
+    "https://files.catbox.moe/8vntiv.mp3",
+    "https://files.catbox.moe/aahvu1.mp3",
+    "https://files.catbox.moe/v3441h.mp3",
+    "https://files.catbox.moe/5pw6cp.mp3",
+    "https://files.catbox.moe/l0542e.mp3",
 ];
 
 const getMimeType = (url) => (url.endsWith(".wav") ? "audio/wav" : "audio/mpeg");
@@ -128,13 +132,14 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ╰┈┈┈┈┈╯
 ${greeting}
 
-> ©Ibrahim Adams\n\n
+> ©Ibrahim Adams
+
 ${commandList}${footer}
 `,
                 contextInfo: {
                     externalAdReply: {
                         title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                        body: "Join the official channel!",
+                        body: "Tap here to Join our official channel!",
                         thumbnailUrl: image,
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                         showAdAttribution: true,
@@ -156,13 +161,14 @@ ${commandList}${footer}
 ╰───❖
 ${greeting}
 
-> ©Ibrahim Adams\n\n
+> ©Ibrahim Adams
+
 ${commandList}${footer}
 `,
                 contextInfo: {
                 externalAdReply: {
                     title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                    body: "Tap here to join our official channel!",
+                    body: "Tap here to Join our official channel!",
                     thumbnailUrl: image,
                     sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     showAdAttribution: true,
