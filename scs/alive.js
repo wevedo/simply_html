@@ -1,25 +1,39 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const { adams } = require("../Ibrahim/adams");
+const axios = require("axios");
+
+const githubRawBaseUrl =
+  "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
+
+const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
 
 adams(
   { nomCom: "alive", reaction: "🪄", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
     console.log("Alive command triggered!");
 
-    // URLs and configurations
     const fullImageUrl = "https://files.catbox.moe/fxcksg.webp"; // Full image URL
     const smallThumbnailUrl = "https://files.catbox.moe/fxcksg.webp"; // Small thumbnail URL
-    const randomAudio = "https://files.catbox.moe/qmpij0.mp3"; // Voice note URL
     const sourceUrl = "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y"; // Channel link
     const contactName = commandeOptions?.ms?.pushName || "Unknown Contact"; // Sender's name or "Unknown Contact"
 
     try {
+      // Randomly pick an audio file
+      const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
+      const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
+
+      // Verify if the file exists
+      const audioResponse = await axios.head(audioUrl);
+      if (audioResponse.status !== 200) {
+        throw new Error("Audio file not found!");
+      }
+
       // Send the custom message
       await zk.sendMessage(dest, {
         image: { url: fullImageUrl }, // Full image displayed at the top
         caption: `🚀 Always Active 🚀\n\n🌟 Contact: ${contactName}\n🌐 [Visit Channel](${sourceUrl})`,
-        audio: { url: randomAudio }, // Voice note URL
+        audio: { url: audioUrl }, // Voice note URL
         mimetype: "audio/mpeg", // Correct MIME type for audio
         ptt: true, // Send as a voice note
         contextInfo: {
@@ -33,10 +47,10 @@ adams(
             showAdAttribution: true, // Attribution for the channel
           },
           forwardingScore: -1, // Prevent message forwarding
-        }
+        },
       });
 
-      console.log("Alive message sent successfully with customized layout.");
+      console.log("Alive message sent successfully with a random GitHub audio file.");
     } catch (error) {
       console.error("Error sending Alive message:", error.message);
     }
@@ -44,8 +58,6 @@ adams(
 );
 
 console.log("WhatsApp bot is ready!");
-
-
 
 
 
