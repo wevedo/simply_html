@@ -38,7 +38,7 @@ adams(
         ptt: true, // Send as a voice note
         contextInfo: {
           externalAdReply: {
-            title: `🌟 Message from: ${contactName}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`, // Your contact in WhatsApp status format
+            title: `🌟 Message from: ${contactName} 🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`, // Your contact in WhatsApp status format
             body: "Bot Active🚀 Tap here",
             thumbnailUrl: smallThumbnailUrl, // Small thumbnail displayed below
             mediaType: 1, // Indicate this is an image
@@ -91,7 +91,7 @@ adams(
         ptt: true, // Send as a voice note
         contextInfo: {
           externalAdReply: {
-            title: `🌟 Message from: ${contactName}\n🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`, // Your contact in WhatsApp status format
+            title: `🌟 Message from: ${contactName} 🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀`, // Your contact in WhatsApp status format
             body: "Bot Active🚀 Tap here",
             thumbnailUrl: smallThumbnailUrl, // Small thumbnail displayed below
             mediaType: 1, // Indicate this is an image
