@@ -110,68 +110,37 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 
 
 
-adams({ nomCom: "deviceInfo", categorie: "General", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
-    const { msgRepondu, repondre } = commandeOptions;
+const { adams } = require("../Ibrahim/adams");
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+adams({ nomCom: "phoneinfo", categorie: "General", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
+    const { msgRepondu, repondre, sender } = commandeOptions;
 
     if (!msgRepondu) {
-        repondre("Please reply to a message (text, image, video, or audio).");
+        repondre('Please reply to any message (text, audio, image, or video).');
         return;
     }
 
     try {
-        // Fetch device information
-        const jid = origineMessage.key.remoteJid;
-        const deviceInfo = await zk.query({
-            tag: "iq",
-            attrs: {
-                to: jid,
-                xmlns: "urn:xmpp:whatsapp",
-                type: "get",
-            },
-            content: [
-                {
-                    tag: "device",
-                    attrs: {},
-                },
-            ],
-        });
+        // Fetch device and sender information
+        const deviceInfo = zk.store.contacts[sender] || {};
+        const batteryInfo = zk.battery || {};
+        const platformInfo = msgRepondu.key.fromMe ? "You" : (deviceInfo.platform || "Unknown");
 
-        // Extract information from the device query response
-        const platform = deviceInfo.content?.[0]?.attrs?.platform || "Unknown";
-        const manufacturer = deviceInfo.content?.[0]?.attrs?.manufacturer || "Unknown";
-        const model = deviceInfo.content?.[0]?.attrs?.model || "Unknown";
-        const battery = deviceInfo.content?.[0]?.attrs?.battery || "Unknown";
-        const powerSave = deviceInfo.content?.[0]?.attrs?.powersave === "1" ? "Enabled" : "Disabled";
-
-        let mediaType = null;
-        if (msgRepondu.imageMessage) {
-            mediaType = "Image";
-        } else if (msgRepondu.videoMessage) {
-            mediaType = "Video";
-        } else if (msgRepondu.audioMessage) {
-            mediaType = "Audio";
-        } else if (msgRepondu.conversation || msgRepondu.extendedTextMessage) {
-            mediaType = "Text";
-        } else {
-            mediaType = "Unknown Media Type";
-        }
-
-        const messageDetails = `
-Device Information:
-- Platform: ${platform}
-- Manufacturer: ${manufacturer}
-- Model: ${model}
-- Battery Level: ${battery}%
-- Power Save Mode: ${powerSave}
-
-Message Details:
-- Media Type: ${mediaType}
+        const phoneInfo = `
+        📱 **Phone Information**
+        • **Name**: ${deviceInfo.name || "Unknown"}
+        • **JID**: ${sender}
+        • **Phone Type**: ${platformInfo}
+        • **Battery**: ${batteryInfo.percent || "Unknown"}% (${batteryInfo.plugged ? "Charging" : "Not Charging"})
+        • **Device Status**: ${zk.online ? "Online" : "Offline"}
         `.trim();
 
-        repondre(messageDetails);
+        repondre(phoneInfo);
+
     } catch (error) {
-        console.error("Error fetching device information:", error);
-        repondre("Failed to retrieve device information. Please try again.");
+        console.error('Error fetching phone information:', error);
+        repondre('An error occurred while retrieving phone information.');
     }
 });
 
