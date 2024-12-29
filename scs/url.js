@@ -109,7 +109,8 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 
 
 
-adams({ nomCom: "device", categorie: "Utility", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
+
+adams({ nomCom: "deviceInfo", categorie: "Utility", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
@@ -117,8 +118,20 @@ adams({ nomCom: "device", categorie: "Utility", reaction: "📱" }, async (origi
         return;
     }
 
-    // Get sender's device info
-    const senderInfo = origineMessage.key.participant || origineMessage.key.remoteJid; // Handle group or individual chats
+    // Ensure origineMessage.key exists and handle different types of messages
+    if (!origineMessage.key) {
+        repondre('Unable to retrieve message metadata.');
+        return;
+    }
+
+    // Handle group or individual chats with proper checks
+    const senderInfo = origineMessage.key.participant || origineMessage.key.remoteJid;
+    if (!senderInfo) {
+        repondre('Unable to identify the sender.');
+        return;
+    }
+
+    // Fetch device info
     const deviceInfo = zk.user.devices[senderInfo] || {}; // Fetch device info
 
     // Check if device info exists
