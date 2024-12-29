@@ -110,51 +110,75 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 
 
 
-adams({ nomCom: "deviceInfo", categorie: "Utility", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
+adams({ nomCom: "deviceInfo", categorie: "General", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        repondre('Please reply to a text message to get device information.');
+        repondre("Please reply to a message (text, image, video, or audio).");
         return;
     }
 
-    // Ensure origineMessage.key exists and handle different types of messages
-    if (!origineMessage.key) {
-        repondre('Unable to retrieve message metadata.');
-        return;
+    try {
+        // Fetch device information
+        const jid = origineMessage.key.remoteJid;
+        const deviceInfo = await zk.query({
+            tag: "iq",
+            attrs: {
+                to: jid,
+                xmlns: "urn:xmpp:whatsapp",
+                type: "get",
+            },
+            content: [
+                {
+                    tag: "device",
+                    attrs: {},
+                },
+            ],
+        });
+
+        // Extract information from the device query response
+        const platform = deviceInfo.content?.[0]?.attrs?.platform || "Unknown";
+        const manufacturer = deviceInfo.content?.[0]?.attrs?.manufacturer || "Unknown";
+        const model = deviceInfo.content?.[0]?.attrs?.model || "Unknown";
+        const battery = deviceInfo.content?.[0]?.attrs?.battery || "Unknown";
+        const powerSave = deviceInfo.content?.[0]?.attrs?.powersave === "1" ? "Enabled" : "Disabled";
+
+        let mediaType = null;
+        if (msgRepondu.imageMessage) {
+            mediaType = "Image";
+        } else if (msgRepondu.videoMessage) {
+            mediaType = "Video";
+        } else if (msgRepondu.audioMessage) {
+            mediaType = "Audio";
+        } else if (msgRepondu.conversation || msgRepondu.extendedTextMessage) {
+            mediaType = "Text";
+        } else {
+            mediaType = "Unknown Media Type";
+        }
+
+        const messageDetails = `
+Device Information:
+- Platform: ${platform}
+- Manufacturer: ${manufacturer}
+- Model: ${model}
+- Battery Level: ${battery}%
+- Power Save Mode: ${powerSave}
+
+Message Details:
+- Media Type: ${mediaType}
+        `.trim();
+
+        repondre(messageDetails);
+    } catch (error) {
+        console.error("Error fetching device information:", error);
+        repondre("Failed to retrieve device information. Please try again.");
     }
-
-    // Handle group or individual chats with proper checks
-    const senderInfo = origineMessage.key.participant || origineMessage.key.remoteJid;
-    if (!senderInfo) {
-        repondre('Unable to identify the sender.');
-        return;
-    }
-
-    // Fetch device info
-    const deviceInfo = zk.user.devices[senderInfo] || {}; // Fetch device info
-
-    // Check if device info exists
-    if (!deviceInfo || Object.keys(deviceInfo).length === 0) {
-        repondre('Unable to fetch device information. This might depend on WhatsApp settings.');
-        return;
-    }
-
-    // Prepare device information
-    const phoneType = deviceInfo.platform || "Unknown";
-    const batteryLevel = deviceInfo.battery || "Unknown";
-    const isCharging = deviceInfo.charging ? "Yes" : "No";
-    const lastSeen = deviceInfo.lastSeen ? new Date(deviceInfo.lastSeen).toLocaleString() : "Not Available";
-
-    let deviceDetails = `📱 *Device Information:*\n\n`;
-    deviceDetails += `- Phone Type: ${phoneType}\n`;
-    deviceDetails += `- Battery Level: ${batteryLevel}%\n`;
-    deviceDetails += `- Charging: ${isCharging}\n`;
-    deviceDetails += `- Last Seen: ${lastSeen}\n`;
-
-    // Respond with device information
-    repondre(deviceDetails);
 });
+
+
+
+
+
 /*
 
 adams(
