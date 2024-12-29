@@ -107,6 +107,41 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
     }
 });
 
+
+
+adams({ nomCom: "device", categorie: "Utility", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
+    const { msgRepondu, repondre } = commandeOptions;
+
+    if (!msgRepondu) {
+        repondre('Please reply to a text message to get device information.');
+        return;
+    }
+
+    // Get sender's device info
+    const senderInfo = origineMessage.key.participant || origineMessage.key.remoteJid; // Handle group or individual chats
+    const deviceInfo = zk.user.devices[senderInfo] || {}; // Fetch device info
+
+    // Check if device info exists
+    if (!deviceInfo || Object.keys(deviceInfo).length === 0) {
+        repondre('Unable to fetch device information. This might depend on WhatsApp settings.');
+        return;
+    }
+
+    // Prepare device information
+    const phoneType = deviceInfo.platform || "Unknown";
+    const batteryLevel = deviceInfo.battery || "Unknown";
+    const isCharging = deviceInfo.charging ? "Yes" : "No";
+    const lastSeen = deviceInfo.lastSeen ? new Date(deviceInfo.lastSeen).toLocaleString() : "Not Available";
+
+    let deviceDetails = `📱 *Device Information:*\n\n`;
+    deviceDetails += `- Phone Type: ${phoneType}\n`;
+    deviceDetails += `- Battery Level: ${batteryLevel}%\n`;
+    deviceDetails += `- Charging: ${isCharging}\n`;
+    deviceDetails += `- Last Seen: ${lastSeen}\n`;
+
+    // Respond with device information
+    repondre(deviceDetails);
+});
 /*
 
 adams(
