@@ -2420,33 +2420,21 @@ zk.ev.on('group-participants.update', async (group) => {
                 if((conf.DP).toLowerCase() === 'yes') {     
 
                 let cmsg =` ⁠⁠⁠⁠
-╔═════ ❖ •✦
-║   SYSTEM ACTIVE
-╚═════ ❖ •✦
-║ Prefix: [ ${prefixe} ]
-║ Mode: ${md}
-║ Version: 7.0.8
-║ Bot Name: BWM XMD
-║ Owner: Sir Ibrahim Adams
-╚═════ ❖ •✦
-╭───────────────━⊷
-
-*Stay Updated in our channel*
+╭──────────━⊷
+║ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄
+╰──────────━⊷
+╭──────────━⊷
+║ ᴘʀᴇғɪx: [ ${ᴘʀᴇғɪxᴇ} ]
+║ ᴍᴏᴅᴇ: ${ᴍᴅ}
+║ ᴠᴇʀsɪᴏɴ: 7.0.8
+║ ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
+║ ᴏᴡɴᴇʀ: sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+╰──────────━⊷
+╭──────────━⊷
+  ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs
  
-> https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y
-
-*Heroku App Configuration*
- 
-*Your Heroku App Name*
-> ${herokuAppName}
-
-*Visit Heroku App*
-> ${herokuAppLink}
-
-*Owner Number*
-> ${botOwner}
-
-╰───────────────━⊷
+  ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ: https://shorturl.at/E0jGI
+╰──────────━⊷
                 
                  `;
                     
