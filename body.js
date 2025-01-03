@@ -2377,21 +2377,18 @@ zk.ev.on('group-participants.update', async (group) => {
         zk.ev.on("connection.update", async (con) => {
             const { lastDisconnect, connection } = con;
             if (connection === "connecting") {
-                console.log("bwm xmd is connecting in your account...");
+                console.log("ℹ️ Bwm xmd is connecting...");
             }
             else if (connection === 'open') {
-       
-                      await zk.groupAcceptInvite("KCFu29DJGTiBpH7L4hT08K");
-                     
-                console.log("Bwm xmd connected successfully✔");
+                console.log("✅ Bwm xmd Connected to WhatsApp! ☺️");
                 console.log("--");
                 await (0, baileys_1.delay)(200);
                 console.log("------");
                 await (0, baileys_1.delay)(300);
                 console.log("------------------/-----");
-                console.log("Bmw Md is Online 🕸\n\n");
+                console.log("Bwm xmd is Online 🕸\n\n");
                 //chargement des commandes 
-                console.log("Loading Bmw Commands ...\n");
+                console.log("Loading Bwm xmd Commands ...\n");
                 fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
                     if (path.extname(fichier).toLowerCase() == (".js")) {
                         try {
