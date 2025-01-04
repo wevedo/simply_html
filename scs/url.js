@@ -108,11 +108,6 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 });
 
 
-
-
-const { adams } = require("../Ibrahim/adams");
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-
 adams({ nomCom: "phoneinfo", categorie: "General", reaction: "📱" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre, sender } = commandeOptions;
 
