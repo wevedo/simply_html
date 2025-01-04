@@ -131,6 +131,9 @@ ${greeting}
 ${commandList}${footer}
 `,
                 contextInfo: {
+                    quotedMessage: {
+                        conversation: "𝙈𝙚𝙨𝙨𝙖𝙜𝙚 𝙗𝙮 𝙄𝙗𝙧𝙖𝙝𝙞𝙢 𝘼𝙙𝙖𝙢𝙨 💫",
+                    },
                     externalAdReply: {
                         title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                         body: "Tap here to Join our official channel!",
@@ -160,6 +163,9 @@ ${greeting}
 ${commandList}${footer}
 `,
                 contextInfo: {
+                    quotedMessage: {
+                        conversation: "𝙈𝙚𝙨𝙨𝙖𝙜𝙚 𝙗𝙮 𝙄𝙗𝙧𝙖𝙝𝙞𝙢 𝘼𝙙𝙖𝙢𝙨 💫",
+                    },
                     externalAdReply: {
                         title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                         body: "Tap here to Join our official channel!",
