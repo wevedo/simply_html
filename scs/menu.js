@@ -132,14 +132,14 @@ ${commandList}${footer}
 `,
                 contextInfo: {
                     quotedMessage: {
-                        conversation: "𝙈𝙚𝙨𝙨𝙖𝙜𝙚 𝙗𝙮 𝙄𝙗𝙧𝙖𝙝𝙞𝙢 𝘼𝙙𝙖𝙢𝙨 💫",
+                        conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
                     },
                     externalAdReply: {
                         title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                         body: "Tap here to Join our official channel!",
                         thumbnailUrl: image,
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        showAdAttribution: true,
+                        showAdAttribution: false,
                         renderLargerThumbnail: false,
                     },
                 },
@@ -164,14 +164,14 @@ ${commandList}${footer}
 `,
                 contextInfo: {
                     quotedMessage: {
-                        conversation: "𝙈𝙚𝙨𝙨𝙖𝙜𝙚 𝙗𝙮 𝙄𝙗𝙧𝙖𝙝𝙞𝙢 𝘼𝙙𝙖𝙢𝙨 💫",
+                        conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
                     },
                     externalAdReply: {
                         title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
                         body: "Tap here to Join our official channel!",
                         thumbnailUrl: image,
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        showAdAttribution: true,
+                        showAdAttribution: false,
                         mediaType: 1,
                         renderLargerThumbnail: true,
                     },
