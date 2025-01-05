@@ -23,13 +23,19 @@ const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.le
 
 const getMimeType = (url) => (url.endsWith(".wav") ? "audio/wav" : "audio/mpeg");
 
-// Menu images
+// Menu images and thumbnail URLs
 const menuImages = [
     "https://files.catbox.moe/13i93y.jpeg",
     "https://files.catbox.moe/2696sn.jpeg",
     "https://files.catbox.moe/soj3q4.jpeg",
     "https://files.catbox.moe/bddwnw.jpeg",
     "https://files.catbox.moe/f6zee8.jpeg",
+    "https://files.catbox.moe/dd93hl.jpg",
+    "https://files.catbox.moe/omgszj.jpg",
+    "https://files.catbox.moe/sf6xgk.jpg",
+    "https://files.catbox.moe/nwvoq3.jpg",
+    "https://files.catbox.moe/040de7.jpeg",
+    "https://files.catbox.moe/3qkejj.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
@@ -48,11 +54,9 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Main category command
-adams({ nomCom: "category", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { nomAuteurMessage, args } = commandeOptions;
-    const categoryFilter = args[0]?.toUpperCase(); // Category name provided in command
-
+// Main menu command
+adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+    let { nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
@@ -77,31 +81,92 @@ adams({ nomCom: "category", categorie: "General" }, async (dest, zk, commandeOpt
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Generate command list for the specified category
+    // Filter and display only the requested category if provided
+    const requestedCategory = commandeOptions.category;  // Assuming category is passed via options
     let commandList = "";
-    if (categoryFilter && coms[categoryFilter]) {
-        commandList += `📂 *${categoryFilter}*:\n\n`;
-        coms[categoryFilter].forEach((cmd) => {
-            commandList += `🔹 ${cmd}\n`;
-        });
-    } else if (!categoryFilter) {
-        commandList += "❌ No category specified. Please specify a valid category.\n";
+    const sortedCategories = Object.keys(coms).sort();
+
+    if (requestedCategory) {
+        // Display only the requested category
+        if (coms[requestedCategory.toUpperCase()]) {
+            const categoryCommands = coms[requestedCategory.toUpperCase()];
+            commandList += `📂 *${requestedCategory.toUpperCase()}*:\n\n`;
+            categoryCommands.forEach((cmd, i) => {
+                commandList += `🟢 ${cmd}   `;
+                if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
+            });
+        } else {
+            commandList = "❌ Category not found!";
+        }
     } else {
-        commandList += `❌ No commands found for the category: *${categoryFilter}*.\n`;
+        // Show the full menu if no specific category is requested
+        sortedCategories.forEach((cat) => {
+            if (cat === "ABU") {
+                commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;
+            } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
+                commandList += `${readmore}\n📂 *${cat}*:\n\n`;
+            } else {
+                commandList += `\n📂 *${cat}*:\n\n`;
+            }
+
+            let categoryCommands = coms[cat];
+            for (let i = 0; i < categoryCommands.length; i++) {
+                commandList += `🟢 ${categoryCommands[i]}   `;
+                if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
+            }
+            commandList += `\n`;
+        });
     }
 
     // Select assets
     const image = randomImage();
+    const image1 = randomImage();
     const randomAudioFile = getRandomAudio();
     const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
+
+    const menuType = s.MENUTYPE || (Math.random() < 0.5 ? "1" : "2");
 
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
 
     try {
-        // Send category menu
-        await zk.sendMessage(dest, {
-            image: { url: image },
-            caption: `
+        if (menuType === "1") {
+            // Menu Type 1
+            await zk.sendMessage(dest, {
+                image: { url: image1 },
+                caption: `
+╭┈┈┈┈┈╮
+│  ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
+├┈┈┈┈•➤
+│ 🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
+│ 📆 ᴅᴀᴛᴇ: ${date}
+│ ⏰ ᴛɪᴍᴇ: ${time}
+│ 👪 ʙᴡᴍ ᴜsᴇʀs: 1${formattedTotalUsers}
+╰┈┈┈┈┈╯
+${greeting}
+
+> ©Ibrahim Adams
+
+${commandList}${footer}
+`,
+                contextInfo: {
+                    quotedMessage: {
+                        conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
+                    },
+                    externalAdReply: {
+                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                        body: "Tap here to Join our official channel!",
+                        thumbnailUrl: image,
+                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        showAdAttribution: false,
+                        renderLargerThumbnail: false,
+                    },
+                },
+            });
+        } else {
+            // Menu Type 2
+            await zk.sendMessage(dest, {
+                image: { url: image1 },
+                caption: `
 ╭───❖
 ┃🚀 ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
 ┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
@@ -115,19 +180,22 @@ ${greeting}
 
 ${commandList}${footer}
 `,
-            contextInfo: {
-                quotedMessage: {
-                    conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
+                contextInfo: {
+                    quotedMessage: {
+                        conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
+                    },
+                    externalAdReply: {
+                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                        body: "Tap here to Join our official channel!",
+                        thumbnailUrl: image,
+                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        showAdAttribution: false,
+                        mediaType: 1,
+                        renderLargerThumbnail: true,
+                    },
                 },
-                externalAdReply: {
-                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                    body: "Tap here to Join our official channel!",
-                    thumbnailUrl: image,
-                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                    showAdAttribution: false,
-                },
-            },
-        });
+            });
+        }
 
         // Send audio
         await zk.sendMessage(dest, {
@@ -136,10 +204,9 @@ ${commandList}${footer}
             ptt: true,
         });
     } catch (error) {
-        console.error("Error sending category menu:", error);
+        console.error("Error sending menu:", error);
     }
 });
-
 
 
 
