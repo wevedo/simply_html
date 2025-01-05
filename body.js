@@ -2323,54 +2323,63 @@ zk.ev.on('group-participants.update', async (group) => {
     /*****************************Cron setup */
 
         
-    async  function activateCrons() {
-        const cron = require('node-cron');
-        const { getCron } = require('./lib/cron');
+    async function activateCrons() {
+    const cron = require('node-cron');
+    const { getCron } = require('./lib/cron');
 
-          let crons = await getCron();
-          console.log(crons);
-          if (crons.length > 0) {
-        
-            for (let i = 0; i < crons.length; i++) {
-        
-              if (crons[i].mute_at != null) {
-                let set = crons[i].mute_at.split(':');
+    let crons = await getCron();
+    console.log(crons);
 
-                console.log(`etablissement d'un automute pour ${crons[i].group_id} a ${set[0]} H ${set[1]}`)
+    if (crons.length > 0) {
+        for (let i = 0; i < crons.length; i++) {
+            const cronItem = crons[i];
 
-                cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                  await zk.groupSettingUpdate(crons[i].group_id, 'announcement');
-                  zk.sendMessage(crons[i].group_id, { image : { url : './files/chrono.webp'} , caption: "Hello, it's time to close the group; sayonara." });
+            if (cronItem.mute_at) {
+                let set = cronItem.mute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
 
-                }, {
-                    timezone: "Africa/Nairobi"
-                  });
-              }
-        
-              if (crons[i].unmute_at != null) {
-                let set = crons[i].unmute_at.split(':');
+                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
+                    console.log(`Setting up auto-mute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
 
-                console.log(`etablissement d'un autounmute pour ${set[0]} H ${set[1]} `)
-        
-                cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-
-                  await zk.groupSettingUpdate(crons[i].group_id, 'not_announcement');
-
-                  zk.sendMessage(crons[i].group_id, { image : { url : './files/chrono.webp'} , caption: "Good morning; It's time to open the group." });
-
-                 
-                },{
-                    timezone: "Africa/Nairobi"
-                  });
-              }
-        
+                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
+                        await zk.groupSettingUpdate(cronItem.group_id, 'announcement');
+                        zk.sendMessage(cronItem.group_id, {
+                            image: { url: './files/chrono.webp' },
+                            caption: "Hello, it's time to close the group; sayonara."
+                        });
+                    }, {
+                        timezone: "Africa/Nairobi"
+                    });
+                } else {
+                    console.error(`Invalid mute_at format: ${cronItem.mute_at}`);
+                }
             }
-          } else {
-            console.log('Les crons n\'ont pas été activés');
-          }
 
-          return
+            if (cronItem.unmute_at) {
+                let set = cronItem.unmute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
+
+                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
+                    console.log(`Setting up auto-unmute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
+
+                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
+                        await zk.groupSettingUpdate(cronItem.group_id, 'not_announcement');
+                        zk.sendMessage(cronItem.group_id, {
+                            image: { url: './files/chrono.webp' },
+                            caption: "Good morning; it's time to open the group."
+                        });
+                    }, {
+                        timezone: "Africa/Nairobi"
+                    });
+                } else {
+                    console.error(`Invalid unmute_at format: ${cronItem.unmute_at}`);
+                }
+            }
         }
+    } else {
+        console.log("No cron jobs to activate.");
+    }
+
+    return;
+}
 
         
         //événement contact
