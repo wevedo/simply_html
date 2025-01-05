@@ -108,7 +108,6 @@ commands.forEach((command) => {
 
         // Create the repository info message
         const infoMessage = `
-
 ╭───────────────━⊷
 ║ 🚀 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐑𝐄𝐏𝐎 𝐈𝐍𝐅𝐎 🚀
 ╰───────────────━⊷
@@ -121,8 +120,8 @@ commands.forEach((command) => {
 ║👤 *ᴏᴡɴᴇʀ:* sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
 ╰───────────────━⊷
 ╭───────────────━⊷
-║*ғᴇᴛᴄʜᴇᴅ ᴏɴ:* ${currentTime}
-║*ʀᴇᴘᴏ ʟɪɴᴋ:* https://shorturl.at/pv9qw
+║ ғᴇᴛᴄʜᴇᴅ ᴏɴ: ${currentTime}
+║ ʀᴇᴘᴏ ʟɪɴᴋ: https://shorturl.at/pv9qw
 ╰───────────────━⊷
 
 > sᴛᴀʏ ᴄᴏɴɴᴇᴄᴛᴇᴅ ғᴏʀ ғᴀɴᴛᴀsᴛɪᴄ ᴜᴘᴅᴀᴛᴇs!`;
@@ -133,11 +132,12 @@ commands.forEach((command) => {
                 text: infoMessage,
                 contextInfo: {
                     externalAdReply: {
-                        title: "✨ Explore Fantastic Updates!",
+                        title: "Explore Fantastic Updates!",
                         body: "Click here for the latest repository details.",
                         thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg", // Replace with your image URL
                         mediaType: 1,
                         renderLargerThumbnail: true, // Ensures a larger thumbnail display
+                        showAdAttribution: true, 
                         mediaUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Source URL in context
                     },
