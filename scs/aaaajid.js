@@ -1,26 +1,10 @@
 const { adams } = require("../Ibrahim/adams");
-//const moment = require("moment-timezone"); 
-const { ajouterOuMettreAJourJid, mettreAJourAction, verifierEtatJid } = require("../lib/antilien");
-const { atbajouterOuMettreAJourJid, atbverifierEtatJid } = require("../lib/antibot");
-const { search, download } = require("aptoide-scraper");
-const fs = require("fs-extra");
-const conf = require("../config");
-const { default: axios } = require('axios');
 
-adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg, verifGroupe, infosGroupe, nomGroupe, verifAdmin, superUser } = commandeOptions;
-
-  // Debug to check the value of `arg`
-  console.log("Received argument:", arg);
+const groupCommandHandler = async (dest, zk, commandeOptions, action, timeInMinutes) => {
+  const { ms, repondre, verifGroupe, verifAdmin, superUser } = commandeOptions;
 
   if (!verifGroupe) {
-    repondre("✋🏿 ✋🏿 This command is reserved for groups ❌\n\n" +
-             "Instructions:\n" +
-             "1️⃣ Use this command in a group chat.\n" +
-             "2️⃣ Command format: `group <open/close> [time in minutes]`\n" +
-             "Examples:\n" +
-             "`group open`\n" +
-             "`group close 20` (close group for 20 minutes)");
+    repondre("✋🏿 This command is reserved for groups ❌");
     return;
   }
 
@@ -29,22 +13,7 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
     return;
   }
 
-  // Safely split the arguments
-  const commandArgs = (typeof arg === "string" ? arg : "").split(' ');
-  const action = commandArgs[0]?.toLowerCase();
-  const timeInMinutes = commandArgs[1] ? parseInt(commandArgs[1], 10) : null;
-
-  // Debug to check parsed arguments
-  console.log("Parsed action:", action);
-  console.log("Parsed timeInMinutes:", timeInMinutes);
-
-  if (!["open", "close"].includes(action)) {
-    repondre("❌ Invalid command. Use `group open` or `group close [time in minutes]`.");
-    return;
-  }
-
   try {
-    // Function to change group settings
     const updateGroupSettings = async (setting) => {
       await zk.groupSettingUpdate(dest, setting);
       const statusMessage = setting === "not_announcement" ? 
@@ -56,7 +25,7 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
     if (action === "open") {
       await updateGroupSettings("not_announcement");
 
-      if (timeInMinutes && !isNaN(timeInMinutes) && timeInMinutes > 0) {
+      if (timeInMinutes && timeInMinutes > 0) {
         repondre(`⏳ Group will automatically close in ${timeInMinutes} minutes.`);
         setTimeout(async () => {
           await updateGroupSettings("announcement");
@@ -65,7 +34,7 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
     } else if (action === "close") {
       await updateGroupSettings("announcement");
 
-      if (timeInMinutes && !isNaN(timeInMinutes) && timeInMinutes > 0) {
+      if (timeInMinutes && timeInMinutes > 0) {
         repondre(`⏳ Group will automatically open in ${timeInMinutes} minutes.`);
         setTimeout(async () => {
           await updateGroupSettings("not_announcement");
@@ -76,6 +45,42 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
     console.error(`Error updating group settings:`, error);
     repondre("❌ Failed to update group settings. Please try again later.");
   }
+};
+
+// Command: group open
+adams({ nomCom: "group open", categorie: 'Group', reaction: "🔓" }, async (dest, zk, commandeOptions) => {
+  await groupCommandHandler(dest, zk, commandeOptions, "open", null);
+});
+
+// Command: group close
+adams({ nomCom: "group close", categorie: 'Group', reaction: "🔒" }, async (dest, zk, commandeOptions) => {
+  await groupCommandHandler(dest, zk, commandeOptions, "close", null);
+});
+
+// Command: group open <time>
+adams({ nomCom: "group open", categorie: 'Group', reaction: "⏳🔓" }, async (dest, zk, commandeOptions) => {
+  const { arg, repondre } = commandeOptions;
+  const timeInMinutes = parseInt(arg, 10);
+
+  if (isNaN(timeInMinutes) || timeInMinutes <= 0) {
+    repondre("❌ Invalid time specified. Use a positive number for time in minutes.");
+    return;
+  }
+
+  await groupCommandHandler(dest, zk, commandeOptions, "open", timeInMinutes);
+});
+
+// Command: group close <time>
+adams({ nomCom: "group close", categorie: 'Group', reaction: "⏳🔒" }, async (dest, zk, commandeOptions) => {
+  const { arg, repondre } = commandeOptions;
+  const timeInMinutes = parseInt(arg, 10);
+
+  if (isNaN(timeInMinutes) || timeInMinutes <= 0) {
+    repondre("❌ Invalid time specified. Use a positive number for time in minutes.");
+    return;
+  }
+
+  await groupCommandHandler(dest, zk, commandeOptions, "close", timeInMinutes);
 });
 
 adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
