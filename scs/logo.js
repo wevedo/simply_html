@@ -33,10 +33,70 @@ const logoCommands = [
     makerUrl: "https://en.ephoto360.com/create-water-effect-text-online-295.html"
   },
   {
-    nomCom: "whitegold",
+    nomCom: "underwater",
     categorie: "Logo",
-    reaction: "💫",
-    makerUrl: "https://textpro.me/elegant-white-gold-3d-text-effect-online-free-1070.html"
+    reaction: "💦",
+    makerUrl: "https://en.ephoto360.com/3d-underwater-text-effect-online-682.html"
+  },
+  {
+    nomCom: "4d",
+    categorie: "Logo",
+    reaction: "👁️‍🗨️",
+    makerUrl: "https://en.ephoto360.com/create-glowing-text-effects-online-706.html"
+  },
+  {
+    nomCom: "captainamerica",
+    categorie: "Logo",
+    reaction: "🎯",
+    makerUrl: "https://en.ephoto360.com/create-a-cinematic-captain-america-text-effect-online-715.html"
+  },
+  {
+    nomCom: "american",
+    categorie: "Logo",
+    reaction: "🇱🇷",
+    makerUrl: "https://en.ephoto360.com/free-online-american-flag-3d-text-effect-generator-725.html"
+  },
+  {
+nomCom: "thor",
+    categorie: "Logo",
+    reaction: "🔨",
+    makerUrl: "https://en.ephoto360.com/create-thor-logo-style-text-effects-online-for-free-796.html"
+  },
+  {
+nomCom: "1997",
+    categorie: "Logo",
+    reaction: "⚗️",
+    makerUrl: "https://en.ephoto360.com/1917-style-text-effect-523.html"
+  },
+  {
+    nomCom: "embroider",
+    categorie: "Logo",
+    reaction: "📍",
+    makerUrl: "https://en.ephoto360.com/embroider-159.html"
+  },
+  {
+nomCom: "thunder",
+    categorie: "Logo",
+    reaction: "🔷",
+    makerUrl: "https://en.ephoto360.com/thunder-text-effect-online-97.html"
+  },
+  {
+    nomCom: "foggyglass",
+    categorie: "Logo",
+    reaction: "🟥",
+    makerUrl: "https://en.ephoto360.com/handwritten-text-on-foggy-glass-online-680.html"
+  },
+  {
+    nomCom: "silver",
+    categorie: "Logo",
+    reaction: "㊙",
+    makerUrl: "https://en.ephoto360.com/create-glossy-silver-3d-text-effect-online-802.html"
+  },
+  {
+    nomCom: "wetglass",
+    categorie: "Logo",
+    reaction: "🪟",
+    makerUrl: "https://en.ephoto360.com/write-text-on-wet-glass-online-589.html"
   }
 ];
 
