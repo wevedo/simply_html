@@ -10,6 +10,9 @@ const { default: axios } = require('axios');
 adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifGroupe, infosGroupe, nomGroupe, verifAdmin, superUser } = commandeOptions;
 
+  // Debug to check the value of `arg`
+  console.log("Received argument:", arg);
+
   if (!verifGroupe) {
     repondre("✋🏿 ✋🏿 This command is reserved for groups ❌\n\n" +
              "Instructions:\n" +
@@ -30,6 +33,10 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
   const commandArgs = (typeof arg === "string" ? arg : "").split(' ');
   const action = commandArgs[0]?.toLowerCase();
   const timeInMinutes = commandArgs[1] ? parseInt(commandArgs[1], 10) : null;
+
+  // Debug to check parsed arguments
+  console.log("Parsed action:", action);
+  console.log("Parsed timeInMinutes:", timeInMinutes);
 
   if (!["open", "close"].includes(action)) {
     repondre("❌ Invalid command. Use `group open` or `group close [time in minutes]`.");
@@ -70,7 +77,6 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
     repondre("❌ Failed to update group settings. Please try again later.");
   }
 });
-
 
 adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifGroupe, infosGroupe, nomGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
