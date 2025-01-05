@@ -2233,7 +2233,8 @@ zk.ev.on('group-participants.update', async (group) => {
             // Add each member who joined to the welcome message, including their member number
             for (let i = 0; i < membres.length; i++) {
                 let memberIndex = metadata.participants.findIndex((p) => p.id === membres[i]) + 1;
-                msg += `\n👋 *Hello* @${membres[i].split("@")[0]}\n, *You are member number*: ${memberIndex} in this group! 🎉\n`;
+                msg += `\n
+> 👋 *Hello* @${membres[i].split("@")[0]}\n\n *You are member number*: ${memberIndex} in this group! 🎉\n`;
             }
 
             msg += `\n*Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*\n\n
