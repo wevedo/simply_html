@@ -45,10 +45,46 @@ const logoCommands = [
     makerUrl: "https://en.ephoto360.com/create-glowing-text-effects-online-706.html"
   },
   {
-    nomCom: "captainamerica",
+    nomCom: "boken",
     categorie: "Logo",
-    reaction: "🎯",
-    makerUrl: "https://en.ephoto360.com/create-a-cinematic-captain-america-text-effect-online-715.html"
+    reaction: "🔺",
+    makerUrl: "https://en.ephoto360.com/bokeh-text-effect-86.html"
+  },
+  {
+nomCom: "starnight",
+    categorie: "Logo",
+    reaction: "🌃",
+    makerUrl: "https://en.ephoto360.com/stars-night-online-84.html"
+  },
+  {
+nomCom: "gold",
+    categorie: "Logo",
+    reaction: "🎨",
+    makerUrl: "https://en.ephoto360.com/modern-gold-purple-175.html"
+  },
+  {
+    nomCom: "avatar",
+    categorie: "Logo",
+    reaction: "🗽",
+    makerUrl: "https://en.ephoto360.com/create-typography-avatars-with-your-photos-778.html"
+  },
+  {
+    nomCom: "xmd",
+    categorie: "Logo",
+    reaction: "🛰",
+    makerUrl: "https://en.ephoto360.com/light-text-effect-futuristic-technology-style-648.html"
+  },
+  {
+nomCom: "3d",
+    categorie: "Logo",
+    reaction: "🎟",
+    makerUrl: "https://en.ephoto360.com/create-3d-gradient-text-effect-online-600.html"
+  },
+  {
+    nomCom: "luxury",
+    categorie: "Logo",
+    reaction: "🌄",
+    makerUrl: "https://en.ephoto360.com/create-a-luxury-gold-text-effect-online-594.html"
   },
   {
     nomCom: "american",
@@ -57,10 +93,10 @@ const logoCommands = [
     makerUrl: "https://en.ephoto360.com/free-online-american-flag-3d-text-effect-generator-725.html"
   },
   {
-nomCom: "thor",
+nomCom: "matrix",
     categorie: "Logo",
-    reaction: "🔨",
-    makerUrl: "https://en.ephoto360.com/create-thor-logo-style-text-effects-online-for-free-796.html"
+    reaction: "🔳",
+    makerUrl: "https://en.ephoto360.com/matrix-text-effect-154.html"
   },
   {
 nomCom: "1997",
