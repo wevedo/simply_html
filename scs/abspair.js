@@ -13,7 +13,7 @@ adams({ nomCom: "rent", reaction: "🚘", categorie: "User" }, async (dest, zk, 
       return repondre('Example Usage: .rent 254xxxxxxxx.');
     }
 
-    await repondre('Generating your code.....');
+    await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ᴄᴏᴅᴇ.........');
     const text = encodeURIComponent(arg.join(' '));
     const apiUrl = `https://bwm-xmd-scanner-s211.onrender.com/code?number=${text}`;
 
