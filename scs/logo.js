@@ -63,12 +63,6 @@ nomCom: "gold",
     makerUrl: "https://en.ephoto360.com/modern-gold-purple-175.html"
   },
   {
-    nomCom: "avatar",
-    categorie: "Logo",
-    reaction: "🗽",
-    makerUrl: "https://en.ephoto360.com/create-typography-avatars-with-your-photos-778.html"
-  },
-  {
     nomCom: "xmd",
     categorie: "Logo",
     reaction: "🛰",
@@ -142,14 +136,25 @@ logoCommands.forEach(({ nomCom, categorie, reaction, makerUrl }) => {
     const { arg, repondre, ms, prefixe } = commandeOptions;
 
     if (!arg || arg == "") {
-      repondre(`Exemple of using commande:\n ${prefixe}${nomCom} My text`);
+      repondre(`Exemple of using commande:\n ${prefixe}${nomCom} Ibrahim Adams`);
       return;
     }
 
     try {
       repondre("Processing...");
       const img = await mumaker.textpro(makerUrl, arg.join(" "));
-      await zk.sendMessage(dest, { image: { url: img.image }, caption: `Logo by BMW-MD` }, { quoted: ms });
+      await zk.sendMessage(dest, { image: { url: img.image }, caption: `
+⁠⁠⁠⁠
+╭──────────━⊷
+║ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐋𝐎𝐆𝐎
+╰──────────━⊷
+╭──────────━⊷
+  ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs
+ 
+  ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ: https://shorturl.at/E0jGI
+╰──────────━⊷
+
+> Sir Ibrahim Adams` }, { quoted: ms });
     } catch (e) {
       repondre(`🥵🥵 ${e}`);
     }
