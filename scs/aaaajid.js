@@ -57,31 +57,7 @@ adams({ nomCom: "group close", categorie: 'Group', reaction: "🔒" }, async (de
   await groupCommandHandler(dest, zk, commandeOptions, "close", null);
 });
 
-// Command: group open <time>
-adams({ nomCom: "group open", categorie: 'Group', reaction: "⏳🔓" }, async (dest, zk, commandeOptions) => {
-  const { arg, repondre } = commandeOptions;
-  const timeInMinutes = parseInt(arg, 10);
 
-  if (isNaN(timeInMinutes) || timeInMinutes <= 0) {
-    repondre("❌ Invalid time specified. Use a positive number for time in minutes.");
-    return;
-  }
-
-  await groupCommandHandler(dest, zk, commandeOptions, "open", timeInMinutes);
-});
-
-// Command: group close <time>
-adams({ nomCom: "group close", categorie: 'Group', reaction: "⏳🔒" }, async (dest, zk, commandeOptions) => {
-  const { arg, repondre } = commandeOptions;
-  const timeInMinutes = parseInt(arg, 10);
-
-  if (isNaN(timeInMinutes) || timeInMinutes <= 0) {
-    repondre("❌ Invalid time specified. Use a positive number for time in minutes.");
-    return;
-  }
-
-  await groupCommandHandler(dest, zk, commandeOptions, "close", timeInMinutes);
-});
 
 adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifGroupe, infosGroupe, nomGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
