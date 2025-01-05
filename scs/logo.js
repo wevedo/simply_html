@@ -1,10 +1,11 @@
 const { adams } = require("../Ibrahim/adams");
 var mumaker = require("mumaker");
 
-// List of logo commands
+// List of 30 logo commands
 const logoOptions = [
-    { nomCom: "dragonball", url: "https://en.ephoto360.com/create-dragon-ball-style-text-effects-online-809.html", categorie: "Logo", reaction: "🐉" },
     { nomCom: "hacker", url: "https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html", categorie: "Logo", reaction: "👨🏿‍💻" },
+    { nomCom: "dragonball", url: "https://en.ephoto360.com/create-dragon-ball-style-text-effects-online-809.html", categorie: "Logo", reaction: "🐉" },
+    { nomCom: "naruto", url: "https://en.ephoto360.com/naruto-shippuden-logo-style-text-effect-online-808.html", categorie: "Logo", reaction: "⛩" },
     { nomCom: "fire", url: "https://en.ephoto360.com/create-fire-logo-online-632.html", categorie: "Logo", reaction: "🔥" },
     { nomCom: "gaming", url: "https://en.ephoto360.com/create-gaming-logo-online-710.html", categorie: "Gaming", reaction: "🎮" },
     { nomCom: "neon", url: "https://en.ephoto360.com/create-neon-light-logo-online-637.html", categorie: "Logo", reaction: "💡" },
@@ -23,54 +24,48 @@ const logoOptions = [
     { nomCom: "vintage", url: "https://en.ephoto360.com/create-vintage-logo-online-675.html", categorie: "Logo", reaction: "🕰️" },
     { nomCom: "gold", url: "https://en.ephoto360.com/create-gold-logo-online-629.html", categorie: "Logo", reaction: "🥇" },
     { nomCom: "wolf", url: "https://en.ephoto360.com/create-wolf-logo-online-631.html", categorie: "Logo", reaction: "🐺" },
+    { nomCom: "love", url: "https://en.ephoto360.com/create-love-logo-online-728.html", categorie: "Logo", reaction: "❤️" },
+    { nomCom: "light", url: "https://en.ephoto360.com/create-light-logo-online-635.html", categorie: "Logo", reaction: "💡" },
+    { nomCom: "devil", url: "https://en.ephoto360.com/create-devil-logo-online-639.html", categorie: "Logo", reaction: "😈" },
+    { nomCom: "ghost", url: "https://en.ephoto360.com/create-ghost-logo-online-641.html", categorie: "Logo", reaction: "👻" },
+    { nomCom: "superhero", url: "https://en.ephoto360.com/create-superhero-logo-online-654.html", categorie: "Logo", reaction: "🦸‍♂️" },
+    { nomCom: "anime", url: "https://en.ephoto360.com/create-anime-logo-online-723.html", categorie: "Logo", reaction: "🎨" },
+    { nomCom: "flower", url: "https://en.ephoto360.com/create-flower-logo-online-626.html", categorie: "Logo", reaction: "🌸" },
+    { nomCom: "water", url: "https://en.ephoto360.com/create-water-logo-online-634.html", categorie: "Logo", reaction: "💧" },
 ];
 
-// Register all logo commands
+// Register commands dynamically
 logoOptions.forEach(({ nomCom, url, categorie, reaction }) => {
     adams(
-        {
-            nomCom,
-            categorie,
-            reaction,
-        },
+        { nomCom, categorie, reaction },
         async (dest, zk, commandeOptions) => {
             const { arg, repondre, prefixe, ms } = commandeOptions;
 
+            // Validate input
+            if (!arg || arg.length === 0) {
+                repondre(`*_EXEMPLE *: ${prefixe}${nomCom} YourTextHere`);
+                return;
+            }
+
             try {
-                const noArgMsg = `*_EXEMPLE *:  ${prefixe}${nomCom} Ibrahim adams`;
+                // Notify user
+                repondre("* processing...*");
 
-                // Check if argument is missing
-                if (!arg || arg.trim() === "") {
-                    repondre(noArgMsg);
-                    return;
-                }
+                // Generate logo
+                const imgInfo = await mumaker.ephoto(url, arg.join(" "));
 
-                // Log input parameters
-                console.log(`Requesting logo for: ${nomCom}, URL: ${url}, Argument: ${arg.trim()}`);
-
-                // Fetch the logo
-                const imgInfo = await mumaker.ephoto(url, arg.trim());
-
-                // Log response for debugging
-                console.log("Response from mumaker.ephoto:", imgInfo);
-
+                // Check for valid response
                 if (imgInfo && imgInfo.image) {
-                    await zk.sendMessage(dest, { text: " *Traitement en cours ...*" }, { quoted: ms });
-
-                    // Send generated image
                     await zk.sendMessage(
                         dest,
-                        { image: { url: imgInfo.image }, caption: "*\t Logo by Bmw-Md*" },
+                        { image: { url: imgInfo.image }, caption: "* \t Logo by Bmw-Md*" },
                         { quoted: ms }
                     );
                 } else {
-                    // Handle invalid response
-                    repondre("🥵🥵 Error: Unable to generate logo. Please check the input or template URL.");
+                    repondre("🥵🥵 Error: Unable to generate logo. Please try again.");
                 }
             } catch (e) {
-                // Log and handle errors
-                console.error(`Error generating logo for ${nomCom}:`, e);
-                repondre(`🥵🥵 Error: ${e.message}`);
+                repondre(`🥵🥵 ${e.message}`);
             }
         }
     );
