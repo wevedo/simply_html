@@ -1,63 +1,133 @@
 const { adams } = require("../Ibrahim/adams");
 var mumaker = require("mumaker");
 
-// List of 20 verified logo commands
-const logoOptions = [
-    { nomCom: "hacker", url: "https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html", categorie: "Logo", reaction: "👨🏿‍💻" },
-    { nomCom: "dragonball", url: "https://en.ephoto360.com/create-dragon-ball-style-text-effects-online-809.html", categorie: "Logo", reaction: "🐉" },
-    { nomCom: "naruto", url: "https://en.ephoto360.com/naruto-shippuden-logo-style-text-effect-online-808.html", categorie: "Logo", reaction: "⛩" },
-    { nomCom: "fire", url: "https://en.ephoto360.com/create-fire-logo-online-632.html", categorie: "Logo", reaction: "🔥" },
-    { nomCom: "neon", url: "https://en.ephoto360.com/create-neon-light-logo-online-637.html", categorie: "Logo", reaction: "💡" },
-    { nomCom: "joker", url: "https://en.ephoto360.com/create-joker-logo-online-630.html", categorie: "Logo", reaction: "🃏" },
-    { nomCom: "matrix", url: "https://en.ephoto360.com/create-matrix-logo-online-650.html", categorie: "Logo", reaction: "🟩" },
-    { nomCom: "cyberpunk", url: "https://en.ephoto360.com/create-cyberpunk-logo-online-726.html", categorie: "Logo", reaction: "🤖" },
-    { nomCom: "space", url: "https://en.ephoto360.com/create-space-logo-online-647.html", categorie: "Logo", reaction: "🚀" },
-    { nomCom: "luxury", url: "https://en.ephoto360.com/create-luxury-logo-online-648.html", categorie: "Logo", reaction: "✨" },
-    { nomCom: "3d", url: "https://en.ephoto360.com/create-3d-logo-online-625.html", categorie: "Logo", reaction: "🌀" },
-    { nomCom: "galaxy", url: "https://en.ephoto360.com/create-galaxy-logo-online-676.html", categorie: "Logo", reaction: "🌌" },
-    { nomCom: "ninja", url: "https://en.ephoto360.com/create-ninja-logo-online-642.html", categorie: "Logo", reaction: "🥷" },
-    { nomCom: "crown", url: "https://en.ephoto360.com/create-crown-logo-online-722.html", categorie: "Logo", reaction: "👑" },
-    { nomCom: "shadow", url: "https://en.ephoto360.com/create-shadow-logo-online-724.html", categorie: "Logo", reaction: "🌑" },
-    { nomCom: "gold", url: "https://en.ephoto360.com/create-gold-logo-online-629.html", categorie: "Logo", reaction: "🥇" },
-    { nomCom: "wolf", url: "https://en.ephoto360.com/create-wolf-logo-online-631.html", categorie: "Logo", reaction: "🐺" },
-    { nomCom: "superhero", url: "https://en.ephoto360.com/create-superhero-logo-online-654.html", categorie: "Logo", reaction: "🦸‍♂️" },
-    { nomCom: "anime", url: "https://en.ephoto360.com/create-anime-logo-online-723.html", categorie: "Logo", reaction: "🎨" },
-    { nomCom: "flower", url: "https://en.ephoto360.com/create-flower-logo-online-626.html", categorie: "Logo", reaction: "🌸" },
+const logoCommands = [
+  {
+    nomCom: "hacker",
+    categorie: "Logo",
+    reaction: "👨🏿‍💻",
+    makerUrl: "https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html"
+  },
+  {
+    nomCom: "dragonball",
+    categorie: "Logo",
+    reaction: "🐉",
+    makerUrl: "https://en.ephoto360.com/create-dragon-ball-style-text-effects-online-809.html"
+  },
+  {
+    nomCom: "naruto",
+    categorie: "Logo",
+    reaction: "⛩",
+    makerUrl: "https://en.ephoto360.com/naruto-shippuden-logo-style-text-effect-online-808.html"
+  },
+  {
+    nomCom: "didong",
+    categorie: "Logo",
+    reaction: "📱",
+    makerUrl: "https://ephoto360.com/tao-anh-che-vui-tu-choi-cuoc-goi-voi-ten-cua-ban-930.html"
+  },
+  {
+    nomCom: "wall",
+    categorie: "Logo",
+    reaction: "👍",
+    makerUrl: "https://textpro.me/break-wall-text-effect-871.html"
+  },
+  {
+    nomCom: "summer",
+    categorie: "Logo",
+    reaction: "🌞",
+    makerUrl: "https://textpro.me/create-sunset-light-text-effects-online-for-free-1124.html"
+  },
+  {
+    nomCom: "neonlight",
+    categorie: "Logo",
+    reaction: "💡",
+    makerUrl: "https://textpro.me/create-glowing-neon-light-text-effect-online-free-1061.html"
+  },
+  {
+    nomCom: "greenneon",
+    categorie: "Logo",
+    reaction: "🟢",
+    makerUrl: "https://textpro.me/green-neon-text-effect-874.html"
+  },
+  {
+    nomCom: "glitch",
+    categorie: "Logo",
+    reaction: "🎛️",
+    makerUrl: "https://textpro.me/create-impressive-glitch-text-effects-online-1027.html"
+  },
+  {
+    nomCom: "devil",
+    categorie: "Logo",
+    reaction: "😈",
+    makerUrl: "https://textpro.me/create-neon-devil-wings-text-effect-online-free-1014.html"
+  },
+  {
+    nomCom: "boom",
+    categorie: "Logo",
+    reaction: "💥",
+    makerUrl: "https://en.ephoto360.com/boom-text-comic-style-text-effect-675.html"
+  },
+  {
+    nomCom: "water",
+    categorie: "Logo",
+    reaction: "💦",
+    makerUrl: "https://en.ephoto360.com/create-water-effect-text-online-295.html"
+  },
+  {
+    nomCom: "snow",
+    categorie: "Logo",
+    reaction: "❄️",
+    makerUrl: "https://textpro.me/create-beautiful-3d-snow-text-effect-online-1101.html"
+  },
+  {
+    nomCom: "transformer",
+    categorie: "Logo",
+    reaction: "🤖",
+    makerUrl: "https://textpro.me/create-a-transformer-text-effect-online-1035.html"
+  },
+  {
+    nomCom: "thunder",
+    categorie: "Logo",
+    reaction: "⚡",
+    makerUrl: "https://textpro.me/online-thunder-text-effect-generator-1031.html"
+  },
+  {
+    nomCom: "harrypotter",
+    categorie: "Logo",
+    reaction: "🧙‍♂️",
+    makerUrl: "https://textpro.me/create-harry-potter-text-effect-online-1025.html"
+  },
+  {
+    nomCom: "cat",
+    categorie: "Logo",
+    reaction: "🪟",
+    makerUrl: "https://textpro.me/write-text-on-foggy-window-online-free-1015.html"
+  },
+  {
+    nomCom: "whitegold",
+    categorie: "Logo",
+    reaction: "💫",
+    makerUrl: "https://textpro.me/elegant-white-gold-3d-text-effect-online-free-1070.html"
+  }
 ];
 
-// Register commands dynamically
-logoOptions.forEach(({ nomCom, url, categorie, reaction }) => {
-    adams(
-        { nomCom, categorie, reaction },
-        async (dest, zk, commandeOptions) => {
-            const { arg, repondre, prefixe, ms } = commandeOptions;
+// Process each logo command
+logoCommands.forEach(({ nomCom, categorie, reaction, makerUrl }) => {
+  adams({ nomCom, categorie, reaction }, async (dest, zk, commandeOptions) => {
+    const { arg, repondre, ms, prefixe } = commandeOptions;
 
-            // Validate input
-            if (!arg || arg.length === 0) {
-                repondre(`*_EXEMPLE *: ${prefixe}${nomCom} YourTextHere`);
-                return;
-            }
+    if (!arg || arg == "") {
+      repondre(`Exemple of using commande:\n ${prefixe}${nomCom} My text`);
+      return;
+    }
 
-            try {
-                // Notify user
-                repondre("* processing...*");
-
-                // Generate logo
-                const imgInfo = await mumaker.ephoto(url, arg.join(" "));
-
-                // Check for valid response
-                if (imgInfo && imgInfo.image) {
-                    await zk.sendMessage(
-                        dest,
-                        { image: { url: imgInfo.image }, caption: "* \t Logo by Bmw-Md*" },
-                        { quoted: ms }
-                    );
-                } else {
-                    repondre("🥵🥵 Error: Unable to generate logo. Please try again.");
-                }
-            } catch (e) {
-                repondre(`🥵🥵 ${e.message}`);
-            }
-        }
-    );
+    try {
+      repondre("Processing...");
+      const img = await mumaker.textpro(makerUrl, arg.join(" "));
+      await zk.sendMessage(dest, { image: { url: img.image }, caption: `Logo by BMW-MD` }, { quoted: ms });
+    } catch (e) {
+      repondre(`🥵🥵 ${e}`);
+    }
+  });
 });
