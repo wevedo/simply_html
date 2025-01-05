@@ -1,6 +1,7 @@
 const { adams } = require("../Ibrahim/adams");
 var mumaker = require("mumaker");
 
+// List of logo options
 const logoOptions = [
     { nomCom: "hacker", url: "https://en.ephoto360.com/create-anonymous-hacker-avatars-cyan-neon-677.html", categorie: "Logo", reaction: "👨🏿‍💻" },
     { nomCom: "gaming", url: "https://en.ephoto360.com/create-gaming-logo-online-710.html", categorie: "Gaming", reaction: "🎮" },
@@ -35,6 +36,7 @@ const logoOptions = [
     { nomCom: "flower", url: "https://en.ephoto360.com/create-flower-logo-online-663.html", categorie: "Logo", reaction: "🌸" },
 ];
 
+// Register all logo commands
 logoOptions.forEach(({ nomCom, url, categorie, reaction }) => {
     adams(
         {
@@ -51,16 +53,28 @@ logoOptions.forEach(({ nomCom, url, categorie, reaction }) => {
             }
 
             try {
+                // Log the input details
+                console.log(`Requesting logo for: ${nomCom} with URL: ${url} and argument: ${arg}`);
+
                 let anu = await mumaker.ephoto(url, arg);
-                repondre("*Processing...*");
-                await zk.sendMessage(
-                    origineMessage,
-                    {
-                        image: { url: anu.image },
-                        caption: `*Logo by BWM XMD*`,
-                    },
-                    { quoted: ms }
-                );
+
+                // Log the response to check its structure
+                console.log("Response from mumaker.ephoto:", anu);
+
+                if (anu && anu.image) {
+                    repondre("*Processing...*");
+                    await zk.sendMessage(
+                        origineMessage,
+                        {
+                            image: { url: anu.image },
+                            caption: `*Logo by BWM XMD*`,
+                        },
+                        { quoted: ms }
+                    );
+                } else {
+                    repondre("🥵🥵 Error: No valid image returned. Check the template or argument.");
+                }
+
             } catch (e) {
                 repondre(`🥵🥵 Error: ${e.message}`);
             }
