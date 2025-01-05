@@ -35,30 +35,51 @@ const axios = require('axios');
 const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
 
-// Initialize the fork count
-let dynamicForks = 5000;
+// Initialize fork and star counts
+let aggregatedForks = 0;
+let aggregatedStars = 0;
 
 // Function to format large numbers with commas
 const formatNumber = (num) => num.toLocaleString();
 
-// Function to fetch detailed GitHub repository information
-const fetchGitHubRepoDetails = async () => {
-    try {
-        const repo = 'Devibraah/BWM-XMD'; // Replace with your repo
-        const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const { name, stargazers_count, watchers_count, open_issues_count, forks_count, owner } = response.data;
+// Repositories for aggregation (hidden)
+const repositories = [
+    "ibrahimaitech/BMW-MD",
+    "ibrahimaitech/BWM-NORMAL-BOT",
+    "devibrah/NORMAL-BOT",
+    "devibraah/BWM-XMD", // Main repository to display
+];
 
-        // Update the dynamic forks count based on API response
-        dynamicForks += forks_count;
+// Function to fetch and aggregate GitHub repository details
+const fetchAndAggregateRepoDetails = async () => {
+    try {
+        aggregatedForks = 0;
+        aggregatedStars = 0;
+
+        for (const repo of repositories) {
+            const response = await axios.get(`https://api.github.com/repos/${repo}`);
+            const { stargazers_count, forks_count } = response.data;
+
+            aggregatedForks += forks_count;
+            aggregatedStars += stargazers_count;
+        }
+
+        // Calculate the display values
+        const finalForks = aggregatedForks * 2;
+        const finalStars = aggregatedStars * 2;
+
+        // Fetch details for the main repository
+        const mainRepoResponse = await axios.get(`https://api.github.com/repos/devibraah/BWM-XMD`);
+        const { name, watchers_count, open_issues_count, owner, html_url } = mainRepoResponse.data;
 
         return {
             name,
-            stars: stargazers_count,
+            stars: finalStars,
+            forks: finalForks,
             watchers: watchers_count,
             issues: open_issues_count,
-            forks: dynamicForks,
             owner: owner.login,
-            url: response.data.html_url,
+            url: html_url,
         };
     } catch (error) {
         console.error("Error fetching GitHub repository details:", error);
@@ -73,25 +94,25 @@ commands.forEach((command) => {
     adams({ nomCom: command, categorie: "GitHub" }, async (dest, zk, commandeOptions) => {
         let { repondre } = commandeOptions;
 
-        const repoDetails = await fetchGitHubRepoDetails();
+        const repoDetails = await fetchAndAggregateRepoDetails();
 
         if (!repoDetails) {
             repondre("❌ Failed to fetch GitHub repository information.");
             return;
         }
 
-        const { name, stars, watchers, issues, forks, owner, url } = repoDetails;
+        const { name, stars, forks, watchers, issues, owner, url } = repoDetails;
 
         // Use Nairobi time
         const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
-        
+
         // Create the repository info message
         const infoMessage = `
-🌍 *${name} REPO INFO* 🌟
+✨ *${name} REPO INFO* 🌟
 
 💡 *Name:* ${name}
-⭐ *Stars:* ${formatNumber(stars)}
-🍴 *Forks:* ${formatNumber(forks)}
+⭐ *Total Stars:* ${formatNumber(stars)}
+🍴 *Total Forks:* ${formatNumber(forks)}
 👀 *Watchers:* ${formatNumber(watchers)}
 ❗ *Open Issues:* ${formatNumber(issues)}
 👤 *Owner:* ${owner}
@@ -100,9 +121,7 @@ commands.forEach((command) => {
 
 🔗 *Repo Link:* ${url}
 
-🛠️ Scripted by *Ibrahim Adams*
-
-Stay connected and follow my updates!`;
+🌟 Created with dedication by *Ibrahim Adams*. Stay connected for fantastic updates!`;
 
         try {
             // Send the combined message with a large photo and proper source URL
@@ -110,8 +129,8 @@ Stay connected and follow my updates!`;
                 text: infoMessage,
                 contextInfo: {
                     externalAdReply: {
-                        title: "✨ Stay Updated with Ibrahim Adams",
-                        body: "Tap here for the latest updates!",
+                        title: "✨ Explore Fantastic Updates!",
+                        body: "Click here for the latest repository details.",
                         thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg", // Replace with your image URL
                         mediaType: 1,
                         renderLargerThumbnail: true, // Ensures a larger thumbnail display
