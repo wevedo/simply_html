@@ -16,8 +16,7 @@ const greetings = {
 };
 
 // GitHub audio files
-const githubRawBaseUrl =
-    "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
+const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
 const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
 const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.length)];
 
@@ -81,42 +80,24 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Filter and display only the requested category if provided
-    const requestedCategory = commandeOptions.category;  // Assuming category is passed via options
+    // Prepare command list with readmore before specific categories
     let commandList = "";
     const sortedCategories = Object.keys(coms).sort();
-
-    if (requestedCategory) {
-        // Display only the requested category
-        if (coms[requestedCategory.toUpperCase()]) {
-            const categoryCommands = coms[requestedCategory.toUpperCase()];
-            commandList += `📂 *${requestedCategory.toUpperCase()}*:\n\n`;
-            categoryCommands.forEach((cmd, i) => {
-                commandList += `🟢 ${cmd}   `;
-                if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
-            });
+    sortedCategories.forEach((cat) => {
+        if (cat === "ABU") {
+            commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;
+        } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
+            commandList += `${readmore}\n📂 *${cat}*:\n\n`;
         } else {
-            commandList = "❌ Category not found!";
+            commandList += `\n📂 *${cat}*:\n\n`;
         }
-    } else {
-        // Show the full menu if no specific category is requested
-        sortedCategories.forEach((cat) => {
-            if (cat === "ABU") {
-                commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;
-            } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
-                commandList += `${readmore}\n📂 *${cat}*:\n\n`;
-            } else {
-                commandList += `\n📂 *${cat}*:\n\n`;
-            }
 
-            let categoryCommands = coms[cat];
-            for (let i = 0; i < categoryCommands.length; i++) {
-                commandList += `🟢 ${categoryCommands[i]}   `;
-                if ((i + 1) % 3 === 0 || i === categoryCommands.length - 1) commandList += `\n`;
-            }
-            commandList += `\n`;
-        });
-    }
+        let categoryCommands = coms[cat];
+        for (let i = 0; i < categoryCommands.length; i++) {
+            commandList += `🟢 ${categoryCommands[i]}\n`; // Display commands in a list
+        }
+        commandList += `\n`;
+    });
 
     // Select assets
     const image = randomImage();
@@ -124,13 +105,16 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const randomAudioFile = getRandomAudio();
     const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
 
-    const menuType = s.MENUTYPE || (Math.random() < 0.5 ? "1" : "2");
+    const menuType = s.MENUTYPE || (Math.random() < 0.5 ? "1" : "2"); // Randomly pick if blank
 
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
 
     try {
+        // Send menu based on the requested category
+        const requestedCategory = commandeOptions.category || 'General'; // Get the requested category or default to 'General'
+
         if (menuType === "1") {
-            // Menu Type 1
+            // Menu Type 1 (For all categories or specific category)
             await zk.sendMessage(dest, {
                 image: { url: image1 },
                 caption: `
@@ -163,7 +147,7 @@ ${commandList}${footer}
                 },
             });
         } else {
-            // Menu Type 2
+            // Menu Type 2 (For all categories or specific category)
             await zk.sendMessage(dest, {
                 image: { url: image1 },
                 caption: `
@@ -207,7 +191,6 @@ ${commandList}${footer}
         console.error("Error sending menu:", error);
     }
 });
-
 
 
 
