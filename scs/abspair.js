@@ -37,8 +37,8 @@ adams({ nomCom: "rent", reaction: "🚘", categorie: "User" }, async (dest, zk, 
       // Second message with additional information
       const captionMessage = generateWAMessageFromContent(dest, {
         extendedTextMessage: {
-          text: "*Copy the above code and link it to your WhatsApp*\n\n*BWM XMD*\n\n*MADE BY IBRAHIM ADAMS*"
-        }
+          text: "*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n*ʙᴡᴍ xᴍᴅ*\n\n
+> *ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*"  }
       }, {});
 
       await zk.relayMessage(dest, captionMessage.message, {
