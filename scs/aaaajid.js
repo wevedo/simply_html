@@ -58,7 +58,7 @@ adams({ nomCom: "group close", categorie: 'Group', reaction: "🔒" }, async (de
 });
 
 // Command: group open <time>
-adams({ nomCom: "group open time", categorie: 'Group', reaction: "⏳🔓" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "group open", categorie: 'Group', reaction: "⏳🔓" }, async (dest, zk, commandeOptions) => {
   const { arg, repondre } = commandeOptions;
   const timeInMinutes = parseInt(arg, 10);
 
@@ -71,7 +71,7 @@ adams({ nomCom: "group open time", categorie: 'Group', reaction: "⏳🔓" }, as
 });
 
 // Command: group close <time>
-adams({ nomCom: "group close time", categorie: 'Group', reaction: "⏳🔒" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "group close", categorie: 'Group', reaction: "⏳🔒" }, async (dest, zk, commandeOptions) => {
   const { arg, repondre } = commandeOptions;
   const timeInMinutes = parseInt(arg, 10);
 
