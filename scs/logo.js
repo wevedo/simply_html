@@ -21,10 +21,10 @@ const logoCommands = [
     makerUrl: "https://en.ephoto360.com/naruto-shippuden-logo-style-text-effect-online-808.html"
   },
   {
-    nomCom: "didong",
+    nomCom: "marvel",
     categorie: "Logo",
     reaction: "📱",
-    makerUrl: "https://ephoto360.com/tao-anh-che-vui-tu-choi-cuoc-goi-voi-ten-cua-ban-930.html"
+    makerUrl: "https://ephoto360.com/tao-logo-phong-cach-marvel-419.html"
   },
   {
     nomCom: "wall",
@@ -57,10 +57,10 @@ const logoCommands = [
     makerUrl: "https://textpro.me/create-impressive-glitch-text-effects-online-1027.html"
   },
   {
-    nomCom: "devil",
+    nomCom: "spiderman",
     categorie: "Logo",
     reaction: "😈",
-    makerUrl: "https://textpro.me/create-neon-devil-wings-text-effect-online-free-1014.html"
+    makerUrl: "https://ephoto360.com/tao-banner-phong-cach-spider-man-465.html"
   },
   {
     nomCom: "boom",
@@ -75,10 +75,10 @@ const logoCommands = [
     makerUrl: "https://en.ephoto360.com/create-water-effect-text-online-295.html"
   },
   {
-    nomCom: "snow",
+    nomCom: "galaxy",
     categorie: "Logo",
     reaction: "❄️",
-    makerUrl: "https://textpro.me/create-beautiful-3d-snow-text-effect-online-1101.html"
+    makerUrl: "https://ephoto360.com/tao-hinh-nen-dien-thoai-galaxy-theo-ten-dep-full-hd-684.html"
   },
   {
     nomCom: "transformer",
