@@ -108,20 +108,24 @@ commands.forEach((command) => {
 
         // Create the repository info message
         const infoMessage = `
-✨ *${name} REPO INFO* 🌟
 
-💡 *Name:* ${name}
-⭐ *Total Stars:* ${formatNumber(stars)}
-🍴 *Total Forks:* ${formatNumber(forks)}
-👀 *Watchers:* ${formatNumber(watchers)}
-❗ *Open Issues:* ${formatNumber(issues)}
-👤 *Owner:* ${owner}
+╭───────────────━⊷
+║ 🚀 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐑𝐄𝐏𝐎 𝐈𝐍𝐅𝐎 🚀
+╰───────────────━⊷
+╭───────────────━⊷
+║💡 *ɴᴀᴍᴇ:* ʙᴡᴍ-xᴍᴅ
+║⭐ *ᴛᴏᴛᴀʟ sᴛᴀʀs:* ${formatNumber(stars)}
+║🍴 *ᴛᴏᴛᴀʟ ғᴏʀᴋs:* ${formatNumber(forks)}
+║👀 *ᴡᴀᴛᴄʜᴇʀs:* ${formatNumber(watchers)}
+║❗ *ᴏᴘᴇɴ ɪssᴜᴇs:* ${formatNumber(issues)}
+║👤 *ᴏᴡɴᴇʀ:* sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+╰───────────────━⊷
+╭───────────────━⊷
+║*ғᴇᴛᴄʜᴇᴅ ᴏɴ:* ${currentTime}
+║*ʀᴇᴘᴏ ʟɪɴᴋ:* https://shorturl.at/pv9qw
+╰───────────────━⊷
 
-🕒 *Fetched on:* ${currentTime}
-
-🔗 *Repo Link:* ${url}
-
-🌟 Created with dedication by *Ibrahim Adams*. Stay connected for fantastic updates!`;
+> sᴛᴀʏ ᴄᴏɴɴᴇᴄᴛᴇᴅ ғᴏʀ ғᴀɴᴛᴀsᴛɪᴄ ᴜᴘᴅᴀᴛᴇs!`;
 
         try {
             // Send the combined message with a large photo and proper source URL
