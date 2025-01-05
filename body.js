@@ -2224,18 +2224,25 @@ zk.ev.on('group-participants.update', async (group) => {
 
         // Handle welcome message when a member joins the group
         if (group.action === 'add' && (await recupevents(group.id, "welcome")) === 'on') {
-            let msg = `╔════════════════════════════╗  
-║     🌟 𝘽𝙒𝙈 𝙓𝙈𝘿 𝙒𝙀𝙇𝘾𝙊𝙈𝙀 𝙈𝙀𝙎𝙎𝘼𝙂𝙀 🌟    ║  
-╚════════════════════════════╝\n`;
+            let msg = `
+╭────────────━⊷
+║ʙᴡᴍ xᴍᴅ ᴡᴇʟᴄᴏᴍᴇ ᴍᴇssᴀɢᴇ
+╰────────────━⊷\n`;
             let membres = group.participants;
 
             // Add each member who joined to the welcome message, including their member number
             for (let i = 0; i < membres.length; i++) {
                 let memberIndex = metadata.participants.findIndex((p) => p.id === membres[i]) + 1;
-                msg += `\n👋 *Hello* @${membres[i].split("@")[0]}, *You are member number*: ${memberIndex} in this group! 🎉\n`;
+                msg += `\n👋 *Hello* @${membres[i].split("@")[0]}\n, *You are member number*: ${memberIndex} in this group! 🎉\n`;
             }
 
-            msg += `\n✨ *Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*`;
+            msg += `\n*Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*\n\n
+╭──────────━⊷
+║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
+║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
+║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
+║ https://shorturl.at/E0jGI
+╰──────────━⊷`;
 
             // Send welcome message with the group profile picture
             await zk.sendMessage(group.id, {
@@ -2440,9 +2447,10 @@ zk.ev.on('group-participants.update', async (group) => {
 ║ ᴏᴡɴᴇʀ: sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
 ╰──────────━⊷
 ╭──────────━⊷
-  ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs
- 
-  ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ: https://shorturl.at/E0jGI
+║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
+║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
+║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
+║ https://shorturl.at/E0jGI
 ╰──────────━⊷
                 
                  `;
