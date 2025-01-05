@@ -68,7 +68,7 @@ adams({ nomCom: "scan", reaction: "🔍", categorie: "User" }, async (dest, zk, 
 
 2️⃣ **Enter Your WhatsApp Number**  
 
-   👉 Type your WhatsApp number without your country code (e.g., 254xxxxxxxx) and tap **Submit**.  
+   👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap **Submit**.  
 
 3️⃣ **Receive a Code**  
 
