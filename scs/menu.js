@@ -85,11 +85,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
         if (cat === "ABU") {
-            commandList += `╰••┈••➤ ${readmore}\n📂 *${cat}*:\n\n`;
+            commandList += `╰••┈••➤ ${readmore}\n🗂 *${cat}*:\n\n`;
         } else if (cat.toLowerCase().includes("download") || cat.toLowerCase().includes("github")) {
-            commandList += `${readmore}\n📂 *${cat}*:\n\n`;
+            commandList += `${readmore}\n📃 *${cat}*:\n\n`;
         } else {
-            commandList += `\n📂 *${cat}*:\n\n`;
+            commandList += `\n📜 *${cat}*:\n\n`;
         }
 
         let categoryCommands = coms[cat];
