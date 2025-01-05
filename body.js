@@ -2256,15 +2256,29 @@ zk.ev.on('group-participants.update', async (group) => {
 
         // Handle goodbye message when a member leaves the group
         else if (group.action === 'remove' && (await recupevents(group.id, "goodbye")) === 'on') {
-            let msg = `💔 One of our members left the group:\n`;
+let msg = `
+╭────────────━⊷
+║ʙᴡᴍ xᴍᴅ ɢᴏᴏᴅʙʏᴇ ᴍᴇssᴀɢᴇ
+╰────────────━⊷          
+            
+> 💔 One of our members left the group:\n`;
             let membres = group.participants;
 
             // Add each member who left the group to the goodbye message
             for (let membre of membres) {
-                msg += `@${membre.split("@")[0]}\n`;
+                msg += `
+> ~@${membre.split("@")[0]}~ \n`;
             }
 
-            msg += `\nWe hope to see you again someday! 🌟`;
+            msg += `\n
+            
+> We hope to see you again someday!\n\n
+╭──────────━⊷
+║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
+║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
+║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
+║ https://shorturl.at/E0jGI
+╰──────────━⊷`;
 
             // Send goodbye message with mentions
             await zk.sendMessage(group.id, {
