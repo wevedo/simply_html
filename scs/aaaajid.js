@@ -26,8 +26,8 @@ adams({ nomCom: "group", categorie: 'Group', reaction: "🔒" }, async (dest, zk
     return;
   }
 
-  // Check and parse arguments
-  const commandArgs = arg ? arg.split(' ') : [];
+  // Safely split the arguments
+  const commandArgs = (typeof arg === "string" ? arg : "").split(' ');
   const action = commandArgs[0]?.toLowerCase();
   const timeInMinutes = commandArgs[1] ? parseInt(commandArgs[1], 10) : null;
 
