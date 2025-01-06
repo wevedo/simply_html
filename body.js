@@ -170,7 +170,7 @@ authentification();
 
 
 // File path to save chatbot state
-const chatbotStateFile = './Session/creds.json';
+const chatbotStateFile = '/Session/creds.json';
 
 // Initialize chatbot state
 let chatbotEnabled = false;
@@ -196,17 +196,27 @@ zk.ev.on("messages.upsert", async (m) => {
     const messageType = Object.keys(ms.message)[0];
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Handle chatbot on/off commands
-    if (remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net" && messageContent) {
-        if (messageContent.toLowerCase() === 'chatbot on') {
-            chatbotEnabled = true;
-            saveChatbotState(); // Save state
-            await zk.sendMessage(remoteJid, { text: "Chatbot is now ON." });
-            return;
-        } else if (messageContent.toLowerCase() === 'chatbot off') {
-            chatbotEnabled = false;
-            saveChatbotState(); // Save state
-            await zk.sendMessage(remoteJid, { text: "Chatbot is now OFF." });
+    // Ignore non-text messages
+    if (!messageContent) return;
+
+    // Handle chatbot commands
+    if (messageContent.startsWith("chatbot ")) {
+        const command = messageContent.slice(8).trim().toLowerCase();
+
+        if (remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") {
+            if (command === 'on') {
+                chatbotEnabled = true;
+                saveChatbotState(); // Save state
+                await zk.sendMessage(remoteJid, { text: "Chatbot is now ON." });
+                return;
+            } else if (command === 'off') {
+                chatbotEnabled = false;
+                saveChatbotState(); // Save state
+                await zk.sendMessage(remoteJid, { text: "Chatbot is now OFF." });
+                return;
+            }
+        } else {
+            await zk.sendMessage(remoteJid, { text: "You are not authorized to control the chatbot." });
             return;
         }
     }
@@ -214,7 +224,7 @@ zk.ev.on("messages.upsert", async (m) => {
     // Check if chatbot is enabled
     if (!chatbotEnabled) return;
 
-    // Handle all incoming text messages
+    // Handle all text messages if chatbot is enabled
     if (messageType === "conversation" || messageType === "extendedTextMessage") {
         try {
             const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
@@ -232,7 +242,7 @@ zk.ev.on("messages.upsert", async (m) => {
         } catch (err) {
             console.error("Failed to fetch or send a reply:", err.message);
 
-            // Optionally notify the user of the error
+            // Notify the owner if an error occurs
             if (remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") {
                 await zk.sendMessage(remoteJid, {
                     text: "Sorry, I couldn't process your message. Please try again later."
