@@ -169,88 +169,57 @@ authentification();
    store.bind(zk.ev);
 
 
-// File path to save chatbot state
-const chatbotStateFile = '/Session/creds.json';
-
-// Initialize chatbot state
-let chatbotEnabled = false;
-
-// Load chatbot state from file (if exists)
-if (fs.existsSync(chatbotStateFile)) {
-    const state = JSON.parse(fs.readFileSync(chatbotStateFile, 'utf8'));
-    chatbotEnabled = state.enabled;
-}
-
-// Function to save chatbot state to file
-const saveChatbotState = () => {
-    fs.writeFileSync(chatbotStateFile, JSON.stringify({ enabled: chatbotEnabled }));
-};
-
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
 
     if (!ms.message || ms.key.fromMe) return; // Ignore bot's own messages
 
-    const remoteJid = ms.key.remoteJid;
     const messageType = Object.keys(ms.message)[0];
+    const remoteJid = ms.key.remoteJid;
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Ignore non-text messages
-    if (!messageContent) return;
-
-    // Handle chatbot commands
-    if (messageContent.startsWith("chatbot ")) {
-        const command = messageContent.slice(8).trim().toLowerCase();
-
-        if (remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") {
-            if (command === 'on') {
-                chatbotEnabled = true;
-                saveChatbotState(); // Save state
-                await zk.sendMessage(remoteJid, { text: "Chatbot is now ON." });
-                return;
-            } else if (command === 'off') {
-                chatbotEnabled = false;
-                saveChatbotState(); // Save state
-                await zk.sendMessage(remoteJid, { text: "Chatbot is now OFF." });
-                return;
-            }
-        } else {
-            await zk.sendMessage(remoteJid, { text: "You are not authorized to control the chatbot." });
-            return;
-        }
-    }
-
-    // Check if chatbot is enabled
-    if (!chatbotEnabled) return;
-
-    // Handle all text messages if chatbot is enabled
+    // Only process text messages
     if (messageType === "conversation" || messageType === "extendedTextMessage") {
         try {
-            const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
-            const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
-            const data = await response.json();
+            // Check CHATBOT setting to reply to all messages
+            if (conf.CHATBOT === "yes" && remoteJid !== conf.NUMERO_OWNER + "@s.whatsapp.net") {
+                const replyText = await getGPTResponse(messageContent);
+                if (replyText) {
+                    await zk.sendMessage(remoteJid, { text: replyText });
+                }
+            }
 
-            if (data && data.response && data.response.response) {
-                const replyText = data.response.response;
-
-                // Send GPT response
-                await zk.sendMessage(remoteJid, { text: replyText });
-            } else {
-                throw new Error('Invalid response from GPT API.');
+            // Check SELF_CHATBOT setting to reply only to the bot owner's messages
+            if (conf.SELF_CHATBOT === "yes" && remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") {
+                const replyText = await getGPTResponse(messageContent);
+                if (replyText) {
+                    await zk.sendMessage(remoteJid, { text: replyText });
+                }
             }
         } catch (err) {
-            console.error("Failed to fetch or send a reply:", err.message);
-
-            // Notify the owner if an error occurs
-            if (remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") {
-                await zk.sendMessage(remoteJid, {
-                    text: "Sorry, I couldn't process your message. Please try again later."
-                });
-            }
+            console.error("Failed to process or send a reply:", err.message);
         }
     }
 });
+
+// Function to get GPT response from API
+async function getGPTResponse(prompt) {
+    try {
+        const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
+        const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(prompt)}`);
+        const data = await response.json();
+
+        if (data && data.response && data.response.response) {
+            return data.response.response;
+        } else {
+            throw new Error('Invalid response from GPT API.');
+        }
+    } catch (err) {
+        console.error("Error fetching GPT response:", err.message);
+        return "Sorry, I couldn't process your message.";
+    }
+}
      
         function getCurrentDateTime() {
     const options = {
