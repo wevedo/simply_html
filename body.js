@@ -168,58 +168,76 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
 
-    if (!ms.message || ms.key.fromMe) return; // Ignore bot's own messages
+    if (!ms.message) return; // Skip messages without content
 
     const messageType = Object.keys(ms.message)[0];
     const remoteJid = ms.key.remoteJid;
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Only process text messages
-    if (messageType === "conversation" || messageType === "extendedTextMessage") {
-        try {
-            // Check CHATBOT setting to reply to all messages
-            if (conf.CHATBOT === "yes" && remoteJid !== conf.NUMERO_OWNER + "@s.whatsapp.net") {
-                const replyText = await getGPTResponse(messageContent);
-                if (replyText) {
-                    await zk.sendMessage(remoteJid, { text: replyText });
-                }
-            }
+    // Skip bot's own messages
+    if (ms.key.fromMe) return;
 
-            // Check SELF_CHATBOT setting to reply only to the bot owner's messages
-            if (conf.SELF_CHATBOT === "yes" && remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") {
-                const replyText = await getGPTResponse(messageContent);
-                if (replyText) {
+    // Bot owner's number (configured in `conf.NUMERO_OWNER`)
+    const botOwnerJid = conf.NUMERO_OWNER + "@s.whatsapp.net";
+
+    // Handle CHATBOT for non-bot-owner messages
+    if (conf.CHATBOT === "yes" && remoteJid !== botOwnerJid) {
+        if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            try {
+                const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
+                const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
+                const data = await response.json();
+
+                if (data && data.response && data.response.response) {
+                    const replyText = data.response.response;
+
+                    // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
+                } else {
+                    throw new Error('Invalid response from GPT API.');
                 }
+            } catch (err) {
+                console.error("CHATBOT Error:", err.message);
+
+                // Send an error message
+                await zk.sendMessage(remoteJid, {
+                    text: "Sorry, I couldn't process your message. Please try again later."
+                });
             }
-        } catch (err) {
-            console.error("Failed to process or send a reply:", err.message);
+        }
+    }
+
+    // Handle SELF_CHATBOT for bot-owner messages
+    if (conf.SELF_CHATBOT === "yes" && remoteJid === botOwnerJid) {
+        if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            try {
+                const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
+                const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
+                const data = await response.json();
+
+                if (data && data.response && data.response.response) {
+                    const replyText = data.response.response;
+
+                    // Send the GPT response as a reply
+                    await zk.sendMessage(remoteJid, { text: replyText });
+                } else {
+                    throw new Error('Invalid response from GPT API.');
+                }
+            } catch (err) {
+                console.error("SELF_CHATBOT Error:", err.message);
+
+                // Send an error message
+                await zk.sendMessage(remoteJid, {
+                    text: "Sorry, I couldn't process your message. Please try again later."
+                });
+            }
         }
     }
 });
-
-// Function to get GPT response from API
-async function getGPTResponse(prompt) {
-    try {
-        const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
-        const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(prompt)}`);
-        const data = await response.json();
-
-        if (data && data.response && data.response.response) {
-            return data.response.response;
-        } else {
-            throw new Error('Invalid response from GPT API.');
-        }
-    } catch (err) {
-        console.error("Error fetching GPT response:", err.message);
-        return "Sorry, I couldn't process your message.";
-    }
-}
      
         function getCurrentDateTime() {
     const options = {
