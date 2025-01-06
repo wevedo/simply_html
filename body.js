@@ -208,6 +208,98 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
+
+     
+const googleTTS = require('google-tts-api'); // Import Google TTS API
+const ffmpeg = require('fluent-ffmpeg'); // Import ffmpeg for conversion
+const https = require('https');
+
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+
+    if (!ms.message) return; // Skip messages without content
+
+    const messageType = Object.keys(ms.message)[0];
+    const remoteJid = ms.key.remoteJid;
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+
+    // Skip bot's own messages and bot-owner messages
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+
+    // Handle CHATBOT for non-bot-owner messages
+    if (conf.SELF_CHATBOT === "yes") {
+        if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            try {
+                const sanitizedMessage = encodeURIComponent(messageContent.trim()); // Sanitize the input
+                const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
+                const response = await fetch(`${apiUrl}?prompt=${sanitizedMessage}`);
+
+                if (!response.ok) {
+                    throw new Error(`API request failed with status ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data && data.response && data.response.response) {
+                    const replyText = data.response.response;
+
+                    // Convert the reply text into an audio file using Google TTS API
+                    const audioUrl = googleTTS.getAudioUrl(replyText, {
+                        lang: 'en',
+                        slow: false,
+                        host: 'https://translate.google.com',
+                    });
+
+                    // Download the audio file from Google TTS
+                    const audioFilePath = path.join(__dirname, 'audio.mp3');
+                    const audioFile = fs.createWriteStream(audioFilePath);
+                    https.get(audioUrl, (response) => {
+                        response.pipe(audioFile);
+
+                        // When the download is complete, convert the audio file to .ogg
+                        audioFile.on('finish', () => {
+                            // Convert MP3 to OGG using ffmpeg
+                            const voiceNotePath = path.join(__dirname, 'audio.ogg');
+                            ffmpeg(audioFilePath)
+                                .output(voiceNotePath)
+                                .audioCodec('libopus')
+                                .on('end', async () => {
+                                    // Send the voice note as an audio message
+                                    await zk.sendMessage(remoteJid, {
+                                        audio: { url: voiceNotePath },
+                                        mimetype: 'audio/ogg',
+                                        ptt: true, // Specify that it's a voice note (PTT: Push-To-Talk)
+                                    });
+
+                                    // Cleanup: Delete the temporary audio files
+                                    fs.unlinkSync(audioFilePath);
+                                    fs.unlinkSync(voiceNotePath);
+                                })
+                                .on('error', (err) => {
+                                    console.error("Error during audio conversion:", err.message);
+                                    // Send an error message
+                                    zk.sendMessage(remoteJid, {
+                                        text: "Sorry, I couldn't process your message. Please try again later."
+                                    });
+                                })
+                                .run();
+                        });
+                    });
+                } else {
+                    throw new Error('Invalid response from GPT API.');
+                }
+            } catch (err) {
+                console.error("CHATBOT Error:", err.message);
+
+                // Send an error message
+                await zk.sendMessage(remoteJid, {
+                    text: "Sorry, I couldn't process your message. Please try again later."
+                });
+            }
+        }
+    }
+});
      
         function getCurrentDateTime() {
     const options = {
