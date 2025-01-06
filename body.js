@@ -178,14 +178,11 @@ zk.ev.on("messages.upsert", async (m) => {
     const remoteJid = ms.key.remoteJid;
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Skip bot's own messages
-    if (ms.key.fromMe) return;
-
-    // Bot owner's number (configured in `conf.NUMERO_OWNER`)
-    const botOwnerJid = conf.NUMERO_OWNER + "@s.whatsapp.net";
+    // Skip bot's own messages and bot-owner messages
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
     // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT === "yes" && remoteJid !== botOwnerJid) {
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
@@ -202,33 +199,6 @@ zk.ev.on("messages.upsert", async (m) => {
                 }
             } catch (err) {
                 console.error("CHATBOT Error:", err.message);
-
-                // Send an error message
-                await zk.sendMessage(remoteJid, {
-                    text: "Sorry, I couldn't process your message. Please try again later."
-                });
-            }
-        }
-    }
-
-    // Handle SELF_CHATBOT for bot-owner messages
-    if (conf.SELF_CHATBOT === "yes" && remoteJid === botOwnerJid) {
-        if (messageType === "conversation" || messageType === "extendedTextMessage") {
-            try {
-                const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
-                const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
-                const data = await response.json();
-
-                if (data && data.response && data.response.response) {
-                    const replyText = data.response.response;
-
-                    // Send the GPT response as a reply
-                    await zk.sendMessage(remoteJid, { text: replyText });
-                } else {
-                    throw new Error('Invalid response from GPT API.');
-                }
-            } catch (err) {
-                console.error("SELF_CHATBOT Error:", err.message);
 
                 // Send an error message
                 await zk.sendMessage(remoteJid, {
