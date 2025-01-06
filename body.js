@@ -169,7 +169,42 @@ authentification();
    store.bind(zk.ev);
 
 
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
 
+    if (!ms.message || ms.key.fromMe) return; // Ignore bot's own messages
+
+    const messageType = Object.keys(ms.message)[0];
+    const remoteJid = ms.key.remoteJid;
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+
+    // Only reply to text messages
+    if (messageType === "conversation" || messageType === "extendedTextMessage") {
+        try {
+            // Send the user's message to your GPT API endpoint
+            const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
+            const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
+            const data = await response.json();
+
+            if (data && data.response && data.response.response) {
+                const replyText = data.response.response;
+
+                // Send the GPT response as a reply
+                await zk.sendMessage(remoteJid, { text: replyText });
+            } else {
+                throw new Error('Invalid response from GPT API.');
+            }
+        } catch (err) {
+            console.error("Failed to fetch or send a reply:", err.message);
+
+            // Send an error message to the user
+            await zk.sendMessage(remoteJid, {
+                text: "Sorry, I couldn't process your message. Please try again later."
+            });
+        }
+    }
+});
      
         function getCurrentDateTime() {
     const options = {
