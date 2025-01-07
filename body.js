@@ -179,37 +179,36 @@ zk.ev.on("messages.upsert", async (m) => {
     const remoteJid = ms.key.remoteJid;
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Skip bot's own messages and bot-owner messages
-    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+    // Skip bot's own messages
+    if (ms.key.fromMe) return;
 
-    // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT === "yes") {
-        if (messageType === "conversation" || messageType === "extendedTextMessage") {
-            try {
-                const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot'; // Updated API endpoint
-                const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`);
-                const data = await response.json();
+    // Skip unsupported message types (audio, phone, video)
+    const unsupportedTypes = ["audioMessage", "videoMessage", "contactMessage", "documentMessage"];
+    if (unsupportedTypes.includes(messageType)) return;
 
-                if (data && data.response) {
-                    const replyText = data.response;
+    // Process all incoming messages
+    try {
+        const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot';
+        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`);
+        const data = await response.json();
 
-                    // Send the GPT response as a reply
-                    await zk.sendMessage(remoteJid, { text: replyText });
-                } else {
-                    throw new Error('Invalid response from GPT API.');
-                }
-            } catch (err) {
-                console.error("CHATBOT Error:", err.message);
+        if (data && data.response) {
+            const replyText = data.response;
 
-                // Send an error message
-                await zk.sendMessage(remoteJid, {
-                    text: "Sorry, I couldn't process your message. Please try again later."
-                });
-            }
+            // Send the response as a reply
+            await zk.sendMessage(remoteJid, { text: replyText });
+        } else {
+            throw new Error('Invalid response from chatbot API.');
         }
+    } catch (err) {
+        console.error("CHATBOT Error:", err.message);
+
+        // Send an error message
+        await zk.sendMessage(remoteJid, {
+            text: "Sorry, I couldn't process your message. Please try again later."
+        });
     }
 });
-
         function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
