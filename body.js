@@ -187,7 +187,7 @@ zk.ev.on("messages.upsert", async (m) => {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Primary API endpoint
-                const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help&q=${encodeURIComponent(messageContent)}`;
+                const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech&q=${encodeURIComponent(messageContent)}`;
 
                 // Fetch response from the primary API
                 let response = await fetch(primaryApiUrl);
