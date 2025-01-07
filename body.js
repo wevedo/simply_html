@@ -210,12 +210,6 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-instate of as using this
-https://api.gurusensei.workers.dev/llama
-
- less use this
-https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help&q=Which%20Model%20Are%20You?
-     
         function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
