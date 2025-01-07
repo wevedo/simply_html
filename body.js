@@ -186,12 +186,12 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help'; // Replace with your GPT API endpoint
-                const response = await fetch(`${apiUrl}&q=${encodeURIComponent(messageContent)}`);
+                const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot'; // Updated API endpoint
+                const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`);
                 const data = await response.json();
 
-                if (data && data.response && data.response.response) {
-                    const replyText = data.response.response;
+                if (data && data.response) {
+                    const replyText = data.response;
 
                     // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
