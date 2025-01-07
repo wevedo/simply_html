@@ -168,6 +168,11 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+const fetch = require("node-fetch");
+
+// Ensure you load your OpenAI key securely
+const OPENAI_API_KEY = "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";
+
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -185,49 +190,43 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
-                const apiKey = 'AIzaSyDJC5a882ruaC4XL6ejY1yhgRkN-JNQKg8'; // Replace with your actual API key
-                
-                // Prepare the request body
-                const requestBody = {
-                    prompt: {
-                        text: messageContent
-                    },
-                    temperature: 0.7, // Adjust as needed
-                    maxOutputTokens: 200 // Adjust token limit as needed
-                };
-
-                // Send the request to the API
-                const response = await fetch(`${apiUrl}?key=${apiKey}`, {
-                    method: 'POST',
+                // Call OpenAI API
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${OPENAI_API_KEY}`,
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify({
+                        model: "gpt-3.5-turbo", // or "gpt-4" if you have access
+                        messages: [
+                            { role: "system", content: "You are a helpful chatbot." },
+                            { role: "user", content: messageContent },
+                        ],
+                    }),
                 });
 
                 const data = await response.json();
 
-                if (data && data.candidates && data.candidates.length > 0) {
-                    const replyText = data.candidates[0].output;
+                if (data && data.choices && data.choices[0]?.message?.content) {
+                    const replyText = data.choices[0].message.content;
 
                     // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
                 } else {
-                    throw new Error('Invalid response from Gemini Pro API.');
+                    throw new Error("Invalid response from OpenAI API.");
                 }
             } catch (err) {
                 console.error("CHATBOT Error:", err.message);
 
                 // Send an error message
                 await zk.sendMessage(remoteJid, {
-                    text: "Sorry, I couldn't process your message. Please try again later."
+                    text: "Sorry, I couldn't process your message. Please try again later.",
                 });
             }
         }
     }
 });
-
      
 
      
