@@ -1210,7 +1210,7 @@ zk.ev.on("messages.upsert", async (m) => {
         await createAndSendGroupVCard(sender, baseName, zk);
     }
 });
-*/
+
 // Default auto-reply message
 let auto_reply_message = "Hello, I am Bwm xmd. My owner is currently unavailable. Please leave a message, and he will get back to you as soon as possible.";
 
@@ -1251,7 +1251,7 @@ zk.ev.on("messages.upsert", async (m) => {
         repliedContacts.add(remoteJid);
     }
 });
-
+**/
 
 
 
