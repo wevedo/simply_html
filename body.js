@@ -186,8 +186,16 @@ zk.ev.on("messages.upsert", async (m) => {
     const unsupportedTypes = ["audioMessage", "videoMessage", "contactMessage", "documentMessage"];
     if (unsupportedTypes.includes(messageType)) return;
 
+    // Ensure the bot processes each message only once
+    const messageId = ms.key.id; // Unique identifier for the message
+    if (global.processedMessages && global.processedMessages.has(messageId)) {
+        return; // Skip if this message has already been processed
+    }
+    global.processedMessages = global.processedMessages || new Set();
+    global.processedMessages.add(messageId);
+
     try {
-        const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech';
+        const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help';
         const response = await fetch(`${apiUrl}&q=${encodeURIComponent(messageContent)}`, {
             method: 'GET',
         });
@@ -195,21 +203,19 @@ zk.ev.on("messages.upsert", async (m) => {
         if (response.ok) {
             const data = await response.json();
 
-            // Ensure only one response is sent
             if (data && data.result) {
-                const replyText = data.result.trim(); // Trim to avoid extra spaces
+                const replyText = data.result; // Use the 'result' field from the API response
 
-                if (replyText && replyText !== "Hello! How can I assist you today?") {
-                    // Send the response as a reply only if it's valid and not the default message
-                    await zk.sendMessage(remoteJid, { text: replyText });
-                    console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
-                } else {
-                    console.log("Skipping Default Message"); // Debug: Skip default message
-                }
+                // Send the response as a reply
+                await zk.sendMessage(remoteJid, { text: replyText });
+                console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
             }
         }
     } catch (err) {
         console.error("CHATBOT Error:", err.message); // Debug: Log error details
+    } finally {
+        // Clean up the processed message to prevent memory leaks
+        setTimeout(() => global.processedMessages.delete(messageId), 60000); // Keep message ID for 1 minute
     }
 });
 
