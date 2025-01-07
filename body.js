@@ -195,8 +195,12 @@ zk.ev.on("messages.upsert", async (m) => {
     global.processedMessages.add(messageId);
 
     try {
-        const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help';
-        const response = await fetch(`${apiUrl}&q=${encodeURIComponent(messageContent)}`, {
+        const apiUrl1 = 'https://apis.ibrahimadams.us.kg/api/ai?apikey=ibraah-help';
+        const apiUrl2 = 'https://api.davidcyriltech.my.id/ai/chatbot?query=';
+        let replyText = '';
+
+        // Try the primary API first
+        let response = await fetch(`${apiUrl1}&q=${encodeURIComponent(messageContent)}`, {
             method: 'GET',
         });
 
@@ -204,13 +208,39 @@ zk.ev.on("messages.upsert", async (m) => {
             const data = await response.json();
 
             if (data && data.result) {
-                const replyText = data.result; // Use the 'result' field from the API response
+                replyText = data.result;
+            } else {
+                throw new Error('No result from primary API');
+            }
+        } else {
+            throw new Error('Primary API failed');
+        }
 
-                // Send the response as a reply
-                await zk.sendMessage(remoteJid, { text: replyText });
-                console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
+        // If the primary API fails, use the fallback API
+        if (!replyText) {
+            response = await fetch(`${apiUrl2}${encodeURIComponent(messageContent)}`, {
+                method: 'GET',
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data && data.result) {
+                    replyText = data.result;
+                } else {
+                    throw new Error('No result from fallback API');
+                }
+            } else {
+                throw new Error('Fallback API failed');
             }
         }
+
+        // Send the response as a reply
+        if (replyText) {
+            await zk.sendMessage(remoteJid, { text: replyText });
+            console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
+        }
+
     } catch (err) {
         console.error("CHATBOT Error:", err.message); // Debug: Log error details
     } finally {
