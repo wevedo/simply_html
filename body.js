@@ -187,8 +187,8 @@ zk.ev.on("messages.upsert", async (m) => {
     if (unsupportedTypes.includes(messageType)) return;
 
     try {
-        const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot';
-        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`, {
+        const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help';
+        const response = await fetch(`${apiUrl}&q=${encodeURIComponent(messageContent)}`, {
             method: 'GET',
         });
 
