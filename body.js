@@ -168,6 +168,7 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -185,14 +186,12 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4';
-                const apiKey = 'ibraah-help'; // Replace with your actual API key
-                const query = encodeURIComponent(messageContent);
-                const response = await fetch(`${apiUrl}?apikey=${apiKey}&q=${query}`);
+                const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
+                const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
                 const data = await response.json();
 
-                if (data && data.response) {
-                    const replyText = data.response;
+                if (data && data.response && data.response.response) {
+                    const replyText = data.response.response;
 
                     // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
@@ -210,6 +209,12 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
+
+instate of as using this
+https://api.gurusensei.workers.dev/llama
+
+ less use this
+https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help&q=Which%20Model%20Are%20You?
      
         function getCurrentDateTime() {
     const options = {
