@@ -195,7 +195,7 @@ zk.ev.on("messages.upsert", async (m) => {
     global.processedMessages.add(messageId);
 
     try {
-        const apiUrl1 = 'https://apis.ibrahimadams.us.kg/api/ai?apikey=ibraah-help';
+        const apiUrl1 = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help';
         const apiUrl2 = 'https://api.davidcyriltech.my.id/ai/chatbot?query=';
         let replyText = '';
 
