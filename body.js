@@ -187,7 +187,7 @@ zk.ev.on("messages.upsert", async (m) => {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help'; // Replace with your GPT API endpoint
-                const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
+                const response = await fetch(`${apiUrl}&q=${encodeURIComponent(messageContent)}`);
                 const data = await response.json();
 
                 if (data && data.response && data.response.response) {
