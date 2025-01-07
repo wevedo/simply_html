@@ -170,7 +170,6 @@ authentification();
 
 const fetch = require("node-fetch");
 
-// Ensure you load your OpenAI key securely
 const OPENAI_API_KEY = "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";
 
 zk.ev.on("messages.upsert", async (m) => {
@@ -190,7 +189,6 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                // Call OpenAI API
                 const response = await fetch("https://api.openai.com/v1/chat/completions", {
                     method: "POST",
                     headers: {
@@ -198,7 +196,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         "Authorization": `Bearer ${OPENAI_API_KEY}`,
                     },
                     body: JSON.stringify({
-                        model: "gpt-3.5-turbo", // or "gpt-4" if you have access
+                        model: "gpt-3.5-turbo",
                         messages: [
                             { role: "system", content: "You are a helpful chatbot." },
                             { role: "user", content: messageContent },
@@ -207,11 +205,10 @@ zk.ev.on("messages.upsert", async (m) => {
                 });
 
                 const data = await response.json();
+                console.log("OpenAI Response:", data);
 
-                if (data && data.choices && data.choices[0]?.message?.content) {
+                if (data.choices && data.choices[0]?.message?.content) {
                     const replyText = data.choices[0].message.content;
-
-                    // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
                 } else {
                     throw new Error("Invalid response from OpenAI API.");
@@ -227,7 +224,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-     
 
      
         function getCurrentDateTime() {
