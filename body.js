@@ -186,29 +186,25 @@ zk.ev.on("messages.upsert", async (m) => {
     const unsupportedTypes = ["audioMessage", "videoMessage", "contactMessage", "documentMessage"];
     if (unsupportedTypes.includes(messageType)) return;
 
-    console.log("Incoming Message:", messageContent); // Debug: Check incoming message content
-
-    // Fetch and reply using the API
     try {
         const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot';
-        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`);
+        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`, {
+            method: 'GET',
+        });
 
-        console.log("API Status:", response.status); // Debug: Check API response status
         if (response.ok) {
             const data = await response.json();
 
-            console.log("API Response:", data); // Debug: Log the full API response
+            console.log("API Response:", data); // Debug: Log the API response
 
-            if (data && data.response) {
-                const replyText = data.response;
+            if (data && data.result) {
+                const replyText = data.result; // Use the 'result' field from the API response
 
-                console.log("Reply Text:", replyText); // Debug: Log the text to be sent
-
-                // Send the reply
+                // Send the response as a reply
                 await zk.sendMessage(remoteJid, { text: replyText });
-                console.log("Message Sent Successfully"); // Debug: Confirm message was sent
+                console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
             } else {
-                console.error("Invalid API Response Structure:", data); // Debug: Log invalid response
+                console.error("Unexpected API Response Structure:", data); // Debug: Log unexpected structure
             }
         } else {
             console.error("API Request Failed:", response.status, response.statusText); // Debug: Log failed request
