@@ -168,10 +168,6 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-const fetch = require("node-fetch");
-
-const OPENAI_API_KEY = "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";
-
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -189,42 +185,34 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                const response = await fetch("https://api.openai.com/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-                    },
-                    body: JSON.stringify({
-                        model: "gpt-3.5-turbo",
-                        messages: [
-                            { role: "system", content: "You are a helpful chatbot." },
-                            { role: "user", content: messageContent },
-                        ],
-                    }),
-                });
+                const apiUrl = 'https://api.brainshop.ai/get';
+                const bid = '181821'; // Your BrainShop bot ID
+                const key = 'ltFzFIXrtj2SVMTX'; // Your BrainShop API key
+                const uid = remoteJid.split("@")[0]; // Use the user's JID as UID
+                const query = encodeURIComponent(messageContent);
 
+                const response = await fetch(`${apiUrl}?bid=${bid}&key=${key}&uid=${uid}&msg=${query}`);
                 const data = await response.json();
-                console.log("OpenAI Response:", data);
 
-                if (data.choices && data.choices[0]?.message?.content) {
-                    const replyText = data.choices[0].message.content;
+                if (data && data.cnt) {
+                    const replyText = data.cnt;
+
+                    // Send the BrainShop response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
                 } else {
-                    throw new Error("Invalid response from OpenAI API.");
+                    throw new Error('Invalid response from BrainShop API.');
                 }
             } catch (err) {
                 console.error("CHATBOT Error:", err.message);
 
                 // Send an error message
                 await zk.sendMessage(remoteJid, {
-                    text: "Sorry, I couldn't process your message. Please try again later.",
+                    text: "Sorry, I couldn't process your message. Please try again later."
                 });
             }
         }
     }
 });
-
      
         function getCurrentDateTime() {
     const options = {
