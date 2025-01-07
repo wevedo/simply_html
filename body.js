@@ -182,32 +182,39 @@ zk.ev.on("messages.upsert", async (m) => {
     // Skip bot's own messages
     if (ms.key.fromMe) return;
 
-    // Skip unsupported message types (audio, phone, video)
+    // Skip unsupported message types
     const unsupportedTypes = ["audioMessage", "videoMessage", "contactMessage", "documentMessage"];
     if (unsupportedTypes.includes(messageType)) return;
 
-    // Process incoming text-based messages
+    console.log("Incoming Message:", messageContent); // Debug: Check incoming message content
+
+    // Fetch and reply using the API
     try {
         const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot';
-        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`, {
-            method: 'GET',
-        });
+        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`);
 
-        // Check if the response is successful
+        console.log("API Status:", response.status); // Debug: Check API response status
         if (response.ok) {
             const data = await response.json();
 
-            // Ensure valid response data
+            console.log("API Response:", data); // Debug: Log the full API response
+
             if (data && data.response) {
                 const replyText = data.response;
 
-                // Send the response as a reply
+                console.log("Reply Text:", replyText); // Debug: Log the text to be sent
+
+                // Send the reply
                 await zk.sendMessage(remoteJid, { text: replyText });
+                console.log("Message Sent Successfully"); // Debug: Confirm message was sent
+            } else {
+                console.error("Invalid API Response Structure:", data); // Debug: Log invalid response
             }
+        } else {
+            console.error("API Request Failed:", response.status, response.statusText); // Debug: Log failed request
         }
     } catch (err) {
-        console.error("CHATBOT Error:", err.message);
-        // Do nothing in case of an error
+        console.error("CHATBOT Error:", err.message); // Debug: Log error details
     }
 });
         function getCurrentDateTime() {
