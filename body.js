@@ -187,7 +187,7 @@ zk.ev.on("messages.upsert", async (m) => {
     if (unsupportedTypes.includes(messageType)) return;
 
     try {
-        const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help';
+        const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech';
         const response = await fetch(`${apiUrl}&q=${encodeURIComponent(messageContent)}`, {
             method: 'GET',
         });
@@ -195,12 +195,17 @@ zk.ev.on("messages.upsert", async (m) => {
         if (response.ok) {
             const data = await response.json();
 
+            // Ensure only one response is sent
             if (data && data.result) {
-                const replyText = data.result; // Use the 'result' field from the API response
+                const replyText = data.result.trim(); // Trim to avoid extra spaces
 
-                // Send the response as a reply
-                await zk.sendMessage(remoteJid, { text: replyText });
-                console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
+                if (replyText && replyText !== "Hello! How can I assist you today?") {
+                    // Send the response as a reply only if it's valid and not the default message
+                    await zk.sendMessage(remoteJid, { text: replyText });
+                    console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
+                } else {
+                    console.log("Skipping Default Message"); // Debug: Skip default message
+                }
             }
         }
     } catch (err) {
