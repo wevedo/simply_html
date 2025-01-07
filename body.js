@@ -195,24 +195,22 @@ zk.ev.on("messages.upsert", async (m) => {
         if (response.ok) {
             const data = await response.json();
 
-            console.log("API Response:", data); // Debug: Log the API response
-
             if (data && data.result) {
                 const replyText = data.result; // Use the 'result' field from the API response
 
                 // Send the response as a reply
                 await zk.sendMessage(remoteJid, { text: replyText });
                 console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
-            } else {
-                console.error("Unexpected API Response Structure:", data); // Debug: Log unexpected structure
             }
-        } else {
-            console.error("API Request Failed:", response.status, response.statusText); // Debug: Log failed request
         }
     } catch (err) {
         console.error("CHATBOT Error:", err.message); // Debug: Log error details
     }
 });
+
+
+
+        
         function getCurrentDateTime() {
     const options = {
         timeZone: 'Africa/Nairobi', // Kenya time zone
