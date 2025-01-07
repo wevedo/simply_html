@@ -179,73 +179,58 @@ zk.ev.on("messages.upsert", async (m) => {
     const remoteJid = ms.key.remoteJid;
     const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Skip bot's own messages
-    if (ms.key.fromMe) return;
+    // Skip bot's own messages and bot-owner messages
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    // Skip unsupported message types
-    const unsupportedTypes = ["audioMessage", "videoMessage", "contactMessage", "documentMessage"];
-    if (unsupportedTypes.includes(messageType)) return;
+    // Handle CHATBOT for non-bot-owner messages
+    if (conf.CHATBOT === "yes") {
+        if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            try {
+                // Primary API endpoint
+                const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help&q=${encodeURIComponent(messageContent)}`;
 
-    // Ensure the bot processes each message only once
-    const messageId = ms.key.id; // Unique identifier for the message
-    if (global.processedMessages && global.processedMessages.has(messageId)) {
-        return; // Skip if this message has already been processed
-    }
-    global.processedMessages = global.processedMessages || new Set();
-    global.processedMessages.add(messageId);
-
-    try {
-        const apiUrl1 = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-help';
-        const apiUrl2 = 'https://api.davidcyriltech.my.id/ai/chatbot?query=';
-        let replyText = '';
-
-        // Try the primary API first
-        let response = await fetch(`${apiUrl1}&q=${encodeURIComponent(messageContent)}`, {
-            method: 'GET',
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-
-            if (data && data.result) {
-                replyText = data.result;
-            } else {
-                throw new Error('No result from primary API');
-            }
-        } else {
-            throw new Error('Primary API failed');
-        }
-
-        // If the primary API fails, use the fallback API
-        if (!replyText) {
-            response = await fetch(`${apiUrl2}${encodeURIComponent(messageContent)}`, {
-                method: 'GET',
-            });
-
-            if (response.ok) {
-                const data = await response.json();
+                // Fetch response from the primary API
+                let response = await fetch(primaryApiUrl);
+                let data = await response.json();
 
                 if (data && data.result) {
-                    replyText = data.result;
+                    const replyText = data.result;
+
+                    // Log the response
+                    console.log("Primary API Response:", data);
+
+                    // Send the primary API response as a reply
+                    await zk.sendMessage(remoteJid, { text: replyText });
                 } else {
-                    throw new Error('No result from fallback API');
+                    throw new Error('Invalid response or missing "result" field in primary API.');
                 }
-            } else {
-                throw new Error('Fallback API failed');
+            } catch (primaryErr) {
+                console.error("Primary API Error:", primaryErr.message);
+
+                try {
+                    // Fallback API endpoint
+                    const fallbackApiUrl = `https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(messageContent)}`;
+
+                    // Fetch response from the fallback API
+                    let fallbackResponse = await fetch(fallbackApiUrl);
+                    let fallbackData = await fallbackResponse.json();
+
+                    if (fallbackData && fallbackData.result) {
+                        const fallbackReplyText = fallbackData.result;
+
+                        // Log the response
+                        console.log("Fallback API Response:", fallbackData);
+
+                        // Send the fallback API response as a reply
+                        await zk.sendMessage(remoteJid, { text: fallbackReplyText });
+                    } else {
+                        console.warn("Fallback API returned no result.");
+                    }
+                } catch (fallbackErr) {
+                    console.error("Fallback API Error:", fallbackErr.message);
+                }
             }
         }
-
-        // Send the response as a reply
-        if (replyText) {
-            await zk.sendMessage(remoteJid, { text: replyText });
-            console.log("Message Sent Successfully:", replyText); // Debug: Confirm message sent
-        }
-
-    } catch (err) {
-        console.error("CHATBOT Error:", err.message); // Debug: Log error details
-    } finally {
-        // Clean up the processed message to prevent memory leaks
-        setTimeout(() => global.processedMessages.delete(messageId), 60000); // Keep message ID for 1 minute
     }
 });
 
