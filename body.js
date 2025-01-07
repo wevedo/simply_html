@@ -185,22 +185,19 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                const apiUrl = 'https://api.brainshop.ai/get';
-                const bid = '181821'; // Your BrainShop bot ID
-                const key = 'ltFzFIXrtj2SVMTX'; // Your BrainShop API key
-                const uid = remoteJid.split("@")[0]; // Use the user's JID as UID
+                const apiUrl = 'https://apis.ibrahimadams.us.kg/api/ai/gpt4';
+                const apiKey = 'ibraah-help'; // Replace with your actual API key
                 const query = encodeURIComponent(messageContent);
-
-                const response = await fetch(`${apiUrl}?bid=${bid}&key=${key}&uid=${uid}&msg=${query}`);
+                const response = await fetch(`${apiUrl}?apikey=${apiKey}&q=${query}`);
                 const data = await response.json();
 
-                if (data && data.cnt) {
-                    const replyText = data.cnt;
+                if (data && data.response) {
+                    const replyText = data.response;
 
-                    // Send the BrainShop response as a reply
+                    // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
                 } else {
-                    throw new Error('Invalid response from BrainShop API.');
+                    throw new Error('Invalid response from GPT API.');
                 }
             } catch (err) {
                 console.error("CHATBOT Error:", err.message);
