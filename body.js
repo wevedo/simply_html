@@ -186,27 +186,28 @@ zk.ev.on("messages.upsert", async (m) => {
     const unsupportedTypes = ["audioMessage", "videoMessage", "contactMessage", "documentMessage"];
     if (unsupportedTypes.includes(messageType)) return;
 
-    // Process all incoming messages
+    // Process incoming text-based messages
     try {
         const apiUrl = 'https://api.davidcyriltech.my.id/ai/chatbot';
-        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`);
-        const data = await response.json();
+        const response = await fetch(`${apiUrl}?query=${encodeURIComponent(messageContent)}`, {
+            method: 'GET',
+        });
 
-        if (data && data.response) {
-            const replyText = data.response;
+        // Check if the response is successful
+        if (response.ok) {
+            const data = await response.json();
 
-            // Send the response as a reply
-            await zk.sendMessage(remoteJid, { text: replyText });
-        } else {
-            throw new Error('Invalid response from chatbot API.');
+            // Ensure valid response data
+            if (data && data.response) {
+                const replyText = data.response;
+
+                // Send the response as a reply
+                await zk.sendMessage(remoteJid, { text: replyText });
+            }
         }
     } catch (err) {
         console.error("CHATBOT Error:", err.message);
-
-        // Send an error message
-        await zk.sendMessage(remoteJid, {
-            text: "Sorry, I couldn't process your message. Please try again later."
-        });
+        // Do nothing in case of an error
     }
 });
         function getCurrentDateTime() {
