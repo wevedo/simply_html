@@ -185,17 +185,36 @@ zk.ev.on("messages.upsert", async (m) => {
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                const apiUrl = 'https://api.gurusensei.workers.dev/llama'; // Replace with your GPT API endpoint
-                const response = await fetch(`${apiUrl}?prompt=${encodeURIComponent(messageContent)}`);
+                const apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+                const apiKey = 'AIzaSyDJC5a882ruaC4XL6ejY1yhgRkN-JNQKg8'; // Replace with your actual API key
+                
+                // Prepare the request body
+                const requestBody = {
+                    prompt: {
+                        text: messageContent
+                    },
+                    temperature: 0.7, // Adjust as needed
+                    maxOutputTokens: 200 // Adjust token limit as needed
+                };
+
+                // Send the request to the API
+                const response = await fetch(`${apiUrl}?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
                 const data = await response.json();
 
-                if (data && data.response && data.response.response) {
-                    const replyText = data.response.response;
+                if (data && data.candidates && data.candidates.length > 0) {
+                    const replyText = data.candidates[0].output;
 
                     // Send the GPT response as a reply
                     await zk.sendMessage(remoteJid, { text: replyText });
                 } else {
-                    throw new Error('Invalid response from GPT API.');
+                    throw new Error('Invalid response from Gemini Pro API.');
                 }
             } catch (err) {
                 console.error("CHATBOT Error:", err.message);
