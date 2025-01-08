@@ -8,7 +8,7 @@ const yts = require('yt-search');
 const axios = require('axios');
 
 // Hardcoded API Configurations
-const BaseUrl = 'https://ibrahim-tech-18c88c249766.herokuapp.com';
+const BaseUrl = 'http://apis.ibrahimadams.us.kg';
 const adamsapikey = 'ibraah-tech';
 
 // Validate Config
