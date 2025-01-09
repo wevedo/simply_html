@@ -184,6 +184,12 @@ zk.ev.on("messages.upsert", async (m) => {
     // Skip bot's own messages and bot-owner messages
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
+    // Ensure messageContent is defined
+    if (!messageContent || typeof messageContent.toLowerCase !== 'function') {
+        console.warn("Received a message without valid text content.");
+        return;
+    }
+
     // Load memory (persistent data)
     let memory = {};
     try {
@@ -215,11 +221,8 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 
     // Handle CHATBOT responses for general input
-    if (conf.CHATBOT1 === "yes") {
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
-            // Add user message to memory if necessary
-            const userMessage = { role: 'user', content: messageContent };
-
             try {
                 // Primary API endpoint
                 const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech&q=${encodeURIComponent(messageContent)}`;
