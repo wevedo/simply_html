@@ -1,8 +1,10 @@
 const { adams } = require('../Ibrahim/adams');
 const axios = require("axios");
+const fs = require('fs');
 const { igdl } = require("ruhend-scraper");
 const { downloadTiktok } = require('@mrnima/tiktok-downloader');
 const { facebook } = require('@mrnima/facebook-downloader');  
+const ai = require('unlimited-ai');
 
 adams({
   nomCom: "instagram",
