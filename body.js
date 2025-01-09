@@ -169,7 +169,7 @@ authentification();
    store.bind(zk.ev);
 
 const googleTTS = require('google-tts-api');
-const fs = require('fs');
+//const fs = require('fs');
 
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
@@ -185,22 +185,22 @@ zk.ev.on("messages.upsert", async (m) => {
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
     // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT1 === "yes") {
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            // Load previous conversation history
+            let conversationData = [];
             try {
-                // Load previous conversation history
-                let conversationData = [];
-                try {
-                    const rawData = fs.readFileSync('store.json');
-                    conversationData = JSON.parse(rawData);
-                } catch (err) {
-                    console.log("No previous conversation found, starting new one.");
-                }
+                const rawData = fs.readFileSync('store.json');
+                conversationData = JSON.parse(rawData);
+            } catch (err) {
+                console.log("No previous conversation found, starting new one.");
+            }
 
-                // Add user message to the conversation history
-                const userMessage = { role: 'user', content: messageContent };
-                conversationData.push(userMessage);
+            // Add user message to the conversation history
+            const userMessage = { role: 'user', content: messageContent };
+            conversationData.push(userMessage);
 
+            try {
                 // Primary API endpoint
                 const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech&q=${encodeURIComponent(messageContent)}`;
 
