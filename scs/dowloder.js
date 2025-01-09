@@ -382,7 +382,7 @@ adams({
 
 
 adams({
-  nomCom: "gpt",
+  nomCom: "gpt1",
   aliases: ["gpt4", "ai"],
   reaction: '⚔️',
   categorie: "search"
