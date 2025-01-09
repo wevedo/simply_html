@@ -185,7 +185,7 @@ zk.ev.on("messages.upsert", async (m) => {
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
   // Check if chatbot feature is enabled
-  if (conf.CHATBOT !== "yes") return; // Exit if CHATBOT is not enabled
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
 
   if (messageType === "conversation" || messageType === "extendedTextMessage") {
     const alpha = messageContent.trim();
@@ -209,7 +209,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
     const model = 'gpt-4-turbo-2024-04-09';
     const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are an assistant in WhatsApp. You are called Ibrahim Adams. You respond to user commands.' };
+    const systemMessage = { role: 'system', content: 'You are Bwm xmd WhatsApp bot. Your owner is Ibrahim Adams. You respond to user commands.' };
 
     // Add user message and system message to the conversation
     conversationData.push(userMessage);
