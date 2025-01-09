@@ -380,7 +380,7 @@ adams({
   }
 });
 
-/*
+
 adams({
   nomCom: "gpt1",
   aliases: ["gpt4", "ai"],
@@ -393,33 +393,39 @@ adams({
   if (!alpha) return repondre("Please provide text.");
 
   let conversationData = [];
+
   try {
-      const rawData = fs.readFileSync('store.json', 'utf8');
+    const rawData = fs.readFileSync('store.json', 'utf8');
+    if (rawData) {
       conversationData = JSON.parse(rawData);
+      if (!Array.isArray(conversationData)) {
+        conversationData = [];
+      }
+    }
   } catch (err) {
-      console.log('No previous conversation found, starting new one.');
+    console.log('No previous conversation found, starting new one.');
   }
 
   const model = 'gpt-4-turbo-2024-04-09';
   const userMessage = { role: 'user', content: alpha };  
   const systemMessage = { role: 'system', content: 'You are an assistant in WhatsApp. You are called Ibrahim Adams. You respond to user commands.' };
 
+  // Ensure that the conversationData is an array before pushing
   conversationData.push(userMessage);
   conversationData.push(systemMessage);
 
   try {
-    
-      const aiResponse = await ai.generate(model, conversationData);
+    const aiResponse = await ai.generate(model, conversationData);
 
-     
-      conversationData.push({ role: 'assistant', content: aiResponse });
+    // Append AI response to the conversation
+    conversationData.push({ role: 'assistant', content: aiResponse });
 
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+    // Save the conversation to file
+    fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      await repondre(aiResponse);
+    await repondre(aiResponse);
   } catch (error) {
-      console.error("Error with AI generation: ", error);
-      await repondre("Sorry, there was an error generating the response.");
+    console.error("Error with AI generation: ", error);
+    await repondre("Sorry, there was an error generating the response.");
   }
 });
-*/
