@@ -156,7 +156,7 @@ adams({
 });
 
 
-keith({
+adams({
   nomCom: "spotify",
   aliases: ["spotifydl", "splay"],
   categorie: "Download",
