@@ -377,3 +377,46 @@ adams({
     repondre('An error occurred: ' + error.message);
   }
 });
+
+
+adams({
+  nomCom: "gpt",
+  aliases: ["gpt4", "ai"],
+  reaction: '⚔️',
+  categorie: "search"
+}, async (context, message, params) => {
+  const { repondre, arg } = params;  
+  const alpha = arg.join(" ").trim(); 
+
+  if (!alpha) return repondre("Please provide text.");
+
+  let conversationData = [];
+  try {
+      const rawData = fs.readFileSync('store.json', 'utf8');
+      conversationData = JSON.parse(rawData);
+  } catch (err) {
+      console.log('No previous conversation found, starting new one.');
+  }
+
+  const model = 'gpt-4-turbo-2024-04-09';
+  const userMessage = { role: 'user', content: alpha };  
+  const systemMessage = { role: 'system', content: 'You are an assistant in WhatsApp. You are called Ibrahim Adams. You respond to user commands.' };
+
+  conversationData.push(userMessage);
+  conversationData.push(systemMessage);
+
+  try {
+    
+      const aiResponse = await ai.generate(model, conversationData);
+
+     
+      conversationData.push({ role: 'assistant', content: aiResponse });
+
+      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+
+      await repondre(aiResponse);
+  } catch (error) {
+      console.error("Error with AI generation: ", error);
+      await repondre("Sorry, there was an error generating the response.");
+  }
+});
