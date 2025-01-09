@@ -209,7 +209,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
     const model = 'gpt-4-turbo-2024-04-09';
     const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Made by Ibrahim Adams. You respond to user commands.' };
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
     // Add user message and system message to the conversation
     conversationData.push(userMessage);
@@ -285,7 +285,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
     const model = 'gpt-4-turbo-2024-04-09';
     const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Made by Ibrahim Adams. You respond to user commands.' };
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
     // Add user message and system message to the conversation
     conversationData.push(userMessage);
