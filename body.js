@@ -169,7 +169,6 @@ authentification();
    store.bind(zk.ev);
 
 const googleTTS = require('google-tts-api');
-const fs = require('fs');
 
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
@@ -184,62 +183,7 @@ zk.ev.on("messages.upsert", async (m) => {
     // Skip bot's own messages and bot-owner messages
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    // Ensure messageContent is defined
-    if (!messageContent || typeof messageContent.toLowerCase !== 'function') {
-        console.warn("Received a message without valid text content.");
-        return;
-    }
-
-    // Load memory (persistent data)
-    let memory = {};
-    try {
-        const rawData = fs.readFileSync('store.json', 'utf8');
-        memory = JSON.parse(rawData);
-    } catch (err) {
-        console.log("No memory found, starting with an empty memory.");
-        memory = {}; // Initialize empty memory
-    }
-
-    // Handle specific memory commands
-    if (messageContent.toLowerCase().startsWith("my name is ")) {
-        const name = messageContent.slice(11).trim(); // Extract name
-        memory.name = name; // Save name in memory
-        fs.writeFileSync('store.json', JSON.stringify(memory, null, 2));
-        const responseText = `Got it, ${name}! I'll remember your name.`;
-        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-        //await zk.sendMessage(remoteJid, { text: responseText });
-        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
-        return;
-    }
-
-    if (messageContent.toLowerCase().startsWith("what is my name")) {
-        const name = memory.name || "I don't know your name yet. Tell me by saying 'My name is [your name]'.";
-        const responseText = `Your name is ${name}.`;
-        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-       // await zk.sendMessage(remoteJid, { text: responseText });
-        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
-        return;
-    }
-
-    if (messageContent.toLowerCase().startsWith("who made you")) {
-        const responseText = "I was made by Ibrahim Adams, and I'm called BMW XMD.";
-        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-       // await zk.sendMessage(remoteJid, { text: responseText });
-        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
-        return;
-    }
-
-    // Handle greeting messages
-    const greetings = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"];
-    if (greetings.some(greet => messageContent.toLowerCase().includes(greet))) {
-        const responseText = "Hello! I'm BMW XMD, how can I help?";
-        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-        //await zk.sendMessage(remoteJid, { text: responseText });
-        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
-        return;
-    }
-
-    // Handle CHATBOT responses for general input
+    // Handle CHATBOT for non-bot-owner messages
     if (conf.CHATBOT1 === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
@@ -306,6 +250,7 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
+
         
 
 zk.ev.on("messages.upsert", async (m) => {
