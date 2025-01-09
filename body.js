@@ -169,15 +169,22 @@ authentification();
    store.bind(zk.ev);
 
 const googleTTS = require('google-tts-api');
+const fs = require('fs');
+const path = './xmd/adams.json';
 
-// Load user data from JSON
-const dataPath = './xmd/adams.json';
-let userData = {};
-if (fs.existsSync(dataPath)) {
-  userData = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
+// Load or initialize the memory file
+let memoryData = {};
+if (fs.existsSync(path)) {
+  memoryData = JSON.parse(fs.readFileSync(path, 'utf-8'));
 } else {
-  userData = { creator: "Mr. Ibrahim Adams", bot_name: "BWM XMD" };
-  fs.writeFileSync(dataPath, JSON.stringify(userData, null, 2));
+  memoryData = {
+    creator: "Mr. Ibrahim Adams",
+    bot_name: "BWM XMD",
+    memory: {
+      "who made you": "I was created by Mr. Ibrahim Adams."
+    }
+  };
+  fs.writeFileSync(path, JSON.stringify(memoryData, null, 2));
 }
 
 zk.ev.on("messages.upsert", async (m) => {
@@ -193,10 +200,29 @@ zk.ev.on("messages.upsert", async (m) => {
   // Skip bot's own messages and bot-owner messages
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-  // Handle specific greetings
+  // Check for "who made you" or any saved memory
+  if (memoryData.memory[messageContent]) {
+    const replyText = memoryData.memory[messageContent];
+
+    // Convert response to audio
+    const audioUrl = googleTTS.getAudioUrl(replyText, {
+      lang: 'en',
+      slow: false,
+      host: 'https://translate.google.com',
+    });
+
+    await zk.sendMessage(remoteJid, {
+      audio: { url: audioUrl },
+      mimetype: 'audio/mp4',
+      ptt: true,
+    });
+    return;
+  }
+
+  // Handle greetings
   const greetings = ["hello", "hi", "hey", "good morning", "good evening", "good afternoon"];
   if (greetings.includes(messageContent)) {
-    const replyText = `I'm ${userData.bot_name}, how can I help you?`;
+    const replyText = `I'm ${memoryData.bot_name}, how can I help you?`;
 
     // Convert greeting response to audio
     const audioUrl = googleTTS.getAudioUrl(replyText, {
@@ -213,24 +239,7 @@ zk.ev.on("messages.upsert", async (m) => {
     return;
   }
 
-  // Handle specific questions
-  if (messageContent === "who made you?") {
-    const replyText = `I was created by ${userData.creator}.`;
-    const audioUrl = googleTTS.getAudioUrl(replyText, {
-      lang: 'en',
-      slow: false,
-      host: 'https://translate.google.com',
-    });
-
-    await zk.sendMessage(remoteJid, {
-      audio: { url: audioUrl },
-      mimetype: 'audio/mp4',
-      ptt: true,
-    });
-    return;
-  }
-
-  // Handle CHATBOT for non-bot-owner messages
+  // Handle CHATBOT for other incoming messages
   if (conf.CHATBOT === "yes") {
     if (messageType === "conversation" || messageType === "extendedTextMessage") {
       try {
@@ -244,7 +253,11 @@ zk.ev.on("messages.upsert", async (m) => {
         if (data && data.result) {
           const replyText = data.result;
 
-          // Convert text to speech
+          // Save response to memory
+          memoryData.memory[messageContent] = replyText;
+          fs.writeFileSync(path, JSON.stringify(memoryData, null, 2));
+
+          // Convert response to audio
           const audioUrl = googleTTS.getAudioUrl(replyText, {
             lang: 'en',
             slow: false,
@@ -274,7 +287,11 @@ zk.ev.on("messages.upsert", async (m) => {
           if (fallbackData && fallbackData.result) {
             const fallbackReplyText = fallbackData.result;
 
-            // Convert text to speech
+            // Save fallback response to memory
+            memoryData.memory[messageContent] = fallbackReplyText;
+            fs.writeFileSync(path, JSON.stringify(memoryData, null, 2));
+
+            // Convert response to audio
             const fallbackAudioUrl = googleTTS.getAudioUrl(fallbackReplyText, {
               lang: 'en',
               slow: false,
