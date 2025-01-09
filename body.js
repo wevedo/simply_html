@@ -168,8 +168,8 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-const fs = require('fs');
 const googleTTS = require('google-tts-api');
+const fs = require('fs');
 
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
@@ -187,24 +187,20 @@ zk.ev.on("messages.upsert", async (m) => {
     // Handle CHATBOT for non-bot-owner messages
     if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
-            // Load previous conversation from store.json, if exists
-            let conversationData = [];
             try {
-                const rawData = fs.readFileSync('store.json');
-                conversationData = JSON.parse(rawData);
-            } catch (err) {
-                console.log('No previous conversation found, starting new one.');
-            }
+                // Load previous conversation history
+                let conversationData = [];
+                try {
+                    const rawData = fs.readFileSync('store.json');
+                    conversationData = JSON.parse(rawData);
+                } catch (err) {
+                    console.log("No previous conversation found, starting new one.");
+                }
 
-            // Add user input to the conversation data
-            const userMessage = { role: 'user', content: messageContent };
-            conversationData.push(userMessage);
+                // Add user message to the conversation history
+                const userMessage = { role: 'user', content: messageContent };
+                conversationData.push(userMessage);
 
-            // Define system message for context
-            const systemMessage = { role: 'system', content: 'You are Bwm xmd WhatsApp bot. You are called Ibrahim Adams. You respond to user commands.' };
-            conversationData.push(systemMessage);
-
-            try {
                 // Primary API endpoint
                 const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech&q=${encodeURIComponent(messageContent)}`;
 
@@ -213,32 +209,33 @@ zk.ev.on("messages.upsert", async (m) => {
                 let data = await response.json();
 
                 if (data && data.result) {
-                    const aiResponse = data.result;
+                    const replyText = data.result;
 
-                    // Add AI response to the conversation data
-                    conversationData.push({ role: 'assistant', content: aiResponse });
+                    // Add AI response to the conversation history
+                    const aiResponse = { role: 'assistant', content: replyText };
+                    conversationData.push(aiResponse);
 
-                    // Save the updated conversation to store.json
+                    // Save updated conversation history
                     fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-                    // Convert AI response to speech (audio)
-                    const audioUrl = googleTTS.getAudioUrl(aiResponse, {
+                    // Convert text to speech
+                    const audioUrl = googleTTS.getAudioUrl(replyText, {
                         lang: 'en',
                         slow: false,
                         host: 'https://translate.google.com',
                     });
 
-                    // Send the AI response as audio (voice note)
+                    // Send the primary API response as audio
                     await zk.sendMessage(remoteJid, { 
                         audio: { url: audioUrl }, 
                         mimetype: 'audio/mp4', 
                         ptt: true 
                     });
                 } else {
-                    throw new Error('Primary API returned no valid response.');
+                    throw new Error('Invalid response or missing "result" field in primary API.');
                 }
-            } catch (error) {
-                console.error("Primary API Error:", error.message);
+            } catch (primaryErr) {
+                console.error("Primary API Error:", primaryErr.message);
 
                 try {
                     // Fallback API endpoint
@@ -249,33 +246,33 @@ zk.ev.on("messages.upsert", async (m) => {
                     let fallbackData = await fallbackResponse.json();
 
                     if (fallbackData && fallbackData.result) {
-                        const fallbackAiResponse = fallbackData.result;
+                        const fallbackReplyText = fallbackData.result;
 
-                        // Add fallback AI response to the conversation data
-                        conversationData.push({ role: 'assistant', content: fallbackAiResponse });
+                        // Add fallback AI response to the conversation history
+                        const aiFallbackResponse = { role: 'assistant', content: fallbackReplyText };
+                        conversationData.push(aiFallbackResponse);
 
-                        // Save the updated conversation to store.json
+                        // Save updated conversation history
                         fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-                        // Convert fallback AI response to speech (audio)
-                        const audioUrl = googleTTS.getAudioUrl(fallbackAiResponse, {
+                        // Convert text to speech
+                        const fallbackAudioUrl = googleTTS.getAudioUrl(fallbackReplyText, {
                             lang: 'en',
                             slow: false,
                             host: 'https://translate.google.com',
                         });
 
-                        // Send the fallback AI response as audio (voice note)
+                        // Send the fallback API response as audio
                         await zk.sendMessage(remoteJid, { 
-                            audio: { url: audioUrl }, 
+                            audio: { url: fallbackAudioUrl }, 
                             mimetype: 'audio/mp4', 
                             ptt: true 
                         });
                     } else {
-                        throw new Error('Fallback API returned no valid response.');
+                        console.warn("Fallback API returned no result.");
                     }
                 } catch (fallbackErr) {
                     console.error("Fallback API Error:", fallbackErr.message);
-                    // No message sent if both APIs fail
                 }
             }
         }
