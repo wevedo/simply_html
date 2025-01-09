@@ -169,7 +169,6 @@ authentification();
    store.bind(zk.ev);
 
 const googleTTS = require('google-tts-api');
-const fs = require('fs');
 const path = './xmd/adams.json';
 
 // Load or initialize the memory file
