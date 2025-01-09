@@ -169,86 +169,80 @@ authentification();
    store.bind(zk.ev);
 
 const googleTTS = require('google-tts-api');
-
+const ai = require('unlimited-ai');
+        
 zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const ms = messages[0];
+  const { messages } = m;
+  const ms = messages[0];
 
-    if (!ms.message) return; // Skip messages without content
+  if (!ms.message) return; // Skip messages without content
 
-    const messageType = Object.keys(ms.message)[0];
-    const remoteJid = ms.key.remoteJid;
-    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+  const messageType = Object.keys(ms.message)[0];
+  const remoteJid = ms.key.remoteJid;
+  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-    // Skip bot's own messages and bot-owner messages
-    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+  // Skip bot's own messages and bot-owner messages
+  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT1 === "yes") {
-        if (messageType === "conversation" || messageType === "extendedTextMessage") {
-            try {
-                // Primary API endpoint
-                const primaryApiUrl = `https://apis.ibrahimadams.us.kg/api/ai/gpt4?apikey=ibraah-tech&q=${encodeURIComponent(messageContent)}`;
+  // Check if chatbot feature is enabled
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
 
-                // Fetch response from the primary API
-                let response = await fetch(primaryApiUrl);
-                let data = await response.json();
+  if (messageType === "conversation" || messageType === "extendedTextMessage") {
+    const alpha = messageContent.trim();
 
-                if (data && data.result) {
-                    const replyText = data.result;
+    if (!alpha) return;
 
-                    // Convert text to speech
-                    const audioUrl = googleTTS.getAudioUrl(replyText, {
-                        lang: 'en',
-                        slow: false,
-                        host: 'https://translate.google.com',
-                    });
+    let conversationData = [];
 
-                    // Send the primary API response as audio
-                    await zk.sendMessage(remoteJid, { 
-                        audio: { url: audioUrl }, 
-                        mimetype: 'audio/mp4', 
-                        ptt: true 
-                    });
-                } else {
-                    throw new Error('Invalid response or missing "result" field in primary API.');
-                }
-            } catch (primaryErr) {
-                console.error("Primary API Error:", primaryErr.message);
-
-                try {
-                    // Fallback API endpoint
-                    const fallbackApiUrl = `https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(messageContent)}`;
-
-                    // Fetch response from the fallback API
-                    let fallbackResponse = await fetch(fallbackApiUrl);
-                    let fallbackData = await fallbackResponse.json();
-
-                    if (fallbackData && fallbackData.result) {
-                        const fallbackReplyText = fallbackData.result;
-
-                        // Convert text to speech
-                        const fallbackAudioUrl = googleTTS.getAudioUrl(fallbackReplyText, {
-                            lang: 'en',
-                            slow: false,
-                            host: 'https://translate.google.com',
-                        });
-
-                        // Send the fallback API response as audio
-                        await zk.sendMessage(remoteJid, { 
-                            audio: { url: fallbackAudioUrl }, 
-                            mimetype: 'audio/mp4', 
-                            ptt: true 
-                        });
-                    } else {
-                        console.warn("Fallback API returned no result.");
-                    }
-                } catch (fallbackErr) {
-                    console.error("Fallback API Error:", fallbackErr.message);
-                }
-            }
+    // Read previous conversation data
+    try {
+      const rawData = fs.readFileSync('store.json', 'utf8');
+      if (rawData) {
+        conversationData = JSON.parse(rawData);
+        if (!Array.isArray(conversationData)) {
+          conversationData = [];
         }
+      }
+    } catch (err) {
+      console.log('No previous conversation found, starting new one.');
     }
+
+    const model = 'gpt-4-turbo-2024-04-09';
+    const userMessage = { role: 'user', content: alpha };  
+    const systemMessage = { role: 'system', content: 'You are an assistant in WhatsApp. You are called Ibrahim Adams. You respond to user commands.' };
+
+    // Add user message and system message to the conversation
+    conversationData.push(userMessage);
+    conversationData.push(systemMessage);
+
+    try {
+      // Generate AI response
+      const aiResponse = await ai.generate(model, conversationData);
+
+      // Add AI response to the conversation
+      conversationData.push({ role: 'assistant', content: aiResponse });
+
+      // Save the updated conversation
+      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+
+      // Convert AI response to audio
+      const audioUrl = googleTTS.getAudioUrl(aiResponse, {
+        lang: 'en',
+        slow: false,
+        host: 'https://translate.google.com',
+      });
+
+      // Send the audio response
+      await sendMessage(remoteJid, { 
+        audio: { url: audioUrl }, 
+        mimetype: 'audio/mp4', 
+        ptt: true 
+      });
+    } catch (error) {
+      // Silent error handling, no response to the user
+      console.error("Error with AI generation:", error);
+    }
+  }
 });
 
         
