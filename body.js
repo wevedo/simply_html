@@ -221,7 +221,7 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 
     // Handle CHATBOT responses for general input
-    if (conf.CHATBOT === "yes") {
+    if (conf.CHATBOT1 === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Primary API endpoint
