@@ -185,15 +185,22 @@ zk.ev.on("messages.upsert", async (m) => {
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
     // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT1 === "yes") {
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             // Load previous conversation history
             let conversationData = [];
             try {
-                const rawData = fs.readFileSync('store.json');
+                const rawData = fs.readFileSync('store.json', 'utf8');
                 conversationData = JSON.parse(rawData);
+
+                // Ensure it's an array (fallback in case of invalid data)
+                if (!Array.isArray(conversationData)) {
+                    console.warn("Invalid data in store.json, resetting conversation history.");
+                    conversationData = [];
+                }
             } catch (err) {
-                console.log("No previous conversation found, starting new one.");
+                console.log("No valid conversation history found, starting new one.");
+                conversationData = []; // Initialize as empty array
             }
 
             // Add user message to the conversation history
