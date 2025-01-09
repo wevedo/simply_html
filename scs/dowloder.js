@@ -380,7 +380,7 @@ adams({
   }
 });
 
-
+/*
 adams({
   nomCom: "gpt1",
   aliases: ["gpt4", "ai"],
@@ -422,3 +422,4 @@ adams({
       await repondre("Sorry, there was an error generating the response.");
   }
 });
+*/
