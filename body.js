@@ -168,22 +168,22 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-const googleTTS = require('google-tts-api');
-const path = './xmd/adams.json';
 
-// Load or initialize the memory file
+const memoryFilePath = './xmd/adams.json';
+
 let memoryData = {};
-if (fs.existsSync(path)) {
-  memoryData = JSON.parse(fs.readFileSync(path, 'utf-8'));
+if (fs.existsSync(memoryFilePath) && path.extname(memoryFilePath) === '.json') {
+  memoryData = JSON.parse(fs.readFileSync(memoryFilePath, 'utf-8'));
 } else {
   memoryData = {
     creator: "Mr. Ibrahim Adams",
     bot_name: "BWM XMD",
     memory: {
       "who made you": "I was created by Mr. Ibrahim Adams."
-    }
+    },
+    user_data: {}
   };
-  fs.writeFileSync(path, JSON.stringify(memoryData, null, 2));
+  fs.writeFileSync(memoryFilePath, JSON.stringify(memoryData, null, 2));
 }
 
 zk.ev.on("messages.upsert", async (m) => {
