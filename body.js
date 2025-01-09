@@ -168,7 +168,7 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-
+const googleTTS = require('google-tts-api');
 const memoryFilePath = './xmd/adams.json';
 
 let memoryData = {};
