@@ -170,7 +170,7 @@ authentification();
 
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
-        
+
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
@@ -185,7 +185,7 @@ zk.ev.on("messages.upsert", async (m) => {
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
   // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
+  if (conf.CHATBOT !== "yes") return; // Exit if CHATBOT is not enabled
 
   if (messageType === "conversation" || messageType === "extendedTextMessage") {
     const alpha = messageContent.trim();
@@ -232,8 +232,8 @@ zk.ev.on("messages.upsert", async (m) => {
         host: 'https://translate.google.com',
       });
 
-      // Send the audio response
-      await sendMessage(remoteJid, { 
+      // Send the audio response using zk.sendMessage
+      await zk.sendMessage(remoteJid, { 
         audio: { url: audioUrl }, 
         mimetype: 'audio/mp4', 
         ptt: true 
