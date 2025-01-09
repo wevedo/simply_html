@@ -169,7 +169,7 @@ authentification();
    store.bind(zk.ev);
 
 const googleTTS = require('google-tts-api');
-//const fs = require('fs');
+const fs = require('fs');
 
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
@@ -205,18 +205,37 @@ zk.ev.on("messages.upsert", async (m) => {
         const name = messageContent.slice(11).trim(); // Extract name
         memory.name = name; // Save name in memory
         fs.writeFileSync('store.json', JSON.stringify(memory, null, 2));
-        await zk.sendMessage(remoteJid, { text: `Got it, ${name}! I'll remember your name.` });
+        const responseText = `Got it, ${name}! I'll remember your name.`;
+        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
+        await zk.sendMessage(remoteJid, { text: responseText });
+        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
+        return;
+    }
+
+    if (messageContent.toLowerCase().startsWith("what is my name")) {
+        const name = memory.name || "I don't know your name yet. Tell me by saying 'My name is [your name]'.";
+        const responseText = `Your name is ${name}.`;
+        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
+        await zk.sendMessage(remoteJid, { text: responseText });
+        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
 
     if (messageContent.toLowerCase().startsWith("who made you")) {
-        await zk.sendMessage(remoteJid, { text: "I was made by Ibrahim Adams and I'm called BMW XMD." });
+        const responseText = "I was made by Ibrahim Adams, and I'm called BMW XMD.";
+        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
+        await zk.sendMessage(remoteJid, { text: responseText });
+        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
 
-    if (messageContent.toLowerCase().startsWith("what's my name")) {
-        const name = memory.name || "I don't know your name yet. Tell me by saying 'My name is [your name]'.";
-        await zk.sendMessage(remoteJid, { text: `Your name is ${name}.` });
+    // Handle greeting messages
+    const greetings = ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"];
+    if (greetings.some(greet => messageContent.toLowerCase().includes(greet))) {
+        const responseText = "Hello! I'm BMW XMD, how can I help?";
+        const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
+        await zk.sendMessage(remoteJid, { text: responseText });
+        await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
 
