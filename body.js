@@ -184,28 +184,41 @@ zk.ev.on("messages.upsert", async (m) => {
     // Skip bot's own messages and bot-owner messages
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT1 === "yes") {
+    // Load memory (persistent data)
+    let memory = {};
+    try {
+        const rawData = fs.readFileSync('store.json', 'utf8');
+        memory = JSON.parse(rawData);
+    } catch (err) {
+        console.log("No memory found, starting with an empty memory.");
+        memory = {}; // Initialize empty memory
+    }
+
+    // Handle specific memory commands
+    if (messageContent.toLowerCase().startsWith("my name is ")) {
+        const name = messageContent.slice(11).trim(); // Extract name
+        memory.name = name; // Save name in memory
+        fs.writeFileSync('store.json', JSON.stringify(memory, null, 2));
+        await zk.sendMessage(remoteJid, { text: `Got it, ${name}! I'll remember your name.` });
+        return;
+    }
+
+    if (messageContent.toLowerCase().startsWith("who made you")) {
+        await zk.sendMessage(remoteJid, { text: "I was made by Ibrahim Adams and I'm called BMW XMD." });
+        return;
+    }
+
+    if (messageContent.toLowerCase().startsWith("what's my name")) {
+        const name = memory.name || "I don't know your name yet. Tell me by saying 'My name is [your name]'.";
+        await zk.sendMessage(remoteJid, { text: `Your name is ${name}.` });
+        return;
+    }
+
+    // Handle CHATBOT responses for general input
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
-            // Load previous conversation history
-            let conversationData = [];
-            try {
-                const rawData = fs.readFileSync('store.json', 'utf8');
-                conversationData = JSON.parse(rawData);
-
-                // Ensure it's an array (fallback in case of invalid data)
-                if (!Array.isArray(conversationData)) {
-                    console.warn("Invalid data in store.json, resetting conversation history.");
-                    conversationData = [];
-                }
-            } catch (err) {
-                console.log("No valid conversation history found, starting new one.");
-                conversationData = []; // Initialize as empty array
-            }
-
-            // Add user message to the conversation history
+            // Add user message to memory if necessary
             const userMessage = { role: 'user', content: messageContent };
-            conversationData.push(userMessage);
 
             try {
                 // Primary API endpoint
@@ -217,13 +230,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
                 if (data && data.result) {
                     const replyText = data.result;
-
-                    // Add AI response to the conversation history
-                    const aiResponse = { role: 'assistant', content: replyText };
-                    conversationData.push(aiResponse);
-
-                    // Save updated conversation history
-                    fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
                     // Convert text to speech
                     const audioUrl = googleTTS.getAudioUrl(replyText, {
@@ -254,13 +260,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
                     if (fallbackData && fallbackData.result) {
                         const fallbackReplyText = fallbackData.result;
-
-                        // Add fallback AI response to the conversation history
-                        const aiFallbackResponse = { role: 'assistant', content: fallbackReplyText };
-                        conversationData.push(aiFallbackResponse);
-
-                        // Save updated conversation history
-                        fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
                         // Convert text to speech
                         const fallbackAudioUrl = googleTTS.getAudioUrl(fallbackReplyText, {
