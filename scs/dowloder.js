@@ -70,7 +70,7 @@ adams({
     return repondre('Please insert a public TikTok video link!');
   }
 
-  if (!arg.includes('tiktok.com')) {
+  if (!arg[0].includes('tiktok.com')) {
     return repondre("That is not a valid TikTok link.");
   }
 
