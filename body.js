@@ -207,7 +207,7 @@ zk.ev.on("messages.upsert", async (m) => {
         fs.writeFileSync('store.json', JSON.stringify(memory, null, 2));
         const responseText = `Got it, ${name}! I'll remember your name.`;
         const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-        await zk.sendMessage(remoteJid, { text: responseText });
+        //await zk.sendMessage(remoteJid, { text: responseText });
         await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
@@ -216,7 +216,7 @@ zk.ev.on("messages.upsert", async (m) => {
         const name = memory.name || "I don't know your name yet. Tell me by saying 'My name is [your name]'.";
         const responseText = `Your name is ${name}.`;
         const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-        await zk.sendMessage(remoteJid, { text: responseText });
+       // await zk.sendMessage(remoteJid, { text: responseText });
         await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
@@ -224,7 +224,7 @@ zk.ev.on("messages.upsert", async (m) => {
     if (messageContent.toLowerCase().startsWith("who made you")) {
         const responseText = "I was made by Ibrahim Adams, and I'm called BMW XMD.";
         const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-        await zk.sendMessage(remoteJid, { text: responseText });
+       // await zk.sendMessage(remoteJid, { text: responseText });
         await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
@@ -234,7 +234,7 @@ zk.ev.on("messages.upsert", async (m) => {
     if (greetings.some(greet => messageContent.toLowerCase().includes(greet))) {
         const responseText = "Hello! I'm BMW XMD, how can I help?";
         const audioUrl = googleTTS.getAudioUrl(responseText, { lang: 'en', slow: false });
-        await zk.sendMessage(remoteJid, { text: responseText });
+        //await zk.sendMessage(remoteJid, { text: responseText });
         await zk.sendMessage(remoteJid, { audio: { url: audioUrl }, mimetype: 'audio/mp4', ptt: true });
         return;
     }
