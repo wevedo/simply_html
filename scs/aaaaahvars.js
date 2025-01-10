@@ -1,43 +1,50 @@
 
-const { updateConfig } = require('./config');
-const { adams } = require("../Ibrahim/adams");
+#!/usr/bin/env node
 
-adams({
-    nomCom: 'setvar',
-    categorie: "Control"
-}, async (chatId, zk, context) => {
-    const { repondre, superUser, arg } = context;
+const fs = require('fs');
+const path = require('path');
 
-    if (!superUser) {
-        return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
-    }
+// Path to the config.js file
+const configPath = path.join(__dirname, './config.js');
 
-    if (!arg[0] || !arg[0].includes('=')) {
-        return repondre(
-            "📋 *Usage Instructions:*\n\n" +
-            "To set or update a variable:\n" +
-            "`setvar VAR_NAME=value`\n\n" +
-            "Example:\n" +
-            "`setvar BOT=NewBotName`\n" +
-            "`setvar AUTO_REPLY=no`"
-        );
-    }
-
-    const [variable, value] = arg[0].split('=');
-    if (!variable || !value) {
-        return repondre("⚠️ *Invalid format!* Use `VAR_NAME=value` format.");
-    }
-
+// Function to update a variable in config.js
+const updateConfig = (key, value) => {
     try {
-        updateConfig(variable.trim(), value.trim());
-        await zk.sendMessage(chatId, {
-            text: `✅ *Variable Updated Successfully!*\n\n🔑 *${variable}:* ${value}\n\n🔄 *Restart the bot for the changes to take effect!*`
-        });
-    } catch (error) {
-        await zk.sendMessage(chatId, { text: `⚠️ *Error:* ${error.message}` });
-    }
-});
+        // Read the current config.js file
+        const configContent = fs.readFileSync(configPath, 'utf-8');
 
+        // Create a regex pattern to match the variable
+        const regex = new RegExp(`(${key}\\s*:\\s*)(["']?.*?["']?)\\s*,`);
+
+        if (regex.test(configContent)) {
+            // Replace the variable value in the file
+            const updatedContent = configContent.replace(regex, `$1"${value}",`);
+            fs.writeFileSync(configPath, updatedContent, 'utf-8');
+            console.log(`✅ Successfully updated ${key} to "${value}" in config.js.`);
+        } else {
+            console.log(`⚠️ Variable ${key} not found in config.js.`);
+        }
+    } catch (err) {
+        console.error("❌ Error updating config.js:", err.message);
+    }
+};
+
+// Command-line arguments for the variable name and value
+const args = process.argv.slice(2);
+
+// Ensure the correct format
+if (args.length !== 2) {
+    console.log(
+        "📋 Usage: setvar <VARIABLE> <VALUE>\n" +
+        "Example: setvar AUTO_REPLY yes"
+    );
+    process.exit(1);
+}
+
+const [varName, newValue] = args;
+
+// Update the variable in config.js
+updateConfig(varName, newValue);
 
 
 /**
