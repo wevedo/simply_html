@@ -1,50 +1,100 @@
 
-#!/usr/bin/env node
-
-const fs = require('fs');
-const path = require('path');
+const { adams } = require("../Ibrahim/adams");
+const fs = require('fs-extra');
+const path = require("path");
 
 // Path to the config.js file
-const configPath = path.join(__dirname, './config.js');
+const configFilePath = path.join(__dirname, '../config.js');
 
-// Function to update a variable in config.js
-const updateConfig = (key, value) => {
-    try {
-        // Read the current config.js file
-        const configContent = fs.readFileSync(configPath, 'utf-8');
+// Command to set or update a variable in config.js
+adams({
+  nomCom: 'setvar',
+  categorie: "Control"
+}, async (chatId, zk, context) => {
+  const { repondre, superUser, arg } = context;
 
-        // Create a regex pattern to match the variable
-        const regex = new RegExp(`(${key}\\s*:\\s*)(["']?.*?["']?)\\s*,`);
+  // Ensure the command is executed by the bot owner
+  if (!superUser) {
+    return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
+  }
 
-        if (regex.test(configContent)) {
-            // Replace the variable value in the file
-            const updatedContent = configContent.replace(regex, `$1"${value}",`);
-            fs.writeFileSync(configPath, updatedContent, 'utf-8');
-            console.log(`✅ Successfully updated ${key} to "${value}" in config.js.`);
-        } else {
-            console.log(`⚠️ Variable ${key} not found in config.js.`);
-        }
-    } catch (err) {
-        console.error("❌ Error updating config.js:", err.message);
-    }
-};
-
-// Command-line arguments for the variable name and value
-const args = process.argv.slice(2);
-
-// Ensure the correct format
-if (args.length !== 2) {
-    console.log(
-        "📋 Usage: setvar <VARIABLE> <VALUE>\n" +
-        "Example: setvar AUTO_REPLY yes"
+  // Validate input
+  if (!arg[0] || !arg[0].includes('=')) {
+    return repondre(
+      "📋 *Usage Instructions:*\n\n" +
+      "To set or update a variable:\n" +
+      "`setvar VAR_NAME=value`\n\n" +
+      "Example:\n" +
+      "`setvar AUTO_REPLY=yes`\n" +
+      "`setvar AUTO_REPLY=no`"
     );
-    process.exit(1);
-}
+  }
 
-const [varName, newValue] = args;
+  // Parse variable and value
+  const [varName, value] = arg[0].split('=');
+  if (!varName || !value) {
+    return repondre("⚠️ *Invalid format!* Use `AUTO_REPLY=no` format.");
+  }
 
-// Update the variable in config.js
-updateConfig(varName, newValue);
+  // Read the existing config.js file
+  try {
+    let configData = await fs.readFile(configFilePath, 'utf8');
+
+    // Find the variable in the config.js file and update it
+    const regex = new RegExp(`(${varName}:\\s*['"][^'"]*['"])`);
+    if (regex.test(configData)) {
+      configData = configData.replace(regex, `${varName}: '${value}'`);
+    } else {
+      // If variable doesn't exist, add it to the module exports
+      configData = configData.replace('module.exports = {', `module.exports = {\n  ${varName}: '${value}',`);
+    }
+
+    // Write the updated config.js file
+    await fs.writeFile(configFilePath, configData);
+
+    // Send success message to chat
+    await zk.sendMessage(chatId, {
+      text: `*BWM XMD VARS*\n\n✅ *Variable updated successfully!*\n\n🔑 *${varName}:* ${value}`
+    });
+  } catch (error) {
+    console.error("Error updating config.js:", error);
+    await zk.sendMessage(chatId, { text: "⚠️ *Failed to update the variable in config.js!*" });
+  }
+});
+
+// Command to display all variables in config.js
+adams({
+  nomCom: 'getallvar',
+  categorie: "Control"
+}, async (chatId, zk, context) => {
+  const { repondre, superUser } = context;
+
+  // Ensure the command is executed by the bot owner
+  if (!superUser) {
+    return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
+  }
+
+  try {
+    // Read the config.js file
+    const configData = await fs.readFile(configFilePath, 'utf8');
+    
+    // Extract the variables from config.js using regex
+    const regex = /(\w+):\s*['"]([^'"]+)['"]/g;
+    let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
+    let match;
+    
+    while ((match = regex.exec(configData)) !== null) {
+      const [_, key, value] = match;
+      message += `🔑 *${key}=* ${value}\n`;
+    }
+    
+    // Send the list of variables
+    await zk.sendMessage(chatId, { text: message });
+  } catch (error) {
+    console.error("Error reading config.js:", error);
+    await zk.sendMessage(chatId, { text: "⚠️ *Failed to read config.js!*" });
+  }
+});
 
 
 /**
