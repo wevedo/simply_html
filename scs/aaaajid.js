@@ -59,21 +59,24 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest
 
 
 
-const storeFile = "../xmd/adams.json";
+// In-memory settings
+let groupSettings = {};
 
-// Load or initialize the store
-const loadStore = () => {
-  if (!fs.existsSync(storeFile)) {
-    fs.writeJSONSync(storeFile, {});
+// Load or initialize group settings
+const getGroupSettings = (groupId) => {
+  if (!groupSettings[groupId]) {
+    groupSettings[groupId] = { antilink: false }; // Default settings
   }
-  return fs.readJSONSync(storeFile);
+  return groupSettings[groupId];
 };
 
-const saveStore = (store) => {
-  fs.writeJSONSync(storeFile, store);
+// Save settings for a group
+const updateGroupSettings = (groupId, newSettings) => {
+  groupSettings[groupId] = { ...groupSettings[groupId], ...newSettings };
+  return groupSettings[groupId];
 };
 
-// Combined antilink system
+// Combined antilink logic
 adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifGroupe, infosGroupe, verifAdmin } = commandeOptions;
 
@@ -82,24 +85,16 @@ adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest,
     return;
   }
 
-  const store = loadStore();
   const groupId = infosGroupe.id;
+  const settings = getGroupSettings(groupId);
 
-  // Initialize group settings if not present
-  if (!store[groupId]) {
-    store[groupId] = { antilink: false };
-    saveStore(store);
-  }
-
-  // Command for admins to toggle antilink
+  // Admin command to toggle antilink
   if (verifAdmin && arg) {
     if (arg === "on") {
-      store[groupId].antilink = true;
-      saveStore(store);
+      updateGroupSettings(groupId, { antilink: true });
       repondre("✅ Antilink has been enabled for this group.");
     } else if (arg === "off") {
-      store[groupId].antilink = false;
-      saveStore(store);
+      updateGroupSettings(groupId, { antilink: false });
       repondre("✅ Antilink has been disabled for this group.");
     } else {
       repondre("❌ Invalid argument. Use `antilink on` or `antilink off`.");
@@ -107,15 +102,15 @@ adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest,
     return;
   }
 
-  // Show current status for admins if no arguments are provided
+  // Show current settings if no arguments are provided
   if (verifAdmin && !arg) {
-    const currentState = store[groupId].antilink ? "ON" : "OFF";
+    const currentState = settings.antilink ? "ON" : "OFF";
     repondre(`🚨 Antilink is currently: *${currentState}*.\n\nTo toggle:\n- Use \`antilink on\` to enable.\n- Use \`antilink off\` to disable.`);
     return;
   }
 
-  // Detect and remove links if antilink is enabled
-  if (store[groupId].antilink) {
+  // Auto-remove links if antilink is enabled
+  if (settings.antilink) {
     const messageContent = ms?.text || "";
     const linkRegex = /(https?:\/\/[^\s]+)/gi;
     const isLink = linkRegex.test(messageContent);
