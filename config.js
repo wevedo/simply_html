@@ -1,54 +1,82 @@
 const fs = require('fs-extra');
-const { Sequelize } = require('sequelize');
-if (fs.existsSync('config.env'))
-    require('dotenv').config({ path: __dirname + '/config.env' });
 const path = require("path");
+
+// Path to the database
 const databasePath = path.join(__dirname, './database.db');
-const DATABASE_URL = process.env.DATABASE_URL === undefined
-    ? databasePath
-    : process.env.DATABASE_URL;
-module.exports = { session: process.env.SESSION_ID || '',
-    PREFIXE: process.env.PREFIX || ".",
-    OWNER_NAME: process.env.OWNER_NAME || "Ibrahim Adams",
-    NUMERO_OWNER : process.env.NUMERO_OWNER || " Ibrahim Adams",              
-    AUTO_READ_STATUS: process.env.AUTO_READ_STATUS || "yes",
-    AUTO_DOWNLOAD_STATUS: process.env.AUTO_DOWNLOAD_STATUS || 'no',
-    BOT : process.env.BOT_NAME || 'BMW_MD',
-    URL : process.env.BOT_MENU_LINKS || 'https://files.catbox.moe/h2ydge.jpg',
-    MODE: process.env.PUBLIC_MODE || "yes",
-    PM_PERMIT: process.env.PM_PERMIT || 'yes',
-    HEROKU_APP_NAME : process.env.HEROKU_APP_NAME,
-    HEROKU_APY_KEY : process.env.HEROKU_APY_KEY ,
-    WARN_COUNT : process.env.WARN_COUNT || '3' ,
-    ETAT : process.env.PRESENCE || '',
-    CHATBOT : process.env.CHATBOT || 'yes',
-    CHATBOT1 : process.env.CHATBOT1 || 'yes',
-    SELF_CHATBOT : process.env.SELF_CHATBOT || 'yes',
-    DP : process.env.STARTING_BOT_MESSAGE || "yes",
-    ANTIDELETE1 : process.env.ANTIDELETE1 || 'yes',
-    ANTIDELETE2 : process.env.ANTIDELETE2 || 'yes',
-    ANTICALL : process.env.ANTICALL || 'yes',
-                  MENUTYPE : process.env.MENUTYPE || '',
-                  AUTO_REACT : process.env.AUTO_REACT || 'yes',
-                  AUTO_REACT_STATUS : process.env.AUTO_REACT_STATUS || 'yes',
-                  AUTO_REPLY : process.env.AUTO_REPLY || 'yes',
-                  AUTO_READ : process.env.AUTO_READ || 'yes',
-                  AUTO_SAVE_CONTACTS : process.env.AUTO_SAVE_CONTACTS || 'yes',
-                  AUTO_REJECT_CALL : process.env.AUTO_REJECT_CALL || 'yes',
-                  AUTO_BIO : process.env.AUTO_BIO || 'yes',
-                  AUDIO_REPLY : process.env.AUDIO_REPLY || 'yes',
-                  ANTI_VV : process.env.ANTI_VV || 'yes',
-                  AUTO_SAVE_CONTACTS_NAME: "🚀 ʙᴡᴍ xᴍᴅ", // Default name prefix for new contacts
-                  AUTO_REPLY_MESSAGE: "", 
-    DATABASE_URL,
-    DATABASE: DATABASE_URL === databasePath
-        ? "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway" : "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway",
-   
+
+// Default configuration object
+const config = {
+    session: '',
+    PREFIXE: ".",
+    OWNER_NAME: "Ibrahim Adams",
+    NUMERO_OWNER: "Ibrahim Adams",
+    AUTO_READ_STATUS: "yes",
+    AUTO_DOWNLOAD_STATUS: "no",
+    BOT: "BMW_MD",
+    URL: "https://files.catbox.moe/h2ydge.jpg",
+    MODE: "yes",
+    PM_PERMIT: "yes",
+    HEROKU_APP_NAME: "",
+    HEROKU_APY_KEY: "",
+    WARN_COUNT: '3',
+    ETAT: '',
+    CHATBOT: "yes",
+    CHATBOT1: "yes",
+    SELF_CHATBOT: "yes",
+    DP: "yes",
+    ANTIDELETE1: "yes",
+    ANTIDELETE2: "yes",
+    ANTICALL: "yes",
+    MENUTYPE: '',
+    AUTO_REACT: "yes",
+    AUTO_REACT_STATUS: "yes",
+    AUTO_REPLY: "yes",
+    AUTO_READ: "yes",
+    AUTO_SAVE_CONTACTS: "yes",
+    AUTO_REJECT_CALL: "yes",
+    AUTO_BIO: "yes",
+    AUDIO_REPLY: "yes",
+    ANTI_VV: "yes",
+    AUTO_SAVE_CONTACTS_NAME: "🚀 ʙᴡᴍ xᴍᴅ",
+    AUTO_REPLY_MESSAGE: "",
+    DATABASE_URL: process.env.DATABASE_URL || databasePath,
+    DATABASE: process.env.DATABASE_URL === databasePath
+        ? "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway"
+        : "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway",
 };
-let fichier = require.resolve(__filename);
-fs.watchFile(fichier, () => {
-    fs.unwatchFile(fichier);
-    console.log(`mise à jour ${__filename}`);
-    delete require.cache[fichier];
-    require(fichier);
+
+// Function to update configuration values dynamically
+function updateConfig(variable, value) {
+    const configPath = __filename;
+
+    try {
+        // Read the current content of config.js
+        let content = fs.readFileSync(configPath, 'utf8');
+
+        // Create a regex pattern to locate the variable
+        const regex = new RegExp(`(${variable}\\s*:\\s*)(["'].*?["']|\\S+)`, 'g');
+        if (regex.test(content)) {
+            // Update the variable with the new value
+            content = content.replace(regex, `$1'${value}'`);
+        } else {
+            throw new Error(`⚠️ Variable ${variable} not found in config.js`);
+        }
+
+        // Write the updated content back to the file
+        fs.writeFileSync(configPath, content, 'utf8');
+        console.log(`✅ Successfully updated ${variable} to ${value}`);
+    } catch (error) {
+        console.error("Error updating config.js:", error.message);
+        throw error;
+    }
+}
+
+// Monitor the file for changes and reload it dynamically
+fs.watchFile(__filename, () => {
+    fs.unwatchFile(__filename);
+    console.log(`♻️ Reloading ${__filename}`);
+    delete require.cache[require.resolve(__filename)];
+    require(__filename);
 });
+
+module.exports = { ...config, updateConfig };
