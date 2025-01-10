@@ -1,4 +1,46 @@
 
+const { updateConfig } = require('./config');
+const { adams } = require("../Ibrahim/adams");
+
+adams({
+    nomCom: 'setvar',
+    categorie: "Control"
+}, async (chatId, zk, context) => {
+    const { repondre, superUser, arg } = context;
+
+    if (!superUser) {
+        return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
+    }
+
+    if (!arg[0] || !arg[0].includes('=')) {
+        return repondre(
+            "📋 *Usage Instructions:*\n\n" +
+            "To set or update a variable:\n" +
+            "`setvar VAR_NAME=value`\n\n" +
+            "Example:\n" +
+            "`setvar BOT=NewBotName`\n" +
+            "`setvar AUTO_REPLY=no`"
+        );
+    }
+
+    const [variable, value] = arg[0].split('=');
+    if (!variable || !value) {
+        return repondre("⚠️ *Invalid format!* Use `VAR_NAME=value` format.");
+    }
+
+    try {
+        updateConfig(variable.trim(), value.trim());
+        await zk.sendMessage(chatId, {
+            text: `✅ *Variable Updated Successfully!*\n\n🔑 *${variable}:* ${value}\n\n🔄 *Restart the bot for the changes to take effect!*`
+        });
+    } catch (error) {
+        await zk.sendMessage(chatId, { text: `⚠️ *Error:* ${error.message}` });
+    }
+});
+
+
+
+/**
 const { adams } = require("../Ibrahim/adams");
 const Heroku = require('heroku-client');
 const { readdirSync } = require('fs');
@@ -89,3 +131,4 @@ adams({
   }
 });
 
+**/
