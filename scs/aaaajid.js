@@ -56,7 +56,7 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest
 });
 
 
-
+/**
 
 
 let groupSettings = {};
@@ -129,3 +129,4 @@ adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest,
     }
   }
 });
+**/
