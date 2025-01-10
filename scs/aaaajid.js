@@ -59,27 +59,25 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest
 
 
 
-// In-memory settings
 let groupSettings = {};
 
-// Load or initialize group settings
+// In-memory settings management
 const getGroupSettings = (groupId) => {
   if (!groupSettings[groupId]) {
-    groupSettings[groupId] = { antilink: false }; // Default settings
+    groupSettings[groupId] = { antilink: false }; // Default to off
   }
   return groupSettings[groupId];
 };
 
-// Save settings for a group
 const updateGroupSettings = (groupId, newSettings) => {
   groupSettings[groupId] = { ...groupSettings[groupId], ...newSettings };
-  return groupSettings[groupId];
 };
 
-// Combined antilink logic
+// Antilink command functionality
 adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifGroupe, infosGroupe, verifAdmin } = commandeOptions;
 
+  // Ensure the command is only used in groups
   if (!verifGroupe) {
     repondre("❌ This command can only be used in a group.");
     return;
@@ -88,7 +86,7 @@ adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest,
   const groupId = infosGroupe.id;
   const settings = getGroupSettings(groupId);
 
-  // Admin command to toggle antilink
+  // Admin controls to toggle Antilink
   if (verifAdmin && arg) {
     if (arg === "on") {
       updateGroupSettings(groupId, { antilink: true });
@@ -102,14 +100,14 @@ adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest,
     return;
   }
 
-  // Show current settings if no arguments are provided
+  // Show current status if no arguments are passed
   if (verifAdmin && !arg) {
     const currentState = settings.antilink ? "ON" : "OFF";
     repondre(`🚨 Antilink is currently: *${currentState}*.\n\nTo toggle:\n- Use \`antilink on\` to enable.\n- Use \`antilink off\` to disable.`);
     return;
   }
 
-  // Auto-remove links if antilink is enabled
+  // Auto-remove links if Antilink is enabled
   if (settings.antilink) {
     const messageContent = ms?.text || "";
     const linkRegex = /(https?:\/\/[^\s]+)/gi;
@@ -117,10 +115,10 @@ adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest,
 
     if (isLink) {
       try {
-        // Delete the message
+        // Delete the message with the link
         await zk.sendMessage(dest, { delete: ms.key });
 
-        // Remove the sender
+        // Remove the sender from the group
         const senderId = ms.key.participant || ms.key.remoteJid;
         await zk.groupParticipantsUpdate(dest, [senderId], "remove");
 
