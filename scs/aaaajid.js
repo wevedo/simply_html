@@ -55,3 +55,84 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📣" }, async (dest
   }
 });
 
+
+
+
+
+const storeFile = "../xmd/adams.json";
+
+// Load or initialize the store
+const loadStore = () => {
+  if (!fs.existsSync(storeFile)) {
+    fs.writeJSONSync(storeFile, {});
+  }
+  return fs.readJSONSync(storeFile);
+};
+
+const saveStore = (store) => {
+  fs.writeJSONSync(storeFile, store);
+};
+
+// Combined antilink system
+adams({ nomCom: "antilink", categorie: "Group", reaction: "🚫" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg, verifGroupe, infosGroupe, verifAdmin } = commandeOptions;
+
+  if (!verifGroupe) {
+    repondre("❌ This command can only be used in a group.");
+    return;
+  }
+
+  const store = loadStore();
+  const groupId = infosGroupe.id;
+
+  // Initialize group settings if not present
+  if (!store[groupId]) {
+    store[groupId] = { antilink: false };
+    saveStore(store);
+  }
+
+  // Command for admins to toggle antilink
+  if (verifAdmin && arg) {
+    if (arg === "on") {
+      store[groupId].antilink = true;
+      saveStore(store);
+      repondre("✅ Antilink has been enabled for this group.");
+    } else if (arg === "off") {
+      store[groupId].antilink = false;
+      saveStore(store);
+      repondre("✅ Antilink has been disabled for this group.");
+    } else {
+      repondre("❌ Invalid argument. Use `antilink on` or `antilink off`.");
+    }
+    return;
+  }
+
+  // Show current status for admins if no arguments are provided
+  if (verifAdmin && !arg) {
+    const currentState = store[groupId].antilink ? "ON" : "OFF";
+    repondre(`🚨 Antilink is currently: *${currentState}*.\n\nTo toggle:\n- Use \`antilink on\` to enable.\n- Use \`antilink off\` to disable.`);
+    return;
+  }
+
+  // Detect and remove links if antilink is enabled
+  if (store[groupId].antilink) {
+    const messageContent = ms?.text || "";
+    const linkRegex = /(https?:\/\/[^\s]+)/gi;
+    const isLink = linkRegex.test(messageContent);
+
+    if (isLink) {
+      try {
+        // Delete the message
+        await zk.sendMessage(dest, { delete: ms.key });
+
+        // Remove the sender
+        const senderId = ms.key.participant || ms.key.remoteJid;
+        await zk.groupParticipantsUpdate(dest, [senderId], "remove");
+
+        repondre(`🚨 A link was sent by ${senderId} and they were removed from the group.`);
+      } catch (error) {
+        console.error("Error handling antilink:", error);
+      }
+    }
+  }
+});
