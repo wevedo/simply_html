@@ -2599,9 +2599,6 @@ let msg = `
         if ((conf.DP).toLowerCase() === 'yes') {
             let cmsg = `
 ╭──────────━⊷
-║ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄
-╰──────────━⊷
-╭──────────━⊷
 ║ ᴘʀᴇғɪx: [ ${prefixe} ]
 ║ ᴍᴏᴅᴇ: ${md}
 ║ ᴠᴇʀsɪᴏɴ: 7.0.8
@@ -2614,7 +2611,7 @@ let msg = `
                 contextInfo: {
                     mentionedJid: [zk.user.id || ""],
                     externalAdReply: {
-                        title: "𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄",
+                        title: "𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄 🚀",
                         body: "BWM XMD is currently active and running.",
                         thumbnailUrl: "https://files.catbox.moe/bzyd9o.jpg",
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
