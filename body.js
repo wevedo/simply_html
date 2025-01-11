@@ -2722,5 +2722,5 @@ fs.watchFile(fichier, () => {
     require(fichier);
 });
 
-main()});
+main()};
     //}, 5000);
