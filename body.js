@@ -2613,7 +2613,7 @@ let msg = `
 ║  ${herokuAppName}
 ╰──────────━⊷
 ╭──────────━⊷
-  ~*Your Heroku App Name*~
+  ~*Visit your Heroku App*~
    ${herokuAppLink}
 ╰──────────━⊷`;
                     await zk.sendMessage(zk.user.id, {
