@@ -6,152 +6,7 @@ const { downloadTiktok } = require('@mrnima/tiktok-downloader');
 const { facebook } = require('@mrnima/facebook-downloader');  
 const ai = require('unlimited-ai');
 
-adams({
-  nomCom: "instagram",
-  aliases: ["igdl", "ig", "insta"],
-  categorie: "Download",
-  reaction: "📽️"
-}, async (dest, zk, commandeOptions) => {
-  const { repondre, ms, arg } = commandeOptions;
-
-  // Check if the argument (Instagram link) is provided
-  if (!arg[0]) {
-    return repondre('Please provide a valid public Instagram video link!');
-  }
-
-  // Validate the Instagram URL format
-  if (!arg[0].includes('https://www.instagram.com/')) {
-    return repondre("That is not a valid Instagram link.");
-  }
-
-  try {
-    // Fetch the download data for the Instagram video
-    let downloadData = await igdl(arg[0]);
-
-    // Check if the data returned is valid
-    if (!downloadData || !downloadData.data || downloadData.data.length === 0) {
-      return repondre("No video found at the provided Instagram link.");
-    }
-
-    let videoData = downloadData.data;
-
-    // Process the first video (or more if necessary)
-    for (let i = 0; i < Math.min(20, videoData.length); i++) {
-      let video = videoData[i];
-
-      // Ensure the video object and URL are defined
-      if (!video || !video.url) {
-        continue; // Skip if the video data is incomplete
-      }
-
-      let videoUrl = video.url;
-
-      // Send the video to the chat
-      await zk.sendMessage(dest, {
-        video: { url: videoUrl },
-        mimetype: "video/mp4",
-        caption: "*Instagram video by bwm xmd*"
-      });
-    }
-  } catch (error) {
-    // Catch and log any errors
-    console.error(error);
-    return repondre("An error occurred while processing the request. Please try again later.");
-  }
-});
-
-adams({
-  nomCom: "tiktok",
-  aliases: ["tikdl", "tiktokdl"],
-  categorie: "Download",
-  reaction: "📽️"
-}, async (dest, zk, commandeOptions) => {
-  const { repondre, ms, arg } = commandeOptions;
-
-  if (!arg) {
-    return repondre('Please insert a public TikTok video link!');
-  }
-
-  if (!arg[0].includes('tiktok.com')) {
-    return repondre("That is not a valid TikTok link.");
-  }
-
-  try {
-    // Download the TikTok video data
-    let tiktokData = await downloadTiktok(arg);
-
-    const caption = `
-╭───────────━⊷
-║ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐋𝐎𝐃𝐄𝐑
-╰───────────━⊷
-╭───────────━⊷
-   ᴛɪᴛʟᴇ
-   ${tiktokData.result.title}
-╰──────────━⊷
-╭──────────━⊷
-║ *ʀᴇᴘʟʏ ᴡɪᴛʜ ʙᴇʟᴏᴡ ɴᴜᴍʙᴇʀs* 
-║  *1* sᴅ ǫᴜᴀʟɪᴛʏ
-║  *2*  ʜᴅ ǫᴜᴀʟɪᴛʏ
-║  *3*  ᴀᴜᴅɪᴏᴍᴏᴅᴇ: public
-╰───────────━⊷
-╭───────────━⊷
-║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
-║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
-║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
-║ https://shorturl.at/E0jGI
-╰───────────━⊷
-    `;
-
-    // Send the image and caption with a reply
-    const message = await zk.sendMessage(dest, {
-      image: { url: tiktokData.result.image },
-      caption: caption,
-    });
-
-    const messageId = message.key.id;
-
-    // Event listener for reply messages
-    zk.ev.on("messages.upsert", async (update) => {
-      const messageContent = update.messages[0];
-      if (!messageContent.message) return;
-
-      const responseText = messageContent.message.conversation || messageContent.message.extendedTextMessage?.text;
-      const keithdl = messageContent.key.remoteJid;
-
-      // Check if the response is a reply to the message we sent
-      const isReplyToMessage = messageContent.message.extendedTextMessage?.contextInfo.stanzaId === messageId;
-
-      if (isReplyToMessage) {
-        // React to the message
-        await zk.sendMessage(keithdl, {
-          react: { text: '⬇️', key: messageContent.key },
-        });
-
-        const tiktokLinks = tiktokData.result;
-
-        await zk.sendMessage(keithdl, {
-          react: { text: '⬆️', key: messageContent.key },
-        });
-
-        // Send the requested media based on the user's response
-        if (responseText === '1') {
-          await zk.sendMessage(keithdl, {
-            video: { url: tiktokLinks.dl_link.download_mp4_1 },
-            caption: "*𝐁𝐖𝐌 𝐗𝐌𝐃*",
-          }, { quoted: messageContent });
-        } else if (responseText === '2') {
-          await zk.sendMessage(keithdl, {
-            video: { url: tiktokLinks.dl_link.download_mp4_2 },
-            caption: "*𝐁𝐖𝐌 𝐗𝐌𝐃*",
-          }, { quoted: messageContent });
-        } else if (responseText === '3') {
-          await zk.sendMessage(keithdl, {
-            audio: { url: tiktokLinks.dl_link.download_mp3 },
-            mimetype: "audio/mpeg",
-          }, { quoted: messageContent });
-        }
-      }
-    });
+hhhhhhhhhh    });
   } catch (error) {
     console.error(error);
     repondre('An error occurred: ' + error.message);
@@ -323,56 +178,85 @@ adams({
         // Extract video details
         const videoDetails = videoData.result;
 
-        // React with an upward arrow
-        await zk.sendMessage(dest, {
-          react: { text: '⬆️', key: messageContent.key },
-        });
+adams({
+  nomCom: "instagram",
+  aliases: ["igdl", "ig", "insta"],
+  categorie: "Download",
+  reaction: "📽️"
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
 
-        // Send the requested media based on the user's response
-        if (responseText === '1') {
-          await zk.sendMessage(dest, {
-            video: { url: videoDetails.links.SD },
-            caption: "*𝐁𝐖𝐌 𝐗𝐌𝐃*",
-          }, { quoted: messageContent });
-        } else if (responseText === '2') {
-          await zk.sendMessage(dest, {
-            video: { url: videoDetails.links.HD },
-            caption: "*𝐁𝐖𝐌 𝐗𝐌𝐃*",
-          }, { quoted: messageContent });
-        } else if (responseText === '3') {
-          await zk.sendMessage(dest, {
-            audio: { url: videoDetails.links.SD },
-            mimetype: "audio/mpeg",
-          }, { quoted: messageContent });
-        } else if (responseText === '4') {
-          await zk.sendMessage(dest, {
-            document: {
-              url: videoDetails.links.SD
-            },
-            mimetype: "audio/mpeg",
-            fileName: "Bwm.mp3",
-            caption: "*𝐁𝐖𝐌 𝐗𝐌𝐃*"
-          }, {
-            quoted: messageContent
-          });
-        } else if (responseText === '5') {
-          await zk.sendMessage(dest, {
-            audio: {
-              url: videoDetails.links.SD
-            },
-            mimetype: 'audio/mp4',
-            ptt: true
-          }, {
-            quoted: messageContent
-          });
-        } else {
-          // If the response is invalid, inform the user
-          await zk.sendMessage(dest, {
-            text: "Invalid option. Please reply with a valid number (1-5).",
-            quoted: messageContent
-          });
-        }
-      }
+  if (!arg[0]) {
+    return repondre('Please provide a valid public Instagram video link!');
+  }
+
+  if (!arg[0].includes('https://www.instagram.com/')) {
+    return repondre("That is not a valid Instagram link.");
+  }
+
+  try {
+    let downloadData = await igdl(arg[0]);
+
+    if (!downloadData || !downloadData.data || downloadData.data.length === 0) {
+      return repondre("No video found at the provided Instagram link.");
+    }
+
+    let videoData = downloadData.data;
+
+    for (let i = 0; i < Math.min(20, videoData.length); i++) {
+      let video = videoData[i];
+      if (!video || !video.url) continue;
+
+      await zk.sendMessage(dest, {
+        video: { url: video.url },
+        mimetype: "video/mp4",
+        caption: "*Instagram video by BWM XMD*"
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return repondre("An error occurred while processing the request. Please try again later.");
+  }
+});
+
+
+
+adams({
+  nomCom: "tiktok",
+  aliases: ["tikdl", "tiktokdl"],
+  categorie: "Download",
+  reaction: "📽️"
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
+
+  if (!arg[0]) {
+    return repondre('Please insert a public TikTok video link!');
+  }
+
+  if (!arg[0].includes('tiktok.com')) {
+    return repondre("That is not a valid TikTok link.");
+  }
+
+  try {
+    let tiktokData = await downloadTiktok(arg);
+
+    const links = tiktokData.result.dl_link;
+
+    // Send all available download options at once
+    await zk.sendMessage(dest, {
+      video: { url: links.download_mp4_1 },
+      caption: "*SD Quality - BWM XMD*"
+    });
+
+    await zk.sendMessage(dest, {
+      video: { url: links.download_mp4_2 },
+      caption: "*HD Quality - BWM XMD*"
+    });
+
+    await zk.sendMessage(dest, {
+      audio: { url: links.download_mp3 },
+      mimetype: "audio/mpeg",
+      caption: "*Audio Mode - BWM XMD*"
     });
   } catch (error) {
     console.error(error);
@@ -380,6 +264,97 @@ adams({
   }
 });
 
+
+
+        adams({
+  nomCom: "spotify",
+  aliases: ["spotifydl", "splay"],
+  categorie: "Download",
+  reaction: "📽️"
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
+
+  if (!arg[0]) {
+    return repondre('Please provide a Spotify track link!');
+  }
+
+  if (!arg[0].includes('spotify.com/track/')) {
+    return repondre('Invalid Spotify track link. Please provide a valid Spotify URL.');
+  }
+
+  try {
+    const downloadApiUrl = `https://spotifyapi.caliphdev.com/api/download/track?url=${encodeURIComponent(arg[0])}`;
+    const response = await axios({
+      url: downloadApiUrl,
+      method: "GET",
+      responseType: "stream",
+    });
+
+    if (response.headers["content-type"] === "audio/mpeg") {
+      await zk.sendMessage(dest, {
+        audio: { stream: response.data },
+        mimetype: "audio/mpeg",
+        caption: "*Spotify Track by BWM XMD*"
+      });
+    } else {
+      repondre("Failed to fetch Spotify audio. Please try again later.");
+    }
+  } catch (error) {
+    repondre(`Error: ${error.message}`);
+    console.error(error);
+  }
+});
+
+
+
+        adams({
+  nomCom: "facebook",
+  aliases: ["fbdl", "facebookdl", "fb"],
+  categorie: "Download",
+  reaction: "📽️"
+}, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
+
+  if (!arg[0]) {
+    return repondre('Please insert a public Facebook video link!');
+  }
+
+  if (!arg[0].includes('https://')) {
+    return repondre("That is not a valid Facebook link.");
+  }
+
+  try {
+    const videoData = await facebook(arg[0]);
+    const videoLinks = videoData.result.links;
+
+    // Send all available download options
+    await zk.sendMessage(dest, {
+      video: { url: videoLinks.SD },
+      caption: "*SD Quality - BWM XMD*"
+    });
+
+    await zk.sendMessage(dest, {
+      video: { url: videoLinks.HD },
+      caption: "*HD Quality - BWM XMD*"
+    });
+
+    await zk.sendMessage(dest, {
+      audio: { url: videoLinks.SD },
+      mimetype: "audio/mpeg",
+      caption: "*Audio Mode - BWM XMD*"
+    });
+
+    await zk.sendMessage(dest, {
+      document: { url: videoLinks.SD },
+      mimetype: "video/mp4",
+      fileName: "FacebookVideo.mp4",
+      caption: "*Document Mode - BWM XMD*"
+    });
+  } catch (error) {
+    console.error(error);
+    repondre('An error occurred: ' + error.message);
+  }
+});
 
 adams({
   nomCom: "gpt1",
