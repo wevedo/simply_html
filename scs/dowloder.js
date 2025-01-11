@@ -84,7 +84,7 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg } = commandeOptions;
 
-  if (!arg[0] || !arg[0].includes('https://open.spotify.com/track/')) {
+  if (!arg[0] || !arg[0].includes('https://')) {
     return repondre('Please provide a valid Spotify track link!');
   }
 
