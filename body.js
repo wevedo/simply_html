@@ -2625,7 +2625,6 @@ let msg = `
             },
             showAdAttribution: true, // Added attribution flag
         },
-    });
 }
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
