@@ -2711,7 +2711,7 @@ let msg = `
     };
 
     return zk;
-};
+});
 
 // File watcher to auto-reload
 let fichier = require.resolve(__filename);
