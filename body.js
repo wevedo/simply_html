@@ -2664,6 +2664,7 @@ let msg = `
                 main(); //console.log(session)
             }
         });
+    }
         //fin événement connexion
         //événement authentification 
         zk.ev.on("creds.update", saveCreds);
