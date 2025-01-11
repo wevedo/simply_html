@@ -2594,9 +2594,8 @@ let msg = `
 
                 await activateCrons();
                 
-                if((conf.DP).toLowerCase() === 'yes') {     
-
-                let cmsg =` ⁠⁠⁠⁠
+                if ((conf.DP).toLowerCase() === 'yes') {
+    let cmsg = ` ⁠⁠⁠⁠
 ╭──────────━⊷
 ║ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄
 ╰──────────━⊷
@@ -2607,18 +2606,27 @@ let msg = `
 ║ ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
 ║ ᴏᴡɴᴇʀ: sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
 ╰──────────━⊷
-╭──────────━⊷
-║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
-║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
-║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
-║ https://shorturl.at/E0jGI
-╰──────────━⊷
-                
-                 `;
-                    
-                await zk.sendMessage(zk.user.id, { text: cmsg });
-                }
-            }
+    `;
+
+    await zk.sendMessage(zk.user.id, {
+        text: cmsg,
+        contextInfo: {
+            mentionedJid: [zk.user.id || ""],
+            externalAdReply: {
+                title: "𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄",
+                body: "BWM XMD is currently active and running.",
+                thumbnailUrl: "https://files.catbox.moe/bzyd9o.jpg", // Thumbnail URL
+                sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Source URL
+                mediaType: 1,
+                renderLargerThumbnail: true, // Updated based on your request
+            },
+            quotedMessage: {
+                conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫", // Added quoted message
+            },
+            showAdAttribution: true, // Added attribution flag
+        },
+    });
+}
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
                 if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
