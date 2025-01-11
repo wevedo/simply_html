@@ -61,6 +61,15 @@ adams({
       video: { url: videoLinks.download_mp4_2 || videoLinks.download_mp4_1 },
       caption: "*TikTok video by BWM XMD*",
     });
+
+    // Send the audio version of the video
+    if (videoLinks.download_mp3) {
+      await zk.sendMessage(dest, {
+        audio: { url: videoLinks.download_mp3 },
+        mimetype: "audio/mpeg",
+        caption: "*TikTok audio by BWM XMD*",
+      });
+    }
   } catch (error) {
     console.error(error);
     repondre('An error occurred: ' + error.message);
