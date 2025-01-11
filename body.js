@@ -2650,7 +2650,7 @@ let msg = `
                 exec("pm2 restart all");
             }
         }
-    });
+            };
 
     zk.ev.on("creds.update", saveCreds);
 
