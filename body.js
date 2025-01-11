@@ -2624,8 +2624,10 @@ let msg = `
                 conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫", // Added quoted message
             },
             showAdAttribution: true, // Added attribution flag
-        },
-}
+          },
+        });
+        }
+
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
                 if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
