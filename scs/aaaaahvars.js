@@ -28,6 +28,14 @@ const setEnvVars = (vars) => {
   fs.writeFileSync(envFile, content);
 };
 
+// Helper function to reload updated environment variables into `process.env`
+const reloadEnvVars = () => {
+  const vars = getEnvVars();
+  Object.keys(vars).forEach((key) => {
+    process.env[key] = vars[key];
+  });
+};
+
 // Command to display all environment variables
 adams({
   nomCom: 'getallvar',
@@ -83,6 +91,7 @@ adams({
     const vars = getEnvVars();
     vars[varName] = value;
     setEnvVars(vars);
+    reloadEnvVars(); // Reload the updated variables into `process.env`
 
     await zk.sendMessage(chatId, {
       text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🔄 *Your changes have been applied immediately!*`
@@ -111,6 +120,7 @@ Object.keys(vars).forEach((key) => {
       if (arg[0]) {
         vars[key] = arg[0];
         setEnvVars(vars);
+        reloadEnvVars(); // Reload updated variables into `process.env`
 
         await zk.sendMessage(chatId, {
           text: `✅ *${key} Updated Successfully!*\n\n🔑 *New Value:* ${arg[0]}`
