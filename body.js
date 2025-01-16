@@ -1359,9 +1359,10 @@ zk.ev.on("messages.upsert", async (m) => {
 function loadStore() {
     try {
         const rawData = fs.readFileSync("store.json", "utf8");
-        return JSON.parse(rawData);
+        const parsedData = JSON.parse(rawData);
+        return Array.isArray(parsedData) ? parsedData : []; // Ensure it's an array
     } catch (err) {
-        console.error("Error loading store.json:", err);
+        console.error("Error loading store.json or initializing new store:", err);
         return [];
     }
 }
@@ -1414,8 +1415,31 @@ zk.ev.on("messages.upsert", async (m) => {
     // Load the message store from store.json
     let conversationData = loadStore();
 
-    // Add the new message to the store
-    conversationData.push(ms);
+    // Prepare the message for storage
+    let messageToStore = {
+        key: messageKey,
+        message: ms.message,
+        timestamp: ms.messageTimestamp,
+    };
+
+    // Handle media messages
+    const mtype = Object.keys(ms.message)[0];
+    if (
+        mtype === "imageMessage" ||
+        mtype === "videoMessage" ||
+        mtype === "documentMessage" ||
+        mtype === "audioMessage" ||
+        mtype === "stickerMessage" ||
+        mtype === "voiceMessage"
+    ) {
+        const mediaBuffer = await downloadMedia(ms.message);
+        if (mediaBuffer) {
+            messageToStore.media = mediaBuffer.toString("base64"); // Store media as base64
+        }
+    }
+
+    // Add the message to the conversation data and save it
+    conversationData.push(messageToStore);
     saveStore(conversationData);
 
     // Handle deleted messages
@@ -1439,49 +1463,41 @@ zk.ev.on("messages.upsert", async (m) => {
 
                 // Handle ANTIDELETE1: Resend to the original chat
                 if (conf.ANTIDELETE1 === "yes") {
-                    const mtype = Object.keys(deletedMessage.message)[0];
-                    if (mtype === "conversation" || mtype === "extendedTextMessage") {
-                        const messageContent =
-                            deletedMessage.message.conversation ||
-                            deletedMessage.message.extendedTextMessage?.text;
+                    if (deletedMessage.message.conversation) {
+                        // Text message
                         await zk.sendMessage(remoteJid, {
-                            text: notification + `*Message:* ${messageContent}`,
+                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
                             mentions: [deletedMessage.key.participant],
                         });
-                    } else {
-                        const mediaBuffer = await downloadMedia(deletedMessage.message);
-                        if (mediaBuffer) {
-                            const mediaType = mtype.replace("Message", "").toLowerCase();
-                            await zk.sendMessage(remoteJid, {
-                                [mediaType]: mediaBuffer,
-                                caption: notification,
-                                mentions: [deletedMessage.key.participant],
-                            });
-                        }
+                    } else if (deletedMessage.media) {
+                        // Media message
+                        const mediaBuffer = Buffer.from(deletedMessage.media, "base64");
+                        const mediaType = mtype.replace("Message", "").toLowerCase();
+                        await zk.sendMessage(remoteJid, {
+                            [mediaType]: mediaBuffer,
+                            caption: notification,
+                            mentions: [deletedMessage.key.participant],
+                        });
                     }
                 }
 
                 // Handle ANTIDELETE2: Notify the bot owner
                 if (conf.ANTIDELETE2 === "yes") {
-                    const mtype = Object.keys(deletedMessage.message)[0];
-                    if (mtype === "conversation" || mtype === "extendedTextMessage") {
-                        const messageContent =
-                            deletedMessage.message.conversation ||
-                            deletedMessage.message.extendedTextMessage?.text;
+                    if (deletedMessage.message.conversation) {
+                        // Text message
                         await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                            text: notification + `*Message:* ${messageContent}`,
+                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
                             mentions: [deletedMessage.key.participant],
                         });
-                    } else {
-                        const mediaBuffer = await downloadMedia(deletedMessage.message);
-                        if (mediaBuffer) {
-                            const mediaType = mtype.replace("Message", "").toLowerCase();
-                            await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                                [mediaType]: mediaBuffer,
-                                caption: notification,
-                                mentions: [deletedMessage.key.participant],
-                            });
-                        }
+                    } else if (deletedMessage.media) {
+                        // Media message
+                        const mediaBuffer = Buffer.from(deletedMessage.media, "base64");
+                        const mediaType = mtype.replace("Message", "").toLowerCase();
+                        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
+                            [mediaType]: mediaBuffer,
+                            caption: notification,
+                            mentions: [deletedMessage.key.participant],
+                        });
                     }
                 }
             } catch (error) {
