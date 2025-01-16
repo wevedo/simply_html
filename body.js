@@ -1355,7 +1355,6 @@ zk.ev.on("messages.upsert", async (m) => {
 **/
 
 
-
 // Function to download and return media buffer
 async function downloadMedia(message) {
     const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
@@ -1390,86 +1389,138 @@ function createNotification(deletedMessage) {
     return notification;
 }
 
-// Load or initialize the chat store
-let chatStore = {};
-if (fs.existsSync('chatStore.json')) {
-    chatStore = JSON.parse(fs.readFileSync('chatStore.json', 'utf8'));
-}
-
-// Save the chat store periodically
-setInterval(() => {
-    fs.writeFileSync('chatStore.json', JSON.stringify(chatStore, null, 2));
-}, 10000);
-
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const ms = messages[0];
-    if (!ms.message) return;
+    if (conf.ANTIDELETE2 === "yes") { // Check if ANTIDELETE is enabled
+        const { messages } = m;
+        const ms = messages[0];
+        if (!ms.message) return;
 
-    const messageKey = ms.key;
-    const remoteJid = messageKey.remoteJid;
+        const messageKey = ms.key;
+        const remoteJid = messageKey.remoteJid;
 
-    // Initialize chat history for the remote JID
-    if (!chatStore[remoteJid]) {
-        chatStore[remoteJid] = [];
-    }
+        // Store message for future reference
+        if (!store.chats[remoteJid]) {
+            store.chats[remoteJid] = [];
+        }
+        store.chats[remoteJid].push(ms);
 
-    // Store the incoming message
-    chatStore[remoteJid].push(ms);
+        // Handle deleted messages
+        if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
+            const deletedKey = ms.message.protocolMessage.key;
+            const chatMessages = store.chats[remoteJid];
+            const deletedMessage = chatMessages.find(
+                (msg) => msg.key.id === deletedKey.id
+            );
 
-    // Handle deleted messages
-    if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
-        const deletedKey = ms.message.protocolMessage.key;
+            if (deletedMessage) {
+                try {
+                    const notification = createNotification(deletedMessage);
 
-        // Search for the deleted message in the chat store
-        const deletedMessage = chatStore[remoteJid].find(
-            (msg) => msg.key.id === deletedKey.id
-        );
+                    // Determine message type
+                    const mtype = Object.keys(deletedMessage.message)[0];
 
-        if (deletedMessage) {
-            try {
-                // Create notification for the deleted message
-                const notification = createNotification(deletedMessage);
-
-                // Determine the message type
-                const mtype = Object.keys(deletedMessage.message)[0];
-
-                // Handle text messages
-                if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
-                    await zk.sendMessage(remoteJid, {
-                        text: notification + `*Message:* ${deletedMessage.message[mtype].text || deletedMessage.message[mtype].caption}`,
-                        mentions: [deletedMessage.key.participant],
-                    });
-                }
-                // Handle media messages
-                else if (['imageMessage', 'videoMessage', 'documentMessage', 'audioMessage', 'stickerMessage', 'gifMessage', 'voiceMessage'].includes(mtype)) {
-                    const mediaBuffer = await downloadMedia(deletedMessage.message);
-                    if (mediaBuffer) {
-                        const mediaType = mtype.replace('Message', '').toLowerCase();
-                        await zk.sendMessage(remoteJid, {
-                            [mediaType]: mediaBuffer,
-                            caption: notification,
+                    // Handle text messages (conversation or extendedTextMessage)
+                    if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
+                        await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
+                            text: notification + `*Message:* ${deletedMessage.message[mtype].text}`,
                             mentions: [deletedMessage.key.participant],
                         });
                     }
+                    // Handle media messages (image, video, document, audio, sticker, voice)
+                    else if (mtype === 'imageMessage' || mtype === 'videoMessage' || mtype === 'documentMessage' ||
+                             mtype === 'audioMessage' || mtype === 'stickerMessage' || mtype === 'voiceMessage') {
+                        const mediaBuffer = await downloadMedia(deletedMessage.message);
+                        if (mediaBuffer) {
+                            const mediaType = mtype.replace('Message', '').toLowerCase();
+                            await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
+                                [mediaType]: mediaBuffer,
+                                caption: notification,
+                                mentions: [deletedMessage.key.participant],
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling deleted message:', error);
                 }
-            } catch (error) {
-                console.error('Error handling deleted message:', error);
             }
         }
     }
 });
 
-// Periodically save chatStore to disk
-process.on('SIGINT', () => {
-    fs.writeFileSync('chatStore.json', JSON.stringify(chatStore, null, 2));
-    process.exit();
+
+
+// Event listener for all incoming messages
+zk.ev.on("messages.upsert", async (m) => {
+    // Check if ANTIDELETE is enabled
+    if (conf.ANTIDELETE1 === "yes") {
+        const { messages } = m;
+        const ms = messages[0];
+        if (!ms.message) return;
+
+        // Store each received message
+        const messageKey = ms.key;
+        const remoteJid = messageKey.remoteJid;
+
+        // Store message for future undelete reference
+        if (!store.chats[remoteJid]) {
+            store.chats[remoteJid] = [];
+        }
+
+        // Save the received message to storage
+        store.chats[remoteJid].push(ms);
+
+        // Handle deleted messages
+        if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
+            const deletedKey = ms.message.protocolMessage.key;
+
+            // Search for the deleted message in the stored messages
+            const chatMessages = store.chats[remoteJid];
+            const deletedMessage = chatMessages.find(
+                (msg) => msg.key.id === deletedKey.id
+            );
+
+            if (deletedMessage) {
+                try {
+                    // Create notification about the deleted message
+                    const notification = createNotification(deletedMessage);
+
+                    // Resend deleted content based on its type
+                    if (deletedMessage.message.conversation) {
+                        // Text message
+                        await zk.sendMessage(remoteJid, {
+                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
+                            mentions: [deletedMessage.key.participant],
+                        });
+                    } else if (deletedMessage.message.imageMessage || 
+                               deletedMessage.message.videoMessage || 
+                               deletedMessage.message.documentMessage || 
+                               deletedMessage.message.audioMessage || 
+                               deletedMessage.message.stickerMessage || 
+                               deletedMessage.message.voiceMessage) {
+                        // Media message (image, video, document, audio, sticker, voice)
+                        const mediaBuffer = await downloadMedia(deletedMessage.message);
+                        if (mediaBuffer) {
+                            const mediaType = deletedMessage.message.imageMessage ? 'image' :
+                                deletedMessage.message.videoMessage ? 'video' :
+                                deletedMessage.message.documentMessage ? 'document' :
+                                deletedMessage.message.audioMessage ? 'audio' :
+                                deletedMessage.message.stickerMessage ? 'sticker' : 'audio';
+
+                            await zk.sendMessage(remoteJid, {
+                                [mediaType]: mediaBuffer,
+                                caption: notification,
+                                mentions: [deletedMessage.key.participant],
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error handling deleted message:', error);
+                }
+            }
+        }
+    }
 });
-
-
-
-
 
 
 
