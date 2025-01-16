@@ -175,14 +175,14 @@ const isLink = (message) => {
 };
 
 // Helper function to check if a user is an admin in a group
-const isAdmin = async (sock, groupId, userId) => {
-    const groupMetadata = await sock.groupMetadata(groupId);
+const isAdmin = async (zk, groupId, userId) => {
+    const groupMetadata = await zk.groupMetadata(groupId);
     const admins = groupMetadata.participants.filter(participant => participant.admin).map(participant => participant.id);
     return admins.includes(userId);
 };
 
-// Add this logic inside your messages.upsert event listener
-sock.ev.on('messages.upsert', async ({ messages }) => {
+// Add this logic inside your zk.ev.on('messages.upsert', ...) event listener
+zk.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
         try {
             // Skip if the message is not from a group, self, or has no content
@@ -194,15 +194,15 @@ sock.ev.on('messages.upsert', async ({ messages }) => {
 
             // Check if the message is from a group and contains a link
             if (isJidGroup(groupId) && isLink(messageContent)) {
-                const senderIsAdmin = await isAdmin(sock, groupId, senderId);
-                const botIsAdmin = await isAdmin(sock, groupId, sock.user.id);
+                const senderIsAdmin = await isAdmin(zk, groupId, senderId);
+                const botIsAdmin = await isAdmin(zk, groupId, zk.user.id);
 
                 if (botIsAdmin && !senderIsAdmin) {
                     // Delete the message
-                    await sock.sendMessage(groupId, { delete: msg.key });
+                    await zk.sendMessage(groupId, { delete: msg.key });
 
                     // Remove the sender from the group
-                    await sock.groupParticipantsUpdate(groupId, [senderId], 'remove');
+                    await zk.groupParticipantsUpdate(groupId, [senderId], 'remove');
                     console.log(`Removed ${senderId} for sending a link in group ${groupId}.`);
                 }
             }
