@@ -5,7 +5,7 @@ const { default: axios } = require('axios');
 const apikey = "gifted";
 const apiUrl = "https://api.giftedtech.web.id/api"; 
 
-// Xnxx, Weather, Lyrics Commands
+// Xnxx Command
 adams({ nomCom: "xnxx", categorie: "Download" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
 
@@ -24,7 +24,7 @@ adams({ nomCom: "xnxx", categorie: "Download" }, async (dest, zk, commandeOption
     // Log the raw result from the API
     console.log("XNXX API Response:", response.data);
 
-    // Handle response based on the result
+    // Use results directly from logs (Accessing data as shown in the logs)
     if (response.data && response.data[0]) {
       if (response.data[0].type === 'video') {
         zk.sendMessage(dest, { video: { url: response.data[0].url }, caption: "Video Downloader powered by *NomComBot*", gifPlayback: false }, { quoted: ms });
@@ -41,6 +41,7 @@ adams({ nomCom: "xnxx", categorie: "Download" }, async (dest, zk, commandeOption
   }
 });
 
+// Weather Command
 adams({ nomCom: "weather", categorie: "Information" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
 
@@ -56,20 +57,30 @@ adams({ nomCom: "weather", categorie: "Information" }, async (dest, zk, commande
     const weatherUrl = `${apiUrl}/search/weather?apikey=${apikey}&location=${location}`;
     const response = await axios.get(weatherUrl);
 
-    // Log the raw result from the API
+    // Log the raw result from the API (displayed in logs)
     console.log("Weather API Response:", response.data);
 
-    // Handle response based on the result
-    if (response.data && response.data.weather) {
-      repondre(`Weather in ${location}:\nTemperature: ${response.data.weather.temperature}°C\nCondition: ${response.data.weather.description}`);
+    // Use the results directly from logs (Accessing results as shown in the logs)
+    const weather = response.data.weather;  // Extracted directly from logs
+    const main = response.data.main;  // Extracted directly from logs
+
+    if (weather && main) {
+      const weatherDescription = `${weather.main} - ${weather.description}`;
+      const temperature = main.temp;
+      const feelsLike = main.feels_like;
+
+      // Send weather response using data shown in logs
+      repondre(`Weather in ${location}:\nCondition: ${weatherDescription}\nTemperature: ${temperature}°C\nFeels Like: ${feelsLike}°C`);
     } else {
-      repondre('Error: Weather information not found.');
+      repondre('Error: Weather data not available.');
     }
+    
   } catch (e) {
     repondre('An error occurred while fetching weather data: ' + e.message);
   }
 });
 
+// Lyrics Command
 adams({ nomCom: "lyrics", categorie: "Information" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
 
@@ -88,7 +99,7 @@ adams({ nomCom: "lyrics", categorie: "Information" }, async (dest, zk, commandeO
     // Log the raw result from the API
     console.log("Lyrics API Response:", response.data);
 
-    // Handle response based on the result
+    // Use the results directly from logs (Accessing lyrics from logs)
     if (response.data && response.data.lyrics) {
       repondre(`Lyrics for "${songName}": \n${response.data.lyrics}`);
     } else {
@@ -99,7 +110,7 @@ adams({ nomCom: "lyrics", categorie: "Information" }, async (dest, zk, commandeO
   }
 });
 
-// Link shortener command
+// Link Shortener Command
 adams({ nomCom: "shorten", categorie: "Utility" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg } = commandeOptions;
 
@@ -118,7 +129,7 @@ adams({ nomCom: "shorten", categorie: "Utility" }, async (dest, zk, commandeOpti
     // Log the raw result from the API
     console.log("URL Shortener API Response:", response.data);
 
-    // Handle response based on the result
+    // Use the results directly from logs (Accessing shortened URL from logs)
     if (response.data && response.data.shortened_url) {
       repondre(`Shortened URL: ${response.data.shortened_url}`);
     } else {
