@@ -1355,55 +1355,64 @@ zk.ev.on("messages.upsert", async (m) => {
 **/
 
 
-// Function to load data from store.json
+// Directory for storing media files
+const mediaDir = path.join(__dirname, "media");
+
+// Ensure the media directory exists
+if (!fs.existsSync(mediaDir)) {
+    fs.mkdirSync(mediaDir);
+}
+
+// Load or initialize the conversation data store
 function loadStore() {
     try {
-        const rawData = fs.readFileSync("store.json", "utf8");
-        const parsedData = JSON.parse(rawData);
-        return Array.isArray(parsedData) ? parsedData : []; // Ensure it's an array
+        const data = fs.readFileSync("store.json", "utf8");
+        return JSON.parse(data);
     } catch (err) {
-        console.error("Error loading store.json or initializing new store:", err);
-        return [];
+        console.log("No store.json found, initializing new store.");
+        return {}; // Initialize as an empty object
     }
 }
 
-// Function to save data to store.json
+// Save the updated conversation data store
 function saveStore(data) {
     try {
         fs.writeFileSync("store.json", JSON.stringify(data, null, 2));
     } catch (err) {
-        console.error("Error saving store.json:", err);
+        console.error("Error saving to store.json:", err);
     }
 }
 
-// Function to download and return media buffer
-async function downloadMedia(message) {
-    const mediaType = Object.keys(message)[0].replace("Message", "");
+// Download media and save to a file
+async function saveMedia(message, mediaType) {
     try {
         const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
-        let buffer = Buffer.from([]);
+        const fileName = `${Date.now()}_${mediaType}.bin`;
+        const filePath = path.join(mediaDir, fileName);
+        const fileStream = fs.createWriteStream(filePath);
+
         for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
+            fileStream.write(chunk);
         }
-        return buffer;
+        fileStream.end();
+
+        return fileName; // Return the saved file name
     } catch (error) {
         console.error("Error downloading media:", error);
         return null;
     }
 }
 
-// Function to create notification message
+// Create a formatted notification message
 function createNotification(deletedMessage, timeInNairobi) {
     const deletedBy = deletedMessage.key.participant || deletedMessage.key.remoteJid;
 
-    let notification = `*[ANTIDELETE DETECTED]*\n\n`;
-    notification += `*Time:* ${timeInNairobi}\n`;
-    notification += `*Deleted By:* @${deletedBy.split("@")[0]}\n\n`;
-
-    return notification;
+    return `*[ANTIDELETE DETECTED]*\n\n` +
+           `*Time:* ${timeInNairobi}\n` +
+           `*Deleted By:* @${deletedBy.split("@")[0]}\n`;
 }
 
-// Event listener for all incoming messages
+// Event listener for incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -1412,11 +1421,14 @@ zk.ev.on("messages.upsert", async (m) => {
     const messageKey = ms.key;
     const remoteJid = messageKey.remoteJid;
 
-    // Load the message store from store.json
-    let conversationData = loadStore();
+    // Load the store
+    const store = loadStore();
 
-    // Prepare the message for storage
-    let messageToStore = {
+    // Ensure chat entry exists
+    if (!store[remoteJid]) store[remoteJid] = [];
+
+    // Prepare the message data for storage
+    const messageData = {
         key: messageKey,
         message: ms.message,
         timestamp: ms.messageTimestamp,
@@ -1432,22 +1444,24 @@ zk.ev.on("messages.upsert", async (m) => {
         mtype === "stickerMessage" ||
         mtype === "voiceMessage"
     ) {
-        const mediaBuffer = await downloadMedia(ms.message);
-        if (mediaBuffer) {
-            messageToStore.media = mediaBuffer.toString("base64"); // Store media as base64
+        const mediaFileName = await saveMedia(ms.message, mtype.replace("Message", ""));
+        if (mediaFileName) {
+            messageData.mediaFileName = mediaFileName; // Store the media file name
         }
     }
 
-    // Add the message to the conversation data and save it
-    conversationData.push(messageToStore);
-    saveStore(conversationData);
+    // Save the message to the store
+    store[remoteJid].push(messageData);
+    saveStore(store);
 
     // Handle deleted messages
     if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
         const deletedKey = ms.message.protocolMessage.key;
 
         // Search for the deleted message in the store
-        const deletedMessage = conversationData.find((msg) => msg.key.id === deletedKey.id);
+        const deletedMessage = store[remoteJid].find(
+            (msg) => msg.key.id === deletedKey.id
+        );
 
         if (deletedMessage) {
             try {
@@ -1458,47 +1472,27 @@ zk.ev.on("messages.upsert", async (m) => {
                     timeStyle: "medium",
                 }).format(new Date());
 
-                // Create notification about the deleted message
+                // Create a notification
                 const notification = createNotification(deletedMessage, timeInNairobi);
 
-                // Handle ANTIDELETE1: Resend to the original chat
-                if (conf.ANTIDELETE1 === "yes") {
-                    if (deletedMessage.message.conversation) {
-                        // Text message
-                        await zk.sendMessage(remoteJid, {
-                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
-                            mentions: [deletedMessage.key.participant],
-                        });
-                    } else if (deletedMessage.media) {
-                        // Media message
-                        const mediaBuffer = Buffer.from(deletedMessage.media, "base64");
-                        const mediaType = mtype.replace("Message", "").toLowerCase();
-                        await zk.sendMessage(remoteJid, {
-                            [mediaType]: mediaBuffer,
-                            caption: notification,
-                            mentions: [deletedMessage.key.participant],
-                        });
-                    }
+                // Handle text messages
+                if (deletedMessage.message.conversation) {
+                    await zk.sendMessage(remoteJid, {
+                        text: notification + `*Message:* ${deletedMessage.message.conversation}`,
+                        mentions: [deletedMessage.key.participant],
+                    });
                 }
 
-                // Handle ANTIDELETE2: Notify the bot owner
-                if (conf.ANTIDELETE2 === "yes") {
-                    if (deletedMessage.message.conversation) {
-                        // Text message
-                        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                            text: notification + `*Message:* ${deletedMessage.message.conversation}`,
-                            mentions: [deletedMessage.key.participant],
-                        });
-                    } else if (deletedMessage.media) {
-                        // Media message
-                        const mediaBuffer = Buffer.from(deletedMessage.media, "base64");
-                        const mediaType = mtype.replace("Message", "").toLowerCase();
-                        await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
-                            [mediaType]: mediaBuffer,
-                            caption: notification,
-                            mentions: [deletedMessage.key.participant],
-                        });
-                    }
+                // Handle media messages
+                else if (deletedMessage.mediaFileName) {
+                    const mediaFilePath = path.join(mediaDir, deletedMessage.mediaFileName);
+                    const mediaType = mtype.replace("Message", "").toLowerCase();
+
+                    await zk.sendMessage(remoteJid, {
+                        [mediaType]: { url: mediaFilePath },
+                        caption: notification,
+                        mentions: [deletedMessage.key.participant],
+                    });
                 }
             } catch (error) {
                 console.error("Error handling deleted message:", error);
