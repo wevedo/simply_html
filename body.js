@@ -169,49 +169,7 @@ authentification();
    store.bind(zk.ev);
 
 
-const TIME_LIMIT = 1000; // 1 second
-const MESSAGE_LIMIT = 2; // Max 2 messages per second
-const messageCount = {}; // To track user messages
 
-// Antibug Event Listener for All Incoming Messages
-sock.ev.on("messages.upsert", async (m) => {
-  try {
-    const msg = m.messages[0];
-    if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
-
-    const userId = msg.key.remoteJid;
-    const now = Date.now();
-
-    // Initialize message count for the user
-    if (!messageCount[userId]) {
-      messageCount[userId] = [];
-    }
-
-    // Add the current timestamp to the user's message array
-    messageCount[userId].push(now);
-
-    // Remove timestamps older than the TIME_LIMIT
-    messageCount[userId] = messageCount[userId].filter((timestamp) => now - timestamp <= TIME_LIMIT);
-
-    // Check if the user exceeds the message limit
-    if (messageCount[userId].length > MESSAGE_LIMIT) {
-      // Delete the spam message
-      await sock.sendMessage(userId, { delete: { remoteJid: userId, fromMe: false, id: msg.key.id } });
-
-      // Block the user
-      await sock.updateBlockStatus(userId, "block");
-      console.log(`Blocked user: ${userId} for spamming.`);
-
-      // Notify the user (optional, before blocking)
-      await sock.sendMessage(userId, { text: `*You have been blocked for spamming (${MESSAGE_LIMIT} messages in ${TIME_LIMIT / 1000} second).*` });
-
-      // Reset message count for the user after blocking
-      delete messageCount[userId];
-    }
-  } catch (error) {
-    console.error("Error in antibug listener:", error);
-  }
-});
 
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
