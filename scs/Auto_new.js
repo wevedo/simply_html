@@ -21,13 +21,20 @@ adams({ nomCom: "xnxx", categorie: "Download" }, async (dest, zk, commandeOption
     const videoUrl = `${apiUrl}/download/xnxxdl?apikey=${apikey}&url=${link}`;
     const response = await axios.get(videoUrl);
 
-    // Direct access to API result
-    if (response.data && response.data[0].type === 'video') {
-      zk.sendMessage(dest, { video: { url: response.data[0].url }, caption: "Video Downloader powered by *NomComBot*", gifPlayback: false }, { quoted: ms });
-    } else if (response.data && response.data[0].type === 'image') {
-      zk.sendMessage(dest, { image: { url: response.data[0].url }, caption: "Image Downloader powered by *NomComBot*" });
+    // Log the raw result from the API
+    console.log("XNXX API Response:", response.data);
+
+    // Handle response based on the result
+    if (response.data && response.data[0]) {
+      if (response.data[0].type === 'video') {
+        zk.sendMessage(dest, { video: { url: response.data[0].url }, caption: "Video Downloader powered by *NomComBot*", gifPlayback: false }, { quoted: ms });
+      } else if (response.data[0].type === 'image') {
+        zk.sendMessage(dest, { image: { url: response.data[0].url }, caption: "Image Downloader powered by *NomComBot*" });
+      } else {
+        repondre('Error: No valid video or image found.');
+      }
     } else {
-      repondre('Error: No video or image found.');
+      repondre('Error: Invalid data returned from the API.');
     }
   } catch (e) {
     repondre("An error occurred during the download: " + e.message);
@@ -49,7 +56,10 @@ adams({ nomCom: "weather", categorie: "Information" }, async (dest, zk, commande
     const weatherUrl = `${apiUrl}/search/weather?apikey=${apikey}&location=${location}`;
     const response = await axios.get(weatherUrl);
 
-    // Direct access to API result
+    // Log the raw result from the API
+    console.log("Weather API Response:", response.data);
+
+    // Handle response based on the result
     if (response.data && response.data.weather) {
       repondre(`Weather in ${location}:\nTemperature: ${response.data.weather.temperature}°C\nCondition: ${response.data.weather.description}`);
     } else {
@@ -75,7 +85,10 @@ adams({ nomCom: "lyrics", categorie: "Information" }, async (dest, zk, commandeO
     const lyricsUrl = `${apiUrl}/search/lyrics?apikey=${apikey}&query=${songName}`;
     const response = await axios.get(lyricsUrl);
 
-    // Direct access to API result
+    // Log the raw result from the API
+    console.log("Lyrics API Response:", response.data);
+
+    // Handle response based on the result
     if (response.data && response.data.lyrics) {
       repondre(`Lyrics for "${songName}": \n${response.data.lyrics}`);
     } else {
@@ -102,7 +115,10 @@ adams({ nomCom: "shorten", categorie: "Utility" }, async (dest, zk, commandeOpti
     const shortUrl = `${apiUrl}/tools/shorturl?apikey=${apikey}&url=${longUrl}`;
     const response = await axios.get(shortUrl);
 
-    // Direct access to API result
+    // Log the raw result from the API
+    console.log("URL Shortener API Response:", response.data);
+
+    // Handle response based on the result
     if (response.data && response.data.shortened_url) {
       repondre(`Shortened URL: ${response.data.shortened_url}`);
     } else {
