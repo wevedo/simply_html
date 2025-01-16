@@ -1,5 +1,6 @@
 const { adams } = require('../Ibrahim/adams');
-const { default: axios } = require('axios');
+//const { zokou } = require("../framework/zokou");
+const axios = require('axios');
 
 // Lyrics Command
 adams({
@@ -16,11 +17,11 @@ adams({
     
     const songName = arg.join(" ");
     
-    // Lyrics search API (adjust URL as needed)
-    const songSearchUrl = `https://api.giftedtech.web.id/api/search/lyrics?apikey=gifted&query=${encodeURIComponent(songName)}`;
-    const response = await axios.get(songSearchUrl);
+    // Lyrics API (adjust to your desired service)
+    const lyricsUrl = `https://api.giftedtech.web.id/api/search/lyrics?apikey=gifted&query=${encodeURIComponent(songName)}`;
+    const response = await axios.get(lyricsUrl);
     
-    // Log the API response for debugging
+    // Log the response for debugging
     console.log("Lyrics API Response:", response.data);
 
     if (response.data && response.data.lyrics) {
@@ -65,7 +66,7 @@ adams({
       const sunrise = new Date(weatherData.sys.sunrise * 1000).toLocaleTimeString();
       const sunset = new Date(weatherData.sys.sunset * 1000).toLocaleTimeString();
       
-      repondre(`*BMW-MD WEATHER UPDATES* \n\n❄️ Weather in ${locationName}:\n🌡️ Temperature: ${temperature}°C\n📝 Description: ${description}\n❄️ Humidity: ${humidity}%\n🌀 Wind Speed: ${windSpeed} m/s\n🌧️ Rain Volume (last hour): ${rainVolume} mm\n🌄 Sunrise: ${sunrise}\n🌅 Sunset: ${sunset}\n`);
+      repondre(`*BWM XMD WEATHER UPDATES* \n\n❄️ Weather in ${locationName}:\n🌡️ Temperature: ${temperature}°C\n📝 Description: ${description}\n❄️ Humidity: ${humidity}%\n🌀 Wind Speed: ${windSpeed} m/s\n🌧️ Rain Volume (last hour): ${rainVolume} mm\n🌄 Sunrise: ${sunrise}\n🌅 Sunset: ${sunset}\n`);
     } else {
       repondre("Could not retrieve weather data. Please try again.");
     }
@@ -106,30 +107,32 @@ adams({
   }
 });
 
-// Video Download Command (for video download)
+// XNXX Video Command (search by name, not URL)
 adams({
   'nomCom': "xnxx",
-  'reaction': '📥',
+  'reaction': '🎬',
   'categorie': "Download"
 }, async (_0x16b585, _0x24921b, _0x5047e1) => {
   const { repondre, arg, ms } = _0x5047e1;
 
   try {
     if (!arg || arg.length === 0) {
-      return repondre("Please provide the video URL.");
+      return repondre("Please provide a video name to search.");
     }
     
-    const videoUrl = arg.join(" ");
-    const videoDownloadUrl = `https://api.giftedtech.web.id/api/download/xnxxdl?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
-    const response = await axios.get(videoDownloadUrl);
+    const videoName = arg.join(" ");
     
+    // XNXX API to search video by name
+    const xnxxSearchUrl = `https://api.giftedtech.web.id/api/download/xnxxdl?apikey=gifted&url=https://www.xnxx.health/search/${encodeURIComponent(videoName)}`;
+    const response = await axios.get(xnxxSearchUrl);
+
     // Log the video download API response for debugging
-    console.log("Video Download API Response:", response.data);
+    console.log("XNXX Video API Response:", response.data);
 
     if (response.data && response.data.result) {
-      repondre(`Video Download Link: ${response.data.result}`);
+      repondre(`Video Download Link for "${videoName}": ${response.data.result}`);
     } else {
-      repondre("Could not fetch video. Please try again.");
+      repondre("Could not find a video for the given name. Please try a different one.");
     }
   } catch (err) {
     repondre("An error occurred while fetching the video. Please try again.");
