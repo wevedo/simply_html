@@ -1355,141 +1355,132 @@ zk.ev.on("messages.upsert", async (m) => {
 **/
 
 
-// Directory for storing media files
-const mediaDir = path.join(__dirname, "media");
-
-// Ensure the media directory exists
-if (!fs.existsSync(mediaDir)) {
-    fs.mkdirSync(mediaDir);
-}
-
-// Load or initialize the conversation data store
+// Load or initialize the store
 function loadStore() {
     try {
         const data = fs.readFileSync("store.json", "utf8");
         return JSON.parse(data);
     } catch (err) {
-        console.log("No store.json found, initializing new store.");
-        return {}; // Initialize as an empty object
+        console.log("Initializing a new store.");
+        return {}; // Start with an empty object
     }
 }
 
-// Save the updated conversation data store
+// Save updated store to file
 function saveStore(data) {
     try {
         fs.writeFileSync("store.json", JSON.stringify(data, null, 2));
     } catch (err) {
-        console.error("Error saving to store.json:", err);
+        console.error("Error saving store:", err);
     }
 }
 
-// Download media and save to a file
-async function saveMedia(message, mediaType) {
+// Function to download and save media
+async function downloadAndSaveMedia(message, mediaType) {
     try {
         const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
-        const fileName = `${Date.now()}_${mediaType}.bin`;
-        const filePath = path.join(mediaDir, fileName);
-        const fileStream = fs.createWriteStream(filePath);
+        const mediaPath = `media_${Date.now()}.${mediaType}`; // Unique filename
+        const writeStream = fs.createWriteStream(mediaPath);
 
         for await (const chunk of stream) {
-            fileStream.write(chunk);
+            writeStream.write(chunk);
         }
-        fileStream.end();
+        writeStream.end();
 
-        return fileName; // Return the saved file name
+        return mediaPath; // Return the saved file path
     } catch (error) {
         console.error("Error downloading media:", error);
         return null;
     }
 }
 
-// Create a formatted notification message
-function createNotification(deletedMessage, timeInNairobi) {
+// Add message to the store
+function addMessageToStore(store, remoteJid, messageData) {
+    if (!store[remoteJid]) {
+        store[remoteJid] = [];
+    }
+    store[remoteJid].push(messageData);
+    saveStore(store);
+}
+
+// Create a notification message for deleted messages
+function createNotification(deletedMessage) {
     const deletedBy = deletedMessage.key.participant || deletedMessage.key.remoteJid;
+    const timeInNairobi = new Intl.DateTimeFormat("en-KE", {
+        timeZone: "Africa/Nairobi",
+        dateStyle: "full",
+        timeStyle: "medium",
+    }).format(new Date());
 
     return `*[ANTIDELETE DETECTED]*\n\n` +
            `*Time:* ${timeInNairobi}\n` +
            `*Deleted By:* @${deletedBy.split("@")[0]}\n`;
 }
 
-// Event listener for incoming messages
+// Main event listener for incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
     if (!ms.message) return;
 
-    const messageKey = ms.key;
-    const remoteJid = messageKey.remoteJid;
-
-    // Load the store
     const store = loadStore();
+    const remoteJid = ms.key.remoteJid;
 
-    // Ensure chat entry exists
-    if (!store[remoteJid]) store[remoteJid] = [];
-
-    // Prepare the message data for storage
+    // Save received messages (text and media)
+    const mtype = Object.keys(ms.message)[0];
     const messageData = {
-        key: messageKey,
-        message: ms.message,
+        key: ms.key,
         timestamp: ms.messageTimestamp,
+        messageType: mtype,
     };
 
-    // Handle media messages
-    const mtype = Object.keys(ms.message)[0];
-    if (
-        mtype === "imageMessage" ||
-        mtype === "videoMessage" ||
-        mtype === "documentMessage" ||
-        mtype === "audioMessage" ||
-        mtype === "stickerMessage" ||
-        mtype === "voiceMessage"
+    if (mtype === "conversation" || mtype === "extendedTextMessage") {
+        // Save text message
+        messageData.content =
+            ms.message.conversation || ms.message.extendedTextMessage.text;
+    } else if (
+        ["imageMessage", "videoMessage", "documentMessage", "audioMessage", "stickerMessage", "voiceMessage"].includes(
+            mtype
+        )
     ) {
-        const mediaFileName = await saveMedia(ms.message, mtype.replace("Message", ""));
-        if (mediaFileName) {
-            messageData.mediaFileName = mediaFileName; // Store the media file name
+        // Save media file
+        const mediaType = mtype.replace("Message", "");
+        const mediaPath = await downloadAndSaveMedia(ms.message, mediaType);
+        if (mediaPath) {
+            messageData.mediaPath = mediaPath;
         }
     }
 
-    // Save the message to the store
-    store[remoteJid].push(messageData);
-    saveStore(store);
+    // Add message to the store
+    addMessageToStore(store, remoteJid, messageData);
 
     // Handle deleted messages
     if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
         const deletedKey = ms.message.protocolMessage.key;
 
-        // Search for the deleted message in the store
-        const deletedMessage = store[remoteJid].find(
+        // Find the deleted message in the store
+        const deletedMessage = store[remoteJid]?.find(
             (msg) => msg.key.id === deletedKey.id
         );
 
         if (deletedMessage) {
             try {
-                // Format time in Nairobi timezone
-                const timeInNairobi = new Intl.DateTimeFormat("en-KE", {
-                    timeZone: "Africa/Nairobi",
-                    dateStyle: "full",
-                    timeStyle: "medium",
-                }).format(new Date());
+                const notification = createNotification(deletedMessage);
 
-                // Create a notification
-                const notification = createNotification(deletedMessage, timeInNairobi);
-
-                // Handle text messages
-                if (deletedMessage.message.conversation) {
+                if (deletedMessage.messageType === "conversation") {
+                    // Resend deleted text message
                     await zk.sendMessage(remoteJid, {
-                        text: notification + `*Message:* ${deletedMessage.message.conversation}`,
+                        text: notification + `*Message:* ${deletedMessage.content}`,
                         mentions: [deletedMessage.key.participant],
                     });
-                }
-
-                // Handle media messages
-                else if (deletedMessage.mediaFileName) {
-                    const mediaFilePath = path.join(mediaDir, deletedMessage.mediaFileName);
-                    const mediaType = mtype.replace("Message", "").toLowerCase();
-
+                } else if (deletedMessage.mediaPath) {
+                    // Resend deleted media message
+                    const mediaType = deletedMessage.messageType.replace(
+                        "Message",
+                        ""
+                    ).toLowerCase();
                     await zk.sendMessage(remoteJid, {
-                        [mediaType]: { url: mediaFilePath },
+                        [mediaType]: { url: deletedMessage.mediaPath },
                         caption: notification,
                         mentions: [deletedMessage.key.participant],
                     });
@@ -1500,7 +1491,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-        
 
 
 
