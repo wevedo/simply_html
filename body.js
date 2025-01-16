@@ -168,14 +168,24 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-
-const { events } = require("@whiskeysockets/baileys"); // Assuming events are part of Baileys
+const { default: makeWASocket } = require("@whiskeysockets/baileys");
+const { makeInMemoryStore } = require("@whiskeysockets/baileys/lib/Store");
 const TIME_LIMIT = 1000; // 1 second
 const MESSAGE_LIMIT = 2; // Max 2 messages per second
 const messageCount = {}; // To track user messages
 
+// Initialize Baileys socket
+const store = makeInMemoryStore({});
+const sock = makeWASocket({
+  logger: undefined,
+  printQRInTerminal: true,
+});
+
+// Bind the store to the socket events
+store.bind(sock.ev);
+
 // Antibug Event Listener for All Incoming Messages
-events.on("messages.upsert", async (m) => {
+sock.ev.on("messages.upsert", async (m) => {
   try {
     const msg = m.messages[0];
     if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
@@ -197,14 +207,14 @@ events.on("messages.upsert", async (m) => {
     // Check if the user exceeds the message limit
     if (messageCount[userId].length > MESSAGE_LIMIT) {
       // Delete the spam message
-      await msg.delete(true); // Deletes the message for everyone
+      await sock.sendMessage(userId, { delete: { remoteJid: userId, fromMe: false, id: msg.key.id } });
 
       // Block the user
-      await msg.block();
+      await sock.updateBlockStatus(userId, "block");
       console.log(`Blocked user: ${userId} for spamming.`);
 
       // Notify the user (optional, before blocking)
-      await msg.reply(`*You have been blocked for spamming (${MESSAGE_LIMIT} messages in ${TIME_LIMIT / 1000} second).*`);
+      await sock.sendMessage(userId, { text: `*You have been blocked for spamming (${MESSAGE_LIMIT} messages in ${TIME_LIMIT / 1000} second).*` });
 
       // Reset message count for the user after blocking
       delete messageCount[userId];
