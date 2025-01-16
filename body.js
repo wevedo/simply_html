@@ -1355,37 +1355,29 @@ zk.ev.on("messages.upsert", async (m) => {
 **/
 
 
-// File to store message data
-const DATA_FILE = "store.json";
-
-// Initialize the data file if it doesn't exist
-if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ chats: {} }, null, 2));
-}
-
-// Function to load the message store from JSON
-function loadMessageStore() {
+// Function to load data from store.json
+function loadStore() {
     try {
-        const rawData = fs.readFileSync(DATA_FILE, "utf8");
+        const rawData = fs.readFileSync("store.json", "utf8");
         return JSON.parse(rawData);
     } catch (err) {
-        console.error("Error loading message store:", err);
-        return { chats: {} };
+        console.error("Error loading store.json:", err);
+        return [];
     }
 }
 
-// Function to save the message store to JSON
-function saveMessageStore(store) {
+// Function to save data to store.json
+function saveStore(data) {
     try {
-        fs.writeFileSync(DATA_FILE, JSON.stringify(store, null, 2));
+        fs.writeFileSync("store.json", JSON.stringify(data, null, 2));
     } catch (err) {
-        console.error("Error saving message store:", err);
+        console.error("Error saving store.json:", err);
     }
 }
 
 // Function to download and return media buffer
 async function downloadMedia(message) {
-    const mediaType = Object.keys(message)[0].replace("Message", ""); // Determine the media type
+    const mediaType = Object.keys(message)[0].replace("Message", "");
     try {
         const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
         let buffer = Buffer.from([]);
@@ -1399,7 +1391,7 @@ async function downloadMedia(message) {
     }
 }
 
-// Function to format notification message
+// Function to create notification message
 function createNotification(deletedMessage, timeInNairobi) {
     const deletedBy = deletedMessage.key.participant || deletedMessage.key.remoteJid;
 
@@ -1410,7 +1402,7 @@ function createNotification(deletedMessage, timeInNairobi) {
     return notification;
 }
 
-// Event listener for incoming messages
+// Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -1419,25 +1411,19 @@ zk.ev.on("messages.upsert", async (m) => {
     const messageKey = ms.key;
     const remoteJid = messageKey.remoteJid;
 
-    // Load the message store
-    const store = loadMessageStore();
+    // Load the message store from store.json
+    let conversationData = loadStore();
 
-    // Initialize chat storage for the remoteJid
-    if (!store.chats[remoteJid]) {
-        store.chats[remoteJid] = [];
-    }
-
-    // Save the received message
-    store.chats[remoteJid].push(ms);
-    saveMessageStore(store);
+    // Add the new message to the store
+    conversationData.push(ms);
+    saveStore(conversationData);
 
     // Handle deleted messages
     if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
         const deletedKey = ms.message.protocolMessage.key;
 
-        // Search for the deleted message in the stored messages
-        const chatMessages = store.chats[remoteJid];
-        const deletedMessage = chatMessages.find((msg) => msg.key.id === deletedKey.id);
+        // Search for the deleted message in the store
+        const deletedMessage = conversationData.find((msg) => msg.key.id === deletedKey.id);
 
         if (deletedMessage) {
             try {
@@ -1451,7 +1437,7 @@ zk.ev.on("messages.upsert", async (m) => {
                 // Create notification about the deleted message
                 const notification = createNotification(deletedMessage, timeInNairobi);
 
-                // ANTIDELETE1: Resend deleted message to the original chat
+                // Handle ANTIDELETE1: Resend to the original chat
                 if (conf.ANTIDELETE1 === "yes") {
                     const mtype = Object.keys(deletedMessage.message)[0];
                     if (mtype === "conversation" || mtype === "extendedTextMessage") {
@@ -1475,7 +1461,7 @@ zk.ev.on("messages.upsert", async (m) => {
                     }
                 }
 
-                // ANTIDELETE2: Notify the bot owner about the deleted message
+                // Handle ANTIDELETE2: Notify the bot owner
                 if (conf.ANTIDELETE2 === "yes") {
                     const mtype = Object.keys(deletedMessage.message)[0];
                     if (mtype === "conversation" || mtype === "extendedTextMessage") {
@@ -1504,7 +1490,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-
         
 
 
