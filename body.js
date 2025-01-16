@@ -169,42 +169,34 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-// Helper function to detect if a message contains a link
-const isLink = (message) => {
-    const linkRegex = /https?:\/\/[^\s]+/;
-    return linkRegex.test(message);
-};
-
-// Helper function to check if a user is an admin in a group
-const isAdmin = async (zk, groupId, userId) => {
-    const groupMetadata = await zk.groupMetadata(groupId);
-    const admins = groupMetadata.participants.filter(participant => participant.admin).map(participant => participant.id);
-    return admins.includes(userId);
-};
-
-// Add this logic inside your zk.ev.on('messages.upsert', ...) event listener
 zk.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
         try {
-            // Skip if the message is not from a group, self, or has no content
             if (!msg.key.remoteJid || !msg.message || msg.key.fromMe) continue;
 
             const groupId = msg.key.remoteJid;
             const senderId = msg.key.participant || msg.key.remoteJid;
             const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
 
-            // Check if the message is from a group and contains a link
+            // Debug logs
+            console.log(`New message in group ${groupId} from ${senderId}: ${messageContent}`);
+
             if (isJidGroup(groupId) && isLink(messageContent)) {
+                console.log(`Detected link from ${senderId} in group ${groupId}`);
+                
                 const senderIsAdmin = await isAdmin(zk, groupId, senderId);
                 const botIsAdmin = await isAdmin(zk, groupId, zk.user.id);
+
+                console.log(`Sender is admin: ${senderIsAdmin}, Bot is admin: ${botIsAdmin}`);
 
                 if (botIsAdmin && !senderIsAdmin) {
                     // Delete the message
                     await zk.sendMessage(groupId, { delete: msg.key });
+                    console.log(`Deleted message from ${senderId}`);
 
                     // Remove the sender from the group
                     await zk.groupParticipantsUpdate(groupId, [senderId], 'remove');
-                    console.log(`Removed ${senderId} for sending a link in group ${groupId}.`);
+                    console.log(`Removed ${senderId} from group ${groupId}`);
                 }
             }
         } catch (err) {
