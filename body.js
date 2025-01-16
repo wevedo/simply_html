@@ -168,6 +168,11 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
+// Helper function to detect if a message contains a link
+const isLink = (message) => {
+    const linkRegex = /https?:\/\/[^\s]+/;
+    return linkRegex.test(message);
+};        
 
 zk.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
