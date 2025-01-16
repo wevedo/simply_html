@@ -1520,7 +1520,7 @@ zk.ev.on("messages.upsert", async (m) => {
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     // Check if ANTIDELETE is enabled
-    if (conf.ANTIDELETE1 === "yes") {
+    if (conf.ANTIDELETE3 === "yes") {
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return;
