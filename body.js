@@ -172,8 +172,21 @@ authentification();
 const isLink = (message) => {
     const linkRegex = /https?:\/\/[^\s]+/;
     return linkRegex.test(message);
-};        
+};
 
+// Helper function to check if a user is an admin in a group
+const isAdmin = async (zk, groupId, userId) => {
+    try {
+        const groupMetadata = await zk.groupMetadata(groupId);
+        const admins = groupMetadata.participants.filter(participant => participant.admin).map(participant => participant.id);
+        return admins.includes(userId);
+    } catch (err) {
+        console.error("Error checking admin status: ", err);
+        return false; // Return false in case of error
+    }
+};
+
+// Add this logic inside your zk.ev.on('messages.upsert', ...) event listener
 zk.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
         try {
@@ -183,7 +196,6 @@ zk.ev.on('messages.upsert', async ({ messages }) => {
             const senderId = msg.key.participant || msg.key.remoteJid;
             const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
 
-            // Debug logs
             console.log(`New message in group ${groupId} from ${senderId}: ${messageContent}`);
 
             if (isJidGroup(groupId) && isLink(messageContent)) {
