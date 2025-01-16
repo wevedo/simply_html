@@ -168,21 +168,10 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-const { default: makeWASocket } = require("@whiskeysockets/baileys");
-const { makeInMemoryStore } = require("@whiskeysockets/baileys/lib/Store");
+
 const TIME_LIMIT = 1000; // 1 second
 const MESSAGE_LIMIT = 2; // Max 2 messages per second
 const messageCount = {}; // To track user messages
-
-// Initialize Baileys socket
-const store = makeInMemoryStore({});
-const sock = makeWASocket({
-  logger: undefined,
-  printQRInTerminal: true,
-});
-
-// Bind the store to the socket events
-store.bind(sock.ev);
 
 // Antibug Event Listener for All Incoming Messages
 sock.ev.on("messages.upsert", async (m) => {
