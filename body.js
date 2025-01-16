@@ -168,6 +168,7 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
+
 // Helper function to detect if a message contains a link
 const isLink = (message) => {
     const linkRegex = /https?:\/\/[^\s]+/;
@@ -207,13 +208,23 @@ zk.ev.on('messages.upsert', async ({ messages }) => {
                 console.log(`Sender is admin: ${senderIsAdmin}, Bot is admin: ${botIsAdmin}`);
 
                 if (botIsAdmin && !senderIsAdmin) {
+                    // Prepare the message text for notification
+                    let txt = `Message deleted \n @${senderId.split("@")[0]} avoid sending links.`;
+
+                    // Send notification message
+                    await zk.sendMessage(groupId, { text: txt, mentions: [senderId] });
+
                     // Delete the message
                     await zk.sendMessage(groupId, { delete: msg.key });
                     console.log(`Deleted message from ${senderId}`);
 
                     // Remove the sender from the group
-                    await zk.groupParticipantsUpdate(groupId, [senderId], 'remove');
-                    console.log(`Removed ${senderId} from group ${groupId}`);
+                    try {
+                        await zk.groupParticipantsUpdate(groupId, [senderId], 'remove');
+                        console.log(`Removed ${senderId} from group ${groupId}`);
+                    } catch (e) {
+                        console.error("Error removing participant: ", e);
+                    }
                 }
             }
         } catch (err) {
