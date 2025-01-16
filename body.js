@@ -168,6 +168,61 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+const isAdmin = async (sock, groupId, userId) => {
+    const groupMetadata = await sock.groupMetadata(groupId);
+    const admins = groupMetadata.participants.filter(participant => participant.admin).map(participant => participant.id);
+    return admins.includes(userId);
+};
+
+const isLink = (message) => {
+    const linkRegex = /https?:\/\/[^\s]+/;
+    return linkRegex.test(message);
+};
+
+const startSock = async () => {
+    const sock = makeWASocket();
+    
+    sock.ev.on('messages.upsert', async ({ messages }) => {
+        for (const msg of messages) {
+            try {
+                if (!msg.key.remoteJid || !isJidGroup(msg.key.remoteJid) || !msg.message || msg.key.fromMe) {
+                    continue; // Ignore messages not from a group, self, or without content
+                }
+                const groupId = msg.key.remoteJid;
+                const senderId = msg.key.participant || msg.key.remoteJid;
+                const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
+
+                // Check if the message is a link
+                if (isLink(messageContent)) {
+                    const senderIsAdmin = await isAdmin(sock, groupId, senderId);
+                    const botIsAdmin = await isAdmin(sock, groupId, sock.user.id);
+
+                    if (!botIsAdmin) {
+                        console.log("Bot is not an admin, unable to remove participants.");
+                        return;
+                    }
+
+                    if (!senderIsAdmin) {
+                        // Delete the message
+                        await sock.sendMessage(groupId, { delete: msg.key });
+
+                        // Remove the sender
+                        await sock.groupParticipantsUpdate(groupId, [senderId], 'remove');
+                        console.log(`Removed ${senderId} for sending a link.`);
+                    }
+                }
+            } catch (err) {
+                if (err instanceof Boom) {
+                    console.error("Error handling message: ", err.output.payload.message);
+                } else {
+                    console.error("Unexpected error: ", err);
+                }
+            }
+        }
+    });
+};
+
+startSock();
 
 
 
