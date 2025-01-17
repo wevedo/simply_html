@@ -1,45 +1,35 @@
 const { adams } = require("../Ibrahim/adams");
+const { config } = require("dotenv");
 const fs = require("fs");
+const path = require("path");
 
-// Define the `.env` file name (assumes it exists in the bot's root directory)
-const envFile = ".env";
+config(); // Load environment variables from a `.env` file
 
-// Helper function to read and parse the `.env` file
-const getEnvVars = () => {
-  if (!fs.existsSync(envFile)) {
-    return {};
-  }
-  const content = fs.readFileSync(envFile, "utf8");
-  return content
-    .split("\n")
-    .filter((line) => line.trim() && !line.startsWith("#"))
-    .reduce((acc, line) => {
-      const [key, value] = line.split("=");
-      acc[key.trim()] = value ? value.trim() : "";
-      return acc;
-    }, {});
-};
+const envFilePath = path.resolve(__dirname, "../.env"); // Path to the .env file
 
-// Helper function to update and save the `.env` file
-const setEnvVars = (vars) => {
-  const content = Object.entries(vars)
+// Function to save updated environment variables to the .env file
+function saveEnvVariables(updatedVars) {
+  const envContent = Object.entries(updatedVars)
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
-  fs.writeFileSync(envFile, content);
-};
 
-// Helper function to reload updated environment variables into `process.env`
-const reloadEnvVars = () => {
-  const vars = getEnvVars();
-  Object.keys(vars).forEach((key) => {
-    process.env[key] = vars[key];
-  });
-};
+  fs.writeFileSync(envFilePath, envContent, "utf8");
+}
+
+// Load current environment variables
+function loadEnvVariables() {
+  const envVars = fs.readFileSync(envFilePath, "utf8");
+  return envVars.split("\n").reduce((acc, line) => {
+    const [key, value] = line.split("=");
+    if (key) acc[key] = value;
+    return acc;
+  }, {});
+}
 
 // Command to display all environment variables
 adams({
-  nomCom: 'getallvar',
-  categorie: "Control",
+  nomCom: "getallvar",
+  categorie: "Control"
 }, async (chatId, zk, context) => {
   const { repondre, superUser } = context;
 
@@ -48,22 +38,22 @@ adams({
   }
 
   try {
-    const vars = getEnvVars();
-    let message = "🌟 *BWM XMD ENV VARS LIST* 🌟\n\n";
-    for (const [key, value] of Object.entries(vars)) {
+    const configVars = loadEnvVariables();
+    let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
+    for (const [key, value] of Object.entries(configVars)) {
       message += `🔑 *${key}=* ${value}\n`;
     }
     await zk.sendMessage(chatId, { text: message });
   } catch (error) {
-    console.error("Error reading .env file:", error);
+    console.error("Error fetching environment variables:", error);
     await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch environment variables!*" });
   }
 });
 
 // Command to set or update environment variables
 adams({
-  nomCom: 'setvar',
-  categorie: "Control",
+  nomCom: "setvar",
+  categorie: "Control"
 }, async (chatId, zk, context) => {
   const { repondre, superUser, arg } = context;
 
@@ -71,70 +61,36 @@ adams({
     return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
   }
 
-  if (!arg[0] || !arg[0].includes('=')) {
+  if (!arg[0] || !arg[0].includes("=")) {
     return repondre(
       "📋 *Usage Instructions:*\n\n" +
       "To set or update a variable:\n" +
       "`setvar VAR_NAME=value`\n\n" +
       "Example:\n" +
-      "`setvar presence=1`\n" +
-      "`setvar autoread=yes`"
+      "`setvar AUTO_REPLY=yes`\n" +
+      "`setvar AUTO_REPLY=no`"
     );
   }
 
-  const [varName, value] = arg[0].split('=');
-  if (!varName || value === undefined) {
+  const [varName, value] = arg[0].split("=");
+  if (!varName || !value) {
     return repondre("⚠️ *Invalid format!* Use `VAR_NAME=value` format.");
   }
 
   try {
-    const vars = getEnvVars();
-    vars[varName] = value;
-    setEnvVars(vars);
-    reloadEnvVars(); // Reload the updated variables into `process.env`
+    const configVars = loadEnvVariables();
+    configVars[varName] = value;
+
+    saveEnvVariables(configVars);
 
     await zk.sendMessage(chatId, {
-      text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🔄 *Your changes have been applied immediately!*`
+      text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🔄 *Restart your bot to apply changes.*`
     });
   } catch (error) {
-    console.error("Error updating .env file:", error);
-    await zk.sendMessage(chatId, { text: "⚠️ *Failed to update environment variable!*" });
+    console.error("Error updating environment variables:", error);
+    await zk.sendMessage(chatId, { text: "⚠️ *Failed to update environment variables!*" });
   }
 });
-
-// Dynamically create commands from environment variables
-const vars = getEnvVars();
-Object.keys(vars).forEach((key) => {
-  adams({
-    nomCom: key.toLowerCase(),
-    categorie: "Control",
-  }, async (chatId, zk, context) => {
-    const { repondre, superUser, arg } = context;
-
-    if (!superUser) {
-      return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
-    }
-
-    try {
-      const vars = getEnvVars();
-      if (arg[0]) {
-        vars[key] = arg[0];
-        setEnvVars(vars);
-        reloadEnvVars(); // Reload updated variables into `process.env`
-
-        await zk.sendMessage(chatId, {
-          text: `✅ *${key} Updated Successfully!*\n\n🔑 *New Value:* ${arg[0]}`
-        });
-      } else {
-        await repondre(`🔑 *${key}:* ${vars[key] || "Not Set"}`);
-      }
-    } catch (error) {
-      console.error(`Error handling command for ${key}:`, error);
-      await zk.sendMessage(chatId, { text: `⚠️ *Failed to handle command for ${key}!*` });
-    }
-  });
-});
-
 
 
 
