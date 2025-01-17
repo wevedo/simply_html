@@ -7,13 +7,18 @@ config(); // Load environment variables from a `.env` file
 
 const envFilePath = path.resolve(__dirname, "../.env"); // Path to the .env file
 
-// Function to save updated environment variables to the .env file
+// Function to save updated environment variables to the .env file and process.env
 function saveEnvVariables(updatedVars) {
   const envContent = Object.entries(updatedVars)
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
   fs.writeFileSync(envFilePath, envContent, "utf8");
+
+  // Update process.env dynamically
+  for (const [key, value] of Object.entries(updatedVars)) {
+    process.env[key] = value;
+  }
 }
 
 // Load current environment variables
@@ -84,7 +89,7 @@ adams({
     saveEnvVariables(configVars);
 
     await zk.sendMessage(chatId, {
-      text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🔄 *Restart your bot to apply changes.*`
+      text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🚀 *Changes applied instantly without restart.*`
     });
   } catch (error) {
     console.error("Error updating environment variables:", error);
