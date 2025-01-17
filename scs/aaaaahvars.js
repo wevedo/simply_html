@@ -1,34 +1,35 @@
 const { adams } = require("../Ibrahim/adams");
-const { config } = require("dotenv");
 const fs = require("fs");
 const path = require("path");
 
-config(); // Load environment variables from a `.env` file
+// Path to the .env file
+const envFilePath = path.resolve(__dirname, "../.env");
 
-const envFilePath = path.resolve(__dirname, "../.env"); // Path to the .env file
-
-// Function to save updated environment variables to the .env file and process.env
-function saveEnvVariables(updatedVars) {
-  const envContent = Object.entries(updatedVars)
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-
-  fs.writeFileSync(envFilePath, envContent, "utf8");
-
-  // Update process.env dynamically
-  for (const [key, value] of Object.entries(updatedVars)) {
-    process.env[key] = value;
-  }
+// Function to load environment variables from the .env file
+function loadEnvVariables() {
+  const envVars = {};
+  const fileContent = fs.readFileSync(envFilePath, "utf8");
+  fileContent.split("\n").forEach((line) => {
+    const [key, value] = line.split("=");
+    if (key) envVars[key.trim()] = value.trim();
+  });
+  return envVars;
 }
 
-// Load current environment variables
-function loadEnvVariables() {
-  const envVars = fs.readFileSync(envFilePath, "utf8");
-  return envVars.split("\n").reduce((acc, line) => {
-    const [key, value] = line.split("=");
-    if (key) acc[key] = value;
-    return acc;
-  }, {});
+// Function to save environment variables to the .env file
+function saveEnvVariables(updatedVars) {
+  const content = Object.entries(updatedVars)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+  fs.writeFileSync(envFilePath, content, "utf8");
+}
+
+// Dynamically loaded environment variables
+let localEnvVars = loadEnvVariables();
+
+// Function to get a variable value (prioritize local .env variables over Heroku vars)
+function getEnvVar(key) {
+  return localEnvVars[key] || process.env[key];
 }
 
 // Command to display all environment variables
@@ -42,17 +43,12 @@ adams({
     return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
   }
 
-  try {
-    const configVars = loadEnvVariables();
-    let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
-    for (const [key, value] of Object.entries(configVars)) {
-      message += `🔑 *${key}=* ${value}\n`;
-    }
-    await zk.sendMessage(chatId, { text: message });
-  } catch (error) {
-    console.error("Error fetching environment variables:", error);
-    await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch environment variables!*" });
+  let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
+  for (const [key, value] of Object.entries(localEnvVars)) {
+    message += `🔑 *${key}=* ${value}\n`;
   }
+
+  await zk.sendMessage(chatId, { text: message });
 });
 
 // Command to set or update environment variables
@@ -72,8 +68,7 @@ adams({
       "To set or update a variable:\n" +
       "`setvar VAR_NAME=value`\n\n" +
       "Example:\n" +
-      "`setvar AUTO_REPLY=yes`\n" +
-      "`setvar AUTO_REPLY=no`"
+      "`setvar BOT_NAME=AdamsBot`"
     );
   }
 
@@ -82,19 +77,22 @@ adams({
     return repondre("⚠️ *Invalid format!* Use `VAR_NAME=value` format.");
   }
 
-  try {
-    const configVars = loadEnvVariables();
-    configVars[varName] = value;
+  // Update local environment variables and save to .env file
+  localEnvVars[varName.trim()] = value.trim();
+  saveEnvVariables(localEnvVars);
 
-    saveEnvVariables(configVars);
+  await zk.sendMessage(chatId, {
+    text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🚀 *Changes applied instantly.*`
+  });
+});
 
-    await zk.sendMessage(chatId, {
-      text: `✅ *Environment Variable Updated Successfully!*\n\n🔑 *${varName}:* ${value}\n\n🚀 *Changes applied instantly without restart.*`
-    });
-  } catch (error) {
-    console.error("Error updating environment variables:", error);
-    await zk.sendMessage(chatId, { text: "⚠️ *Failed to update environment variables!*" });
-  }
+// Example of accessing variables dynamically in your bot
+adams({
+  nomCom: "showbotname",
+  categorie: "Info"
+}, async (chatId, zk, context) => {
+  const botName = getEnvVar("BOT_NAME"); // Dynamically fetch variable
+  await zk.sendMessage(chatId, { text: `🤖 *Bot Name:* ${botName}` });
 });
 
 
