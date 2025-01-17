@@ -41,9 +41,9 @@ adams(
     // Dynamic greeting based on time
     const greeting =
       hour < 12
-        ? "Good Morning 🌤"
+        ? "Good Morning 🌅"
         : hour < 18
-        ? "Good Afternoon 🌞"
+        ? "Good Afternoon ☀️"
         : "Good Evening 🌠";
 
     try {
@@ -68,7 +68,7 @@ adams(
 
       // Randomized external ad reply content
       const externalAdReply = {
-        title: `🚀 ${greeting}, ${contactName} 🚀 `,
+        title: `🚀 ${greeting} ${contactName} 🚀 `,
         body: "Tap here to join our official channel!",
         thumbnailUrl: randomImage,
         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
@@ -80,7 +80,7 @@ adams(
       // Send the custom message
       await zk.sendMessage(dest, {
         image: { url: randomImage },
-        caption: `${greeting}, ${contactName}!\n\n${randomFactOrQuote}\n\n🚀 Always Active 🚀\n🌟 Contact: ${contactName}\n🌐 [Visit Channel](${externalAdReply.sourceUrl})\n\n${emojis}`,
+        caption: `${greeting} ${contactName}\n\n${randomFactOrQuote}\n\n🚀 Always Active 🚀\n🌟 Contact: ${contactName}\n🌐 [Visit Channel](${externalAdReply.sourceUrl})\n\n${emojis}`,
         audio: { url: audioUrl },
         mimetype: "audio/mpeg",
         ptt: true,
