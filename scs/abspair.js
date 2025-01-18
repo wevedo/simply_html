@@ -4,6 +4,33 @@ const { default: axios } = require('axios');
 const pkg = require('@whiskeysockets/baileys');
 const { generateWAMessageFromContent } = pkg;
 
+
+
+// Rent Command
+adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
+  const { repondre } = commandeOptions;
+
+  try {
+    await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ǫʀ ᴄᴏᴅᴇ.........');
+
+    // Fetch QR code as an image
+    const response = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', {
+      responseType: 'arraybuffer' // Ensure we get the image as binary data
+    });
+
+    const qrBuffer = Buffer.from(response.data);
+
+    // Send the QR code image
+    await zk.sendMessage(dest, {
+      image: qrBuffer,
+      caption: '*Scan this QR code to link your WhatsApp to the bot*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
+    });
+
+  } catch (error) {
+    console.error('Error fetching QR code:', error.message);
+    repondre('Error generating QR code.');
+  }
+});
 // Unified Rent/Code Command
 const nomComList = ["rent", "code", "link"]; // Add your desired commands here
 
