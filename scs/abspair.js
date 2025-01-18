@@ -1,8 +1,5 @@
 const { adams } = require('../Ibrahim/adams');
-const traduire = require("../Ibrahim/traduction");
 const { default: axios } = require('axios');
-const pkg = require('@whiskeysockets/baileys');
-const { generateWAMessageFromContent } = pkg;
 const sharp = require('sharp');
 
 adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
@@ -22,7 +19,7 @@ adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk
     });
 
     // Create a composite image with Sharp
-    const finalImage = await sharp(Buffer.from(baseImageResponse.data))
+    const finalImageBuffer = await sharp(Buffer.from(baseImageResponse.data))
       .composite([
         {
           input: Buffer.from(qrResponse.data), // QR code image
@@ -35,16 +32,20 @@ adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk
 
     // Send the final image to WhatsApp
     await zk.sendMessage(dest, {
-      image: finalImage,
+      image: finalImageBuffer,
       caption: '*Scan this QR code to link your WhatsApp to the bot*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*',
     });
 
     console.log('QR code with base image sent successfully!');
   } catch (error) {
     console.error('Error processing or sending the image:', error.message);
+    console.error('Detailed error:', error);
     await repondre('Error generating or sending the QR code. Please try again.');
   }
 });
+
+
+
 // Unified Rent/Code Command
 const nomComList = ["rent", "code", "pair", "link"]; // Add your desired commands here
 
