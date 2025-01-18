@@ -3,41 +3,6 @@ const { default: axios } = require('axios');
 const pkg = require('@whiskeysockets/baileys');
 const { generateWAMessageFromContent, prepareWAMessageMedia } = pkg;
 
-// Rent Command with QR Code
-adams({ nomCom: "rent", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
-  const { repondre } = commandeOptions;
-
-  try {
-    await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ǫʀ ᴄᴏᴅᴇ.........');
-
-    // Fetch QR Code from your API
-    const response = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', { responseType: 'arraybuffer' });
-    const qrImage = Buffer.from(response.data, 'binary');
-
-    // Fetch static image for overlay (if needed)
-    const staticImageResponse = await axios.get('https://i.ibb.co/Rym4hXB/1000071591.png', { responseType: 'arraybuffer' });
-    const staticImageBuffer = Buffer.from(staticImageResponse.data, 'binary');
-
-    // Use the QR image for WhatsApp
-    const mediaMessage = await prepareWAMessageMedia({ image: qrImage }, { upload: zk.waUploadToServer });
-
-    // Send image with QR code
-    const qrMessage = generateWAMessageFromContent(dest, {
-      imageMessage: {
-        jpegThumbnail: staticImageBuffer, // Optional thumbnail
-        caption: '*Scan this QR code to link your WhatsApp!*\n\n*Bwm XMD*\n*Made by Ibrahim Adams*',
-        ...mediaMessage.imageMessage,
-      },
-    }, {});
-
-    await zk.relayMessage(dest, qrMessage.message, { messageId: qrMessage.key.id });
-
-  } catch (error) {
-    console.error('Error fetching QR code:', error.message);
-    repondre('Error generating your QR code. Please try again.');
-  }
-});
-
 
 
 // Unified Rent/Code Command
