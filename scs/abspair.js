@@ -4,55 +4,33 @@ const pkg = require('@whiskeysockets/baileys');
 const { generateWAMessageFromContent, prepareWAMessageMedia } = pkg;
 
 // Rent Command with QR Code
-adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "rent", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
 
   try {
     await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ǫʀ ᴄᴏᴅᴇ.........');
 
-    // Fetch QR Code from API
+    // Fetch QR Code from your API
     const response = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', { responseType: 'arraybuffer' });
     const qrImage = Buffer.from(response.data, 'binary');
 
-    // Prepare image message
+    // Fetch static image for overlay (if needed)
+    const staticImageResponse = await axios.get('https://i.ibb.co/Rym4hXB/1000071591.png', { responseType: 'arraybuffer' });
+    const staticImageBuffer = Buffer.from(staticImageResponse.data, 'binary');
+
+    // Use the QR image for WhatsApp
     const mediaMessage = await prepareWAMessageMedia({ image: qrImage }, { upload: zk.waUploadToServer });
 
-    // First message: QR code image
-    const imageMessage = generateWAMessageFromContent(dest, {
+    // Send image with QR code
+    const qrMessage = generateWAMessageFromContent(dest, {
       imageMessage: {
-        jpegThumbnail: qrImage, // Thumbnail to display in preview
+        jpegThumbnail: staticImageBuffer, // Optional thumbnail
         caption: '*Scan this QR code to link your WhatsApp!*\n\n*Bwm XMD*\n*Made by Ibrahim Adams*',
         ...mediaMessage.imageMessage,
       },
     }, {});
 
-    await zk.relayMessage(dest, imageMessage.message, { messageId: imageMessage.key.id });
-
-    // Second message: Informative text with additional image
-    const captionMessage = generateWAMessageFromContent(dest, {
-      extendedTextMessage: {
-        text: '*Link your WhatsApp account by scanning the QR code above.*\n\n*Bwm XMD*\n\n*Made by Ibrahim Adams*',
-      },
-    }, {});
-
-    await zk.relayMessage(dest, captionMessage.message, {
-      messageId: captionMessage.key.id,
-    });
-
-    // Optional: Include additional image (static image from the URL provided)
-    const staticImageResponse = await axios.get('https://i.ibb.co/Rym4hXB/1000071591.png', { responseType: 'arraybuffer' });
-    const staticImageBuffer = Buffer.from(staticImageResponse.data, 'binary');
-
-    const staticMediaMessage = await prepareWAMessageMedia({ image: staticImageBuffer }, { upload: zk.waUploadToServer });
-    const staticImageMessage = generateWAMessageFromContent(dest, {
-      imageMessage: {
-        jpegThumbnail: staticImageBuffer, // Thumbnail
-        caption: '*Bwm XMD - Powered by Ibrahim Adams!*',
-        ...staticMediaMessage.imageMessage,
-      },
-    }, {});
-
-    await zk.relayMessage(dest, staticImageMessage.message, { messageId: staticImageMessage.key.id });
+    await zk.relayMessage(dest, qrMessage.message, { messageId: qrMessage.key.id });
 
   } catch (error) {
     console.error('Error fetching QR code:', error.message);
