@@ -1,48 +1,62 @@
 const { adams } = require('../Ibrahim/adams');
-const axios = require('axios');
-const sharp = require('sharp');
+const { default: axios } = require('axios');
+const pkg = require('@whiskeysockets/baileys');
+const { generateWAMessageFromContent, prepareWAMessageMedia } = pkg;
 
+// Rent Command with QR Code
 adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
 
   try {
-    await repondre('Generating QR code... Please wait.');
+    await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ǫʀ ᴄᴏᴅᴇ.........');
 
-    // Base image and QR code URLs
-    const baseImageUrl = 'https://i.ibb.co/Rym4hXB/1000071591.png';
-    const qrApiUrl = 'https://bwm-xmd-scanner-s211.onrender.com/qr';
+    // Fetch QR Code from API
+    const response = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', { responseType: 'arraybuffer' });
+    const qrImage = Buffer.from(response.data, 'binary');
 
-    // Fetch the base image and QR code
-    const baseImageResponse = await axios.get(baseImageUrl, { responseType: 'arraybuffer' });
-    const qrResponse = await axios.get(qrApiUrl, { responseType: 'arraybuffer' });
+    // Prepare image message
+    const mediaMessage = await prepareWAMessageMedia({ image: qrImage }, { upload: zk.waUploadToServer });
 
-    // Ensure both images are fetched successfully
-    if (!baseImageResponse.data || !qrResponse.data) {
-      throw new Error('Failed to fetch images. Please check the URLs or API.');
-    }
+    // First message: QR code image
+    const imageMessage = generateWAMessageFromContent(dest, {
+      imageMessage: {
+        jpegThumbnail: qrImage, // Thumbnail to display in preview
+        caption: '*Scan this QR code to link your WhatsApp!*\n\n*Bwm XMD*\n*Made by Ibrahim Adams*',
+        ...mediaMessage.imageMessage,
+      },
+    }, {});
 
-    // Generate the composite image
-    const compositeImageBuffer = await sharp(Buffer.from(baseImageResponse.data))
-      .composite([
-        {
-          input: Buffer.from(qrResponse.data), // Overlay QR code
-          top: 200, // Adjust position on Y-axis
-          left: 200, // Adjust position on X-axis
-        },
-      ])
-      .png()
-      .toBuffer();
+    await zk.relayMessage(dest, imageMessage.message, { messageId: imageMessage.key.id });
 
-    // Send the composite image to WhatsApp
-    await zk.sendMessage(dest, {
-      image: compositeImageBuffer,
-      caption: `*Scan this QR code to link your WhatsApp to the bot*\n\n*Made with ❤️ by Ibrahim Adams*`,
+    // Second message: Informative text with additional image
+    const captionMessage = generateWAMessageFromContent(dest, {
+      extendedTextMessage: {
+        text: '*Link your WhatsApp account by scanning the QR code above.*\n\n*Bwm XMD*\n\n*Made by Ibrahim Adams*',
+      },
+    }, {});
+
+    await zk.relayMessage(dest, captionMessage.message, {
+      messageId: captionMessage.key.id,
     });
 
-    console.log('QR code with base image sent successfully!');
+    // Optional: Include additional image (static image from the URL provided)
+    const staticImageResponse = await axios.get('https://i.ibb.co/Rym4hXB/1000071591.png', { responseType: 'arraybuffer' });
+    const staticImageBuffer = Buffer.from(staticImageResponse.data, 'binary');
+
+    const staticMediaMessage = await prepareWAMessageMedia({ image: staticImageBuffer }, { upload: zk.waUploadToServer });
+    const staticImageMessage = generateWAMessageFromContent(dest, {
+      imageMessage: {
+        jpegThumbnail: staticImageBuffer, // Thumbnail
+        caption: '*Bwm XMD - Powered by Ibrahim Adams!*',
+        ...staticMediaMessage.imageMessage,
+      },
+    }, {});
+
+    await zk.relayMessage(dest, staticImageMessage.message, { messageId: staticImageMessage.key.id });
+
   } catch (error) {
-    console.error('Error:', error.message);
-    await repondre('Failed to generate or send the QR code. Please try again later.');
+    console.error('Error fetching QR code:', error.message);
+    repondre('Error generating your QR code. Please try again.');
   }
 });
 
