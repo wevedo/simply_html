@@ -63,23 +63,15 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
-let restartTimeout;
-/*const AutoSaveContacts = require("./scs/Auto_code");
 
-// Use the existing store object if it already exists
-if (!global.store) {
-    global.store = { contacts: {} }; // Ensure `store` is globally accessible and has a `contacts` property
+function atbverifierEtatJid(jid) {
+    if (!jid.endsWith('@s.whatsapp.net')) {
+        console.error(' successful verified:', jid);
+        return false;
+    }
+    console.log('Verified by bwm xmd:', jid);
+    return true;
 }
-
-// Initialize the bot
-const zk = {}; // Replace with your WhatsApp bot instance
-
-// Initialize AutoSaveContacts
-const autoSaveContacts = new AutoSaveContacts(zk, global.store);
-
-// Activate the listeners
-autoSaveContacts.setupListeners();
-*/
 
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
@@ -168,72 +160,7 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-/*
-// Helper function to detect if a message contains a link
-const isLink = (message) => {
-    const linkRegex = /https?:\/\/[^\s]+/;
-    return linkRegex.test(message);
-};
 
-// Helper function to check if a user is an admin in a group
-const isAdmin = async (zk, groupId, userId) => {
-    try {
-        const groupMetadata = await zk.groupMetadata(groupId);
-        const admins = groupMetadata.participants.filter(participant => participant.admin).map(participant => participant.id);
-        return admins.includes(userId);
-    } catch (err) {
-        console.error("Error checking admin status: ", err);
-        return false; // Return false in case of error
-    }
-};
-
-// Add this logic inside your zk.ev.on('messages.upsert', ...) event listener
-zk.ev.on('messages.upsert', async ({ messages }) => {
-    for (const msg of messages) {
-        try {
-            if (!msg.key.remoteJid || !msg.message || msg.key.fromMe) continue;
-
-            const groupId = msg.key.remoteJid;
-            const senderId = msg.key.participant || msg.key.remoteJid;
-            const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || '';
-
-            console.log(`New message in group ${groupId} from ${senderId}: ${messageContent}`);
-
-            if (isJidGroup(groupId) && isLink(messageContent)) {
-                console.log(`Detected link from ${senderId} in group ${groupId}`);
-                
-                const senderIsAdmin = await isAdmin(zk, groupId, senderId);
-                const botIsAdmin = await isAdmin(zk, groupId, zk.user.id);
-
-                console.log(`Sender is admin: ${senderIsAdmin}, Bot is admin: ${botIsAdmin}`);
-
-                if (botIsAdmin && !senderIsAdmin) {
-                    // Prepare the message text for notification
-                    let txt = `Message deleted \n @${senderId.split("@")[0]} avoid sending links.`;
-
-                    // Send notification message
-                    await zk.sendMessage(groupId, { text: txt, mentions: [senderId] });
-
-                    // Delete the message
-                    await zk.sendMessage(groupId, { delete: msg.key });
-                    console.log(`Deleted message from ${senderId}`);
-
-                    // Remove the sender from the group
-                    try {
-                        await zk.groupParticipantsUpdate(groupId, [senderId], 'remove');
-                        console.log(`Removed ${senderId} from group ${groupId}`);
-                    } catch (e) {
-                        console.error("Error removing participant: ", e);
-                    }
-                }
-            }
-        } catch (err) {
-            console.error("Error processing message: ", err);
-        }
-    }
-});
-
-*/
 
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
@@ -1303,123 +1230,6 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-        /*
-// Function to create and send vCards for all group members
-const fs = require('fs');
-
-// Function to create and send vCard file for all group members
-async function createAndSendGroupVCard(groupJid, baseName, zk) {
-    try {
-        // React to the command
-        await zk.sendMessage(groupJid, { react: { text: "⌛", key: { remoteJid: groupJid, id: groupJid } } });
-
-        // Fetch group metadata to get participants
-        const groupMetadata = await zk.groupMetadata(groupJid);
-        const participants = groupMetadata.participants;
-
-        // Initialize vCard content
-        let vCardContent = '';
-
-        // Loop through each participant and create their vCard
-        participants.forEach((participant, index) => {
-            const phoneNumber = participant.id.split('@')[0];
-            const name = `${baseName} ${index + 1}`; // Assign an incremented name
-            vCardContent += `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${phoneNumber}:+${phoneNumber}\nEND:VCARD\n\n`;
-        });
-
-        // Define the path and file name for the vCard file
-        const fileName = `${baseName}_${groupMetadata.subject.replace(/\s+/g, '_')}.vcf`;
-        const vCardPath = `./${fileName}`;
-
-        // Write the vCard content to a .vcf file
-        fs.writeFileSync(vCardPath, vCardContent);
-
-        // Send the vCard file back to the group
-        await zk.sendMessage(groupJid, {
-            document: { url: vCardPath },
-            mimetype: 'text/vcard',
-            fileName: fileName,
-            caption: `Here is the vCard file containing all members of this group: ${groupMetadata.subject}.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`
-        });
-
-        // Delete the vCard file after sending
-        fs.unlinkSync(vCardPath);
-
-        console.log(`vCard file created and sent for group: ${groupMetadata.subject}`);
-    } catch (error) {
-        console.error(`Error creating or sending vCard file for group ${groupJid}:`, error.message);
-
-        // Send error feedback to the group
-        await zk.sendMessage(groupJid, {
-            text: `❌ Error generating the vCard file for this group. Please try again later.\n\n🚀 ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs`
-        });
-    }
-}
-
-// Command handler with any prefix
-zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const ms = messages[0];
-
-    if (!ms.message) return;
-
-    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text || '';
-    const sender = ms.key.remoteJid;
-
-    // Example prefixes you can allow
-    const prefixes = ["!", ".", "/", "#", "$"];
-    const command = prefixes.find((prefix) => messageContent.startsWith(prefix)) ? messageContent.slice(1).toLowerCase() : null;
-
-    // Check if the message is the "vcard" command and is sent in a group
-    if (command === "vcard" && sender.endsWith("@g.us")) {
-        const baseName = "🚀 ʙᴡᴍ xᴍᴅ";
-
-        // React and call the function to create and send vCards
-        await createAndSendGroupVCard(sender, baseName, zk);
-    }
-});
-
-// Default auto-reply message
-let auto_reply_message = "Hello, I am Bwm xmd. My owner is currently unavailable. Please leave a message, and he will get back to you as soon as possible.";
-
-// Track contacts that have already received the auto-reply
-let repliedContacts = new Set();
-
-zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const ms = messages[0];
-    if (!ms.message) return;
-
-    const messageText = ms.message.conversation || ms.message.extendedTextMessage?.text;
-    const remoteJid = ms.key.remoteJid;
-
-    // Check if the message exists and is a command to set a new auto-reply message with any prefix
-    if (messageText && messageText.match(/^[^\w\s]/) && ms.key.fromMe) {
-        const prefix = messageText[0]; // Detect the prefix
-        const command = messageText.slice(1).split(" ")[0]; // Command after prefix
-        const newMessage = messageText.slice(prefix.length + command.length).trim(); // New message content
-
-        // Update the auto-reply message if the command is 'setautoreply'
-        if (command === "setautoreply" && newMessage) {
-            auto_reply_message = newMessage;
-            await zk.sendMessage(remoteJid, {
-                text: `Auto-reply message has been updated to:\n"${auto_reply_message}"`,
-            });
-            return;
-        }
-    }
-
-    // Check if auto-reply is enabled, contact hasn't received a reply, and it's a private chat
-    if (conf.AUTO_REPLY === "yes" && !repliedContacts.has(remoteJid) && !ms.key.fromMe && !remoteJid.includes("@g.us")) {
-        await zk.sendMessage(remoteJid, {
-            text: auto_reply_message,
-        });
-
-        // Add contact to replied set to prevent repeat replies
-        repliedContacts.add(remoteJid);
-    }
-});
-**/
 
 
 // Function to download and return media buffer
@@ -1709,131 +1519,7 @@ if (conf.AUDIO_REPLY === "yes") {
         }
     });
 }
-        /*// Required Libraries
-const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
-const speech = require("@google-cloud/speech"); // Google Speech-to-Text library
-const client = new speech.SpeechClient(); // Google Speech Client
-
-// Function to process voice note
-async function processVoiceCommand(message) {
-    try {
-        // Download the voice note
-        const stream = await downloadContentFromMessage(message.audioMessage, "audio");
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-
-        // Save the audio locally for transcription
-        const audioPath = "./voice_note.ogg";
-        fs.writeFileSync(audioPath, buffer);
-
-        // Convert the audio to text using Google Speech-to-Text API
-        const audio = { content: buffer.toString("base64") };
-        const config = {
-            encoding: "OGG_OPUS",
-            sampleRateHertz: 16000,
-            languageCode: "en-US", // Adjust based on your preferred language
-        };
-        const request = { audio, config };
-
-        const [response] = await client.recognize(request);
-        const transcription = response.results
-            .map((result) => result.alternatives[0].transcript)
-            .join("\n");
-
-        console.log("Transcription:", transcription);
-        return transcription.toLowerCase();
-    } catch (error) {
-        console.error("Error processing voice command:", error.message);
-        return null;
-    }
-}
-
-// Command handling for voice notes
-zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const ms = messages[0];
-    if (!ms.message) return;
-
-    const remoteJid = ms.key.remoteJid;
-
-    // Check if the message is a voice note
-    if (ms.message.audioMessage) {
-        const transcription = await processVoiceCommand(ms.message);
-
-        if (!transcription) {
-            await zk.sendMessage(remoteJid, { text: "❌ Could not understand the voice note. Please try again." });
-            return;
-        }
-
-        // Respond to commands based on the transcribed text
-        if (transcription.includes("menu")) {
-            await zk.sendMessage(remoteJid, {
-                text: "📜 *Menu*\n1. Command 1\n2. Command 2\n3. Command 3\n\nReply with a number to choose.",
-            });
-        } else {
-            await zk.sendMessage(remoteJid, { text: `🤖 Command "${transcription}" not recognized.` });
-        }
-    }
-});
-        // Initialize zk after creating the socket instance
-
-
-       
-
-if (conf.AUTO_TAG_STATUS === "yes") {
-    console.log("AUTO_TAG_STATUS is enabled. Listening for new status updates...");
-
-    zk.ev.on("messages.upsert", async (messageUpdate) => {
-        const { messages } = messageUpdate;
-
-        for (const message of messages) {
-            try {
-                // Ensure this is a new status posted by the bot itself
-                if (message.key && message.key.remoteJid === "status@broadcast" && message.key.fromMe) {
-                    console.log("Detected a new status update from the bot.");
-
-                    // Validate the store and recent contacts
-                    if (!store || !store.chats) {
-                        console.error("Store or chats data is unavailable. Skipping tagging.");
-                        continue;
-                    }
-
-                    // Fetch up to 10 recent individual contacts
-                    const allContacts = Object.keys(store.chats).filter(jid => jid.endsWith("@s.whatsapp.net"));
-                    const recentContacts = allContacts.slice(-10); // Max 10 contacts
-
-                    if (recentContacts.length === 0) {
-                        console.log("No recent contacts to tag. Skipping tagging.");
-                        continue;
-                    }
-
-                    // Ensure no undefined or invalid JIDs
-                    const mentions = recentContacts.filter(jid => typeof jid === "string" && jid.includes("@s.whatsapp.net"));
-                    if (mentions.length === 0) {
-                        console.log("No valid contacts to tag. Skipping tagging.");
-                        continue;
-                    }
-
-                    // Create the tagging message
-                    const tagMessage = `Hey there, check out my new status!\n\n` +
-                        mentions.map(jid => `@${jid.split("@")[0]}`).join(" ");
-
-                    // Send tagging message
-                    await zk.sendMessage("status@broadcast", {
-                        text: tagMessage,
-                        mentions: mentions,
-                    });
-
-                    console.log(`Successfully tagged ${mentions.length} recent contact(s) in the new status update.`);
-                }
-            } catch (error) {
-                console.error("Error in AUTO_TAG_STATUS functionality:", error.message);
-            }
-        }
-    });
-}**/
+ 
         
         zk.ev.on("messages.upsert", async (m) => {
             const { messages } = m;
@@ -2145,71 +1831,6 @@ var commandeOptions = {
                 
             } 
 
-/**
-
-try {
-    if (conf.ANTIDELETE === 'yes') { // Ensure the feature is enabled
-        zk.ev.on('messages.update', async (updates) => {
-            for (const update of updates) {
-                if (update.key && update.key.remoteJid && update.key.fromMe === false) {
-                    if (update.messageStubType === 8) { // 8 = Message Deleted
-                        const origineMessage = update.key.remoteJid; // Chat ID
-                        const messageId = update.key.id; // Deleted message ID
-                        const deletedMessage = zk.store.messages[origineMessage]?.get(messageId);
-
-                        if (deletedMessage) {
-                            const mtype = Object.keys(deletedMessage.message)[0]; // Message type (text, image, video, etc.)
-                            let msg;
-
-                            if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
-                                // Deleted text message
-                                msg = {
-                                    text: `🛑 *Anti-Delete Detected*\n\nSender: @${
-                                        deletedMessage.key.participant || deletedMessage.key.remoteJid
-                                    }\nMessage: ${deletedMessage.message[mtype].text}`,
-                                    mentions: [deletedMessage.key.participant],
-                                };
-                            } else if (mtype === 'imageMessage' || mtype === 'videoMessage') {
-                                // Deleted image or video
-                                const mediaType = mtype === 'imageMessage' ? 'image' : 'video';
-                                const url = await zk.downloadMediaMessage(deletedMessage);
-                                msg = {
-                                    caption: `🛑 *Anti-Delete Detected*\n\nSender: @${
-                                        deletedMessage.key.participant || deletedMessage.key.remoteJid
-                                    }\nType: ${mediaType}`,
-                                    [mediaType]: url,
-                                    mentions: [deletedMessage.key.participant],
-                                };
-                            } else if (mtype === 'stickerMessage') {
-                                // Deleted sticker
-                                const stickerBuffer = await zk.downloadMediaMessage(deletedMessage);
-                                msg = {
-                                    sticker: stickerBuffer,
-                                };
-                            } else if (mtype === 'audioMessage') {
-                                // Deleted audio
-                                const audioBuffer = await zk.downloadMediaMessage(deletedMessage);
-                                msg = {
-                                    audio: audioBuffer,
-                                    mimetype: 'audio/mp4',
-                                };
-                            }
-
-                            // Send the saved content to the bot owner's number
-                            if (msg) {
-                                await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', msg);
-                                console.log('Deleted message sent to bot owner.');
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
-} catch (error) {
-    console.error('Error in Anti-Delete feature:', error);
-}
-**/
 
 
      //anti-lien
