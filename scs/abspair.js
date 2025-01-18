@@ -3,36 +3,50 @@ const traduire = require("../Ibrahim/traduction");
 const { default: axios } = require('axios');
 const pkg = require('@whiskeysockets/baileys');
 const { generateWAMessageFromContent } = pkg;
+const sharp = require('sharp');
 
-
-
-// Rent Command
 adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
 
   try {
     await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ǫʀ ᴄᴏᴅᴇ.........');
 
-    // Fetch QR code as an image
-    const response = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', {
-      responseType: 'arraybuffer' // Ensure we get the image as binary data
+    // Fetch the base image
+    const baseImageResponse = await axios.get('https://i.ibb.co/Rym4hXB/1000071591.png', {
+      responseType: 'arraybuffer',
     });
 
-    const qrBuffer = Buffer.from(response.data);
+    // Fetch the QR code from the API
+    const qrResponse = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', {
+      responseType: 'arraybuffer',
+    });
 
-    // Send the QR code image
+    // Create a composite image with Sharp
+    const finalImage = await sharp(Buffer.from(baseImageResponse.data))
+      .composite([
+        {
+          input: Buffer.from(qrResponse.data), // QR code image
+          top: 300, // Adjust position (Y-axis)
+          left: 300, // Adjust position (X-axis)
+        },
+      ])
+      .png()
+      .toBuffer();
+
+    // Send the final image to WhatsApp
     await zk.sendMessage(dest, {
-      image: qrBuffer,
-      caption: '*Scan this QR code to link your WhatsApp to the bot*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
+      image: finalImage,
+      caption: '*Scan this QR code to link your WhatsApp to the bot*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*',
     });
 
+    console.log('QR code with base image sent successfully!');
   } catch (error) {
-    console.error('Error fetching QR code:', error.message);
-    repondre('Error generating QR code.');
+    console.error('Error processing or sending the image:', error.message);
+    await repondre('Error generating or sending the QR code. Please try again.');
   }
 });
 // Unified Rent/Code Command
-const nomComList = ["rent", "code", "link"]; // Add your desired commands here
+const nomComList = ["rent", "code", "pair", "link"]; // Add your desired commands here
 
 nomComList.forEach((nomCom) => {
   adams({ nomCom, reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
