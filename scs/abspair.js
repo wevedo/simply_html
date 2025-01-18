@@ -4,6 +4,56 @@ const { default: axios } = require('axios');
 const pkg = require('@whiskeysockets/baileys');
 const { generateWAMessageFromContent } = pkg;
 
+// Scan QR Command
+adams({ nomCom: "scanqr", reaction: "📱", categorie: "User" }, async (dest, zk, commandeOptions) => {
+  const { repondre, arg, ms } = commandeOptions;
+
+  try {
+    if (!arg || arg.length === 0) {
+      return repondre('Example Usage: .scanqr 254xxxxxxxx.');
+    }
+
+    await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ᴄᴏᴅᴇ ᴀɴᴅ ǫʀ ᴄᴏᴅᴇ.........');
+    const text = encodeURIComponent(arg.join(' '));
+    const apiUrl = `https://bwm-xmd-scanner-s211.onrender.com/qr?number=${text}`;
+
+    const response = await axios.get(apiUrl);
+    const result = response.data;
+
+    if (result && result.qr_code) {
+      const qrCodeUrl = result.qr_code;
+
+      // First message with the QR code URL
+      const qrMessage = generateWAMessageFromContent(dest, {
+        extendedTextMessage: {
+          text: `Here is your QR Code:\n\n${qrCodeUrl}`
+        }
+      }, {});
+
+      await zk.relayMessage(dest, qrMessage.message, {
+        messageId: qrMessage.key.id
+      });
+
+      // Second message with additional instructions
+      const captionMessage = generateWAMessageFromContent(dest, {
+        extendedTextMessage: {
+          text: '*Scan the QR code above to proceed with linking your account.*\n\n*ᴄᴏᴘʏ ᴛʜᴇ ǫʀ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*' 
+        }
+      }, {});
+
+      await zk.relayMessage(dest, captionMessage.message, {
+        messageId: captionMessage.key.id
+      });
+
+    } else {
+      throw new Error('Invalid response from API.');
+    }
+  } catch (error) {
+    console.error('Error getting API response:', error.message);
+    repondre('Error generating QR code.');
+  }
+});
+
 // Rent Command
 adams({ nomCom: "rent", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, ms } = commandeOptions;
