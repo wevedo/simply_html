@@ -1,46 +1,48 @@
 const { adams } = require('../Ibrahim/adams');
-const { default: axios } = require('axios');
+const axios = require('axios');
 const sharp = require('sharp');
 
 adams({ nomCom: "scanqr", reaction: "🚘", categorie: "User" }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
 
   try {
-    await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ǫʀ ᴄᴏᴅᴇ.........');
+    await repondre('Generating QR code... Please wait.');
 
-    // Fetch the base image
-    const baseImageResponse = await axios.get('https://i.ibb.co/Rym4hXB/1000071591.png', {
-      responseType: 'arraybuffer',
-    });
+    // Base image and QR code URLs
+    const baseImageUrl = 'https://i.ibb.co/Rym4hXB/1000071591.png';
+    const qrApiUrl = 'https://bwm-xmd-scanner-s211.onrender.com/qr';
 
-    // Fetch the QR code from the API
-    const qrResponse = await axios.get('https://bwm-xmd-scanner-s211.onrender.com/qr', {
-      responseType: 'arraybuffer',
-    });
+    // Fetch the base image and QR code
+    const baseImageResponse = await axios.get(baseImageUrl, { responseType: 'arraybuffer' });
+    const qrResponse = await axios.get(qrApiUrl, { responseType: 'arraybuffer' });
 
-    // Create a composite image with Sharp
-    const finalImageBuffer = await sharp(Buffer.from(baseImageResponse.data))
+    // Ensure both images are fetched successfully
+    if (!baseImageResponse.data || !qrResponse.data) {
+      throw new Error('Failed to fetch images. Please check the URLs or API.');
+    }
+
+    // Generate the composite image
+    const compositeImageBuffer = await sharp(Buffer.from(baseImageResponse.data))
       .composite([
         {
-          input: Buffer.from(qrResponse.data), // QR code image
-          top: 300, // Adjust position (Y-axis)
-          left: 300, // Adjust position (X-axis)
+          input: Buffer.from(qrResponse.data), // Overlay QR code
+          top: 200, // Adjust position on Y-axis
+          left: 200, // Adjust position on X-axis
         },
       ])
       .png()
       .toBuffer();
 
-    // Send the final image to WhatsApp
+    // Send the composite image to WhatsApp
     await zk.sendMessage(dest, {
-      image: finalImageBuffer,
-      caption: '*Scan this QR code to link your WhatsApp to the bot*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*',
+      image: compositeImageBuffer,
+      caption: `*Scan this QR code to link your WhatsApp to the bot*\n\n*Made with ❤️ by Ibrahim Adams*`,
     });
 
     console.log('QR code with base image sent successfully!');
   } catch (error) {
-    console.error('Error processing or sending the image:', error.message);
-    console.error('Detailed error:', error);
-    await repondre('Error generating or sending the QR code. Please try again.');
+    console.error('Error:', error.message);
+    await repondre('Failed to generate or send the QR code. Please try again later.');
   }
 });
 
