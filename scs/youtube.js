@@ -26,25 +26,26 @@ async function searchYouTube(query) {
   }
 }
 
-// Download Media Function with Fallback
+// Download Media Function with Primary as Fast API
 async function downloadMedia(url, type) {
   try {
-    const endpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
-    const { data } = await axios.get(endpoint);
-    if (data.status === 200 && data.success) {
-      return data.result.download_url;
+    // Primary Fast API
+    const fastEndpoint = `https://api.davidcyriltech.my.id/download/yt${type}?url=${encodeURIComponent(url)}`;
+    const { data } = await axios.get(fastEndpoint);
+    if (data.status === "success" && data.download_url) {
+      return data.download_url;
     } else {
-      throw new Error(data.message || 'Primary API download failed.');
+      throw new Error(data.message || 'Fast API download failed.');
     }
   } catch (error) {
-    console.error(`Primary API Error (${type}):`, error.message);
+    console.error(`Primary Fast API Error (${type}):`, error.message);
 
-    // Fallback API
+    // Fallback to API with API Key
     try {
-      const fallbackEndpoint = `https://api.davidcyriltech.my.id/download/${type}?url=${encodeURIComponent(url)}`;
+      const fallbackEndpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
       const { data } = await axios.get(fallbackEndpoint);
-      if (data.status === "success" && data.download_url) {
-        return data.download_url;
+      if (data.status === 200 && data.success) {
+        return data.result.download_url;
       } else {
         throw new Error(data.message || 'Fallback API download failed.');
       }
