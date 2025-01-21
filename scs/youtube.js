@@ -26,36 +26,54 @@ async function searchYouTube(query) {
   }
 }
 
-// Download Media Function with Primary as Fast API
+// Download Media Function
 async function downloadMedia(url, type) {
+  // Primary Fast API
+  const fastEndpoint = `https://api.davidcyriltech.my.id/download/yt${type}?url=${encodeURIComponent(url)}`;
+  const fallbackEndpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
+
   try {
-    // Primary Fast API
-    const fastEndpoint = `https://api.davidcyriltech.my.id/download/yt${type}?url=${encodeURIComponent(url)}`;
+    // Attempt using Fast API
     const { data } = await axios.get(fastEndpoint);
-    if (data.status === "success" && data.download_url) {
-      return data.download_url;
+    console.log('Fast API Response:', data); // Debug API response
+
+    if (data.status === 200 && data.success && data.result.download_url) {
+      return data.result.download_url;
     } else {
       throw new Error(data.message || 'Fast API download failed.');
     }
   } catch (error) {
-    console.error(`Primary Fast API Error (${type}):`, error.message);
+    console.error('Fast API Error:', error.message);
 
-    // Fallback to API with API Key
+    // Fallback to API with API key
     try {
-      const fallbackEndpoint = `${BaseUrl}/api/download/yt${type}?url=${encodeURIComponent(url)}&apikey=${adamsapikey}`;
       const { data } = await axios.get(fallbackEndpoint);
-      if (data.status === 200 && data.success) {
+      console.log('Fallback API Response:', data); // Debug fallback response
+
+      if (data.status === 200 && data.success && data.result.download_url) {
         return data.result.download_url;
       } else {
         throw new Error(data.message || 'Fallback API download failed.');
       }
     } catch (fallbackError) {
-      console.error(`Fallback API Error (${type}):`, fallbackError.message);
-      throw new Error(`Failed to download ${type}. Please try again later.`);
+      console.error('Fallback API Error:', fallbackError.message);
+      throw new Error('Failed to download media from both APIs.');
     }
   }
 }
 
+// Example Usage
+(async () => {
+  const videoUrl = 'https://youtube.com/watch?v=MwpMEbgC7DA';
+
+  try {
+    const downloadUrl = await downloadMedia(videoUrl, 'mp3');
+    console.log('Download URL:', downloadUrl);
+    // Process download URL further (e.g., send it to the user, save it, etc.)
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
+})();
 // WhatsApp Channel URL
 const WhatsAppChannelURL = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
