@@ -41,7 +41,7 @@ async function downloadMedia(url, type) {
 
     // Fallback API
     try {
-      const fallbackEndpoint = `https://api.davidcyriltech.my.id/youtube/${type}?url=${encodeURIComponent(url)}`;
+      const fallbackEndpoint = `https://api.davidcyriltech.my.id/download/${type}?url=${encodeURIComponent(url)}`;
       const { data } = await axios.get(fallbackEndpoint);
       if (data.status === "success" && data.download_url) {
         return data.download_url;
