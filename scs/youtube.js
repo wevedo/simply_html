@@ -196,8 +196,8 @@ adams(
           newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
           serverMessageId: 143, // Example ID, adjust if needed
         },
-      }
-    }, { quoted: ms });
+        },
+      });
     } catch (error) {
       console.error("Play Command Error:", error.message);
       repondre("An error occurred while processing your request. Please try again.");
@@ -274,8 +274,8 @@ adams(
           newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
           serverMessageId: 143, // Example ID, adjust if needed
         },
-      }
-    }, { quoted: ms });
+        },
+      });
     } catch (error) {
       console.error("Play Command Error:", error.message);
       repondre("An error occurred while processing your request. Please try again.");
