@@ -75,39 +75,54 @@ adams(
 
       const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
       await zk.sendMessage(dest, {
-        text: responseMessage,
-        contextInfo: {
-          mentionedJid: [dest.sender || ""],
-          externalAdReply: {
-            title: video.title,
-            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            sourceUrl: WhatsAppChannelURL,
-            mediaType: 1,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-          },
+text: responseMessage,
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        externalAdReply: {
+          title: video.title,
+          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          sourceUrl: WhatsAppChannelURL,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
         },
-        quoted: ms,
+        forwardingScore: 999,
+        isForwarded: false,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y@s.whatsapp.net',
+          newsletterName: "Bwm xmd Updates 🚀",
+          serverMessageId: 143,
+        },
+      },
+      quoted: ms,
+     
       });
 
       const videoDlUrl = await downloadMedia(video.url, "mp4");
       if (!videoDlUrl) return repondre("Failed to download the video.");
 
       await zk.sendMessage(dest, {
-        video: { url: videoDlUrl },
-        mimetype: "video/mp4",
-        caption: `*${video.title}*\n👤 Author: ${video.author.name}\n⏱️ Duration: ${video.timestamp}`,
-        contextInfo: {
-          externalAdReply: {
-            title: `📍 ${video.title}`,
-            body: `👤 ${video.author.name}\n⏱️ ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            renderLargerThumbnail: true,
-            sourceUrl: WhatsAppChannelURL,
-          },
+          video: { url: videoDlUrl },
+      mimetype: 'video/mp4',
+      caption: `*${video.title}*\n👤 Author: ${video.author.name}\n⏱️ Duration: ${video.timestamp}`,
+      contextInfo: {
+        externalAdReply: {
+          title: `📍 ${video.title}`,
+          body: `👤 ${video.author.name}\n⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          renderLargerThumbnail: true,
+          sourceUrl: WhatsAppChannelURL, // Clickable URL for your channel
         },
-      });
+        forwardingScore: 999,  // Increased score for forward likelihood
+        isForwarded: true,     // Mark as forwarded
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',   // Leave empty or use a specific Jid
+          newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
+          serverMessageId: 143, // Example ID, adjust if needed
+        },
+      }
+    }, { quoted: ms });
     } catch (error) {
       console.error("Video Command Error:", error.message);
       repondre("An error occurred while processing your request. Please try again.");
@@ -134,19 +149,28 @@ adams(
       const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
       await zk.sendMessage(dest, {
         text: responseMessage,
-        contextInfo: {
-          mentionedJid: [dest.sender || ""],
-          externalAdReply: {
-            title: video.title,
-            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            sourceUrl: WhatsAppChannelURL,
-            mediaType: 1,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-          },
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        quotedMessage: { conversation: "Requesting your audio download..." },
+        externalAdReply: {
+          title: video.title,
+          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          sourceUrl: WhatsAppChannelURL,
+          mediaType: 1,
+          renderLargerThumbnail: false,
+          showAdAttribution: true,
         },
-        quoted: ms,
+        forwardingScore: 999,
+        isForwarded: false,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',
+          newsletterName: "Bwm xmd Updates 🚀",
+          serverMessageId: 143,
+        },
+      },
+      quoted: ms,
+    
       });
 
       const audioDlUrl = await downloadMedia(video.url, "mp3");
@@ -154,24 +178,36 @@ adams(
 
       await zk.sendMessage(dest, {
         audio: { url: audioDlUrl },
-        mimetype: "audio/mp4",
-        caption: `*${video.title}*\n👤 Author: ${video.author.name}\n⏱️ Duration: ${video.timestamp}`,
-        contextInfo: {
-          externalAdReply: {
-            title: `🎶 ${video.title}`,
-            body: `👤 ${video.author.name}\n⏱️ ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            renderLargerThumbnail: true,
-            sourceUrl: WhatsAppChannelURL,
-          },
+      mimetype: 'audio/mp4',
+      contextInfo: {
+        quotedMessage: { conversation: `Here is your audio: ${video.title}` },
+        externalAdReply: {
+          title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
+          body: `${video.title} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          sourceUrl: WhatsAppChannelURL, // Clickable URL for your channel
         },
-      });
+        forwardingScore: 999,  // Increased score for forward likelihood
+        isForwarded: true,     // Mark as forwarded
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',   // Leave empty or use a specific Jid
+          newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
+          serverMessageId: 143, // Example ID, adjust if needed
+        },
+      }
+    }, { quoted: ms });
     } catch (error) {
       console.error("Play Command Error:", error.message);
       repondre("An error occurred while processing your request. Please try again.");
     }
   }
 );
+
+
+
+
 
 adams(
   {
@@ -191,19 +227,28 @@ adams(
       const responseMessage = `*Bwm xmd is downloading ${video.title}*`;
       await zk.sendMessage(dest, {
         text: responseMessage,
-        contextInfo: {
-          mentionedJid: [dest.sender || ""],
-          externalAdReply: {
-            title: video.title,
-            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            sourceUrl: WhatsAppChannelURL,
-            mediaType: 1,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-          },
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        quotedMessage: { conversation: "Requesting your audio download..." },
+        externalAdReply: {
+          title: video.title,
+          body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          sourceUrl: WhatsAppChannelURL,
+          mediaType: 1,
+          renderLargerThumbnail: false,
+          showAdAttribution: true,
         },
-        quoted: ms,
+        forwardingScore: 999,
+        isForwarded: false,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',
+          newsletterName: "Bwm xmd Updates 🚀",
+          serverMessageId: 143,
+        },
+      },
+      quoted: ms,
+    
       });
 
       const audioDlUrl = await downloadMedia(video.url, "mp3");
@@ -211,22 +256,32 @@ adams(
 
       await zk.sendMessage(dest, {
         audio: { url: audioDlUrl },
-        mimetype: "audio/mp4",
-        caption: `*${video.title}*\n👤 Author: ${video.author.name}\n⏱️ Duration: ${video.timestamp}`,
-        contextInfo: {
-          externalAdReply: {
-            title: `🎶 ${video.title}`,
-            body: `👤 ${video.author.name}\n⏱️ ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            renderLargerThumbnail: true,
-            sourceUrl: WhatsAppChannelURL,
-          },
+      mimetype: 'audio/mp4',
+      contextInfo: {
+        quotedMessage: { conversation: `Here is your audio: ${video.title}` },
+        externalAdReply: {
+          title: '🚀 ʙᴡᴍ xᴍᴅ ɴᴇxᴜs 🚀',
+          body: `${video.title} | ⏱️ ${video.timestamp}`,
+          thumbnailUrl: video.thumbnail,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          sourceUrl: WhatsAppChannelURL, // Clickable URL for your channel
         },
-      });
+        forwardingScore: 999,  // Increased score for forward likelihood
+        isForwarded: true,     // Mark as forwarded
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '0029VaZuGSxEawdxZK9CzM0Y',   // Leave empty or use a specific Jid
+          newsletterName: "Bwm xmd Updates 🚀", // Cool name or title here
+          serverMessageId: 143, // Example ID, adjust if needed
+        },
+      }
+    }, { quoted: ms });
     } catch (error) {
       console.error("Play Command Error:", error.message);
       repondre("An error occurred while processing your request. Please try again.");
     }
   }
 );
+
+
 
