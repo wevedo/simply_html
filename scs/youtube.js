@@ -2,11 +2,12 @@ const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const ytSearch = require('yt-search');
 
+// Command for downloading audio (MP3)
 adams({
-  nomCom: "play",
-  aliases: ["song", "ytmp3", "audio", "mp3"],
+  nomCom: "play",  // Changed to a unique command name
+  aliases: ["song", "audio", "mp3"],
   categorie: "Search",
-  reaction: "🎥"
+  reaction: "🎵"
 }, async (dest, zk, commandOptions) => {
   const { arg, ms, repondre } = commandOptions;
 
@@ -57,9 +58,9 @@ adams({
       }
     };
 
-    // List of APIs to try
+    // List of APIs to try for MP3 download
     const apis = [
-      `https://api-rin-tohsaka.vercel.app/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
+      `https://api-rin-tohsaka.vercel.app/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
       `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
       `https://www.dark-yasiya-api.site/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
       `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
@@ -106,13 +107,12 @@ adams({
   }
 });
 
-
-// Define the command with aliases
+// Command for downloading video (MP4)
 adams({
-  nomCom: "video ",
-  aliases: ["video ", "ytmp4", "audio", "mp3"],
+  nomCom: "video",  // Changed to a unique command name
+  aliases: ["vide", "mp4"],
   categorie: "Search",
-  reaction: "🎥"
+  reaction: "🎬"
 }, async (dest, zk, commandOptions) => {
   const { arg, ms, repondre } = commandOptions;
 
@@ -137,7 +137,7 @@ adams({
 
     // Send a fast response to indicate downloading
     const fastResponse = {
-      text: `*Bwm is downloading ${firstVideo.title}*`",
+      text: `*Bwm is downloading ${firstVideo.title}*`,
       contextInfo: {
         externalAdReply: {
           title: firstVideo.title,
@@ -163,7 +163,7 @@ adams({
       }
     };
 
-    // List of APIs to try
+    // List of APIs to try for MP4 download
     const apis = [
       `https://api-rin-tohsaka.vercel.app/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
       `https://api.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
