@@ -1,9 +1,7 @@
 const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const ytSearch = require('yt-search');
-const yt = require("../lib/adamss"); // Importing download functions
-const { downloadVideo } = yt; // Importing the downloadVideo function
-// Define the command with aliases
+
 adams({
   nomCom: "play",
   aliases: ["song", "ytmp3", "audio", "mp3"],
