@@ -134,25 +134,23 @@ adams({
     if (videos && videos.length > 0 && videos[0]) {
       const video = videos[0];
 
-      // Prepare the message info for the initial response
+      // Prepare the first response message saying 'bwm is downloading'
       let messageInfo = {
-        text: `*Bwm xmd is downloading ${video.title}*`, 
+        text: `*Bwm xmd is downloading ${video.title}*`,
         contextInfo: {
-          mentionedJid: [originMessage.sender || ""],
           externalAdReply: {
             title: video.title,
-            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+            body: `${video.author.name} | ${video.timestamp}`,
             thumbnailUrl: video.thumbnail,
             sourceUrl: video.url,
             mediaType: 1,
             renderLargerThumbnail: true,
+            showAdAttribution: true,
           },
-          forwardingScore: 999,
-          isForwarded: false,
         },
       };
 
-      // Send the initial response message
+      // Send the first message to the user
       await zk.sendMessage(originMessage, messageInfo, { quoted: ms });
 
       // Define the video format (default to 360p)
@@ -166,24 +164,24 @@ adams({
         return;
       }
 
-      // Send the video as a message (only one video, no document)
-      await zk.sendMessage(originMessage, {
+      // Prepare the second response with the video
+      let videoInfo = {
         video: { url: videoUrl },
-        caption: "*Bwm xmd*",
-        gifPlayback: false,
+        caption: `*Bwm xmd Video*\n${video.title} by ${video.author.name}`,
+        mimetype: 'video/mp4',
         contextInfo: {
           externalAdReply: {
             title: `📍 ${video.title}`,
-            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+            body: `${video.author.name} | ${video.timestamp}`,
             thumbnailUrl: video.thumbnail,
-            sourceUrl: video.url,
-            mediaType: 1,
             renderLargerThumbnail: true,
+            sourceUrl: video.url,
           },
-          forwardingScore: 999,
-          isForwarded: false,
         },
-      }, { quoted: ms });
+      };
+
+      // Send the video as a message (in case of playback)
+      await zk.sendMessage(originMessage, videoInfo, { quoted: ms });
 
     } else {
       respond('No video found.');
@@ -193,7 +191,6 @@ adams({
     respond('An error occurred during the search or download process.');
   }
 });
-
 
 
 
