@@ -109,18 +109,18 @@ adams({
 });
 
 
-// Define the command with aliases
+
 adams({
   nomCom: "video",
   aliases: ["videodoc", "ytmp4", "film", "mp4"],
   categorie: "Search",
   reaction: "🎥"
 }, async (originMessage, zk, commandOptions) => {
-  const { arg, ms, respond } = commandOptions;
+  const { arg, ms } = commandOptions;
 
   // Check if a query is provided
   if (!arg[0]) {
-    respond("Please provide a video name.");
+    await zk.sendMessage(originMessage, { text: "Please provide a video name." }, { quoted: ms });
     return;
   }
 
@@ -160,7 +160,7 @@ adams({
       const videoUrl = await downloadVideo(video.url, format);
 
       if (!videoUrl) {
-        respond('An error occurred while downloading the video.');
+        await zk.sendMessage(originMessage, { text: 'An error occurred while downloading the video.' }, { quoted: ms });
         return;
       }
 
@@ -184,11 +184,11 @@ adams({
       await zk.sendMessage(originMessage, videoInfo, { quoted: ms });
 
     } else {
-      respond('No video found.');
+      await zk.sendMessage(originMessage, { text: 'No video found.' }, { quoted: ms });
     }
   } catch (error) {
     console.error('Error during search or video download:', error);
-    respond('An error occurred during the search or download process.');
+    await zk.sendMessage(originMessage, { text: 'An error occurred during the search or download process.' }, { quoted: ms });
   }
 });
 
