@@ -1,7 +1,8 @@
-const { adams } = require("../ibrahim/adams");
+const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const ytSearch = require('yt-search');
-
+const yt = require("../lib/adamss"); // Importing download functions
+const { downloadVideo } = yt; // Importing the downloadVideo function
 // Define the command with aliases
 adams({
   nomCom: "play",
@@ -108,7 +109,90 @@ adams({
 });
 
 
+// Define the command with aliases
+adams({
+  nomCom: "video",
+  aliases: ["videodoc", "ytmp4", "film", "mp4"],
+  categorie: "Search",
+  reaction: "🎥"
+}, async (originMessage, zk, commandOptions) => {
+  const { arg, ms, respond } = commandOptions;
 
+  // Check if a query is provided
+  if (!arg[0]) {
+    respond("Please provide a video name.");
+    return;
+  }
+
+  const query = arg.join(" ");
+  try {
+    // Perform the video search
+    const search = await yts(query);
+    const videos = search.videos;
+
+    // Check if videos are found
+    if (videos && videos.length > 0 && videos[0]) {
+      const video = videos[0];
+
+      // Prepare the message info for the initial response
+      let messageInfo = {
+        text: `*Bwm xmd is downloading ${video.title}*`, 
+        contextInfo: {
+          mentionedJid: [originMessage.sender || ""],
+          externalAdReply: {
+            title: video.title,
+            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+            thumbnailUrl: video.thumbnail,
+            sourceUrl: video.url,
+            mediaType: 1,
+            renderLargerThumbnail: true,
+          },
+          forwardingScore: 999,
+          isForwarded: false,
+        },
+      };
+
+      // Send the initial response message
+      await zk.sendMessage(originMessage, messageInfo, { quoted: ms });
+
+      // Define the video format (default to 360p)
+      const format = '360p';
+
+      // Download the video
+      const videoUrl = await downloadVideo(video.url, format);
+
+      if (!videoUrl) {
+        respond('An error occurred while downloading the video.');
+        return;
+      }
+
+      // Send the video as a message (only one video, no document)
+      await zk.sendMessage(originMessage, {
+        video: { url: videoUrl },
+        caption: "*Bwm xmd*",
+        gifPlayback: false,
+        contextInfo: {
+          externalAdReply: {
+            title: `📍 ${video.title}`,
+            body: `👤 ${video.author.name} | ⏱️ ${video.timestamp}`,
+            thumbnailUrl: video.thumbnail,
+            sourceUrl: video.url,
+            mediaType: 1,
+            renderLargerThumbnail: true,
+          },
+          forwardingScore: 999,
+          isForwarded: false,
+        },
+      }, { quoted: ms });
+
+    } else {
+      respond('No video found.');
+    }
+  } catch (error) {
+    console.error('Error during search or video download:', error);
+    respond('An error occurred during the search or download process.');
+  }
+});
 
 
 
