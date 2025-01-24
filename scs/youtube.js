@@ -109,86 +109,108 @@ adams({
 });
 
 
-
+// Define the command with aliases
 adams({
-  nomCom: "video",
-  aliases: ["videodoc", "ytmp4", "film", "mp4"],
+  nomCom: "video ",
+  aliases: ["video ", "ytmp4", "audio", "mp3"],
   categorie: "Search",
   reaction: "🎥"
-}, async (originMessage, zk, commandOptions) => {
-  const { arg, ms } = commandOptions;
+}, async (dest, zk, commandOptions) => {
+  const { arg, ms, repondre } = commandOptions;
 
   // Check if a query is provided
   if (!arg[0]) {
-    await zk.sendMessage(originMessage, { text: "Please provide a video name." }, { quoted: ms });
-    return;
+    return repondre("Please provide a video name.");
   }
 
   const query = arg.join(" ");
+
   try {
-    // Perform the video search
-    const search = await yts(query);
-    const videos = search.videos;
+    // Perform a YouTube search based on the query
+    const searchResults = await ytSearch(query);
 
-    // Check if videos are found
-    if (videos && videos.length > 0 && videos[0]) {
-      const video = videos[0];
-
-      // Prepare the first response message saying 'bwm is downloading'
-      let messageInfo = {
-        text: `*Bwm xmd is downloading ${video.title}*`,
-        contextInfo: {
-          externalAdReply: {
-            title: video.title,
-            body: `${video.author.name} | ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            sourceUrl: video.url,
-            mediaType: 1,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-          },
-        },
-      };
-
-      // Send the first message to the user
-      await zk.sendMessage(originMessage, messageInfo, { quoted: ms });
-
-      // Define the video format (default to 360p)
-      const format = '360p';
-
-      // Download the video
-      const videoUrl = await downloadVideo(video.url, format);
-
-      if (!videoUrl) {
-        await zk.sendMessage(originMessage, { text: 'An error occurred while downloading the video.' }, { quoted: ms });
-        return;
-      }
-
-      // Prepare the second response with the video
-      let videoInfo = {
-        video: { url: videoUrl },
-        caption: `*Bwm xmd Video*\n${video.title} by ${video.author.name}`,
-        mimetype: 'video/mp4',
-        contextInfo: {
-          externalAdReply: {
-            title: `📍 ${video.title}`,
-            body: `${video.author.name} | ${video.timestamp}`,
-            thumbnailUrl: video.thumbnail,
-            renderLargerThumbnail: true,
-            sourceUrl: video.url,
-          },
-        },
-      };
-
-      // Send the video as a message (in case of playback)
-      await zk.sendMessage(originMessage, videoInfo, { quoted: ms });
-
-    } else {
-      await zk.sendMessage(originMessage, { text: 'No video found.' }, { quoted: ms });
+    // Check if any videos were found
+    if (!searchResults || !searchResults.videos.length) {
+      return repondre('No video found for the specified query.');
     }
+
+    const firstVideo = searchResults.videos[0];
+    const videoUrl = firstVideo.url;
+
+    // Send a fast response to indicate downloading
+    const fastResponse = {
+      text: `*Bwm is downloading ${firstVideo.title}*`",
+      contextInfo: {
+        externalAdReply: {
+          title: firstVideo.title,
+          body: "Bwm xmd downloader",
+          mediaType: 1,
+          thumbnailUrl: firstVideo.thumbnail,
+          sourceUrl: videoUrl,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
+        },
+      },
+    };
+    await zk.sendMessage(dest, fastResponse, { quoted: ms });
+
+    // Function to get download data from APIs
+    const getDownloadData = async (url) => {
+      try {
+        const response = await axios.get(url);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching data from API:', error.message);
+        return { success: false };
+      }
+    };
+
+    // List of APIs to try
+    const apis = [
+      `https://api-rin-tohsaka.vercel.app/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
+      `https://api.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
+      `https://www.dark-yasiya-api.site/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
+      `https://api.giftedtech.web.id/api/download/dlmp4?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
+      `https://api.dreaded.site/api/ytdl/video?url=${encodeURIComponent(videoUrl)}`
+    ];
+
+    let downloadData;
+    for (const api of apis) {
+      downloadData = await getDownloadData(api);
+      if (downloadData && downloadData.success) break;
+    }
+
+    // Check if a valid download URL was found
+    if (!downloadData || !downloadData.success) {
+      return repondre('Failed to retrieve download URL from all sources. Please try again later.');
+    }
+
+    const downloadUrl = downloadData.result.download_url;
+    const videoDetails = downloadData.result;
+
+    // Prepare the video message payload
+    const videoPayload = {
+      video: { url: downloadUrl },
+      mimetype: 'video/mp4',
+      contextInfo: {
+        externalAdReply: {
+          title: videoDetails.title,
+          body: `🎬 ${videoDetails.title} | Download complete`,
+          mediaType: 2,  // MediaType 2 indicates video
+          sourceUrl: 'https://whatsapp.com/channel/0029Vaan9TF9Bb62l8wpoD47',
+          thumbnailUrl: firstVideo.thumbnail,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
+        },
+      },
+    };
+
+    // Send the downloaded video to the user
+    await zk.sendMessage(dest, videoPayload, { quoted: ms });
+
   } catch (error) {
-    console.error('Error during search or video download:', error);
-    await zk.sendMessage(originMessage, { text: 'An error occurred during the search or download process.' }, { quoted: ms });
+    console.error('Error during download process:', error.message);
+    return repondre(`Download failed due to an error: ${error.message || error}`);
   }
 });
 
