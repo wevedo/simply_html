@@ -33,7 +33,7 @@ adams({
 
     // Send a fast response to indicate downloading
     const fastResponse = {
-      text: "Bwm is downloading your audio. Please wait...",
+      text: `*Bwm is downloading ${firstVideo.title}*`,
       contextInfo: {
         externalAdReply: {
           title: firstVideo.title,
@@ -41,7 +41,7 @@ adams({
           mediaType: 1,
           thumbnailUrl: firstVideo.thumbnail,
           sourceUrl: videoUrl,
-          renderLargerThumbnail: true,
+          renderLargerThumbnail: false,
           showAdAttribution: true,
         },
       },
