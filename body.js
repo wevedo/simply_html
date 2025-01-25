@@ -165,48 +165,51 @@ zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const msg = messages[0];
 
-    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore bot's own messages or non-group chats
+    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore non-group messages or bot's messages
 
+    // Ensure ANTI-LINK feature is enabled
+    if (conf.ANTILINK !== "yes") return;
+
+    const messageType = Object.keys(msg.message)[0];
     const remoteJid = msg.key.remoteJid; // Group ID
-    const sender = msg.key.participant || msg.key.remoteJid; // Sender ID
-    const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
-
-    // Ensure ANTI-LINK is not globally disabled
-    if (conf.ANTILINK === "yes") return;
-
-    // Skip if Anti-Link is disabled for this group in settings
-    if (!settings[remoteJid]) return;
-
-    // Fetch group metadata to get admin list
-    const groupMetadata = await zk.groupMetadata(remoteJid);
-    const groupAdmins = groupMetadata.participants
-        .filter(participant => participant.admin !== null)
-        .map(admin => admin.id);
-
-    // Skip if the sender is an admin
-    if (groupAdmins.includes(sender)) {
-        console.log(`Admin ${sender} sent a group link, skipping...`);
-        return;
-    }
+    const sender = msg.key.participant || msg.key.remoteJid; // Message sender
+    let messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
     // Detect group links
     const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
     if (groupLinkRegex.test(messageContent)) {
         console.log(`Detected group link from ${sender} in ${remoteJid}`);
 
-        // Delete the message
-        await zk.sendMessage(remoteJid, { delete: msg.key });
+        try {
+            // Fetch group metadata to check if the sender is an admin
+            const groupMetadata = await zk.groupMetadata(remoteJid);
+            const groupAdmins = groupMetadata.participants
+                .filter((participant) => participant.admin)
+                .map((participant) => participant.id);
 
-        // Remove the user from the group
-        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+            // Check if the sender is an admin
+            if (groupAdmins.includes(sender)) {
+                console.log(`Message from admin ${sender} ignored.`);
+                return; // Don't delete or remove admins
+            }
 
-        // Send notification in the group
-        await zk.sendMessage(remoteJid, { 
-            text: `⚠️ User @${sender.split("@")[0]} was removed for sending a group link!`, 
-            mentions: [sender] 
-        });
+            // Delete the message
+            await zk.sendMessage(remoteJid, { delete: msg.key });
 
-        console.log(`Removed user ${sender} for sending a group link.`);
+            // Remove the user from the group
+            await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+
+            // Notify the group about the action
+            const notification = `⚠️ *Anti-Link Alert!*\nUser @${sender.split('@')[0]} was removed for sharing a group link.`;
+            await zk.sendMessage(remoteJid, {
+                text: notification,
+                mentions: [sender],
+            });
+
+            console.log(`Removed user ${sender} for sending a group link.`);
+        } catch (error) {
+            console.error("Error handling group link:", error);
+        }
     }
 });
         
