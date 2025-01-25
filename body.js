@@ -210,7 +210,7 @@ zk.ev.on('messages.upsert', async (msg) => {
                 await zk.sendMessage(
                     from,
                     {
-                        text: `⚠️ Bwm xmd Anti-link online! User @${sender.split('@')[0]} has been removed for sharing a group link.`,
+                        text: `⚠️ Anti-link warning! User @${sender.split('@')[0]} has been removed for sharing a group link.`,
                         mentions: [sender],
                     }
                 );
