@@ -198,10 +198,10 @@ zk.ev.on('messages.upsert', async (msg) => {
             // Skip messages from admins
             if (groupAdmins.includes(sender)) return;
 
-            // Check if the message contains a group link
+            // Check for group links
             if (isGroupLink(body)) {
                 // Delete the message
-                await zk.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: message.key.id } });
+                await zk.sendMessage(from, { delete: message.key });
 
                 // Remove the sender from the group
                 await zk.groupParticipantsUpdate(from, [sender], 'remove');
