@@ -160,90 +160,55 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-
-// System store path for saving settings
-const settingsFilePath = path.join(__dirname, "store", "groupLinkProtection.json");
-
-// Ensure the directory exists
-if (!fs.existsSync(path.dirname(settingsFilePath))) {
-    fs.mkdirSync(path.dirname(settingsFilePath), { recursive: true });
-}
-
-// Load or initialize settings
-let settings = {};
-if (fs.existsSync(settingsFilePath)) {
-    settings = JSON.parse(fs.readFileSync(settingsFilePath, "utf8"));
-} else {
-    fs.writeFileSync(settingsFilePath, JSON.stringify(settings, null, 2));
-}
-
-// Save settings to the system store
-const saveSettings = () => {
-    fs.writeFileSync(settingsFilePath, JSON.stringify(settings, null, 2));
-};
-
-// Detect any prefix
-const detectPrefix = (text) => {
-    const match = text.match(/^(\W)/); // Matches the first non-alphanumeric character
-    return match ? match[1] : null;
-};
-
-// Event Listener for messages
+        
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const msg = messages[0];
 
-    if (!msg.message || msg.key.fromMe) return; // Ignore bot's own messages
+    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore bot's own messages or non-group chats
 
-    const remoteJid = msg.key.remoteJid; // Chat ID
+    const remoteJid = msg.key.remoteJid; // Group ID
     const sender = msg.key.participant || msg.key.remoteJid; // Sender ID
-    const messageType = Object.keys(msg.message)[0];
     const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
-    // Only work in groups
-    if (!remoteJid.endsWith("@g.us")) return;
+    // Ensure ANTI-LINK is not globally disabled
+    if (conf.ANTILINK === "yes") return;
 
-    // Detect prefix
-    const prefix = detectPrefix(messageContent);
-    if (prefix) {
-        const args = messageContent.slice(prefix.length).trim().split(/ +/);
-        const command = args.shift().toLowerCase();
+    // Skip if Anti-Link is disabled for this group in settings
+    if (!settings[remoteJid]) return;
 
-        if (command === "antilink") {
-            const subCommand = args[0];
-            if (subCommand === "on") {
-                settings[remoteJid] = true; // Enable for this group
-                saveSettings();
-                await zk.sendMessage(remoteJid, { text: "✅ Anti-Link Protection is now *enabled* for this group." });
-            } else if (subCommand === "off") {
-                settings[remoteJid] = false; // Disable for this group
-                saveSettings();
-                await zk.sendMessage(remoteJid, { text: "❌ Anti-Link Protection is now *disabled* for this group." });
-            } else {
-                await zk.sendMessage(remoteJid, { text: `⚙️ Usage: \`${prefix}antilink on\` or \`${prefix}antilink off\`` });
-            }
-            return;
-        }
+    // Fetch group metadata to get admin list
+    const groupMetadata = await zk.groupMetadata(remoteJid);
+    const groupAdmins = groupMetadata.participants
+        .filter(participant => participant.admin !== null)
+        .map(admin => admin.id);
+
+    // Skip if the sender is an admin
+    if (groupAdmins.includes(sender)) {
+        console.log(`Admin ${sender} sent a group link, skipping...`);
+        return;
     }
 
-    // Check if Anti-Link is enabled for this group
-    if (settings[remoteJid]) {
-        const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
+    // Detect group links
+    const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
+    if (groupLinkRegex.test(messageContent)) {
+        console.log(`Detected group link from ${sender} in ${remoteJid}`);
 
-        if (groupLinkRegex.test(messageContent)) {
-            console.log(`Detected group link from ${sender} in ${remoteJid}`);
+        // Delete the message
+        await zk.sendMessage(remoteJid, { delete: msg.key });
 
-            // Delete the message
-            await zk.sendMessage(remoteJid, { delete: msg.key });
+        // Remove the user from the group
+        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
 
-            // Remove the user from the group
-            await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+        // Send notification in the group
+        await zk.sendMessage(remoteJid, { 
+            text: `⚠️ User @${sender.split("@")[0]} was removed for sending a group link!`, 
+            mentions: [sender] 
+        });
 
-            console.log(`Removed user ${sender} for sending a group link.`);
-        }
+        console.log(`Removed user ${sender} for sending a group link.`);
     }
 });
-
         
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
