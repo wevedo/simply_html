@@ -172,7 +172,7 @@ zk.ev.on("messages.upsert", async (m) => {
     const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
     // Check if ANTILINK is enabled in config
-    if (conf.ANTILINK !== "yes") return;
+    if (conf.ANTILINK_GROUP !== "yes") return;
 
     // Fetch group metadata to check admin status
     const groupMetadata = await zk.groupMetadata(remoteJid);
