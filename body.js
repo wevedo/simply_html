@@ -200,10 +200,10 @@ zk.ev.on('messages.upsert', async (msg) => {
 
             // Check if the message contains a group link
             if (isGroupLink(body)) {
-                // Delete the message
+                // First delete the message
                 await zk.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: message.key.id } });
 
-                // Remove the sender from the group
+                // Then remove the sender from the group
                 await zk.groupParticipantsUpdate(from, [sender], 'remove');
 
                 // Send a notification to the group
