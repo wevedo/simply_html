@@ -161,39 +161,48 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
         
+let linkDetectionEnabled = false; // Default state: OFF
+
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const msg = messages[0];
 
-    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if not in a group or bot message
+    if (!msg.message || !msg.key.remoteJid.endsWith("@g.us")) return; // Ensure only group messages are processed
 
-    console.log("ANTILINK status:", conf.ANTILINK); // Debug log
-    if (conf.ANTILINK !== "yes") return; // Check if ANTILINK is enabled
-
+    const messageType = Object.keys(msg.message)[0];
     const remoteJid = msg.key.remoteJid; // Group ID
     const sender = msg.key.participant || msg.key.remoteJid; // Message sender
-    const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+    let messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
-    console.log("Message content:", messageContent); // Debug log
+    // Handle commands with any prefix
+    const commandMatch = messageContent.match(/^(\W)(\w+)/); // Match any prefix and command
+    if (commandMatch) {
+        const prefix = commandMatch[1];
+        const command = commandMatch[2].toLowerCase();
 
-    // Detect group links
-    const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
-    if (groupLinkRegex.test(messageContent)) {
-        console.log(`Group link detected from ${sender} in ${remoteJid}`);
+        if (command === "linkdetecton") {
+            linkDetectionEnabled = true;
+            await zk.sendMessage(remoteJid, { text: `🔔 Link detection enabled.` });
+        } else if (command === "linkdetectoff") {
+            linkDetectionEnabled = false;
+            await zk.sendMessage(remoteJid, { text: `🔕 Link detection disabled.` });
+        }
+        return;
+    }
 
-        try {
+    // Detect group links only if the feature is enabled
+    if (linkDetectionEnabled) {
+        const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
+        if (groupLinkRegex.test(messageContent)) {
+            console.log(`Detected group link from ${sender} in ${remoteJid}`);
+
             // Delete the message
             await zk.sendMessage(remoteJid, { delete: msg.key });
 
-            // Notify the group
-            const notificationMessage = `🚫 *Anti-Link Alert!* 🚫\n\nUser @${sender.split('@')[0]} has been removed for sharing a group link, which is not allowed in this group.`;
-            await zk.sendMessage(remoteJid, { text: notificationMessage, mentions: [sender] });
-
             // Remove the user from the group
             await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
-            console.log(`User ${sender} removed successfully.`);
-        } catch (error) {
-            console.error("Error processing anti-link:", error); // Log any errors
+
+            console.log(`Removed user ${sender} for sending a group link.`);
         }
     }
 });
