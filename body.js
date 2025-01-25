@@ -161,49 +161,46 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
         
-let linkDetectionEnabled = false; // Default state: OFF
-
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const msg = messages[0];
 
-    if (!msg.message || !msg.key.remoteJid.endsWith("@g.us")) return; // Ensure only group messages are processed
+    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if message is from the bot or not in a group
 
-    const messageType = Object.keys(msg.message)[0];
     const remoteJid = msg.key.remoteJid; // Group ID
     const sender = msg.key.participant || msg.key.remoteJid; // Message sender
-    let messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+    const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
-    // Handle commands with any prefix
-    const commandMatch = messageContent.match(/^(\W)(\w+)/); // Match any prefix and command
-    if (commandMatch) {
-        const prefix = commandMatch[1];
-        const command = commandMatch[2].toLowerCase();
+    // Check if ANTILINK is enabled in config
+    if (conf.ANTILINK !== "yes") return;
 
-        if (command === "linkdetecton") {
-            linkDetectionEnabled = true;
-            await zk.sendMessage(remoteJid, { text: `🔔 Link detection enabled.` });
-        } else if (command === "linkdetectoff") {
-            linkDetectionEnabled = false;
-            await zk.sendMessage(remoteJid, { text: `🔕 Link detection disabled.` });
-        }
-        return;
-    }
+    // Fetch group metadata to check admin status
+    const groupMetadata = await zk.groupMetadata(remoteJid);
+    const groupAdmins = groupMetadata.participants
+        .filter((participant) => participant.admin === "admin" || participant.admin === "superadmin")
+        .map((admin) => admin.id);
 
-    // Detect group links only if the feature is enabled
-    if (linkDetectionEnabled) {
-        const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
-        if (groupLinkRegex.test(messageContent)) {
-            console.log(`Detected group link from ${sender} in ${remoteJid}`);
+    // Skip messages from group admins
+    if (groupAdmins.includes(sender)) return;
 
-            // Delete the message
-            await zk.sendMessage(remoteJid, { delete: msg.key });
+    // Detect group links
+    const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
+    if (groupLinkRegex.test(messageContent)) {
+        console.log(`Detected group link from ${sender} in ${remoteJid}`);
 
-            // Remove the user from the group
-            await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+        // Delete the message
+        await zk.sendMessage(remoteJid, { delete: msg.key });
 
-            console.log(`Removed user ${sender} for sending a group link.`);
-        }
+        // Remove the user from the group
+        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+
+        // Notify the group
+        await zk.sendMessage(remoteJid, {
+            text: `🚨 *Group Link Detected!*\nUser @${sender.split("@")[0]} was removed for sharing a group link.`,
+            mentions: [sender],
+        });
+
+        console.log(`Removed user ${sender} for sending a group link.`);
     }
 });
         
