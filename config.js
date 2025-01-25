@@ -39,7 +39,7 @@ module.exports = {
     AUTO_REJECT_CALL: process.env.AUTO_REJECT_CALL || 'yes',
     AUTO_BIO: process.env.AUTO_BIO || 'yes',
     AUDIO_REPLY: process.env.AUDIO_REPLY || 'yes',
-    ANTI_VV: process.env.ANTI_VV || 'yes',
+    ANTILINK: process.env.ANTILINK || 'yes',
     AUTO_SAVE_CONTACTS_NAME: "🚀 ʙᴡᴍ xᴍᴅ", // Default name prefix for new contacts
     AUTO_REPLY_MESSAGE: "", 
     DATABASE_URL,
