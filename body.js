@@ -165,30 +165,36 @@ zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const msg = messages[0];
 
-    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if the message is from the bot or not in a group
+    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if not in a group or bot message
 
-    if (conf.ANTILINK !== "yes") return; // Check if ANTILINK is enabled in the configuration
+    console.log("ANTILINK status:", conf.ANTILINK); // Debug log
+    if (conf.ANTILINK !== "yes") return; // Check if ANTILINK is enabled
 
     const remoteJid = msg.key.remoteJid; // Group ID
     const sender = msg.key.participant || msg.key.remoteJid; // Message sender
     const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
+    console.log("Message content:", messageContent); // Debug log
+
     // Detect group links
     const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
     if (groupLinkRegex.test(messageContent)) {
-        console.log(`Detected group link from ${sender} in ${remoteJid}`);
+        console.log(`Group link detected from ${sender} in ${remoteJid}`);
 
-        // Delete the message
-        await zk.sendMessage(remoteJid, { delete: msg.key });
+        try {
+            // Delete the message
+            await zk.sendMessage(remoteJid, { delete: msg.key });
 
-        // Notify the group
-        const notificationMessage = `🚫 *Anti-Link Alert!* 🚫\n\nUser @${sender.split('@')[0]} has been removed for sharing a group link, which is not allowed in this group.`;
-        await zk.sendMessage(remoteJid, { text: notificationMessage, mentions: [sender] });
+            // Notify the group
+            const notificationMessage = `🚫 *Anti-Link Alert!* 🚫\n\nUser @${sender.split('@')[0]} has been removed for sharing a group link, which is not allowed in this group.`;
+            await zk.sendMessage(remoteJid, { text: notificationMessage, mentions: [sender] });
 
-        // Remove the user from the group
-        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
-
-        console.log(`Removed user ${sender} for sending a group link.`);
+            // Remove the user from the group
+            await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+            console.log(`User ${sender} removed successfully.`);
+        } catch (error) {
+            console.error("Error processing anti-link:", error); // Log any errors
+        }
     }
 });
         
