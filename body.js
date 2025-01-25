@@ -161,46 +161,63 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
         
-zk.ev.on("messages.upsert", async (m) => {
-    const { messages } = m;
-    const msg = messages[0];
+const isGroupLink = (message) => {
+    // Regex pattern to detect WhatsApp group links
+    const groupLinkPattern = /chat\.whatsapp\.com\/[a-zA-Z0-9]{22}/;
+    return groupLinkPattern.test(message);
+};
 
-    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if message is from the bot or not in a group
+zk.ev.on('messages.upsert', async (msg) => {
+    try {
+        const { messages } = msg;
+        const message = messages[0];
 
-    const remoteJid = msg.key.remoteJid; // Group ID
-    const sender = msg.key.participant || msg.key.remoteJid; // Message sender
-    const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+        if (!message.message) return; // Skip empty messages
 
-    // Check if ANTILINK is enabled in config
-    if (conf.ANTILINK_GROUP !== "yes") return;
+        const from = message.key.remoteJid; // Chat ID
+        const sender = message.key.participant || message.key.remoteJid; // Sender ID
+        const isGroup = from.endsWith('@g.us'); // Check if the message is from a group
 
-    // Fetch group metadata to check admin status
-    const groupMetadata = await zk.groupMetadata(remoteJid);
-    const groupAdmins = groupMetadata.participants
-        .filter((participant) => participant.admin === "admin" || participant.admin === "superadmin")
-        .map((admin) => admin.id);
+        if (!isGroup) return; // Skip non-group messages
 
-    // Skip messages from group admins
-    if (groupAdmins.includes(sender)) return;
+        const groupMetadata = await zk.groupMetadata(from); // Fetch group metadata
+        const groupAdmins = groupMetadata.participants
+            .filter((member) => member.admin)
+            .map((admin) => admin.id);
 
-    // Detect group links
-    const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
-    if (groupLinkRegex.test(messageContent)) {
-        console.log(`Detected group link from ${sender} in ${remoteJid}`);
+        // Check if ANTI-LINK is enabled for the group
+        if (conf.ANTILINK_GROUP === 'yes') {
+            const messageType = Object.keys(message.message)[0];
+            const body =
+                messageType === 'conversation'
+                    ? message.message.conversation
+                    : message.message[messageType]?.text || '';
 
-        // Delete the message
-        await zk.sendMessage(remoteJid, { delete: msg.key });
+            if (!body) return; // Skip if there's no text
 
-        // Remove the user from the group
-        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+            // Skip messages from admins
+            if (groupAdmins.includes(sender)) return;
 
-        // Notify the group
-        await zk.sendMessage(remoteJid, {
-            text: `🚨 *Group Link Detected!*\nUser @${sender.split("@")[0]} was removed for sharing a group link.`,
-            mentions: [sender],
-        });
+            // Check if the message contains a group link
+            if (isGroupLink(body)) {
+                // Delete the message
+                await zk.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: message.key.id } });
 
-        console.log(`Removed user ${sender} for sending a group link.`);
+                // Remove the sender from the group
+                await zk.groupParticipantsUpdate(from, [sender], 'remove');
+
+                // Send a notification to the group
+                await zk.sendMessage(
+                    from,
+                    {
+                        text: `⚠️ Anti-link warning! User @${sender.split('@')[0]} has been removed for sharing a group link.`,
+                        mentions: [sender],
+                    }
+                );
+            }
+        }
+    } catch (err) {
+        console.error('Error handling message:', err);
     }
 });
         
