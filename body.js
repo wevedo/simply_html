@@ -161,7 +161,34 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const msg = messages[0];
 
+    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if message is from the bot or not in a group
+
+    const messageType = Object.keys(msg.message)[0];
+    const remoteJid = msg.key.remoteJid; // Group ID
+    const sender = msg.key.participant || msg.key.remoteJid; // Message sender
+
+    let messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+
+    // Detect group links
+    const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
+    if (groupLinkRegex.test(messageContent)) {
+        console.log(`Detected group link from ${sender} in ${remoteJid}`);
+
+        // Delete the message
+        await zk.sendMessage(remoteJid, { delete: msg.key });
+
+        // Remove the user from the group
+        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+
+        console.log(`Removed user ${sender} for sending a group link.`);
+    }
+});
+
+        
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
 
