@@ -201,7 +201,7 @@ zk.ev.on('messages.upsert', async (msg) => {
             // Check if the message contains a group link
             if (isGroupLink(body)) {
                 // Delete the message
-            await zk.sendMessage(remoteJid, { delete: msg.key });
+                await zk.sendMessage(from, { delete: { remoteJid: from, fromMe: false, id: message.key.id } });
 
                 // Remove the sender from the group
                 await zk.groupParticipantsUpdate(from, [sender], 'remove');
@@ -210,7 +210,7 @@ zk.ev.on('messages.upsert', async (msg) => {
                 await zk.sendMessage(
                     from,
                     {
-                        text: `⚠️ Anti-link warning! User @${sender.split('@')[0]} has been removed for sharing a group link.`,
+                        text: `⚠️ Bwm xmd Anti-link online! User @${sender.split('@')[0]} has been removed for sharing a group link.`,
                         mentions: [sender],
                     }
                 );
