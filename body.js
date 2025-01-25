@@ -161,30 +161,86 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+// System store path for saving settings
+const settingsFilePath = path.join(__dirname, "store", "groupLinkProtection.json");
+
+// Ensure the directory exists
+if (!fs.existsSync(path.dirname(settingsFilePath))) {
+    fs.mkdirSync(path.dirname(settingsFilePath), { recursive: true });
+}
+
+// Load or initialize settings
+let settings = {};
+if (fs.existsSync(settingsFilePath)) {
+    settings = JSON.parse(fs.readFileSync(settingsFilePath, "utf8"));
+} else {
+    fs.writeFileSync(settingsFilePath, JSON.stringify(settings, null, 2));
+}
+
+// Save settings to the system store
+const saveSettings = () => {
+    fs.writeFileSync(settingsFilePath, JSON.stringify(settings, null, 2));
+};
+
+// Detect any prefix
+const detectPrefix = (text) => {
+    const match = text.match(/^(\W)/); // Matches the first non-alphanumeric character
+    return match ? match[1] : null;
+};
+
+// Event Listener for messages
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const msg = messages[0];
 
-    if (!msg.message || msg.key.fromMe || !msg.key.remoteJid.endsWith("@g.us")) return; // Ignore if message is from the bot or not in a group
+    if (!msg.message || msg.key.fromMe) return; // Ignore bot's own messages
 
+    const remoteJid = msg.key.remoteJid; // Chat ID
+    const sender = msg.key.participant || msg.key.remoteJid; // Sender ID
     const messageType = Object.keys(msg.message)[0];
-    const remoteJid = msg.key.remoteJid; // Group ID
-    const sender = msg.key.participant || msg.key.remoteJid; // Message sender
+    const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
-    let messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+    // Only work in groups
+    if (!remoteJid.endsWith("@g.us")) return;
 
-    // Detect group links
-    const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
-    if (groupLinkRegex.test(messageContent)) {
-        console.log(`Detected group link from ${sender} in ${remoteJid}`);
+    // Detect prefix
+    const prefix = detectPrefix(messageContent);
+    if (prefix) {
+        const args = messageContent.slice(prefix.length).trim().split(/ +/);
+        const command = args.shift().toLowerCase();
 
-        // Delete the message
-        await zk.sendMessage(remoteJid, { delete: msg.key });
+        if (command === "antilink") {
+            const subCommand = args[0];
+            if (subCommand === "on") {
+                settings[remoteJid] = true; // Enable for this group
+                saveSettings();
+                await zk.sendMessage(remoteJid, { text: "✅ Anti-Link Protection is now *enabled* for this group." });
+            } else if (subCommand === "off") {
+                settings[remoteJid] = false; // Disable for this group
+                saveSettings();
+                await zk.sendMessage(remoteJid, { text: "❌ Anti-Link Protection is now *disabled* for this group." });
+            } else {
+                await zk.sendMessage(remoteJid, { text: `⚙️ Usage: \`${prefix}antilink on\` or \`${prefix}antilink off\`` });
+            }
+            return;
+        }
+    }
 
-        // Remove the user from the group
-        await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+    // Check if Anti-Link is enabled for this group
+    if (settings[remoteJid]) {
+        const groupLinkRegex = /chat\.whatsapp\.com\/([a-zA-Z0-9]{20,24})/;
 
-        console.log(`Removed user ${sender} for sending a group link.`);
+        if (groupLinkRegex.test(messageContent)) {
+            console.log(`Detected group link from ${sender} in ${remoteJid}`);
+
+            // Delete the message
+            await zk.sendMessage(remoteJid, { delete: msg.key });
+
+            // Remove the user from the group
+            await zk.groupParticipantsUpdate(remoteJid, [sender], "remove");
+
+            console.log(`Removed user ${sender} for sending a group link.`);
+        }
     }
 });
 
