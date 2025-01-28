@@ -255,7 +255,7 @@ zk.ev.on("messages.upsert", async (m) => {
 });
         
 zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE2 === "yes") {
+    if (conf.ANTIDELETE2 === "yes") { // Ensure antidelete is enabled
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return; // Skip messages with no content
@@ -313,23 +313,21 @@ zk.ev.on("messages.upsert", async (m) => {
                             mentions: [participant],
                         });
                     }
-                    // Handle other media types
-                    else if (
-                        deletedMessage.message.documentMessage ||
-                        deletedMessage.message.audioMessage ||
-                        deletedMessage.message.stickerMessage ||
-                        deletedMessage.message.gifMessage ||
-                        deletedMessage.message.voiceMessage
-                    ) {
-                        const mediaPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message);
-                        const mediaType = 
-                            deletedMessage.message.documentMessage ? 'document' :
-                            deletedMessage.message.audioMessage ? 'audio' :
-                            deletedMessage.message.stickerMessage ? 'sticker' :
-                            deletedMessage.message.gifMessage ? 'video' : 'audio';
-
+                    // Handle audio messages
+                    else if (deletedMessage.message.audioMessage) {
+                        const audioPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.audioMessage);
                         await zk.sendMessage(remoteJid, {
-                            [mediaType]: { url: mediaPath },
+                            audio: { url: audioPath },
+                            ptt: true, // Send as a voice message
+                            caption: notification,
+                            mentions: [participant],
+                        });
+                    }
+                    // Handle sticker messages
+                    else if (deletedMessage.message.stickerMessage) {
+                        const stickerPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.stickerMessage);
+                        await zk.sendMessage(remoteJid, {
+                            sticker: { url: stickerPath },
                             caption: notification,
                             mentions: [participant],
                         });
