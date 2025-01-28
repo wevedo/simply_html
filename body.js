@@ -254,12 +254,28 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
         
-// Event listener for all incoming messages
+// Function to download media content
+async function downloadMedia(message) {
+    const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
+    try {
+        const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType); // Get the download stream
+        let buffer = Buffer.from([]); // Initialize buffer
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]); // Append chunks to buffer
+        }
+        return buffer;
+    } catch (error) {
+        console.error('Error downloading media:', error);
+        return null; // Return null if download fails
+    }
+}
+
+// Event listener for incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE2 === "yes") {
+    if (conf.ANTIDELETE2 === "yes") { // Ensure antidelete is enabled
         const { messages } = m;
         const ms = messages[0];
-        if (!ms.message) return;
+        if (!ms.message) return; // Skip messages with no content
 
         const messageKey = ms.key;
         const remoteJid = messageKey.remoteJid;
@@ -290,11 +306,11 @@ zk.ev.on("messages.upsert", async (m) => {
                     // Handle text messages
                     if (deletedMessage.message.conversation) {
                         await zk.sendMessage(remoteJid, {
-                            text: `${notification}\nDeleted message: ${deletedMessage.message.conversation}\n\nBwm xmd nexus`,
+                            text: `${notification}\nDeleted message: ${deletedMessage.message.conversation}`,
                             mentions: [participant],
                         });
                     } 
-                    // Handle media messages
+                    // Handle media messages (image, video, document, audio, etc.)
                     else if (
                         deletedMessage.message.imageMessage || 
                         deletedMessage.message.videoMessage || 
@@ -304,7 +320,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         deletedMessage.message.gifMessage || 
                         deletedMessage.message.voiceMessage
                     ) {
-                        const mediaBuffer = await downloadMediaDirectly(deletedMessage.message);
+                        const mediaBuffer = await downloadMedia(deletedMessage.message); // Download media
                         if (mediaBuffer) {
                             const mediaType = 
                                 deletedMessage.message.imageMessage ? 'image' :
@@ -315,9 +331,9 @@ zk.ev.on("messages.upsert", async (m) => {
                                 deletedMessage.message.gifMessage ? 'video' : 'audio';
 
                             await zk.sendMessage(remoteJid, {
-                                [mediaType]: mediaBuffer,
-                                caption: notification,
-                                mentions: [participant],
+                                [mediaType]: mediaBuffer, // Send the downloaded media
+                                caption: notification, // Add caption
+                                mentions: [participant], // Mention participant
                             });
                         }
                     }
