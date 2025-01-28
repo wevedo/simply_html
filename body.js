@@ -254,7 +254,9 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
         
- // Event listener for all incoming messages
+const { downloadContentFromMessage } = require("@whiskeysockets/baileys"); // Import media download utility
+
+// Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     if (conf.ANTIDELETE2 === "yes") {
         const { messages } = m;
@@ -284,7 +286,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    // Create a notification about the deleted message
                     const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
                     const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}:*`;
 
@@ -305,7 +306,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         deletedMessage.message.gifMessage || 
                         deletedMessage.message.voiceMessage
                     ) {
-                        const mediaBuffer = await downloadMedia(deletedMessage.message);
+                        const mediaBuffer = await downloadMediaFromMessage(deletedMessage.message);
                         if (mediaBuffer) {
                             const mediaType = 
                                 deletedMessage.message.imageMessage ? 'image' :
@@ -329,6 +330,22 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
+
+// Helper function to download media
+async function downloadMediaFromMessage(message) {
+    try {
+        const type = Object.keys(message)[0]; // Get the type of media
+        const stream = await downloadContentFromMessage(message[type], type.replace("Message", ""));
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+        return buffer;
+    } catch (err) {
+        console.error("Error downloading media:", err);
+        return null;
+    }
+}
 
 // Helper function to download media
 async function downloadMedia(message) {
