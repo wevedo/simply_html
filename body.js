@@ -161,59 +161,28 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-// Function to download and return media buffer
-async function downloadMedia(message) {
-    const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
-    try {
-        const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType);
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
-        }
-        return buffer;
-    } catch (error) {
-        console.error('Error downloading media:', error);
-        return null;
-    }
-}
-
-// Function to format notification message
-function createNotification(deletedMessage) {
-    const deletedBy = deletedMessage.key.participant || deletedMessage.key.remoteJid;
-
-    // Format time in Nairobi timezone
-    const timeInNairobi = new Intl.DateTimeFormat('en-KE', {
-        timeZone: 'Africa/Nairobi',
-        dateStyle: 'full',
-        timeStyle: 'medium',
-    }).format(new Date());
-
-    let notification = `*[ANTIDELETE DETECTED]*\n\n`;
-    notification += `*Time:* ${timeInNairobi}\n`;
-    notification += `*Deleted By:* @${deletedBy.split('@')[0]}\n\n`;
-
-    return notification;
-}
-
-// Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE1 === "yes") { // Check if ANTIDELETE is enabled
+    if (conf.ANTIDELETE1 === "yes") { // Ensure antidelete is enabled
         const { messages } = m;
         const ms = messages[0];
-        if (!ms.message) return;
+        if (!ms.message) return; // Skip messages with no content
 
         const messageKey = ms.key;
         const remoteJid = messageKey.remoteJid;
 
-        // Store message for future reference
+        // Initialize chat storage if it doesn't exist
         if (!store.chats[remoteJid]) {
             store.chats[remoteJid] = [];
         }
+
+        // Save the received message to storage
         store.chats[remoteJid].push(ms);
 
         // Handle deleted messages
         if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
             const deletedKey = ms.message.protocolMessage.key;
+
+            // Search for the deleted message in stored messages
             const chatMessages = store.chats[remoteJid];
             const deletedMessage = chatMessages.find(
                 (msg) => msg.key.id === deletedKey.id
@@ -221,30 +190,56 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    const notification = createNotification(deletedMessage);
+                    const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
+                    const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}*`;
 
-                    // Determine message type
-                    const mtype = Object.keys(deletedMessage.message)[0];
+                    const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot owner's JID
 
-                    // Handle text messages (conversation or extendedTextMessage)
-                    if (mtype === 'conversation' || mtype === 'extendedTextMessage') {
-                        await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
-                            text: notification + `*Message:* ${deletedMessage.message[mtype].text}`,
-                            mentions: [deletedMessage.key.participant],
+                    // Handle text messages
+                    if (deletedMessage.message.conversation) {
+                        await zk.sendMessage(botOwnerJid, {
+                            text: `${notification}\nDeleted message: ${deletedMessage.message.conversation}`,
+                            mentions: [participant],
                         });
                     }
-                    // Handle media messages (image, video, document, audio, sticker, voice)
-                    else if (mtype === 'imageMessage' || mtype === 'videoMessage' || mtype === 'documentMessage' ||
-                             mtype === 'audioMessage' || mtype === 'stickerMessage' || mtype === 'voiceMessage') {
-                        const mediaBuffer = await downloadMedia(deletedMessage.message);
-                        if (mediaBuffer) {
-                            const mediaType = mtype.replace('Message', '').toLowerCase();
-                            await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
-                                [mediaType]: mediaBuffer,
-                                caption: notification,
-                                mentions: [deletedMessage.key.participant],
-                            });
-                        }
+                    // Handle image messages
+                    else if (deletedMessage.message.imageMessage) {
+                        const caption = deletedMessage.message.imageMessage.caption || '';
+                        const imagePath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.imageMessage);
+                        await zk.sendMessage(botOwnerJid, {
+                            image: { url: imagePath },
+                            caption: `${notification}\n${caption}`,
+                            mentions: [participant],
+                        });
+                    }
+                    // Handle video messages
+                    else if (deletedMessage.message.videoMessage) {
+                        const caption = deletedMessage.message.videoMessage.caption || '';
+                        const videoPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.videoMessage);
+                        await zk.sendMessage(botOwnerJid, {
+                            video: { url: videoPath },
+                            caption: `${notification}\n${caption}`,
+                            mentions: [participant],
+                        });
+                    }
+                    // Handle audio messages
+                    else if (deletedMessage.message.audioMessage) {
+                        const audioPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.audioMessage);
+                        await zk.sendMessage(botOwnerJid, {
+                            audio: { url: audioPath },
+                            ptt: true, // Send as a voice message
+                            caption: notification,
+                            mentions: [participant],
+                        });
+                    }
+                    // Handle sticker messages
+                    else if (deletedMessage.message.stickerMessage) {
+                        const stickerPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.stickerMessage);
+                        await zk.sendMessage(botOwnerJid, {
+                            sticker: { url: stickerPath },
+                            caption: notification,
+                            mentions: [participant],
+                        });
                     }
                 } catch (error) {
                     console.error('Error handling deleted message:', error);
