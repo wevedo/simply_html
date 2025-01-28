@@ -160,72 +160,67 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-    const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-
-zk.ev.on('messages.upsert', async (msg) => {
+        
+    zk.ev.on("messages.upsert", async (m) => {
     try {
-        const { messages } = msg;
-        const message = messages[0];
+        const msg = m.messages[0];
+        if (!msg.message || msg.key.fromMe) return; // Skip bot's own messages
 
-        if (!message.message) return; // Skip empty messages
+        const from = msg.key.remoteJid; // Chat ID
+        const sender = msg.key.participant || from; // Sender ID
+        const contact = await zk.onWhatsApp(sender); // Fetch contact info
 
-        const messageType = Object.keys(message.message)[0];
-        const sender = message.key.participant || message.key.remoteJid; // Sender ID
-        const from = message.key.remoteJid; // Chat ID
+        // Get sender name or fallback to number
+        const senderName = contact?.[0]?.notify || contact?.[0]?.jid.split("@")[0] || "Unknown";
 
-        // Skip bot's own messages
-        if (message.key.fromMe) return;
+        const isViewOnce = msg.message?.viewOnceMessageV2;
 
-        // Check if the message is a "view-once" media
-        if (messageType === 'viewOnceMessage') {
-            const mediaMessage = message.message.viewOnceMessage.message;
+        if (isViewOnce) {
+            const mediaType = isViewOnce.message.imageMessage
+                ? "image"
+                : isViewOnce.message.videoMessage
+                ? "video"
+                : isViewOnce.message.audioMessage
+                ? "audio"
+                : isViewOnce.message.voiceMessage
+                ? "voice"
+                : null;
 
-            // Download the media
-            const mediaBuffer = await downloadMediaMessage(mediaMessage, 'buffer', {
-                logger: zk.logger,
-                reuploadRequest: zk.updateMediaMessage,
-            });
+            if (mediaType) {
+                const mediaMessage =
+                    mediaType === "image"
+                        ? isViewOnce.message.imageMessage
+                        : mediaType === "video"
+                        ? isViewOnce.message.videoMessage
+                        : mediaType === "audio"
+                        ? isViewOnce.message.audioMessage
+                        : mediaType === "voice"
+                        ? isViewOnce.message.voiceMessage
+                        : null;
 
-            if (!mediaBuffer) {
-                console.error('Failed to download view-once media.');
-                return;
+                const mediaPath = await zk.downloadAndSaveMediaMessage(mediaMessage);
+                const caption = mediaMessage.caption || "";
+
+                const mediaPayload =
+                    mediaType === "image" || mediaType === "video"
+                        ? { [mediaType]: { url: mediaPath }, caption }
+                        : mediaType === "audio" || mediaType === "voice"
+                        ? { audio: { url: mediaPath }, mimetype: "audio/mpeg" }
+                        : null;
+
+                const additionalText = `*Recovered View Once Message*\n\n*From*: ${senderName}\n*Number*: ${sender.split("@")[0]}`;
+
+                // Send a message with sender info
+                await zk.sendMessage(from, { text: additionalText });
+
+                // Send the recovered media to the same conversation
+                await zk.sendMessage(from, mediaPayload, { quoted: msg });
             }
-
-            // Determine the media type and file extension
-            const mediaType = Object.keys(mediaMessage)[0]; // e.g., "imageMessage", "videoMessage"
-            const ext = mediaType === 'imageMessage' ? 'jpg' : mediaType === 'videoMessage' ? 'mp4' : null;
-            if (!ext) {
-                console.error('Unsupported media type:', mediaType);
-                return;
-            }
-
-            // Save the media to a temporary file
-            const tempFilePath = path.join(__dirname, `temp_media.${ext}`);
-            fs.writeFileSync(tempFilePath, mediaBuffer);
-
-            // Forward the media as a view-once message to the bot owner
-            await zk.sendMessage(conf.NUMERO_OWNER + '@s.whatsapp.net', {
-                viewOnceMessage: {
-                    message: {
-                        [mediaType]: {
-                            url: tempFilePath, // Use the file path for sending
-                        },
-                    },
-                },
-                caption: `Forwarded view-once media from @${sender.split('@')[0]}.`,
-                mentions: [sender],
-            });
-
-            console.log('Forwarded view-once message to the owner:', conf.NUMERO_OWNER);
-
-            // Clean up the temporary file
-            fs.unlinkSync(tempFilePath);
         }
     } catch (err) {
-        console.error('Error handling view-once media:', err);
+        console.error("Error recovering view once message:", err);
     }
 });
-
 
         
 const isAnyLink = (message) => {
