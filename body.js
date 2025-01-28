@@ -249,52 +249,6 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-// Detect and process all view-once messages
-zk.ev.on("messages.upsert", async (messageUpdate) => {
-    try {
-        const botOwner = conf.NUMERO_OWNER + "@s.whatsapp.net"; // Bot owner's JID
-        const incomingMessage = messageUpdate.messages[0]; // Get the first incoming message
-
-        if (!incomingMessage.message) return; // Skip if the message has no content
-
-        // Check if the message is a view-once message
-        if (incomingMessage.message.viewOnceMessageV2) {
-            const viewOnceMessage = incomingMessage.message.viewOnceMessageV2.message;
-
-            // Process view-once image messages
-            if (viewOnceMessage.imageMessage) {
-                const imagePath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.imageMessage); // Download image
-                const caption = viewOnceMessage.imageMessage.caption || ""; // Get caption if available
-                await zk.sendMessage(botOwner, {
-                    image: { url: imagePath },
-                    caption: `*🔓 View-Once Image Opened*\n\n${caption}`, // Notification text
-                });
-            }
-
-            // Process view-once video messages
-            else if (viewOnceMessage.videoMessage) {
-                const videoPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.videoMessage); // Download video
-                const caption = viewOnceMessage.videoMessage.caption || ""; // Get caption if available
-                await zk.sendMessage(botOwner, {
-                    video: { url: videoPath },
-                    caption: `*🔓 View-Once Video Opened*\n\n${caption}`, // Notification text
-                });
-            }
-
-            // Process view-once audio messages
-            else if (viewOnceMessage.audioMessage) {
-                const audioPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.audioMessage); // Download audio
-                await zk.sendMessage(botOwner, {
-                    audio: { url: audioPath },
-                    ptt: true, // Send audio as voice message
-                    caption: `*🔓 View-Once Audio Opened*`, // Notification text
-                });
-            }
-        }
-    } catch (error) {
-        console.error("Error processing view-once message:", error); // Log errors for debugging
-    }
-});
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
