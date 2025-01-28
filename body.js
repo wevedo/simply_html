@@ -248,7 +248,7 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-        
+   /*     
 zk.ev.on("messages.upsert", async (m) => {
     if (conf.ANTIDELETE2 === "yes") { // Ensure antidelete is enabled
         const { messages } = m;
@@ -334,7 +334,7 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-        
+    */    
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
