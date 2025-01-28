@@ -254,25 +254,8 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
         
-// Function to download media content
-async function downloadMedia(message) {
-    const mediaType = Object.keys(message)[0].replace('Message', ''); // Determine the media type
-    try {
-        const stream = await zk.downloadContentFromMessage(message[mediaType], mediaType); // Get the download stream
-        let buffer = Buffer.from([]); // Initialize buffer
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]); // Append chunks to buffer
-        }
-        return buffer;
-    } catch (error) {
-        console.error('Error downloading media:', error);
-        return null; // Return null if download fails
-    }
-}
-
-// Event listener for incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE2 === "yes") { // Ensure antidelete is enabled
+    if (conf.ANTIDELETE2 === "yes") {
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return; // Skip messages with no content
@@ -310,32 +293,46 @@ zk.ev.on("messages.upsert", async (m) => {
                             mentions: [participant],
                         });
                     } 
-                    // Handle media messages (image, video, document, audio, etc.)
+                    // Handle image messages
+                    else if (deletedMessage.message.imageMessage) {
+                        const caption = deletedMessage.message.imageMessage.caption || '';
+                        const imagePath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.imageMessage);
+                        await zk.sendMessage(remoteJid, {
+                            image: { url: imagePath },
+                            caption: `${notification}\n${caption}`,
+                            mentions: [participant],
+                        });
+                    }
+                    // Handle video messages
+                    else if (deletedMessage.message.videoMessage) {
+                        const caption = deletedMessage.message.videoMessage.caption || '';
+                        const videoPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.videoMessage);
+                        await zk.sendMessage(remoteJid, {
+                            video: { url: videoPath },
+                            caption: `${notification}\n${caption}`,
+                            mentions: [participant],
+                        });
+                    }
+                    // Handle other media types
                     else if (
-                        deletedMessage.message.imageMessage || 
-                        deletedMessage.message.videoMessage || 
-                        deletedMessage.message.documentMessage || 
-                        deletedMessage.message.audioMessage || 
-                        deletedMessage.message.stickerMessage || 
-                        deletedMessage.message.gifMessage || 
+                        deletedMessage.message.documentMessage ||
+                        deletedMessage.message.audioMessage ||
+                        deletedMessage.message.stickerMessage ||
+                        deletedMessage.message.gifMessage ||
                         deletedMessage.message.voiceMessage
                     ) {
-                        const mediaBuffer = await downloadMedia(deletedMessage.message); // Download media
-                        if (mediaBuffer) {
-                            const mediaType = 
-                                deletedMessage.message.imageMessage ? 'image' :
-                                deletedMessage.message.videoMessage ? 'video' :
-                                deletedMessage.message.documentMessage ? 'document' :
-                                deletedMessage.message.audioMessage ? 'audio' :
-                                deletedMessage.message.stickerMessage ? 'sticker' :
-                                deletedMessage.message.gifMessage ? 'video' : 'audio';
+                        const mediaPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message);
+                        const mediaType = 
+                            deletedMessage.message.documentMessage ? 'document' :
+                            deletedMessage.message.audioMessage ? 'audio' :
+                            deletedMessage.message.stickerMessage ? 'sticker' :
+                            deletedMessage.message.gifMessage ? 'video' : 'audio';
 
-                            await zk.sendMessage(remoteJid, {
-                                [mediaType]: mediaBuffer, // Send the downloaded media
-                                caption: notification, // Add caption
-                                mentions: [participant], // Mention participant
-                            });
-                        }
+                        await zk.sendMessage(remoteJid, {
+                            [mediaType]: { url: mediaPath },
+                            caption: notification,
+                            mentions: [participant],
+                        });
                     }
                 } catch (error) {
                     console.error('Error handling deleted message:', error);
@@ -344,34 +341,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-
-// Helper function to download media without external constants
-async function downloadMediaDirectly(message) {
-    try {
-        const type = Object.keys(message)[0]; // Get media type (e.g., imageMessage, videoMessage)
-        const messageContent = message[type];
-
-        // Check if media has a directPath and URL
-        if (messageContent.directPath && messageContent.url) {
-            // Manually fetch the media
-            const res = await zk.request({
-                url: messageContent.url,
-                method: 'GET',
-                headers: {
-                    Origin: 'https://web.whatsapp.com',
-                    Referer: 'https://web.whatsapp.com/',
-                },
-                responseType: 'arraybuffer',
-            });
-
-            return Buffer.from(res.data, 'binary'); // Convert response data to buffer
-        }
-        return null;
-    } catch (err) {
-        console.error("Error downloading media directly:", err);
-        return null;
-    }
-}
         
             
 const isAnyLink = (message) => {
