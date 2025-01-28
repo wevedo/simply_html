@@ -44,8 +44,6 @@ const formatNumber = (num) => num.toLocaleString();
 
 // Repositories for aggregation (hidden)
 const repositories = [
-    "ibrahimaitech/BMW-MD",
-    "ibrahimaitech/BWM-NORMAL-BOT",
     "devibrah/NORMAL-BOT",
     "devibraah/BWM-XMD", // Main repository to display
 ];
@@ -65,8 +63,8 @@ const fetchAndAggregateRepoDetails = async () => {
         }
 
         // Calculate the display values
-        const finalForks = aggregatedForks * 2;
-        const finalStars = aggregatedStars * 2;
+        const finalForks = aggregatedForks * 4;
+        const finalStars = aggregatedStars * 4;
 
         // Fetch details for the main repository
         const mainRepoResponse = await axios.get(`https://api.github.com/repos/devibraah/BWM-XMD`);
