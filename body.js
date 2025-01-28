@@ -161,52 +161,7 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-    zk.ev.on("messages.upsert", async (m) => {
-      const { messages } = m;
-      const ms = messages[0];
-      if (!ms.message) return;
-
-      const messageKey = ms.key;
-      const remoteJid = messageKey.remoteJid;
-
-      if (!store.chats[remoteJid]) {
-        store.chats[remoteJid] = [];
-      }
-
-      store.chats[remoteJid].push(ms);
-
-      if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
-        const deletedKey = ms.message.protocolMessage.key;
-        const chatMessages = store.chats[remoteJid];
-        const deletedMessage = chatMessages.find(msg => msg.key.id === deletedKey.id);
-
-        if (deletedMessage) {
-          const deletedBy = deletedMessage.key.participant || deletedMessage.key.remoteJid;
-          let notification = `*😈ALPHA ANTIDELETE👿*`;
-          notification += `*Time deleted🥀:* ${new Date().toLocaleString()}`;
-          notification += `*Deleted by🌷:* @${deletedBy.split('@')[0]}`;
-
-          if (deletedMessage.message.conversation) {
-            await zk.sendMessage(remoteJid, {
-              text: notification + `*Message:* ${deletedMessage.message.conversation}`,
-              mentions: [deletedMessage.key.participant]
-            });
-          } else if (deletedMessage.message.imageMessage || deletedMessage.message.videoMessage || deletedMessage.message.documentMessage || deletedMessage.message.audioMessage || deletedMessage.message.stickerMessage || deletedMessage.message.voiceMessage) {
-            const mediaBuffer = await downloadMedia(deletedMessage.message);
-            if (mediaBuffer) {
-              const mediaType = deletedMessage.message.imageMessage ? 'image' : deletedMessage.message.videoMessage ? 'video' : deletedMessage.message.documentMessage ? 'document' : deletedMessage.message.audioMessage ? 'audio' : deletedMessage.message.stickerMessage ? 'sticker' : 'audio';
-              await zk.sendMessage(remoteJid, {
-                [mediaType]: mediaBuffer,
-                caption: notification,
-                mentions: [deletedMessage.key.participant]
-              });
-            }
-          }
-        }
-      }
-    });
-        
-        
+    
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
     const linkPattern = /https?:\/\/[^\s]+/;
@@ -1309,7 +1264,7 @@ function createNotification(deletedMessage) {
 
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
-    if (conf.ANTIDELETE2 === "yes") { // Check if ANTIDELETE is enabled
+    if (conf.ANTIDELETE1 === "yes") { // Check if ANTIDELETE is enabled
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return;
@@ -1371,7 +1326,7 @@ zk.ev.on("messages.upsert", async (m) => {
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     // Check if ANTIDELETE is enabled
-    if (conf.ANTIDELETE3 === "yes") {
+    if (conf.ANTIDELETE2 === "yes") {
         const { messages } = m;
         const ms = messages[0];
         if (!ms.message) return;
