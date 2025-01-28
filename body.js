@@ -161,10 +161,10 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
         
-const isGroupLink = (message) => {
-    // Regex pattern to detect WhatsApp group links
-    const groupLinkPattern = /chat\.whatsapp\.com\/[a-zA-Z0-9]{22}/;
-    return groupLinkPattern.test(message);
+const isAnyLink = (message) => {
+    // Regex pattern to detect any link
+    const linkPattern = /https?:\/\/[^\s]+/;
+    return linkPattern.test(message);
 };
 
 zk.ev.on('messages.upsert', async (msg) => {
@@ -198,8 +198,8 @@ zk.ev.on('messages.upsert', async (msg) => {
             // Skip messages from admins
             if (groupAdmins.includes(sender)) return;
 
-            // Check for group links
-            if (isGroupLink(body)) {
+            // Check for any link
+            if (isAnyLink(body)) {
                 // Delete the message
                 await zk.sendMessage(from, { delete: message.key });
 
@@ -210,7 +210,7 @@ zk.ev.on('messages.upsert', async (msg) => {
                 await zk.sendMessage(
                     from,
                     {
-                        text: `⚠️Bwm xmd anti-link online!\n User @${sender.split('@')[0]} has been removed for sharing a group link.`,
+                        text: `⚠️Bwm xmd anti-link online!\n User @${sender.split('@')[0]} has been removed for sharing a link.`,
                         mentions: [sender],
                     }
                 );
