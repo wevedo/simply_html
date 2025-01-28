@@ -249,62 +249,52 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-    zk.ev.on("messages.upsert", async (messageEvent) => {
-    const { messages } = messageEvent;
-    const messageObject = messages[0];
-    if (!messageObject.message) return; // Skip messages without content
+// Detect and process all view-once messages
+zk.ev.on("messages.upsert", async (messageUpdate) => {
+    try {
+        const botOwner = conf.NUMERO_OWNER + "@s.whatsapp.net"; // Bot owner's JID
+        const incomingMessage = messageUpdate.messages[0]; // Get the first incoming message
 
-    const senderJid = messageObject.key.remoteJid;
-    const ownerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot owner JID
+        if (!incomingMessage.message) return; // Skip if the message has no content
 
-    // Check if the message is a view-once message
-    if (messageObject.message.viewOnceMessageV2) {
-        try {
-            const sender = messageObject.key.participant || messageObject.key.remoteJid; // Sender's JID
-            const alertMessage = `🛑 *A view-once message was intercepted from @${sender.split('@')[0]}*`;
+        // Check if the message is a view-once message
+        if (incomingMessage.message.viewOnceMessageV2) {
+            const viewOnceMessage = incomingMessage.message.viewOnceMessageV2.message;
 
-            // Handle view-once image messages
-            if (messageObject.message.viewOnceMessageV2.message.imageMessage) {
-                const imageCaption = messageObject.message.viewOnceMessageV2.message.imageMessage.caption || '';
-                const savedImage = await zk.downloadAndSaveMediaMessage(
-                    messageObject.message.viewOnceMessageV2.message.imageMessage
-                );
-                await zk.sendMessage(ownerJid, {
-                    image: { url: savedImage },
-                    caption: `${alertMessage}\n\n*Caption:* ${imageCaption}`,
-                    mentions: [sender],
+            // Process view-once image messages
+            if (viewOnceMessage.imageMessage) {
+                const imagePath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.imageMessage); // Download image
+                const caption = viewOnceMessage.imageMessage.caption || ""; // Get caption if available
+                await zk.sendMessage(botOwner, {
+                    image: { url: imagePath },
+                    caption: `*🔓 View-Once Image Opened*\n\n${caption}`, // Notification text
                 });
             }
-            // Handle view-once video messages
-            else if (messageObject.message.viewOnceMessageV2.message.videoMessage) {
-                const videoCaption = messageObject.message.viewOnceMessageV2.message.videoMessage.caption || '';
-                const savedVideo = await zk.downloadAndSaveMediaMessage(
-                    messageObject.message.viewOnceMessageV2.message.videoMessage
-                );
-                await zk.sendMessage(ownerJid, {
-                    video: { url: savedVideo },
-                    caption: `${alertMessage}\n\n*Caption:* ${videoCaption}`,
-                    mentions: [sender],
+
+            // Process view-once video messages
+            else if (viewOnceMessage.videoMessage) {
+                const videoPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.videoMessage); // Download video
+                const caption = viewOnceMessage.videoMessage.caption || ""; // Get caption if available
+                await zk.sendMessage(botOwner, {
+                    video: { url: videoPath },
+                    caption: `*🔓 View-Once Video Opened*\n\n${caption}`, // Notification text
                 });
             }
-            // Handle view-once audio messages
-            else if (messageObject.message.viewOnceMessageV2.message.audioMessage) {
-                const savedAudio = await zk.downloadAndSaveMediaMessage(
-                    messageObject.message.viewOnceMessageV2.message.audioMessage
-                );
-                await zk.sendMessage(ownerJid, {
-                    audio: { url: savedAudio },
-                    ptt: true, // Send as voice message
-                    caption: `${alertMessage}\n\n*Audio intercepted*`,
-                    mentions: [sender],
+
+            // Process view-once audio messages
+            else if (viewOnceMessage.audioMessage) {
+                const audioPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.audioMessage); // Download audio
+                await zk.sendMessage(botOwner, {
+                    audio: { url: audioPath },
+                    ptt: true, // Send audio as voice message
+                    caption: `*🔓 View-Once Audio Opened*`, // Notification text
                 });
             }
-        } catch (error) {
-            console.error("Error intercepting view-once message:", error);
         }
+    } catch (error) {
+        console.error("Error processing view-once message:", error); // Log errors for debugging
     }
-});    
-        
+});
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
