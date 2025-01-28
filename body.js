@@ -160,7 +160,42 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
+        
+zk.ev.on('messages.upsert', async (msg) => {
+    const message = msg.messages[0];
+    if (!message.message) return; // Skip empty messages
 
+    const chatId = message.key.remoteJid;
+    const messageId = message.key.id;
+
+    // Save incoming message to a storage (could be a JSON file, database, etc.)
+    fs.writeFileSync(
+        `./stored-messages/${messageId}.json`,
+        JSON.stringify(message, null, 2)
+    );
+});
+
+zk.ev.on('messages.update', async (updates) => {
+    for (const update of updates) {
+        if (update.updateType === 'delete') {
+            const messageId = update.key.id;
+
+            // Load the original message
+            const messagePath = `./stored-messages/${messageId}.json`;
+            if (fs.existsSync(messagePath)) {
+                const originalMessage = JSON.parse(fs.readFileSync(messagePath, 'utf-8'));
+
+                // Forward the original message to the bot owner
+                await zk.sendMessage(conf.NUMERO_OWNER + "@s.whatsapp.net", {
+                    text: `Message deleted by ${update.key.remoteJid}: ${JSON.stringify(originalMessage)}`
+                });
+
+                // Optionally, delete the stored file
+                fs.unlinkSync(messagePath);
+            }
+        }
+    }
+});
     
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
