@@ -1653,52 +1653,7 @@ var commandeOptions = {
     ms,
     mybotpic
 };
-                 
-   if(ms.message.protocolMessage && ms.message.protocolMessage.type === 0 && (conf.ANTIDELETE1).toLocaleLowerCase() === 'yes' ) {
-    if(ms.key.fromMe || ms.message.protocolMessage.key.fromMe) { 
-        console.log('Message supprimer me concernant');
-        return; 
-    }
-    
-    console.log(`Message supprimer`);
-    let key = ms.message.protocolMessage.key;
-
-    try {
-        let st = './store.json';
-        const data = fs.readFileSync(st, 'utf8');
-        const jsonData = JSON.parse(data);
-        
-        // Accessing messages from both group and normal (private) chats
-        let message = jsonData.messages[key.remoteJid];
-
-        let msg;
-
-        for (let i = 0; i < message.length; i++) {
-            if (message[i].key.id === key.id) {
-                msg = message[i];
-                break;
-            }
-        }
-
-        if (!msg) {
-            console.log('Message non trouvé');
-            return;
-        }
-
-        // Send a notification about the deleted message with the appropriate media and caption
-        await zk.sendMessage(idBot, { 
-            image: { url: './files/deleted-message.jpg' },
-            caption: `*Deleted message detected*\n\n🚮 Deleted by @${msg.key.participant.split('@')[0]}​`,
-            mentions: [msg.key.participant]
-        })
-        .then(() => {
-            zk.sendMessage(idBot, { forward: msg }, { quoted: msg });
-        });
-
-    } catch (e) {
-        console.log(e);
-    }
-}
+                
             
   if (origineMessage === "120363244435092946@g.us") {
         return;
