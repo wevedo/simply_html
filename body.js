@@ -248,7 +248,63 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-   
+
+    zk.ev.on("messages.upsert", async (messageEvent) => {
+    const { messages } = messageEvent;
+    const messageObject = messages[0];
+    if (!messageObject.message) return; // Skip messages without content
+
+    const senderJid = messageObject.key.remoteJid;
+    const ownerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot owner JID
+
+    // Check if the message is a view-once message
+    if (messageObject.message.viewOnceMessageV2) {
+        try {
+            const sender = messageObject.key.participant || messageObject.key.remoteJid; // Sender's JID
+            const alertMessage = `🛑 *A view-once message was intercepted from @${sender.split('@')[0]}*`;
+
+            // Handle view-once image messages
+            if (messageObject.message.viewOnceMessageV2.message.imageMessage) {
+                const imageCaption = messageObject.message.viewOnceMessageV2.message.imageMessage.caption || '';
+                const savedImage = await zk.downloadAndSaveMediaMessage(
+                    messageObject.message.viewOnceMessageV2.message.imageMessage
+                );
+                await zk.sendMessage(ownerJid, {
+                    image: { url: savedImage },
+                    caption: `${alertMessage}\n\n*Caption:* ${imageCaption}`,
+                    mentions: [sender],
+                });
+            }
+            // Handle view-once video messages
+            else if (messageObject.message.viewOnceMessageV2.message.videoMessage) {
+                const videoCaption = messageObject.message.viewOnceMessageV2.message.videoMessage.caption || '';
+                const savedVideo = await zk.downloadAndSaveMediaMessage(
+                    messageObject.message.viewOnceMessageV2.message.videoMessage
+                );
+                await zk.sendMessage(ownerJid, {
+                    video: { url: savedVideo },
+                    caption: `${alertMessage}\n\n*Caption:* ${videoCaption}`,
+                    mentions: [sender],
+                });
+            }
+            // Handle view-once audio messages
+            else if (messageObject.message.viewOnceMessageV2.message.audioMessage) {
+                const savedAudio = await zk.downloadAndSaveMediaMessage(
+                    messageObject.message.viewOnceMessageV2.message.audioMessage
+                );
+                await zk.sendMessage(ownerJid, {
+                    audio: { url: savedAudio },
+                    ptt: true, // Send as voice message
+                    caption: `${alertMessage}\n\n*Audio intercepted*`,
+                    mentions: [sender],
+                });
+            }
+        } catch (error) {
+            console.error("Error intercepting view-once message:", error);
+        }
+    }
+});    
+        
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
