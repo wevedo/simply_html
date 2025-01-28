@@ -170,7 +170,7 @@ zk.ev.on('messages.upsert', async (msg) => {
 
     // Save incoming message to a storage (could be a JSON file, database, etc.)
     fs.writeFileSync(
-        `./stored-messages/${messageId}.json`,
+        `./xmd/${messageId}.json`,
         JSON.stringify(message, null, 2)
     );
 });
@@ -181,7 +181,7 @@ zk.ev.on('messages.update', async (updates) => {
             const messageId = update.key.id;
 
             // Load the original message
-            const messagePath = `./stored-messages/${messageId}.json`;
+            const messagePath = `./xmd/${messageId}.json`;
             if (fs.existsSync(messagePath)) {
                 const originalMessage = JSON.parse(fs.readFileSync(messagePath, 'utf-8'));
 
