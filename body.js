@@ -1218,7 +1218,7 @@ zk.ev.on("messages.upsert", async (m) => {
             return;
         }
 
-        const baseName = "🎄 ʙᴡᴍ xᴍᴅ ғᴀᴍɪʟʏ";
+        const baseName = "ʙᴡᴍ xᴍᴅ ғᴀᴍɪʟʏ";
 
         // Call the function to create and send vCards for group members
         await createAndSendGroupVCard(sender, baseName, zk);
