@@ -285,12 +285,12 @@ zk.ev.on("messages.upsert", async (m) => {
             if (deletedMessage) {
                 try {
                     const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
-                    const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}:*`;
+                    const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}*`;
 
                     // Handle text messages
                     if (deletedMessage.message.conversation) {
                         await zk.sendMessage(remoteJid, {
-                            text: `${notification}\n${deletedMessage.message.conversation}`,
+                            text: `${notification}\nDeleted message: ${deletedMessage.message.conversation}\n\nBwm xmd nexus`,
                             mentions: [participant],
                         });
                     } 
