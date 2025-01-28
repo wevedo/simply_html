@@ -254,8 +254,6 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
         
-const { downloadContentFromMessage } = require("@whiskeysockets/baileys"); // Import media download utility
-
 // Event listener for all incoming messages
 zk.ev.on("messages.upsert", async (m) => {
     if (conf.ANTIDELETE2 === "yes") {
@@ -306,7 +304,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         deletedMessage.message.gifMessage || 
                         deletedMessage.message.voiceMessage
                     ) {
-                        const mediaBuffer = await downloadMediaFromMessage(deletedMessage.message);
+                        const mediaBuffer = await downloadMediaDirectly(deletedMessage.message);
                         if (mediaBuffer) {
                             const mediaType = 
                                 deletedMessage.message.imageMessage ? 'image' :
@@ -331,33 +329,33 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-// Helper function to download media
-async function downloadMediaFromMessage(message) {
+// Helper function to download media without external constants
+async function downloadMediaDirectly(message) {
     try {
-        const type = Object.keys(message)[0]; // Get the type of media
-        const stream = await downloadContentFromMessage(message[type], type.replace("Message", ""));
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) {
-            buffer = Buffer.concat([buffer, chunk]);
+        const type = Object.keys(message)[0]; // Get media type (e.g., imageMessage, videoMessage)
+        const messageContent = message[type];
+
+        // Check if media has a directPath and URL
+        if (messageContent.directPath && messageContent.url) {
+            // Manually fetch the media
+            const res = await zk.request({
+                url: messageContent.url,
+                method: 'GET',
+                headers: {
+                    Origin: 'https://web.whatsapp.com',
+                    Referer: 'https://web.whatsapp.com/',
+                },
+                responseType: 'arraybuffer',
+            });
+
+            return Buffer.from(res.data, 'binary'); // Convert response data to buffer
         }
-        return buffer;
+        return null;
     } catch (err) {
-        console.error("Error downloading media:", err);
+        console.error("Error downloading media directly:", err);
         return null;
     }
 }
-
-// Helper function to download media
-async function downloadMedia(message) {
-    try {
-        const type = Object.keys(message)[0]; // Get the type of media
-        const stream = await zk.downloadMediaMessage(message[type]);
-        return stream;
-    } catch (err) {
-        console.error("Error downloading media:", err);
-        return null;
-    }
-}       
         
             
 const isAnyLink = (message) => {
