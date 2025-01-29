@@ -310,8 +310,40 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
-const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
+
+const ELEVENLABS_API_KEY = "sk_7ef905aeff5673fa65d078c52d03bcb2b3b6b6907f1e7cba";
+const ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Change this to your preferred ElevenLabs voice ID
+
+// Function to generate speech from ElevenLabs
+async function textToSpeechElevenLabs(text) {
+  try {
+    const response = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+      {
+        text: text,
+        model_id: "eleven_turbo_v2",
+        voice_settings: { stability: 0.5, similarity_boost: 0.8 },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "xi-api-key": ELEVENLABS_API_KEY,
+        },
+        responseType: "arraybuffer",
+      }
+    );
+
+    // Save the audio file locally
+    const audioPath = "response.mp3";
+    fs.writeFileSync(audioPath, response.data);
+
+    return audioPath;
+  } catch (error) {
+    console.error("Error generating speech from ElevenLabs:", error);
+    return null;
+  }
+}
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
@@ -367,19 +399,17 @@ zk.ev.on("messages.upsert", async (m) => {
       // Save the updated conversation
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      // Convert AI response to audio
-      const audioUrl = googleTTS.getAudioUrl(aiResponse, {
-        lang: 'en',
-        slow: false,
-        host: 'https://translate.google.com',
-      });
+      // Convert AI response to speech using ElevenLabs
+      const audioPath = await textToSpeechElevenLabs(aiResponse);
 
-      // Send the audio response using zk.sendMessage
-      await zk.sendMessage(remoteJid, { 
-        audio: { url: audioUrl }, 
-        mimetype: 'audio/mp4', 
-        ptt: true 
-      });
+      if (audioPath) {
+        // Send the audio response using zk.sendMessage
+        await zk.sendMessage(remoteJid, { 
+          audio: { url: audioPath }, 
+          mimetype: 'audio/mp4', 
+          ptt: true 
+        });
+      }
     } catch (error) {
       // Silent error handling, no response to the user
       console.error("Error with AI generation:", error);
