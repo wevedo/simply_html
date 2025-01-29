@@ -311,39 +311,7 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 const ai = require('unlimited-ai');
-
-const ELEVENLABS_API_KEY = "sk_f81e55a5c56136e6d0e4bed84c1edefede5a28a70d59a69d";
-const ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Change this to your preferred ElevenLabs voice ID
-
-// Function to generate speech from ElevenLabs
-async function textToSpeechElevenLabs(text) {
-  try {
-    const response = await axios.post(
-      `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
-      {
-        text: text,
-        model_id: "eleven_turbo_v2",
-        voice_settings: { stability: 0.5, similarity_boost: 0.8 },
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          "xi-api-key": ELEVENLABS_API_KEY,
-        },
-        responseType: "arraybuffer",
-      }
-    );
-
-    // Save the audio file locally
-    const audioPath = "response.mp3";
-    fs.writeFileSync(audioPath, response.data);
-
-    return audioPath;
-  } catch (error) {
-    console.error("Error generating speech from ElevenLabs:", error);
-    return null;
-  }
-}
+const gtts = require('gtts'); // Better voice quality for girls
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
@@ -383,7 +351,10 @@ zk.ev.on("messages.upsert", async (m) => {
 
     const model = 'gpt-4-turbo-2024-04-09';
     const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
+    const systemMessage = { 
+      role: 'system', 
+      content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' 
+    };
 
     // Add user message and system message to the conversation
     conversationData.push(userMessage);
@@ -399,19 +370,29 @@ zk.ev.on("messages.upsert", async (m) => {
       // Save the updated conversation
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      // Convert AI response to speech using ElevenLabs
-      const audioPath = await textToSpeechElevenLabs(aiResponse);
+      // Use gTTS for better voice quality
+      const tts = new gtts(aiResponse, 'en'); // Auto-detect language
+      const audioFilePath = 'response.mp3';
 
-      if (audioPath) {
-        // Send the audio response using zk.sendMessage
+      // Save TTS output as an MP3 file
+      tts.save(audioFilePath, async function (err) {
+        if (err) {
+          console.error("TTS Error:", err);
+          return;
+        }
+
+        // Send the audio response
         await zk.sendMessage(remoteJid, { 
-          audio: { url: audioPath }, 
+          audio: { url: audioFilePath }, 
           mimetype: 'audio/mp4', 
           ptt: true 
         });
-      }
+
+        // Optional: Clean up the file after sending
+        setTimeout(() => fs.unlinkSync(audioFilePath), 5000);
+      });
+
     } catch (error) {
-      // Silent error handling, no response to the user
       console.error("Error with AI generation:", error);
     }
   }
