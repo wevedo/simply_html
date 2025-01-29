@@ -313,7 +313,7 @@ zk.ev.on('messages.upsert', async (msg) => {
 const ai = require('unlimited-ai');
 
 const ELEVENLABS_API_KEY = "sk_7ef905aeff5673fa65d078c52d03bcb2b3b6b6907f1e7cba";
-const ELEVENLABS_VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Change this to your preferred ElevenLabs voice ID
+const ELEVENLABS_VOICE_ID = "LcfcDJNUP1GQjkzn1xUU"; // Change this to your preferred ElevenLabs voice ID
 
 // Function to generate speech from ElevenLabs
 async function textToSpeechElevenLabs(text) {
