@@ -377,8 +377,8 @@ zk.ev.on("messages.upsert", async (m) => {
         host: 'https://translate.google.com',
         // You can adjust the voice rate, pitch, and volume for better quality
         voice: language === 'sw' ? 'google_swahili_female' : 'google_en_us_female',
-        pitch: 5.0,  // Adjust pitch for better clarity
-        speed: 5.0   // Adjust speed for clearer pronunciation
+        pitch: 10.6,  // Adjust pitch for better clarity
+        speed: 10.5   // Adjust speed for clearer pronunciation
       });
 
       // Send the audio response using zk.sendMessage
