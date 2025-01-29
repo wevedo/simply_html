@@ -327,10 +327,11 @@ zk.ev.on("messages.upsert", async (m) => {
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
   // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return;
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
 
   if (messageType === "conversation" || messageType === "extendedTextMessage") {
     const alpha = messageContent.trim();
+
     if (!alpha) return;
 
     let conversationData = [];
@@ -349,47 +350,46 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 
     const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };
+    const userMessage = { role: 'user', content: alpha };  
     const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
+    // Add user message and system message to the conversation
     conversationData.push(userMessage);
     conversationData.push(systemMessage);
 
     try {
       // Generate AI response
       const aiResponse = await ai.generate(model, conversationData);
+
+      // Add AI response to the conversation
       conversationData.push({ role: 'assistant', content: aiResponse });
 
-      // Save conversation history
+      // Save the updated conversation
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      // Detect language (basic method: checking Swahili words)
-      const swahiliWords = ['habari', 'rafiki', 'poa', 'asante', 'wazii', 'ndiyo', 'vip', 'sawa', 'mambo'];
-      const detectedLang = swahiliWords.some(word => aiResponse.toLowerCase().includes(word)) ? 'sw' : 'en';
+      // Determine the language (English or Swahili)
+      const language = alpha.includes("swahili") || aiResponse.includes("swahili") ? 'sw' : 'en';
 
-      // Convert AI response to speech
+      // Adjusting to better quality voice for both languages
       const audioUrl = googleTTS.getAudioUrl(aiResponse, {
-        lang: detectedLang, // Automatically selects English or Swahili
+        lang: language,
         slow: false,
         host: 'https://translate.google.com',
+        // You can adjust the voice rate, pitch, and volume for better quality
+        voice: language === 'sw' ? 'google_swahili_female' : 'google_en_us_female',
+        pitch: 1.0,  // Adjust pitch for better clarity
+        speed: 2.0   // Adjust speed for clearer pronunciation
       });
 
-      // Download and save the audio file locally
-      const audioPath = 'response.mp3';
-      const response = await fetch(audioUrl);
-      const buffer = await response.arrayBuffer();
-      fs.writeFileSync(audioPath, Buffer.from(buffer));
-
-      // Send the audio response via WhatsApp
-      await zk.sendMessage(remoteJid, {
-        audio: fs.readFileSync(audioPath),
-        mimetype: 'audio/mp3',
-        ptt: true
+      // Send the audio response using zk.sendMessage
+      await zk.sendMessage(remoteJid, { 
+        audio: { url: audioUrl }, 
+        mimetype: 'audio/mp4', 
+        ptt: true 
       });
-
     } catch (error) {
-      console.error("Error processing request:", error);
-      await zk.sendMessage(remoteJid, { text: "Sorry, I encountered an error processing your request." });
+      // Silent error handling, no response to the user
+      console.error("Error with AI generation:", error);
     }
   }
 });
