@@ -1,6 +1,6 @@
 const util = require('util');
 const fs = require('fs-extra');
-const { adams } = require(__dirname + "/../Ibrahim/zokou");
+const { adams } = require(__dirname + "/../Ibrahim/adams");
 const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
 const moment = require("moment-timezone");
