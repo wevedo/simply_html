@@ -53,9 +53,9 @@ ${commandList}`;
 
     // List of extra aid context images
     const extraImages = [
-        "https://i.ibb.co/3mDjK2s/1000146208.jpg",
-        "https://i.ibb.co/7tNWS99X/1000146199.jpg",
-        "https://i.ibb.co/C5XMh6x/1000146185.jpg"
+        "https://files.catbox.moe/a33gc4.jpg",
+        "https://files.catbox.moe/ljsln1.jpeg",
+        "https://files.catbox.moe/p6sqz3.jpeg"
     ];
     
     // Select a random image
