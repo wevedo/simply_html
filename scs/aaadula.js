@@ -26,11 +26,11 @@ adams({ nomCom: "dullah", categorie: "General" }, async (dest, zk, commandeOptio
     const temps = moment().format('HH:mm:ss');
     const date = moment().format('DD/MM/YYYY');
 
-    // Generate commands list
-    let commandList = " Available Commands";
+// Generate commands list
+    let commandList = "\n\nAvailable Commands:";
     for (let category in coms) {
-        commandList += `    *${category}*  `;
-        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("  ");
+        commandList += `\n\n*${category}*\n`;
+        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("\n");
     }
 
     let infoMsg = `
@@ -73,6 +73,7 @@ ${commandList}`;
                     externalAdReply: {
                         title: "ᴅᴜʟʟᴀʜ-xᴍᴅ",
                         body: "Tap here to Join our official channel!",
+                        mediaType: 1,
                         thumbnailUrl: randomImage,
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                         showAdAttribution: true,
@@ -90,6 +91,7 @@ ${commandList}`;
                     externalAdReply: {
                         title: "ᴅᴜʟʟᴀʜ-xᴍᴅ",
                         body: "Tap here to Join our official channel!",
+                        mediaType: 1,
                         thumbnailUrl: randomImage,
                         sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                         showAdAttribution: true,
