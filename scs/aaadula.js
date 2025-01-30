@@ -8,7 +8,7 @@ const s = require(__dirname + "/../config");
 
 adams({ nomCom: "dullah", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { ms, repondre, prefixe, nomAuteurMessage, mybotpic } = commandeOptions;
-    let { cm } = require(__dirname + "/../framework//zokou");
+    let { cm } = require(__dirname + "/../Ibrahim//adams");
     var coms = {};
     var mode = "public";
 
