@@ -27,10 +27,10 @@ adams({ nomCom: "dullah", categorie: "General" }, async (dest, zk, commandeOptio
     const date = moment().format('DD/MM/YYYY');
 
     // Generate commands list
-    let commandList = "\n\nAvailable Commands:";
+    let commandList = " Available Commands";
     for (let category in coms) {
-        commandList += `\n\n*${category}*\n`;
-        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("\n");
+        commandList += `    *${category}*  `;
+        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("  ");
     }
 
     let infoMsg = `
