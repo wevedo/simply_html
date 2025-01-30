@@ -1,133 +1,127 @@
 const util = require('util');
 const fs = require('fs-extra');
-const axios = require('axios');
-const { adams } = require(__dirname + "/../Ibrahim/adams");
+const { adams } = require(__dirname + "/../Ibrahim/zokou");
 const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
 const moment = require("moment-timezone");
 const s = require(__dirname + "/../config");
 
-
-const more = String.fromCharCode(8206);
-const readmore = more.repeat(4001);
-
-const runtime = function (seconds) { 
-    seconds = Number(seconds); 
-    var d = Math.floor(seconds / (3600 * 24)); 
-    var h = Math.floor((seconds % (3600 * 24)) / 3600); 
-    var m = Math.floor((seconds % 3600) / 60); 
-    var s = Math.floor(seconds % 60); 
-    var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " d, ") : ""; 
-    var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " h, ") : ""; 
-    var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " m, ") : ""; 
-    var sDisplay = s > 0 ? s + (s == 1 ? " second" : " s") : ""; 
-    return dDisplay + hDisplay + mDisplay + sDisplay; 
-};
-
-// Function to fetch GitHub repo data
-const fetchGitHubStats = async () => {
-    try {
-        const repo = 'Devibraah/BWM-XMD'; // Replace with your repo
-        const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const forks = response.data.forks_count;
-        const stars = response.data.stargazers_count;
-        const totalUsers = (forks * 2) + (stars * 2);
-        return { forks, stars, totalUsers };
-    } catch (error) {
-        console.error("Error fetching GitHub stats:", error);
-        return { forks: 0, stars: 0, totalUsers: 0 }; 
-    }
-};
-
-adams({ nomCom: "dula", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
-    let { cm } = require(__dirname + "/../Ibrahim/adams");
+adams({ nomCom: "dullah", categorie: "General" }, async (dest, zk, commandeOptions) => {
+    let { ms, repondre, prefixe, nomAuteurMessage, mybotpic } = commandeOptions;
+    let { cm } = require(__dirname + "/../framework//zokou");
     var coms = {};
-    var mode = s.MODE.toLowerCase() === "public" ? "public" : "private";
+    var mode = "public";
 
-    cm.map((com) => {
-        const categoryUpper = com.categorie.toUpperCase();
-        if (!coms[categoryUpper]) coms[categoryUpper] = [];
-        coms[categoryUpper].push(com.nomCom);
+    if ((s.MODE).toLocaleLowerCase() != "yes") {
+        mode = "private";
+    }
+
+    cm.map(async (com, index) => {
+        if (!coms[com.categorie]) coms[com.categorie] = [];
+        coms[com.categorie].push(com.nomCom);
     });
 
-    moment.tz.setDefault(`${s.TZ}`);
+    moment.tz.setDefault("Africa/Nairobi");
+
     const temps = moment().format('HH:mm:ss');
     const date = moment().format('DD/MM/YYYY');
-    const hour = moment().hour();
 
-    let greeting = "Good night";
-    if (hour >= 0 && hour <= 11) greeting = "Good morning";
-    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
-    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
-
-    const { totalUsers } = await fetchGitHubStats();
-    const formattedTotalUsers = totalUsers.toLocaleString();
+    // Generate commands list
+    let commandList = "\n\nAvailable Commands:";
+    for (let category in coms) {
+        commandList += `\n\n*${category}*\n`;
+        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("\n");
+    }
 
     let infoMsg = `
-╭─────═━┈┈━═──━┈⊷
-┇ ʙᴏᴛ ɴᴀᴍᴇ: *ᴅᴜʟʟᴀʜ ᴍᴅ*
-┇ ᴍᴏᴅᴇ: *${mode}*
-┇ ᴘʀᴇғɪx: *[ ${prefixe} ]*
-┇ ᴘʟᴀᴛғᴏʀᴍ: *${os.platform()}*
-┇ ᴅᴀᴛᴇ: *${date}*
-┇ ᴛɪᴍᴇ: *${temps}*
-┇ ᴄᴀᴘᴀᴄɪᴛʏ ${format(os.totalmem() - os.freemem())}/${format(os.totalmem())}
-╰─────═━┈┈━═──━┈⊷\n\n`;
+╭══════════════⊷❍
+┇❍▸ ʙᴏᴛ ɴᴀᴍᴇ: *ᴅᴜʟʟᴀʜ ᴍᴅ*
+┇❍▸ ʙᴏᴛ ᴜsᴇʀ: *${nomAuteurMessage}*
+┇❍▸ ᴍᴏᴅᴇ: *${mode}*
+┇❍▸ ᴘʀᴇғɪx: *[ ${prefixe} ]*
+┇❍▸ ᴘʟᴀᴛғᴏʀᴍ: *${os.platform()}*
+┇❍▸ ᴅᴀᴛᴇ: *${date}*
+┇❍▸ ᴛɪᴍᴇ: *${temps}*
+┇❍▸ ᴄᴀᴘᴀᴄɪᴛʏ: ${format(os.totalmem() - os.freemem())}/${format(os.totalmem())}
+╰══════════════⊷❍ 
+${commandList}`;
 
-    let menuMsg = `${readmore}  
-╭─────═━┈┈━═──━┈⊷
-┇ ᴄᴏᴍᴍᴀɴᴅ ʟɪsᴛ
-╰─────═━┈┈━═──━┈⊷\n\n`;
+    const botPicUrl = mybotpic(); // This returns the bot picture URL
 
-    const sortedCategories = Object.keys(coms).sort();
-    sortedCategories.forEach((cat) => {
-        menuMsg += `*╭────❒* *${cat}* *❒*`;
-        coms[cat].forEach((cmd) => {
-            menuMsg += `\n*╏* ${cmd}`;
-        });
-        menuMsg += `\n*╰─═════════════❒*\n`;
-    });
-
-    menuMsg += `
-▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄
-▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄`;
+    // List of extra aid context images
+    const extraImages = [
+        "https://i.ibb.co/3mDjK2s/1000146208.jpg",
+        "https://i.ibb.co/7tNWS99X/1000146199.jpg",
+        "https://i.ibb.co/C5XMh6x/1000146185.jpg"
+    ];
+    
+    // Select a random image
+    const randomImage = extraImages[Math.floor(Math.random() * extraImages.length)];
 
     try {
-        await zk.sendMessage(dest, { 
-            text: infoMsg + menuMsg,
-            contextInfo: {
-                mentionedJid: [nomAuteurMessage],
-                externalAdReply: {
-                    body: "ᴅᴜʟʟᴀʜ ᴍᴅ",
-                    thumbnailUrl: "https://files.catbox.moe/hegdag.jpg",
-                    sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
-                    mediaType: 1,
-                    renderLargerThumbnail: true
-                }
-            }
-        });
-
-        // Send audio with caption
-        await zk.sendMessage(dest, { 
-            audio: { 
-                url: "https://files.catbox.moe/bewdug.mp3" // Replace with your audio URL
-            }, 
-            mimetype: 'audio/mp4', 
-            ptt: false, // Set to true if you want it as a voice note
-            caption: "BMW MD SONG",
-            contextInfo: {
-                externalAdReply: {
-                    body: "DULLAH MD",
-                    thumbnailUrl: "https://files.catbox.moe/hegdag.jpg",
-                    sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
-                    rendersmallThumbnail: false
-                }
-            }
-        });
-
+        if (botPicUrl.match(/\.(mp4|gif)$/i)) {
+            // If the bot picture is a video or GIF
+            await zk.sendMessage(dest, {
+                video: { url: botPicUrl },
+                caption: infoMsg,
+                footer: "*Dullah MD*, developed by Ibrahim Adams",
+                gifPlayback: true,
+                contextInfo: {
+                    externalAdReply: {
+                        title: "ᴅᴜʟʟᴀʜ-xᴍᴅ",
+                        body: "Tap here to Join our official channel!",
+                        thumbnailUrl: randomImage,
+                        sourceUrl: "https://chat.whatsapp.com/IdRXU9UcO8K50GPelOyhxh",
+                        showAdAttribution: true,
+                        renderLargerThumbnail: false,
+                    },
+                },
+            }, { quoted: ms });
+        } else if (botPicUrl.match(/\.(jpeg|png|jpg)$/i)) {
+            // If the bot picture is an image
+            await zk.sendMessage(dest, {
+                image: { url: botPicUrl },
+                caption: infoMsg,
+                footer: "*Dullah MD*, developed by Ibrahim Adams",
+                contextInfo: {
+                    externalAdReply: {
+                        title: "ᴅᴜʟʟᴀʜ-xᴍᴅ",
+                        body: "Tap here to Join our official channel!",
+                        thumbnailUrl: randomImage,
+                        sourceUrl: "https://chat.whatsapp.com/IdRXU9UcO8K50GPelOyhxh",
+                        showAdAttribution: true,
+                        renderLargerThumbnail: false,
+                    },
+                },
+            }, { quoted: ms });
+        } else {
+            // Default text response if no media type matches
+            repondre(infoMsg);
+        }
     } catch (e) {
-        console.log("🥵🥵 Menu erreur " + e);
-        repondre("🥵🥵 Menu erreur " + e);
+        console.log("🥵🥵 Error sending bot picture: " + e);
+        repondre("🥵🥵 Error sending bot picture: " + e);
+    }
+
+    // List of audio URLs
+    const audioUrls = [
+        "https://files.catbox.moe/wsyxi0.mp3",
+        "https://files.catbox.moe/y6fph9.mp3",
+        "https://files.catbox.moe/w2k8g2.mp3"
+    ];
+    
+    // Select a random audio file
+    const randomAudioUrl = audioUrls[Math.floor(Math.random() * audioUrls.length)];
+
+    // Sending random audio as a voice note
+    try {
+        await zk.sendMessage(dest, {
+            audio: { url: randomAudioUrl },
+            mimetype: 'audio/mpeg',
+            ptt: true, // Send as a voice note
+        }, { quoted: ms });
+    } catch (e) {
+        console.log("🥵🥵 Error sending audio as voice note: " + e);
+        repondre("🥵🥵 Error sending audio as voice note: " + e);
     }
 });
