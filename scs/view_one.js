@@ -23,15 +23,16 @@ adams({ nomCom: "vv", categorie: "General", reaction: "😅" }, async (dest, zk,
         viewOnceMsg = msgRepondu.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessageV2.message;
     } else if (msgRepondu.extendedTextMessage?.contextInfo?.quotedMessage?.viewOnceMessage?.message) {
         viewOnceMsg = msgRepondu.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message;
+    } else if (msgRepondu.quotedMessage?.viewOnceMessageV2?.message) {
+        viewOnceMsg = msgRepondu.quotedMessage.viewOnceMessageV2.message;
+    } else if (msgRepondu.quotedMessage?.viewOnceMessage?.message) {
+        viewOnceMsg = msgRepondu.quotedMessage.viewOnceMessage.message;
+    } else if (msgRepondu.message?.viewOnceMessageV2?.message) {
+        viewOnceMsg = msgRepondu.message.viewOnceMessageV2.message;
+    } else if (msgRepondu.message?.viewOnceMessage?.message) {
+        viewOnceMsg = msgRepondu.message.viewOnceMessage.message;
     } else {
-        // Fallback: Check for new paths or structures
-        viewOnceMsg = msgRepondu.quotedMessage?.viewOnceMessageV2?.message || 
-                      msgRepondu.quotedMessage?.viewOnceMessage?.message || 
-                      msgRepondu.message?.viewOnceMessageV2?.message || 
-                      msgRepondu.message?.viewOnceMessage?.message;
-    }
-
-    if (!viewOnceMsg) {
+        // If no view-once message is found
         return repondre("*The mentioned message is not a view-once message.*");
     }
 
