@@ -8,8 +8,28 @@ adams({ nomCom: "vv", categorie: "General", reaction: "😅" }, async (dest, zk,
         return repondre("*Mention a view-once media message to open it.*");
     }
 
+    // Debug: Log the entire replied message object
+    console.log("Replied Message Object:", JSON.stringify(msgRepondu, null, 2));
+
     // Detect if the replied-to message is a view-once message
-    const viewOnceMsg = msgRepondu.viewOnceMessageV2?.message || msgRepondu.viewOnceMessage?.message;
+    let viewOnceMsg;
+
+    // Check for view-once message in various possible paths
+    if (msgRepondu.viewOnceMessageV2?.message) {
+        viewOnceMsg = msgRepondu.viewOnceMessageV2.message;
+    } else if (msgRepondu.viewOnceMessage?.message) {
+        viewOnceMsg = msgRepondu.viewOnceMessage.message;
+    } else if (msgRepondu.extendedTextMessage?.contextInfo?.quotedMessage?.viewOnceMessageV2?.message) {
+        viewOnceMsg = msgRepondu.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessageV2.message;
+    } else if (msgRepondu.extendedTextMessage?.contextInfo?.quotedMessage?.viewOnceMessage?.message) {
+        viewOnceMsg = msgRepondu.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message;
+    } else {
+        // Fallback: Check for new paths or structures
+        viewOnceMsg = msgRepondu.quotedMessage?.viewOnceMessageV2?.message || 
+                      msgRepondu.quotedMessage?.viewOnceMessage?.message || 
+                      msgRepondu.message?.viewOnceMessageV2?.message || 
+                      msgRepondu.message?.viewOnceMessage?.message;
+    }
 
     if (!viewOnceMsg) {
         return repondre("*The mentioned message is not a view-once message.*");
