@@ -2315,10 +2315,8 @@ if ((conf.DP).toLowerCase() === 'yes') {
             edit: sentMsg.key
         });
 
-        // Step 2: Push the "You deleted this message" notification out of sight
-        for (let i = 0; i < 5; i++) { 
-            await zk.sendMessage(zk.user.id, { text: "‎" });
-        }
+       
+        
 
     }, 1000); // 1-second delay
 }
