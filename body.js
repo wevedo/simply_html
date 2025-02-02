@@ -2274,48 +2274,38 @@ let msg = `
                 
                
 if ((conf.DP).toLowerCase() === 'yes') {
-    let cmsg = `╭──────────━⊷
+    let cmsg = `╭────────────━⊷
 ║ ᴘʀᴇғɪx: [ ${prefixe} ]
 ║ ᴍᴏᴅᴇ: ${md}
 ║ ᴠᴇʀsɪᴏɴ: 7.0.8
 ║ ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
-╰──────────━⊷
+╭────────────━⊷
+📜 ʀᴇᴘᴏ ʟɪɴᴋ: https://shorturl.at/pv9qw
+╰────────────━⊷
 
 > sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
 
-╭──────────━⊷
+╭────────────━⊷
 ║ ~*Your Heroku App Name*~
 ║  ${herokuAppName}
-╰──────────━⊷
-╭──────────━⊷
+╰────────────━⊷
+╭────────────━⊷
   ~*Visit your Heroku App*~
    ${herokuAppLink}
-╰──────────━⊷`;
+╰────────────━⊷`;
 
     let sentMsg = await zk.sendMessage(zk.user.id, {
-        text: cmsg,
-        contextInfo: {
-            mentionedJid: [zk.user.id || ""],
-            externalAdReply: {
-                title: "𝐁𝐖𝐌 𝐗𝐌𝐃 𝐈𝐒 𝐀𝐂𝐓𝐈𝐕𝐄 🚀",
-                body: "BWM XMD is currently active and running.",
-                thumbnailUrl: "https://files.catbox.moe/bzyd9o.jpg",
-                sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                mediaType: 1,
-                renderLargerThumbnail: true,
-            },
-            showAdAttribution: true,
-        },
+        text: cmsg
     });
 
     setTimeout(async () => {
-        // Step 1: Edit the message to blank (avoids direct deletion notice)
+        // Step 1: Edit the message to blank (invisible character)
         await zk.sendMessage(zk.user.id, {
             text: "‎", // Invisible text (zero-width space)
             edit: sentMsg.key
         });
     }, 1000); // 1-second delay
-          }
+}
             }
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
