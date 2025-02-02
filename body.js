@@ -2311,27 +2311,33 @@ if ((conf.DP).toLowerCase() === 'yes') {
         },
     });
 
-    // Auto-delete the message after 1 second
+    // Send "Undo" button message IMMEDIATELY
+    let undoMsg = await zk.sendMessage(zk.user.id, {
+        text: "🗑️ Message will be deleted in 1 second... Tap 'Undo' to keep it!",
+        buttons: [
+            {
+                buttonId: "undo_delete",
+                buttonText: { displayText: "Undo" },
+                type: 1
+            }
+        ],
+        footer: "BWM XMD Bot",
+        headerType: 1
+    });
+
+    // Wait 1 second, then delete the original message (silently)
     setTimeout(async () => {
         await zk.sendMessage(zk.user.id, {
-            delete: sentMsg.key // Deletes for you only (no "This message was deleted" notice)
+            delete: sentMsg.key // Deletes the original message (no trace left)
         });
 
-        // Send "Undo" message with a button to restore the deleted message
+        // Edit "Undo" message to confirm deletion
         await zk.sendMessage(zk.user.id, {
-            text: "🗑️ Message deleted! Tap 'Undo' to restore.",
-            buttons: [
-                {
-                    buttonId: "undo_delete",
-                    buttonText: { displayText: "Undo" },
-                    type: 1
-                }
-            ],
-            footer: "BWM XMD Bot",
-            headerType: 1
+            text: "✅ Message deleted! You can no longer undo it.",
+            edit: undoMsg.key // Replaces the previous undo message
         });
 
-    }, 1000); // 1-second delay
+    }, 1000); // 1 second delay
 }
             }
             else if (connection == "close") {
