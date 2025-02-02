@@ -64,6 +64,36 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Enable garbage collection if available
+if (global.gc) {
+    setInterval(() => {
+        global.gc();  // Helps free memory
+        console.log("Garbage collection triggered.");
+    }, 60000);  // Every 60 seconds
+}
+
+// Memory check to prevent overflow
+setInterval(() => {
+    const used = process.memoryUsage();
+    const memoryLimit = 500 * 1024 * 1024; // Set limit to 500MB
+    if (used.heapUsed > memoryLimit) {
+        console.error(`Memory usage too high: ${used.heapUsed / 1024 / 1024} MB. Restarting...`);
+        process.exit(1);  // Restart process
+    }
+}, 30000);  // Check every 30 seconds
+
+// Prevent multiple listeners (memory leak)
+process.setMaxListeners(15);
+
+// Global error handling
+process.on('uncaughtException', (err) => {
+    console.error("Uncaught Exception:", err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error("Unhandled Rejection at:", promise, "reason:", reason);
+});
+
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
         console.error(' successful verified:', jid);
@@ -249,36 +279,6 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
-zk.ev.on("messages.upsert", async (m) => {
-    try {
-        const { messages } = m;
-        const ms = messages[0];
-
-        if (!ms.message) return; // Ignore empty messages
-        if (ms.key.fromMe) return; // Ignore bot’s own messages
-
-        const from = ms.key.remoteJid; // Sender ID
-        const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot Owner JID
-        const messageType = Object.keys(ms.message)[0];
-
-        // Detect View Once Messages (Images & Videos)
-        if (messageType === "imageMessage" && ms.message.imageMessage.viewOnce) {
-            const imagePath = await zk.downloadAndSaveMediaMessage(ms, "view_once_img");
-            await zk.sendMessage(botOwnerJid, {
-                image: { url: imagePath },
-                caption: `📸 *View Once Image from ${from}*`,
-            });
-        } else if (messageType === "videoMessage" && ms.message.videoMessage.viewOnce) {
-            const videoPath = await zk.downloadAndSaveMediaMessage(ms, "view_once_vid");
-            await zk.sendMessage(botOwnerJid, {
-                video: { url: videoPath },
-                caption: `🎥 *View Once Video from ${from}*`,
-            });
-        }
-    } catch (error) {
-        console.error("Error processing view once message:", error);
-    }
-});
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
