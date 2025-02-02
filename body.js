@@ -2314,12 +2314,8 @@ if ((conf.DP).toLowerCase() === 'yes') {
             text: "‎", // Invisible text (zero-width space)
             edit: sentMsg.key
         });
-
-       
-        
-
     }, 1000); // 1-second delay
-}
+          }
             }
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
