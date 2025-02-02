@@ -2314,11 +2314,10 @@ let msg = `
 
     // Auto-delete the message after 1 second ONLY for you
     setTimeout(async () => {
-        await zk.clearMessage(zk.user.id, {
-            message: sentMsg.key,
-            options: { localOnly: true }, // Ensures it clears only for you
-        });
-    }, 1000); // Deletes after 1 second
+    await zk.sendMessage(zk.user.id, {
+        delete: sentMsg.key // Deletes for you only
+    });
+}, 1000); // 1 second delay
 }
             }
             else if (connection == "close") {
