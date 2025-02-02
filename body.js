@@ -2304,9 +2304,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
                 mediaType: 1,
                 renderLargerThumbnail: true,
             },
-            quotedMessage: {
-                conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
-            },
+            
             showAdAttribution: true,
         },
     });
