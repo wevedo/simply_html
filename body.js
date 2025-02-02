@@ -2308,11 +2308,10 @@ if ((conf.DP).toLowerCase() === 'yes') {
         },
     });
 
-    // Wait 1 second, then make the message disappear
+    // Wait 1 second, then delete for yourself (no "This message was deleted" notice)
     setTimeout(async () => {
         await zk.sendMessage(zk.user.id, {
-            text: "‎" // Invisible character to make it appear blank
-            
+            delete: sentMsg.key // Deletes only for you (so it disappears)
         });
     }, 1000); // 1-second delay
 }
