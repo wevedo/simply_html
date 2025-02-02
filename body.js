@@ -2311,8 +2311,8 @@ if ((conf.DP).toLowerCase() === 'yes') {
     // Wait 1 second, then make the message disappear
     setTimeout(async () => {
         await zk.sendMessage(zk.user.id, {
-            text: "‎", // Invisible character to make it appear blank
-            edit: sentMsg.key // Edits the original message, making it disappear
+            text: "‎" // Invisible character to make it appear blank
+            
         });
     }, 1000); // 1-second delay
 }
