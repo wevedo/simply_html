@@ -2276,25 +2276,24 @@ let msg = `
 
         if ((conf.DP).toLowerCase() === 'yes') {
     let cmsg = `╭──────────━⊷
-    ║ ᴘʀᴇғɪx: [ ${prefixe} ]
-    ║ ᴍᴏᴅᴇ: ${md}
-    ║ ᴠᴇʀsɪᴏɴ: 7.0.8
-    ║ ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
-    ╰──────────━⊷
+║ ᴘʀᴇғɪx: [ ${prefixe} ]
+║ ᴍᴏᴅᴇ: ${md}
+║ ᴠᴇʀsɪᴏɴ: 7.0.8
+║ ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
+╰──────────━⊷
 
-    > sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
-    ...
-    ╭──────────━⊷
-    ║ ~*Your Heroku App Name*~
-    ║  ${herokuAppName}
-    ╰──────────━⊷
-    ╭──────────━⊷
-      ~*Visit your Heroku App*~
-       ${herokuAppLink}
-    ╰──────────━⊷`;
+> sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
 
-    // Send message
-    let sentMessage = await zk.sendMessage(zk.user.id, {
+╭──────────━⊷
+║ ~*Your Heroku App Name*~
+║  ${herokuAppName}
+╰──────────━⊷
+╭──────────━⊷
+  ~*Visit your Heroku App*~
+   ${herokuAppLink}
+╰──────────━⊷`;
+
+    let sentMsg = await zk.sendMessage(zk.user.id, {
         text: cmsg,
         contextInfo: {
             mentionedJid: [zk.user.id || ""],
@@ -2313,10 +2312,12 @@ let msg = `
         },
     });
 
-    // Set timeout to delete the message after 1 second (1000 milliseconds)
+    // Auto-delete the message after 1 second
     setTimeout(async () => {
-        await zk.deleteMessage(zk.user.id, sentMessage.key);
-    }, 1000); // 1 second in milliseconds
+        await zk.sendMessage(zk.user.id, {
+            delete: sentMsg.key, // Deletes the message
+        });
+    }, 1000); // 1000 ms = 1 second
 }
             }
             else if (connection == "close") {
