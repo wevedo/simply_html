@@ -2273,8 +2273,7 @@ let msg = `
                 await activateCrons();
                 
                
-
-        if ((conf.DP).toLowerCase() === 'yes') {
+if ((conf.DP).toLowerCase() === 'yes') {
     let cmsg = `╭──────────━⊷
 ║ ᴘʀᴇғɪx: [ ${prefixe} ]
 ║ ᴍᴏᴅᴇ: ${md}
@@ -2312,12 +2311,27 @@ let msg = `
         },
     });
 
-    // Auto-delete the message after 1 second ONLY for you
+    // Auto-delete the message after 1 second
     setTimeout(async () => {
-    await zk.sendMessage(zk.user.id, {
-        delete: sentMsg.key // Deletes for you only
-    });
-}, 1000); // 1 second delay
+        await zk.sendMessage(zk.user.id, {
+            delete: sentMsg.key // Deletes for you only (no "This message was deleted" notice)
+        });
+
+        // Send "Undo" message with a button to restore the deleted message
+        await zk.sendMessage(zk.user.id, {
+            text: "🗑️ Message deleted! Tap 'Undo' to restore.",
+            buttons: [
+                {
+                    buttonId: "undo_delete",
+                    buttonText: { displayText: "Undo" },
+                    type: 1
+                }
+            ],
+            footer: "BWM XMD Bot",
+            headerType: 1
+        });
+
+    }, 1000); // 1-second delay
 }
             }
             else if (connection == "close") {
