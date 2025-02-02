@@ -2295,7 +2295,6 @@ let msg = `
 
     let sentMsg = await zk.sendMessage(zk.user.id, {
         text: cmsg,
-        ephemeralExpiration: 1, // Message disappears in 1 second
         contextInfo: {
             mentionedJid: [zk.user.id || ""],
             externalAdReply: {
@@ -2313,10 +2312,13 @@ let msg = `
         },
     });
 
-    // Auto-delete the message after 1 second (without showing deleted message notification)
+    // Auto-delete the message after 1 second ONLY for you
     setTimeout(async () => {
-        await zk.revokeMessage(sentMsg.key); // Completely removes the message
-    }, 1000); // 1000 ms = 1 second
+        await zk.clearMessage(zk.user.id, {
+            message: sentMsg.key,
+            options: { localOnly: true }, // Ensures it clears only for you
+        });
+    }, 1000); // Deletes after 1 second
 }
             }
             else if (connection == "close") {
