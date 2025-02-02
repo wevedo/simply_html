@@ -2311,9 +2311,9 @@ if ((conf.DP).toLowerCase() === 'yes') {
         },
     });
 
-    // Send "Undo" button message IMMEDIATELY
+    // Send "Undo" button immediately
     let undoMsg = await zk.sendMessage(zk.user.id, {
-        text: "🗑️ Message will be deleted in 1 second... Tap 'Undo' to keep it!",
+        text: "🗑️ Message will disappear in 1 second... Tap 'Undo' to keep it!",
         buttons: [
             {
                 buttonId: "undo_delete",
@@ -2325,16 +2325,17 @@ if ((conf.DP).toLowerCase() === 'yes') {
         headerType: 1
     });
 
-    // Wait 1 second, then delete the original message (silently)
+    // Wait 1 second, then make the message disappear by editing it to blank
     setTimeout(async () => {
         await zk.sendMessage(zk.user.id, {
-            delete: sentMsg.key // Deletes the original message (no trace left)
+            text: "‎", // Invisible character to make it appear blank
+            edit: sentMsg.key // Edits the original message, making it disappear
         });
 
-        // Edit "Undo" message to confirm deletion
+        // Edit the "Undo" message to confirm the disappearance
         await zk.sendMessage(zk.user.id, {
-            text: "✅ Message deleted! You can no longer undo it.",
-            edit: undoMsg.key // Replaces the previous undo message
+            text: "✅ Message disappeared! You can no longer undo it.",
+            edit: undoMsg.key // Edits the previous undo message
         });
 
     }, 1000); // 1 second delay
