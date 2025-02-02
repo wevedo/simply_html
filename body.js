@@ -2291,7 +2291,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
 ╰────────────━⊷
 ╭────────────━⊷
   ~*Visit your Heroku App*~
-   ${herokuAppLink}
+> ${herokuAppLink}
 ╰────────────━⊷`;
 
     let sentMsg = await zk.sendMessage(zk.user.id, {
@@ -2304,7 +2304,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
             text: "‎", // Invisible text (zero-width space)
             edit: sentMsg.key
         });
-    }, 1000); // 1-second delay
+    }, 300000); // 5-minute delay
 }
             }
             else if (connection == "close") {
