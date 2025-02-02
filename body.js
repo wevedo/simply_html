@@ -249,6 +249,76 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 });
 
+
+   zk.ev.on("messages.upsert", async (m) => {  
+    if (!ms.message) return;
+
+    // Check if the message is a "view once" message
+    if (ms.message.viewOnceMessage) {
+        const viewOnceMessage = ms.message.viewOnceMessage.message;
+        const messageType = Object.keys(viewOnceMessage)[0]; // e.g., imageMessage, videoMessage, etc.
+        const remoteJid = ms.key.remoteJid; // Sender's JID
+        const sender = ms.key.participant || ms.key.remoteJid; // Sender's ID
+
+        // Download the media from the "view once" message
+        try {
+            let mediaPath;
+            let caption = "";
+
+            if (messageType === "imageMessage") {
+                mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.imageMessage);
+                caption = viewOnceMessage.imageMessage.caption || "";
+            } else if (messageType === "videoMessage") {
+                mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.videoMessage);
+                caption = viewOnceMessage.videoMessage.caption || "";
+            } else if (messageType === "audioMessage") {
+                mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.audioMessage);
+            } else if (messageType === "stickerMessage") {
+                mediaPath = await zk.downloadAndSaveMediaMessage(viewOnceMessage.stickerMessage);
+            } else {
+                console.log("Unsupported view once message type:", messageType);
+                return;
+            }
+
+            // Forward the downloaded media to the bot owner
+            const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`;
+
+            if (messageType === "imageMessage") {
+                await zk.sendMessage(botOwnerJid, {
+                    image: { url: mediaPath },
+                    caption: `*View Once Image*\nFrom: @${sender.split("@")[0]}\n${caption}`,
+                    mentions: [sender],
+                });
+            } else if (messageType === "videoMessage") {
+                await zk.sendMessage(botOwnerJid, {
+                    video: { url: mediaPath },
+                    caption: `*View Once Video*\nFrom: @${sender.split("@")[0]}\n${caption}`,
+                    mentions: [sender],
+                });
+            } else if (messageType === "audioMessage") {
+                await zk.sendMessage(botOwnerJid, {
+                    audio: { url: mediaPath },
+                    ptt: true,
+                    caption: `*View Once Audio*\nFrom: @${sender.split("@")[0]}`,
+                    mentions: [sender],
+                });
+            } else if (messageType === "stickerMessage") {
+                await zk.sendMessage(botOwnerJid, {
+                    sticker: { url: mediaPath },
+                    caption: `*View Once Sticker*\nFrom: @${sender.split("@")[0]}`,
+                    mentions: [sender],
+                });
+            }
+
+            console.log(`Forwarded view once ${messageType} to bot owner.`);
+
+            // Delete the downloaded media file after forwarding
+            await fs.unlink(mediaPath);
+        } catch (error) {
+            console.error("Error handling view once message:", error);
+        }
+    }
+});  
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
