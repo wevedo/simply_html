@@ -2308,11 +2308,18 @@ if ((conf.DP).toLowerCase() === 'yes') {
         },
     });
 
-    // Wait 1 second, then delete for yourself (no "This message was deleted" notice)
     setTimeout(async () => {
+        // Step 1: Edit the message to blank (avoids direct deletion notice)
         await zk.sendMessage(zk.user.id, {
-            delete: sentMsg.key // Deletes only for you (so it disappears)
+            text: "‎", // Invisible text (zero-width space)
+            edit: sentMsg.key
         });
+
+        // Step 2: Push the "You deleted this message" notification out of sight
+        for (let i = 0; i < 5; i++) { 
+            await zk.sendMessage(zk.user.id, { text: "‎" });
+        }
+
     }, 1000); // 1-second delay
 }
             }
