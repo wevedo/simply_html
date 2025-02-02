@@ -1091,7 +1091,7 @@ const getRandomFallbackEmoji = () => {
 };
 
 // Auto-react to status updates if AUTO_REACT_STATUS is enabled
-if (conf.AUTO_REACT_STATUS === "yes") {
+if (conf.RANDOM_REACT_STATUS === "yes") {
     console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
 
     zk.ev.on("messages.upsert", async (m) => {
@@ -1176,6 +1176,66 @@ if (conf.AUTO_REACT === "yes") {
     });
 }
 
+ if (conf.AUTO_REACT_STATUS === "yes") {
+    console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
+
+    zk.ev.on("messages.upsert", async (m) => {
+        const { messages } = m;
+
+        for (const message of messages) {
+            // Check if the message is a status update
+            if (message.key && message.key.remoteJid === "status@broadcast") {
+                console.log("Detected status update from:", message.key.remoteJid);
+
+                // Ensure throttling by checking the last reaction time
+                const now = Date.now();
+                if (now - lastReactionTime < 5000) {  // 5-second interval
+                    console.log("Throttling reactions to prevent overflow.");
+                    continue;
+                }
+
+                // Check if bot user ID is available
+                const adams = zk.user && zk.user.id ? zk.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+                if (!adams) {
+                    console.log("Bot's user ID not available. Skipping reaction.");
+                    continue;
+                }
+
+                // Get emojis from conf.AUTO_REACT_EMOJIS
+                if (!conf.AUTO_REACT_EMOJIS) {
+                    console.log("AUTO_REACT_EMOJIS is not set. Skipping reaction.");
+                    continue;
+                }
+
+                const emojis = conf.REACT_STATUS_EMOJIS.split(",").map(e => e.trim());
+                if (emojis.length === 0) {
+                    console.log("No valid emojis found in AUTO_REACT_EMOJIS. Skipping reaction.");
+                    continue;
+                }
+
+                // Pick a random emoji
+                const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+
+                // React to the status with a random emoji
+                await zk.sendMessage(message.key.remoteJid, {
+                    react: {
+                        key: message.key,
+                        text: randomEmoji, // Emoji from config
+                    },
+                }, {
+                    statusJidList: [message.key.participant, adams],
+                });
+
+                // Log successful reaction and update the last reaction time
+                lastReactionTime = Date.now();
+                console.log(`Successfully reacted with "${randomEmoji}" to status update by ${message.key.remoteJid}`);
+
+                // Delay to avoid rapid reactions
+                await delay(2000); // 2-second delay between reactions
+            }
+        }
+    });
+}       
 // Function to create and send vCard for a new contact with incremented numbering
 async function sendVCard(jid, baseName) {
     try {
