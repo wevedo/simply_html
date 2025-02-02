@@ -2304,39 +2304,17 @@ if ((conf.DP).toLowerCase() === 'yes') {
                 mediaType: 1,
                 renderLargerThumbnail: true,
             },
-            
             showAdAttribution: true,
         },
     });
 
-    // Send "Undo" button immediately
-    let undoMsg = await zk.sendMessage(zk.user.id, {
-        text: "🗑️ Message will disappear in 1 second... Tap 'Undo' to keep it!",
-        buttons: [
-            {
-                buttonId: "undo_delete",
-                buttonText: { displayText: "Undo" },
-                type: 1
-            }
-        ],
-        footer: "BWM XMD Bot",
-        headerType: 1
-    });
-
-    // Wait 1 second, then make the message disappear by editing it to blank
+    // Wait 1 second, then make the message disappear
     setTimeout(async () => {
         await zk.sendMessage(zk.user.id, {
             text: "‎", // Invisible character to make it appear blank
             edit: sentMsg.key // Edits the original message, making it disappear
         });
-
-        // Edit the "Undo" message to confirm the disappearance
-        await zk.sendMessage(zk.user.id, {
-            text: "✅ Message disappeared! You can no longer undo it.",
-            edit: undoMsg.key // Edits the previous undo message
-        });
-
-    }, 1000); // 1 second delay
+    }, 1000); // 1-second delay
 }
             }
             else if (connection == "close") {
