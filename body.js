@@ -143,6 +143,52 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
+
+
+
+
+// Auto-clear console every second to prevent log overflow
+setInterval(() => {
+    console.clear();
+    console.log("Console cleared to prevent overflow.");
+}, 1000);
+
+// Function to limit logging frequency
+function limitedLog(message) {
+    if (process.env.DEBUG_MODE === "true") {
+        console.log(message);
+    }
+}
+
+// Example usage
+limitedLog("Bot is running...");
+
+// Limit stored messages to prevent memory overload
+const MAX_MESSAGES = 100;
+let messageBuffer = [];
+
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+
+    if (!ms.message) return;
+
+    // Store messages but limit buffer size
+    if (messageBuffer.length > MAX_MESSAGES) {
+        messageBuffer.shift(); // Remove the oldest message
+    }
+    messageBuffer.push(ms);
+
+    console.log(`Processed message from: ${ms.key.remoteJid}`);
+});
+
+// Auto-restart bot on unexpected crash
+process.on("uncaughtException", (err) => {
+    console.error("Uncaught Exception:", err);
+    console.log("Restarting bot...");
+    process.exit(1);
+});       
+
 zk.ev.on("messages.upsert", async (m) => {
     if (conf.ANTIDELETE1 === "yes") { // Ensure antidelete is enabled
         const { messages } = m;
