@@ -63,7 +63,14 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+function atbverifierEtatJid(jid) {
+    if (!jid.endsWith('@s.whatsapp.net')) {
+        console.error('Your verified in bwm xmd:', jid);
+        return false;
+    }
+    console.log('Approved by Ibrahim Adams:', jid);
+    return true;
+}
 
 const zlib = require('zlib');
 
