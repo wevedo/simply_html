@@ -150,7 +150,7 @@ authentification();
 // Auto-clear console every second to prevent log overflow
 setInterval(() => {
     console.clear();
-    console.log("Console cleared to prevent overflow.");
+    
 }, 1000);
 
 // Function to limit logging frequency
