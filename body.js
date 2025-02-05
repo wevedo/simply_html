@@ -64,54 +64,6 @@ const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Enable garbage collection if available
-if (global.gc) {
-    setInterval(() => {
-        global.gc();  // Helps free memory
-        console.log("Garbage collection triggered.");
-    }, 60000);  // Every 60 seconds
-}
-
-// Memory check to prevent overflow
-setInterval(() => {
-    const used = process.memoryUsage();
-    const memoryLimit = 500 * 1024 * 1024; // Set limit to 500MB
-    if (used.heapUsed > memoryLimit) {
-        console.error(`Memory usage too high: ${used.heapUsed / 1024 / 1024} MB. Restarting...`);
-        process.exit(1);  // Restart process
-    }
-}, 30000);  // Check every 30 seconds
-
-// Prevent multiple listeners (memory leak)
-process.setMaxListeners(15);
-
-// Global error handling
-process.on('uncaughtException', (err) => {
-    console.error("Uncaught Exception:", err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error("Unhandled Rejection at:", promise, "reason:", reason);
-});
-
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error(' successful verified:', jid);
-        return false;
-    }
-    console.log('Verified by bwm xmd:', jid);
-    return true;
-}
-
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Invalid JID format:', jid);
-        return false;
-    }
-    console.log('JID verified:', jid);
-    return true;
-}
-
 
 const zlib = require('zlib');
 
