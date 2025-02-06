@@ -63,12 +63,9 @@ ${commandList}`;
     ];
 
     const extraImages2 = [
-        "https://files.catbox.moe/1loqz2.jpeg",
-        "https://files.catbox.moe/60hwdx.jpeg",
-        "https://files.catbox.moe/kh6yyt.jpeg",
         "https://files.catbox.moe/362jo2.jpeg",
-        "https://files.catbox.moe/609n66.jpeg",
-        "https://files.catbox.moe/143jsg.jpeg"
+        "https://files.catbox.moe/60hwdx.jpeg",
+        "https://files.catbox.moe/kh6yyt.jpeg"
     ];
 
     // Randomly select which menu to show
