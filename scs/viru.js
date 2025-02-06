@@ -1,29 +1,28 @@
 const util = require('util');
 const fs = require('fs-extra');
 const axios = require('axios');
-const { adams } = require(__dirname + "/../Ibrahim/adams");
-const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
 const moment = require("moment-timezone");
+const { adams } = require(__dirname + "/../Ibrahim/adams");
+const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const s = require(__dirname + "/../config");
 
+// Constants
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
 
+// Runtime function
 const runtime = function (seconds) { 
-    seconds = Number(seconds); 
-    var d = Math.floor(seconds / (3600 * 24)); 
-    var h = Math.floor((seconds % (3600 * 24)) / 3600); 
-    var m = Math.floor((seconds % 3600) / 60); 
-    var s = Math.floor(seconds % 60); 
-    var dDisplay = d > 0 ? d + (d == 1 ? " day, " : " d, ") : ""; 
-    var hDisplay = h > 0 ? h + (h == 1 ? " hour, " : " h, ") : ""; 
-    var mDisplay = m > 0 ? m + (m == 1 ? " minute, " : " m, ") : ""; 
-    var sDisplay = s > 0 ? s + (s == 1 ? " second" : " s") : ""; 
-    return dDisplay + hDisplay + mDisplay + sDisplay; 
+    seconds = Number(seconds);
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor((seconds % (3600 * 24)) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    
+    return `${d ? `${d}d, ` : ""}${h ? `${h}h, ` : ""}${m ? `${m}m, ` : ""}${s ? `${s}s` : ""}`;
 };
 
-// Function to fetch GitHub repo data
+// Fetch GitHub stats function
 const fetchGitHubStats = async () => {
     try {
         const repo = 'Devibraah/BWM-XMD'; // Replace with your repo
@@ -34,45 +33,37 @@ const fetchGitHubStats = async () => {
         return { forks, stars, totalUsers };
     } catch (error) {
         console.error("Error fetching GitHub stats:", error);
-        return { forks: 0, stars: 0, totalUsers: 0 }; 
+        return { forks: 0, stars: 0, totalUsers: 0 };
     }
 };
 
-adams({ nomCom: "virusi", categorie: "General" }, async (dest, zk, commandeOptions) => {
+// Main command handler
+adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
-    let { cm } = require(__dirname + "/../framework//zokou");
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
+    
     var coms = {};
-    var mode = (s.MODE.toLowerCase() !== "yes") ? "private" : "public";
+    var mode = s.MODE.toLowerCase() === "public" ? "public" : "private";
 
-    cm.map((com) => {
-        if (!coms[com.categorie]) coms[com.categorie] = [];
-        coms[com.categorie].push(com.nomCom);
+    // Categorizing commands
+    cm.forEach((com) => {
+        const categoryUpper = com.categorie.toUpperCase();
+        if (!coms[categoryUpper]) coms[categoryUpper] = [];
+        coms[categoryUpper].push(com.nomCom);
     });
 
-    moment.tz.setDefault("Africa/Nairobi");
+    moment.tz.setDefault(`${s.TZ}`);
     const temps = moment().format('HH:mm:ss');
     const date = moment().format('DD/MM/YYYY');
-
-    // Determine greeting based on time
     const hour = moment().hour();
-    let greeting = "";
-    
-    if (hour >= 5 && hour < 12) {
-        greeting = "🌅☀️ Good morning! Hope you have a fantastic day! 🌞";
-    } else if (hour >= 12 && hour < 17) {
-        greeting = "☀️😎 Good afternoon! Stay energized! 🌿";
-    } else if (hour >= 17 && hour < 21) {
-        greeting = "🌆✨ Good evening! Hope you had a great day! 🌙";
-    } else {
-        greeting = "🌙😴 Good night! Sweet dreams! 💫";
-    }
 
-    // Generate commands list
-    let commandList = "\n\nAvailable Commands";
-    for (let category in coms) {
-        commandList += `\n\n*${category}*\n`;
-        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("\n");
-    }
+    let greeting = "Good night";
+    if (hour >= 0 && hour <= 11) greeting = "Good morning";
+    else if (hour >= 12 && hour <= 16) greeting = "Good afternoon";
+    else if (hour >= 16 && hour <= 21) greeting = "Good evening";
+
+    const { totalUsers } = await fetchGitHubStats();
+    const formattedTotalUsers = totalUsers.toLocaleString();
 
     let infoMsg = `
 ╔════════════════════════╗
@@ -80,12 +71,10 @@ adams({ nomCom: "virusi", categorie: "General" }, async (dest, zk, commandeOptio
   ✦ ᴠᴇʀsɪᴏɴ  : ${s.VERSION} ✦
 ╚════════════════════════╝
 
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
-  📅 ᴅᴀᴛᴇ : ${date}
-  ⏰ ᴛɪᴍᴇ : ${temps}
-  ⚡ ᴍᴏᴅᴇ : ${mode.toUpperCase()}
-  🔮 ᴘʀᴇғɪx : [ ${prefixe} ]
-▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰▰
+📅 ᴅᴀᴛᴇ : ${date}
+⏰ ᴛɪᴍᴇ : ${temps}
+⚡ ᴍᴏᴅᴇ : ${mode.toUpperCase()}
+🔮 ᴘʀᴇғɪx : [ ${prefixe} ]
 
 ✦ ʀᴜɴᴛɪᴍᴇ : ${runtime(process.uptime())}
 ✦ ᴘʟᴀᴛғᴏʀᴍ : ${os.platform().toUpperCase()}
@@ -123,21 +112,18 @@ ${coms[cat].map(cmd => `│   ➺ ${cmd}`).join('\n')}
    𝗳𝗼𝗿 𝗰𝗼𝗺𝗺𝗮𝗻𝗱 𝗱𝗲𝘁𝗮𝗶𝗹𝘀
 ▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃▃
 
-✦͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙✦͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙✦
+✦͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙✦
          🧪 𝗩𝗜𝗥𝗨𝗦𝗜 𝗠𝗕𝗔𝗬𝗔
-✦͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙✦͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙✦`;
+✦͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙͙✦`;
 
     try {
-        // Keep the message sending logic the same
-        // Update thumbnail URL and audio URL as needed
-
         await zk.sendMessage(dest, { 
             text: infoMsg + menuMsg,
             contextInfo: {
                 mentionedJid: [nomAuteurMessage],
                 externalAdReply: {
                     body: "🔬 𝗩𝗜𝗥𝗨𝗦𝗜 𝗠𝗕𝗔𝗬𝗔 🔍",
-                    thumbnailUrl: "https://files.catbox.moe/xyz123.jpg", // Update thumbnail
+                    thumbnailUrl: "https://files.catbox.moe/xyz123.jpg",
                     sourceUrl: 'https://whatsapp.com/channel/...',
                     mediaType: 1,
                     renderLargerThumbnail: true
@@ -145,14 +131,10 @@ ${coms[cat].map(cmd => `│   ➺ ${cmd}`).join('\n')}
             }
         });
 
-        // Audio message remains similar
         await zk.sendMessage(dest, { 
-            audio: { 
-                url: "https://files.catbox.moe/new_audio.mp3" 
-            },
+            audio: { url: "https://files.catbox.moe/new_audio.mp3" },
             mimetype: 'audio/mp4',
             caption: "🎶 𝗕𝗠𝗪 𝗠𝗗 𝗧𝗛𝗘𝗠𝗘 🎵",
-            // ... rest of audio message context
         });
 
     } catch (e) {
