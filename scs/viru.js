@@ -38,14 +38,41 @@ const fetchGitHubStats = async () => {
     }
 };
 
-moment.tz.setDefault("Africa/Nairobi");
+adams({ nomCom: "virusi", categorie: "General" }, async (dest, zk, commandeOptions) => {
+    let { ms, repondre, prefixe, nomAuteurMessage } = commandeOptions;
+    let { cm } = require(__dirname + "/../framework//zokou");
+    var coms = {};
+    var mode = (s.MODE.toLowerCase() !== "yes") ? "private" : "public";
+
+    cm.map((com) => {
+        if (!coms[com.categorie]) coms[com.categorie] = [];
+        coms[com.categorie].push(com.nomCom);
+    });
+
+    moment.tz.setDefault("Africa/Nairobi");
     const temps = moment().format('HH:mm:ss');
     const date = moment().format('DD/MM/YYYY');
 
-// ... keep the initial requires and functions the same ...
+    // Determine greeting based on time
+    const hour = moment().hour();
+    let greeting = "";
+    
+    if (hour >= 5 && hour < 12) {
+        greeting = "🌅☀️ Good morning! Hope you have a fantastic day! 🌞";
+    } else if (hour >= 12 && hour < 17) {
+        greeting = "☀️😎 Good afternoon! Stay energized! 🌿";
+    } else if (hour >= 17 && hour < 21) {
+        greeting = "🌆✨ Good evening! Hope you had a great day! 🌙";
+    } else {
+        greeting = "🌙😴 Good night! Sweet dreams! 💫";
+    }
 
-adams({ nomCom: "virusi", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    // ... keep variable declarations the same ...
+    // Generate commands list
+    let commandList = "\n\nAvailable Commands";
+    for (let category in coms) {
+        commandList += `\n\n*${category}*\n`;
+        commandList += coms[category].map((cmd) => `- ${prefixe}${cmd}`).join("\n");
+    }
 
     let infoMsg = `
 ╔════════════════════════╗
