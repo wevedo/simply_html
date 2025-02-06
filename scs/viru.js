@@ -51,9 +51,9 @@ adams({ nomCom: "menu1", categorie: "General" }, async (dest, zk, commandeOption
     const formattedTotalUsers = totalUsers.toLocaleString();
 
     let infoMsg = `
-╭───────────◆◇◆───────────╮
-          🤖 *VIRUSI MBAYA BOT* 🤖
-╰───────────◆◇◆───────────╯
+╭─────◆◇◆─────╮
+ 🤖 *VIRUSI MBAYA BOT* 🤖
+╰─────◆◇◆─────╯
 
 🕹 *Mode:* ${mode}  
 🛠 *Prefix:* [ ${prefixe} ]  
@@ -64,18 +64,18 @@ adams({ nomCom: "menu1", categorie: "General" }, async (dest, zk, commandeOption
 👥 *Total Users:* ${formattedTotalUsers}  
 
 🎭 *${greeting}, ${nomAuteurMessage}!*  
-──────────────────────────\n\n`;
+───────────────\n\n`;
 
     let menuMsg = `${readmore}  
-╭───⌬  *VIRUSI MBAYA MENU*  ⌬───╮\n\n`;
+╭⌬ *VIRUSI MBAYA MENU* ⌬╮\n\n`;
 
     const sortedCategories = Object.keys(coms).sort();
     sortedCategories.forEach((cat) => {
-        menuMsg += `🎭 *${cat}* 🎭\n╭──────────────────╮`;
+        menuMsg += `🎭 *${cat}* 🎭\n╭─────◆◇◆─────╮`;
         coms[cat].forEach((cmd) => {
             menuMsg += `\n│ 🔹 *${cmd}*`;
         });
-        menuMsg += `\n╰──────────────────╯\n\n`;
+        menuMsg += `\n╰─────◆◇◆─────╯\n\n`;
     });
 
     menuMsg += `
@@ -104,7 +104,7 @@ adams({ nomCom: "menu1", categorie: "General" }, async (dest, zk, commandeOption
                 url: "https://files.catbox.moe/5x9pup.m4a" // Replace with your audio URL
             }, 
             mimetype: 'audio/mp4', 
-            ptt: false, // Set to true if you want it as a voice note
+            ptt: true, // Set to true if you want it as a voice note
             caption: "🎶 BMW MD SONG 🎶",
             contextInfo: {
                 externalAdReply: {
