@@ -64,7 +64,7 @@ adams({ nomCom: "menu1", categorie: "General" }, async (dest, zk, commandeOption
 👥 *Total Users:* ${formattedTotalUsers}  
 
 🎭 *${greeting}, ${nomAuteurMessage}!*  
-───────────────\n\n`;
+\n`;
 
     let menuMsg = `${readmore}  
 ╭⌬ *VIRUSI MBAYA MENU* ⌬╮\n\n`;
