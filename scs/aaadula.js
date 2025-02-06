@@ -23,11 +23,11 @@ adams({ nomCom: "menu2", categorie: "General" }, async (dest, zk, commandeOption
 
     // Generate greeting based on time of day
     const hour = moment().hour();
-    let greeting = "Good Morning ☀️";
+    let greeting = "Good Morning raise and shine ☀️";
     if (hour >= 12 && hour < 18) {
-        greeting = "Good Afternoon 🌤️";
+        greeting = "🌄Good afternnon! Stay energized! 🌿";
     } else if (hour >= 18) {
-        greeting = "Good Evening 🌙";
+        greeting = "🌇 Good Evening! Time to relax";
     } else if (hour >= 22 || hour < 5) {
         greeting = "Good Night 🌌";
     }
