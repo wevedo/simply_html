@@ -23,11 +23,11 @@ adams({ nomCom: "menu2", categorie: "General" }, async (dest, zk, commandeOption
 
     // Generate greeting based on time of day
     const hour = moment().hour();
-    let greeting = "Good Morning raise and shine ☀️";
+    let greeting = "🌅Good Morning my brother 🌄";
     if (hour >= 12 && hour < 18) {
         greeting = "🌄Good afternnon! Stay energized! 🌿";
     } else if (hour >= 18) {
-        greeting = "🌇 Good Evening! Time to relax";
+        greeting = "🌇Good Everning! Hope you had a great day! 🌙";
     } else if (hour >= 22 || hour < 5) {
         greeting = "Good Night 🌌";
     }
@@ -134,7 +134,7 @@ ${commandList}`;
         "https://files.catbox.moe/w2k8g2.mp3",
         "https://files.catbox.moe/cpjbnl.mp3",
         "https://files.catbox.moe/y6fph9.mp3",
-        "https://files.catbox.moe/newsong.mp3" // New song added
+        "https://files.catbox.moe/moctzu.mp3" // New song added
     ];
 
     // Select a random audio file
