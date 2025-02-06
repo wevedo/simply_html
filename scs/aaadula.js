@@ -1,14 +1,14 @@
 const util = require('util');
 const fs = require('fs-extra');
-const { zokou } = require(__dirname + "/../framework/zokou");
-const { format } = require(__dirname + "/../framework/mesfonctions");
+const { adams } = require(__dirname + "/../Ibrahim/adams");
+const { format } = require(__dirname + "/../Ibrahim/mesfonctions");
 const os = require("os");
 const moment = require("moment-timezone");
-const s = require(__dirname + "/../set");
+const s = require(__dirname + "/../config");
 
-zokou({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "menu2", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { ms, repondre, prefixe, nomAuteurMessage, mybotpic } = commandeOptions;
-    let { cm } = require(__dirname + "/../framework//zokou");
+    let { cm } = require(__dirname + "/../Ibrahim//adams");
     var coms = {};
     var mode = s.MODE.toLowerCase() !== "yes" ? "private" : "public";
 
