@@ -38,6 +38,10 @@ const fetchGitHubStats = async () => {
     }
 };
 
+moment.tz.setDefault("Africa/Nairobi");
+    const temps = moment().format('HH:mm:ss');
+    const date = moment().format('DD/MM/YYYY');
+
 // ... keep the initial requires and functions the same ...
 
 adams({ nomCom: "virusi", categorie: "General" }, async (dest, zk, commandeOptions) => {
