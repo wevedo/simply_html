@@ -1,40 +1,68 @@
 const { adams } = require("../Ibrahim/adams");
 
-// Add this at the beginning to see raw message structure
 adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
-    if (!msgRepondu) return repondre("Reply to a view-once message");
-
-    // Debug: Log complete message structure
-    console.log("DEBUG - RAW MESSAGE STRUCTURE:\n", JSON.stringify(msgRepondu, null, 2));
+    if (!msgRepondu) return repondre("Reply to a media message");
 
     try {
-        const viewOnce = deepExtractViewOnce(msgRepondu);
-        if (!viewOnce) return repondre("Not a view-once message");
+        // Try to find media in any message format
+        const mediaData = extractAnyMedia(msgRepondu);
         
-        await processAndSendMedia(zk, dest, viewOnce, ms);
-        repondre("Successfully revealed view-once media!");
+        if (!mediaData) return repondre("No media found in this message");
+        
+        // Download media
+        const buffer = await zk.downloadMediaMessage(mediaData);
+        const caption = mediaData.caption || "";
+        
+        // Determine media type
+        if (mediaData.mimetype?.startsWith('image/')) {
+            await zk.sendMessage(dest, { 
+                image: buffer, 
+                caption: caption 
+            }, { quoted: ms });
+            
+        } else if (mediaData.mimetype?.startsWith('video/')) {
+            await zk.sendMessage(dest, { 
+                video: buffer, 
+                caption: caption 
+            }, { quoted: ms });
+            
+        } else if (mediaData.mimetype?.startsWith('audio/')) {
+            await zk.sendMessage(dest, { 
+                audio: buffer,
+                mimetype: 'audio/mpeg',
+                ptt: true 
+            }, { quoted: ms });
+            
+        } else {
+            repondre("Unsupported media type");
+        }
+        
     } catch (error) {
-        console.error("Reveal Error:", error);
-        repondre("Error: Failed to process view-once message");
+        console.error("Media download error:", error);
+        repondre("Failed to process media");
     }
 });
 
-// Deep extraction function
-function deepExtractViewOnce(msg) {
-    const scanPaths = [
-        'message.viewOnceMessage.message',
-        'message.ephemeralMessage.message.viewOnceMessage.message',
-        'message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message',
-        'message.extendedTextMessage.contextInfo.quotedMessage.ephemeralMessage.message.viewOnceMessage.message',
-        'viewOnceMessage.message',
-        'ephemeralMessage.message.viewOnceMessage.message',
-        'message.viewOnceMessageV2.message',
-        'message.viewOnceMessageV3.message'
+// Universal media extractor
+function extractAnyMedia(msg) {
+    // Check for media in different message structures
+    const mediaPaths = [
+        'message.imageMessage',
+        'message.videoMessage',
+        'message.audioMessage',
+        'message.viewOnceMessage.message.imageMessage',
+        'message.viewOnceMessage.message.videoMessage',
+        'message.ephemeralMessage.message.imageMessage',
+        'message.ephemeralMessage.message.videoMessage',
+        'message.extendedTextMessage.contextInfo.quotedMessage.imageMessage',
+        'message.extendedTextMessage.contextInfo.quotedMessage.videoMessage',
+        'message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message.imageMessage',
+        'message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message.videoMessage'
     ];
 
-    for (const path of scanPaths) {
+    for (const path of mediaPaths) {
         const parts = path.split('.');
         let result = msg;
         for (const part of parts) {
@@ -44,30 +72,4 @@ function deepExtractViewOnce(msg) {
         if (result) return result;
     }
     return null;
-}
-
-async function processAndSendMedia(zk, dest, mediaContent, originalMsg) {
-    const mediaType = Object.keys(mediaContent)[0];
-    const mediaData = mediaContent[mediaType];
-    
-    const buffer = await zk.downloadMediaMessage(mediaData);
-    const caption = mediaData.caption || "";
-
-    const sendParams = {
-        quoted: originalMsg,
-        mimetype: mediaData.mimetype,
-        caption: caption
-    };
-
-    switch(mediaType) {
-        case 'imageMessage':
-            return zk.sendMessage(dest, { image: buffer, ...sendParams });
-        case 'videoMessage':
-            return zk.sendMessage(dest, { video: buffer, ...sendParams });
-        case 'audioMessage':
-            sendParams.ptt = true;
-            return zk.sendMessage(dest, { audio: buffer, ...sendParams });
-        default:
-            throw new Error(`Unsupported media type: ${mediaType}`);
-    }
 }
