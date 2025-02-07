@@ -1,47 +1,49 @@
 const { adams } = require("../Ibrahim/adams");
 
-// For manual command ("vv")
+// Add this at the beginning to see raw message structure
 adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) return repondre("Reply to a view-once message");
 
+    // Debug: Log complete message structure
+    console.log("DEBUG - RAW MESSAGE STRUCTURE:\n", JSON.stringify(msgRepondu, null, 2));
+
     try {
-        const viewOnce = extractViewOnce(msgRepondu);
+        const viewOnce = deepExtractViewOnce(msgRepondu);
         if (!viewOnce) return repondre("Not a view-once message");
         
         await processAndSendMedia(zk, dest, viewOnce, ms);
+        repondre("Successfully revealed view-once media!");
     } catch (error) {
-        console.error("Command Error:", error);
-        repondre("Error processing view-once message");
+        console.error("Reveal Error:", error);
+        repondre("Error: Failed to process view-once message");
     }
 });
 
-// Auto-capture all incoming view-once messages
-module.exports = (zk) => {
-    zk.ev.on('messages.upsert', async ({ messages }) => {
-        for (const msg of messages) {
-            try {
-                const viewOnce = extractViewOnce(msg);
-                if (!viewOnce) continue;
+// Deep extraction function
+function deepExtractViewOnce(msg) {
+    const scanPaths = [
+        'message.viewOnceMessage.message',
+        'message.ephemeralMessage.message.viewOnceMessage.message',
+        'message.extendedTextMessage.contextInfo.quotedMessage.viewOnceMessage.message',
+        'message.extendedTextMessage.contextInfo.quotedMessage.ephemeralMessage.message.viewOnceMessage.message',
+        'viewOnceMessage.message',
+        'ephemeralMessage.message.viewOnceMessage.message',
+        'message.viewOnceMessageV2.message',
+        'message.viewOnceMessageV3.message'
+    ];
 
-                const sender = msg.key.remoteJid;
-                const mediaData = await processAndSendMedia(zk, sender, viewOnce, msg);
-                
-                // Optional: Delete original view-once message
-                // await zk.sendMessage(sender, { delete: msg.key });
-            } catch (error) {
-                console.error("Auto-Capture Error:", error);
-            }
+    for (const path of scanPaths) {
+        const parts = path.split('.');
+        let result = msg;
+        for (const part of parts) {
+            result = result?.[part];
+            if (!result) break;
         }
-    });
-};
-
-// Helper functions
-function extractViewOnce(message) {
-    return message?.message?.ephemeralMessage?.message?.viewOnceMessage?.message ||
-           message?.message?.viewOnceMessage?.message ||
-           message?.viewOnceMessage?.message;
+        if (result) return result;
+    }
+    return null;
 }
 
 async function processAndSendMedia(zk, dest, mediaContent, originalMsg) {
@@ -50,24 +52,22 @@ async function processAndSendMedia(zk, dest, mediaContent, originalMsg) {
     
     const buffer = await zk.downloadMediaMessage(mediaData);
     const caption = mediaData.caption || "";
-    
-    const sendOptions = {
-        image: { url: buffer },
-        video: { url: buffer },
-        audio: { url: buffer },
-        caption: caption,
+
+    const sendParams = {
+        quoted: originalMsg,
         mimetype: mediaData.mimetype,
-        viewOnce: true // Convert to normal message
+        caption: caption
     };
 
     switch(mediaType) {
         case 'imageMessage':
-            return zk.sendMessage(dest, { image: sendOptions.image, caption: sendOptions.caption }, { quoted: originalMsg });
+            return zk.sendMessage(dest, { image: buffer, ...sendParams });
         case 'videoMessage':
-            return zk.sendMessage(dest, { video: sendOptions.video, caption: sendOptions.caption }, { quoted: originalMsg });
+            return zk.sendMessage(dest, { video: buffer, ...sendParams });
         case 'audioMessage':
-            return zk.sendMessage(dest, { audio: sendOptions.audio, mimetype: 'audio/mpeg' }, { quoted: originalMsg });
+            sendParams.ptt = true;
+            return zk.sendMessage(dest, { audio: buffer, ...sendParams });
         default:
-            throw new Error("Unsupported media type");
+            throw new Error(`Unsupported media type: ${mediaType}`);
     }
 }
