@@ -1,34 +1,37 @@
 const { adams } = require("../Ibrahim/adams");
-const { getContentType, downloadMediaMessage } = require("@whiskeysockets/baileys");
+adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
 
-adams({ nomCom: "vv", categorie: "General", reaction: "🤩" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        return repondre("*Mention a view-once media message.*");
+        return repondre("*Mentionne a view once media* .");
     }
 
-    // Detecting if the message is a "view once" message
-    const messageType = getContentType(msgRepondu.message);
-    if (messageType !== "viewOnceMessage") {
-        return repondre("This message is not a 'view once' media.");
-    }
-
-    // Extracting the actual media content inside the viewOnceMessage
-    const viewOnceContent = msgRepondu.message.viewOnceMessage.message;
-    const mediaKey = Object.keys(viewOnceContent)[0]; // Extract the key (imageMessage or videoMessage)
-
-    if (mediaKey === "imageMessage" || mediaKey === "videoMessage") {
-        const media = viewOnceContent[mediaKey];
-        const mediaBuffer = await downloadMediaMessage(msgRepondu, "buffer");
-
-        // Sending the media back as a normal message
-        await zk.sendMessage(
-            dest,
-            { [mediaKey.split("Message")[0]]: mediaBuffer, caption: media.caption || "" },
-            { quoted: ms }
-        );
+    if (msgRepondu.viewOnceMessage) {
+        const viewOnceContent = msgRepondu.viewOnceMessage.message;
+        
+        if (viewOnceContent.imageMessage) {
+            const image = await zk.downloadAndSaveMediaMessage(viewOnceContent.imageMessage);
+            const texte = viewOnceContent.imageMessage.caption || "";
+            await zk.sendMessage(dest, { image: { url: image }, caption: texte }, { quoted: ms });
+            
+        } else if (viewOnceContent.videoMessage) {
+            const video = await zk.downloadAndSaveMediaMessage(viewOnceContent.videoMessage);
+            const texte = viewOnceContent.videoMessage.caption || "";
+            await zk.sendMessage(dest, { video: { url: video }, caption: texte }, { quoted: ms });
+            
+        } else if (viewOnceContent.audioMessage) {
+            const audio = await zk.downloadAndSaveMediaMessage(viewOnceContent.audioMessage);
+            await zk.sendMessage(dest, { 
+                audio: { url: audio }, 
+                mimetype: "audio/mpeg",
+                ptt: true
+            }, { quoted: ms });
+            
+        } else {
+            return repondre("Unsupported view once content type.");
+        }
     } else {
-        return repondre("Unsupported media type.");
+        return repondre("This message is not a view once message.");
     }
 });
