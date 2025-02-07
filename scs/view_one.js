@@ -8,7 +8,7 @@ adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk,
 
     try {
         const mediaInfo = extractAnyMedia(msgRepondu);
-        if (!mediaInfo) return repondre("No media found");
+        if (!mediaInfo) return repondre("View once not found");
 
         // Use Baileys' official download method
         const stream = await downloadContentFromMessage(mediaInfo.data, mediaInfo.type);
@@ -34,7 +34,7 @@ adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk,
                 return repondre("Unsupported media type");
         }
 
-        repondre("Media revealed successfully!");
+        repondre("Antiviewonce online by bwm xmd!");
 
     } catch (error) {
         console.error("Error:", error);
