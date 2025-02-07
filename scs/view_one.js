@@ -1,26 +1,25 @@
 const { adams } = require("../Ibrahim/adams");
+const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 
 adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) return repondre("Reply to a media message");
 
-    // Debug: Show raw message structure
-    console.log("RAW MESSAGE STRUCTURE:\n", JSON.stringify(msgRepondu, null, 2));
-
     try {
         const mediaInfo = extractAnyMedia(msgRepondu);
+        if (!mediaInfo) return repondre("No media found");
+
+        // Use Baileys' official download method
+        const stream = await downloadContentFromMessage(mediaInfo.data, mediaInfo.type);
+        let buffer = Buffer.from([]);
         
-        if (!mediaInfo) {
-            console.log("MEDIA SCAN FAILED - Available paths:", Object.keys(msgRepondu));
-            return repondre("No media found in this message");
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
         }
 
-        console.log("DETECTED MEDIA PATH:", mediaInfo.path);
-        const buffer = await zk.downloadMediaMessage(mediaInfo.data);
         const caption = mediaInfo.data.caption || "";
 
-        // Send based on detected type
         switch(mediaInfo.type) {
             case 'image':
                 await zk.sendMessage(dest, { image: buffer, caption }, { quoted: ms });
@@ -32,18 +31,18 @@ adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk,
                 await zk.sendMessage(dest, { audio: buffer, mimetype: 'audio/mpeg' }, { quoted: ms });
                 break;
             default:
-                return repondre("Unsupported media type: " + mediaInfo.type);
+                return repondre("Unsupported media type");
         }
 
         repondre("Media revealed successfully!");
 
     } catch (error) {
-        console.error("FULL ERROR:\n", error);
-        repondre("Error processing media: " + error.message);
+        console.error("Error:", error);
+        repondre("Error: " + error.message);
     }
 });
 
-// Enhanced media detector with 35+ possible paths
+// Updated media detector with type mapping
 function extractAnyMedia(msg) {
     const mediaPaths = [
         // Standard media paths
@@ -88,20 +87,11 @@ function extractAnyMedia(msg) {
     for (const { path, type } of mediaPaths) {
         const parts = path.split('.');
         let result = msg;
-        
         for (const part of parts) {
             result = result?.[part];
             if (!result) break;
         }
-        
-        if (result) {
-            return {
-                data: result,
-                type: type,
-                path: path
-            };
-        }
+        if (result) return { data: result, type };
     }
-
     return null;
 }
