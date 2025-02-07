@@ -7,31 +7,50 @@ adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk,
         return repondre("*Mentionne a view once media* .");
     }
 
-    if (msgRepondu.viewOnceMessage) {
-        const viewOnceContent = msgRepondu.viewOnceMessage.message;
-        
-        if (viewOnceContent.imageMessage) {
-            const image = await zk.downloadAndSaveMediaMessage(viewOnceContent.imageMessage);
-            const texte = viewOnceContent.imageMessage.caption || "";
-            await zk.sendMessage(dest, { image: { url: image }, caption: texte }, { quoted: ms });
-            
-        } else if (viewOnceContent.videoMessage) {
-            const video = await zk.downloadAndSaveMediaMessage(viewOnceContent.videoMessage);
-            const texte = viewOnceContent.videoMessage.caption || "";
-            await zk.sendMessage(dest, { video: { url: video }, caption: texte }, { quoted: ms });
-            
-        } else if (viewOnceContent.audioMessage) {
-            const audio = await zk.downloadAndSaveMediaMessage(viewOnceContent.audioMessage);
-            await zk.sendMessage(dest, { 
-                audio: { url: audio }, 
-                mimetype: "audio/mpeg",
-                ptt: true
-            }, { quoted: ms });
-            
-        } else {
-            return repondre("Unsupported view once content type.");
+    // New: Handle both direct and quoted view-once messages
+    const viewOnceMessage = 
+        msgRepondu.viewOnceMessage || 
+        msgRepondu.message?.extendedTextMessage?.contextInfo?.quotedMessage?.viewOnceMessage;
+
+    if (viewOnceMessage) {
+        const mediaContent = viewOnceMessage.message;
+        const mediaType = Object.keys(mediaContent)[0];
+
+        try {
+            const media = await zk.downloadAndSaveMediaMessage(mediaContent[mediaType]);
+            const caption = mediaContent[mediaType]?.caption || "";
+
+            switch(mediaType) {
+                case 'imageMessage':
+                    await zk.sendMessage(dest, { 
+                        image: { url: media }, 
+                        caption: caption 
+                    }, { quoted: ms });
+                    break;
+
+                case 'videoMessage':
+                    await zk.sendMessage(dest, { 
+                        video: { url: media }, 
+                        caption: caption 
+                    }, { quoted: ms });
+                    break;
+
+                case 'audioMessage':
+                    await zk.sendMessage(dest, { 
+                        audio: { url: media }, 
+                        mimetype: 'audio/mpeg',
+                        ptt: true 
+                    }, { quoted: ms });
+                    break;
+
+                default:
+                    return repondre("Unsupported view-once media type");
+            }
+        } catch (error) {
+            console.error("Error processing view-once message:", error);
+            return repondre("Error processing media");
         }
     } else {
-        return repondre("This message is not a view once message.");
+        return repondre("*This is not a view-once message*");
     }
 });
