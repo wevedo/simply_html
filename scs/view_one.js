@@ -2,7 +2,7 @@ const { adams } = require("../Ibrahim/adams");
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const conf = require(__dirname + "/../config");
 
-adams({ nomCom: "vv2", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "vv2", categorie: "General" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) return repondre("Reply to a media message");
@@ -22,7 +22,7 @@ adams({ nomCom: "vv2", categorie: "General", reaction: "🤪" }, async (dest, zk
             buffer = Buffer.concat([buffer, chunk]);
         }
 
-        const caption = mediaInfo.data.caption || "Forwarded by Bwm xmd nexus✅";
+        const caption = mediaInfo.data.caption || "*Forwarded by bwm xmd nexus ✅*";
 
         switch (mediaInfo.type) {
             case 'image':
@@ -36,9 +36,6 @@ adams({ nomCom: "vv2", categorie: "General", reaction: "🤪" }, async (dest, zk
                 break;
             default:
                 return repondre("Unsupported media type");
-        }
-
-        repondre("Media forwarded to owner!");
 
     } catch (error) {
         console.error("Error:", error);
