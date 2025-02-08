@@ -2,7 +2,7 @@ const { adams } = require("../Ibrahim/adams");
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const conf = require(__dirname + "/../config");
 
-adams({ nomCom: "vv2", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "vv2", categorie: "General", reaction: "♻️" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) return repondre("Reply to a media message");
@@ -34,12 +34,10 @@ adams({ nomCom: "vv2", categorie: "General" }, async (dest, zk, commandeOptions)
             case 'audio':
                 await zk.sendMessage(NUMERO_OWNER, { audio: buffer, mimetype: 'audio/mpeg' }, { quoted: ms });
                 break;
-            default:
-                return repondre("Unsupported media type");
+        }
 
     } catch (error) {
         console.error("Error:", error);
-        repondre("Error: " + error.message);
     }
 });
 
@@ -81,7 +79,7 @@ function extractAnyMedia(msg) {
 }
 
 
-adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "vv", categorie: "General", reaction: "♻️" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) return repondre("Reply to a media message");
