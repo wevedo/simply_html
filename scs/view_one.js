@@ -1,6 +1,6 @@
 const { adams } = require("../Ibrahim/adams");
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
-const conf = require("../config"); // Ensure config file is correctly imported
+const conf = require(__dirname + "/../config");
 
 adams({ nomCom: "vv2", categorie: "General", reaction: "🤪" }, async (dest, zk, commandeOptions) => {
     const { ms, msgRepondu, repondre } = commandeOptions;
