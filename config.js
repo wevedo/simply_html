@@ -24,7 +24,7 @@ module.exports = {
     WARN_COUNT: process.env.WARN_COUNT || '3',
     ETAT: process.env.PRESENCE || '',
     CHATBOT: process.env.CHATBOT || 'yes',
-    CHATBOT1: process.env.CHATBOT1 || 'yes',
+    AUDIO_CHATBOT: process.env.AUDIO_CHATBOT || 'no',
     SELF_CHATBOT: process.env.SELF_CHATBOT || 'yes',
     DP: process.env.STARTING_BOT_MESSAGE || "yes",
     ANTIDELETE1: process.env.ANTIDELETE1 || 'yes',
@@ -40,7 +40,7 @@ module.exports = {
     AUTO_REJECT_CALL: process.env.AUTO_REJECT_CALL || 'yes',
     AUTO_BIO: process.env.AUTO_BIO || 'yes',
     ANTILINK_GROUP: process.env.ANTILINK_GROUP || 'yes',
-    AUDIO_REPLY: process.env.AUDIO_REPLY || 'yes',
+    AUDIO_REPLY: process.env.AUDIO_REPLY || 'no',
     AUTO_SAVE_CONTACTS_NAME: "🚀 ʙᴡᴍ xᴍᴅ", // Default name prefix for new contacts
     AUTO_REPLY_MESSAGE: "", 
     DATABASE_URL,
