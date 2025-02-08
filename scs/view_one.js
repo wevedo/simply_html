@@ -114,7 +114,7 @@ adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk,
                 return repondre("Unsupported media type");
         }
 
-        repondre("Antiviewonce online by bwm xmd✅!");
+        repondre("*Antiview_once online by bwm xmd ✅!*");
 
     } catch (error) {
         console.error("Error:", error);
