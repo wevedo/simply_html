@@ -22,7 +22,7 @@ adams({ nomCom: "vv2", categorie: "General", reaction: "🤪" }, async (dest, zk
             buffer = Buffer.concat([buffer, chunk]);
         }
 
-        const caption = mediaInfo.data.caption || "Forwarded by Baraka MD";
+        const caption = mediaInfo.data.caption || "Forwarded by Bwm xmd nexus✅";
 
         switch (mediaInfo.type) {
             case 'image':
@@ -117,7 +117,7 @@ adams({ nomCom: "vv", categorie: "General", reaction: "🤪" }, async (dest, zk,
                 return repondre("Unsupported media type");
         }
 
-        repondre("Antiviewonce online by bwm xmd!");
+        repondre("Antiviewonce online by bwm xmd✅!");
 
     } catch (error) {
         console.error("Error:", error);
