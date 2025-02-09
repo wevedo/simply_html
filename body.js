@@ -2319,7 +2319,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
         { text: cmsg }, 
         {
             disappearingMessagesInChat: true,
-            ephemeralExpiration: 2 // Message disappears after 2 seconds
+            ephemeralExpiration: 600 // Message disappears after 10 minutes 
         }
     );
 }
