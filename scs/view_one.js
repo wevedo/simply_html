@@ -1,4 +1,4 @@
-const { adams } = require("../Ibrahim/adams");
+/*const { adams } = require("../Ibrahim/adams");
 const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const conf = require(__dirname + "/../config");
 
@@ -173,3 +173,4 @@ function extractAnyMedia(msg) {
     }
     return null;
 }
+*/
