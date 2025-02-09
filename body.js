@@ -2314,11 +2314,14 @@ if ((conf.DP).toLowerCase() === 'yes') {
 > ${herokuAppLink}
 ╰────────────━⊷`;
 
-    // Send the message as an ephemeral message (disappearing)
-    await zk.sendMessage(zk.user.id, cmsg, {
-        disappearingMessagesInChat: true,
-        ephemeralExpiration: 1 // 1 second expiration
-    });
+    // Send the message with disappearing mode (disappears after 2 seconds)
+    await zk.sendMessage(zk.user.id, 
+        { text: cmsg }, 
+        {
+            disappearingMessagesInChat: true,
+            ephemeralExpiration: 2 // Message disappears after 2 seconds
+        }
+    );
 }
             }
             else if (connection == "close") {
