@@ -258,7 +258,7 @@ adams(
             mediaType: 2,
             thumbnailUrl: videoThumbnail,
             sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-            renderLargerThumbnail: true,
+            renderLargerThumbnail: false,
             showAdAttribution: true,
           },
         },
@@ -275,19 +275,25 @@ adams(
 
       // Fetch results from all APIs concurrently
       const apiResponses = await Promise.allSettled(
-        apis.map((api) => axios.get(api).catch((err) => null))
+        apis.map((api) =>
+          axios.get(api).then((res) => res.data).catch(() => null)
+        )
       );
 
       // Find the first successful API response
       let downloadData = null;
       for (const response of apiResponses) {
-        if (response.status === "fulfilled" && response.value?.data?.success) {
-          downloadData = response.value.data.result;
+        if (
+          response.status === "fulfilled" &&
+          response.value &&
+          response.value.success
+        ) {
+          downloadData = response.value.result;
           break;
         }
       }
 
-      if (!downloadData) {
+      if (!downloadData || !downloadData.download_url) {
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
@@ -298,11 +304,12 @@ adams(
       const videoPayload = {
         video: { url: downloadUrl },
         mimetype: "video/mp4",
+        caption: `🎬 *${videoTitleFinal}*\n⏳ *Duration:* ${videoDuration}`,
         contextInfo: {
           externalAdReply: {
             title: videoTitleFinal,
             body: `🎬 ${videoTitleFinal} | Duration: ${videoDuration}`,
-            mediaType: 2,
+            mediaType: 2, // MediaType 2 = video
             sourceUrl: videoUrl,
             thumbnailUrl: videoThumbnail,
             renderLargerThumbnail: true,
