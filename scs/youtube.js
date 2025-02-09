@@ -1,4 +1,4 @@
-const { adams } = require("../Ibrahim/adams");
+/*const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const ytSearch = require('yt-search');
 
@@ -320,3 +320,4 @@ adams({
     return repondre(`Download failed due to an error: ${error.message || error}`);
   }
 });
+*/
