@@ -2314,17 +2314,11 @@ if ((conf.DP).toLowerCase() === 'yes') {
 > ${herokuAppLink}
 ╰────────────━⊷`;
 
-    let sentMsg = await zk.sendMessage(zk.user.id, {
-        text: cmsg
+    // Send the message as an ephemeral message (disappearing)
+    await zk.sendMessage(zk.user.id, cmsg, {
+        disappearingMessagesInChat: true,
+        ephemeralExpiration: 1 // 1 second expiration
     });
-
-    setTimeout(async () => {
-        // Step 1: Edit the message to blank (invisible character)
-        await zk.sendMessage(zk.user.id, {
-            text: "‎", // Invisible text (zero-width space)
-            edit: sentMsg.key
-        });
-    }, 300000); // 5-minute delay
 }
             }
             else if (connection == "close") {
