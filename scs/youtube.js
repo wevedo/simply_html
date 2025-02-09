@@ -33,46 +33,65 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
 
       // Notify user about the ongoing download
-      await zk.sendMessage(dest, {
+      const downloadingMessage = {
         text: `🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}`,
-      });
+        contextInfo: {
+          externalAdReply: {
+            title: videoTitle,
+            body: "Bwm xmd downloader",
+            mediaType: 1,
+            thumbnailUrl: videoThumbnail,
+            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+            renderLargerThumbnail: false,
+            showAdAttribution: true,
+          },
+        },
+      };
+      await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
-      // List of APIs for MP3 download (requesting compressed version)
+      // List of APIs for MP3 download
       const apis = [
-        `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}&bitrate=128`,
-        `https://www.dark-yasiya-api.site/download/ytmp3?url=${encodeURIComponent(videoUrl)}&bitrate=128`,
-        `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&quality=low&apikey=gifted-md`,
-        `https://api.dreaded.site/api/ytdl/audio?url=${encodeURIComponent(videoUrl)}&bitrate=128`,
+        `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
+        `https://www.dark-yasiya-api.site/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
+        `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
+        `https://api.dreaded.site/api/ytdl/audio?url=${encodeURIComponent(videoUrl)}`,
       ];
 
       // Fetch results from all APIs concurrently
       const apiResponses = await Promise.allSettled(
-        apis.map((api) => axios.get(api).catch(() => null))
+        apis.map((api) =>
+          axios.get(api).then((res) => res.data).catch(() => null)
+        )
       );
 
       // Find the first successful API response
       let downloadData = null;
       for (const response of apiResponses) {
-        if (response.status === "fulfilled" && response.value?.data?.success) {
-          downloadData = response.value.data.result;
+        if (
+          response.status === "fulfilled" &&
+          response.value &&
+          response.value.success
+        ) {
+          downloadData = response.value.result;
           break;
         }
       }
 
-      if (!downloadData) {
+      if (!downloadData || !downloadData.download_url) {
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
       const downloadUrl = downloadData.download_url;
+      const audioTitle = downloadData.title || videoTitle;
 
-      // Send compressed audio file
-      await zk.sendMessage(dest, {
+      // Send the audio file
+      const audioPayload = {
         audio: { url: downloadUrl },
         mimetype: "audio/mp4",
         contextInfo: {
           externalAdReply: {
-            title: videoTitle,
-            body: `🎶 ${videoTitle} | Duration: ${videoDuration}`,
+            title: audioTitle,
+            body: `🎶 ${audioTitle} | Duration: ${videoDuration}`,
             mediaType: 1,
             sourceUrl: videoUrl,
             thumbnailUrl: videoThumbnail,
@@ -80,12 +99,16 @@ adams(
             showAdAttribution: true,
           },
         },
-      });
+      };
+
+      await zk.sendMessage(dest, audioPayload, { quoted: ms });
     } catch (error) {
-      return repondre(`Download failed due to an error: ${error.message}`);
+      console.error("Error during download process:", error.message);
+      return repondre(`Download failed due to an error: ${error.message || error}`);
     }
   }
 );
+
 
 
 adams(
