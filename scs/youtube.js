@@ -59,19 +59,25 @@ adams(
 
       // Fetch results from all APIs concurrently
       const apiResponses = await Promise.allSettled(
-        apis.map((api) => axios.get(api).catch((err) => null))
+        apis.map((api) =>
+          axios.get(api).then((res) => res.data).catch(() => null)
+        )
       );
 
       // Find the first successful API response
       let downloadData = null;
       for (const response of apiResponses) {
-        if (response.status === "fulfilled" && response.value?.data?.success) {
-          downloadData = response.value.data.result;
+        if (
+          response.status === "fulfilled" &&
+          response.value &&
+          response.value.success
+        ) {
+          downloadData = response.value.result;
           break;
         }
       }
 
-      if (!downloadData) {
+      if (!downloadData || !downloadData.download_url) {
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
@@ -102,7 +108,6 @@ adams(
     }
   }
 );
-
 
 
 adams(
@@ -161,19 +166,25 @@ adams(
 
       // Fetch results from all APIs concurrently
       const apiResponses = await Promise.allSettled(
-        apis.map((api) => axios.get(api).catch((err) => null))
+        apis.map((api) =>
+          axios.get(api).then((res) => res.data).catch(() => null)
+        )
       );
 
       // Find the first successful API response
       let downloadData = null;
       for (const response of apiResponses) {
-        if (response.status === "fulfilled" && response.value?.data?.success) {
-          downloadData = response.value.data.result;
+        if (
+          response.status === "fulfilled" &&
+          response.value &&
+          response.value.success
+        ) {
+          downloadData = response.value.result;
           break;
         }
       }
 
-      if (!downloadData) {
+      if (!downloadData || !downloadData.download_url) {
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
