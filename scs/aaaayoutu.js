@@ -2,6 +2,7 @@ const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const ytSearch = require('yt-search');
 
+// Command for downloading audio (MP3)
 adams({
   nomCom: "play",
   aliases: ["song", "audio", "mp3"],
@@ -17,7 +18,7 @@ adams({
   const query = arg.join(" ");
 
   try {
-    // Search for the video on YouTube
+    // Perform a YouTube search
     const searchResults = await ytSearch(query);
     if (!searchResults || searchResults.videos.length === 0) {
       return repondre('No video found for the specified query.');
@@ -42,15 +43,33 @@ adams({
       },
     }, { quoted: ms });
 
-    // Download from the fallback API
-    const fallbackApi = `https://api.siputzx.my.id/api/d/ytmp3?url=${encodeURIComponent(videoUrl)}`;
-    const fallbackResponse = await axios.get(fallbackApi);
+    let downloadUrl = null;
 
-    if (fallbackResponse.status !== 200 || !fallbackResponse.data.status) {
-      throw new Error("Failed to retrieve download URL.");
+    // **Primary API: OceanSaver**
+    try {
+      const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(videoUrl)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
+      let response = await axios.get(apiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+
+      if (response.data && response.data.success) {
+        const { id } = response.data;
+
+        // Check progress
+        while (true) {
+          let progress = await axios.get(`https://p.oceansaver.in/ajax/progress.php?id=${id}`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+
+          if (progress.data && progress.data.success && progress.data.progress === 1000) {
+            downloadUrl = progress.data.download_url;
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before checking again
+        }
+      } else {
+        throw new Error("Primary API failed.");
+      }
+    } catch (error) {
+      console.error("API Error:", error.message);
+      return repondre('Failed to retrieve download URL.');
     }
-
-    const downloadUrl = fallbackResponse.data.data.dl;
 
     // Send the downloaded audio
     await zk.sendMessage(dest, {
