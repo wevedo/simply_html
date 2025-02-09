@@ -600,6 +600,61 @@ adams({ nomCom: "vv2", categorie: "Mods" }, async (dest, zk, commandeOptions) =>
   })
 ;
 
+adams({ nomCom: "vv", categorie: "Mods" }, async (dest, zk, commandeOptions) => {
+
+  const { repondre, msgRepondu, superUser } = commandeOptions;
+
+  if (superUser) { 
+    if (msgRepondu) {
+      console.log(msgRepondu);
+      let msg;
+
+      if (msgRepondu.imageMessage) {
+        let media = await zk.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
+        msg = {
+          image: { url: media },
+          caption: msgRepondu.imageMessage.caption,
+        };
+      } else if (msgRepondu.videoMessage) {
+        let media = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        msg = {
+          video: { url: media },
+          caption: msgRepondu.videoMessage.caption,
+        };
+      } else if (msgRepondu.audioMessage) {
+        let media = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        msg = {
+          audio: { url: media },
+          mimetype: 'audio/mp4',
+        };
+      } else if (msgRepondu.stickerMessage) {
+        let media = await zk.downloadAndSaveMediaMessage(msgRepondu.stickerMessage);
+        let stickerMess = new Sticker(media, {
+          pack: 'BMW-MD-TAG',
+          type: StickerTypes.CROPPED,
+          categories: ["🤩", "🎉"],
+          id: "12345",
+          quality: 70,
+          background: "transparent",
+        });
+        const stickerBuffer2 = await stickerMess.toBuffer();
+        msg = { sticker: stickerBuffer2 };
+      } else {
+        msg = {
+          text: msgRepondu.conversation,
+        };
+      }
+
+      // Send the message in the same chat where the command was used
+      zk.sendMessage(dest, msg);
+    } else {
+      repondre('Mention the message that you want to save');
+    }
+  } else {
+    repondre('Only mods can use this command');
+  }
+});
+
 adams({
   nomCom : 'mention',
   categorie : 'Mods',
