@@ -63,43 +63,52 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
+const http = require("http");
+const WebSocket = require("ws");
 
-// Add after authentification() call
-app.use(express.static('public'));
-app.use(express.json());
 
-// Add before zk.ev.on("messages.upsert") handlers
-app.post('/web-command', async (req, res) => {
-    const { command } = req.body;
-    if (!command) return res.status(400).json({ error: "No command" });
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
-    // Mock WhatsApp message structure
-    const mockMsg = {
-        key: {
-            remoteJid: 'web@whatsapp.net',
-            fromMe: false,
-            id: 'web-'+Date.now()
-        },
-        message: { conversation: command },
-        pushName: 'Web User'
-    };
+const PORT = process.env.PORT || 3000;
 
-    // Create response collector
-    let response = [];
-    const collector = (msg) => response.push(msg.text);
-    
-    // Temporary listener
-    zk.ev.once('messages.upsert', ({ messages }) => {
-        if (messages[0].key.id === mockMsg.key.id) {
-            res.json({ response });
-        }
+// Serve static files (like index.html)
+app.use(express.static(path.join(__dirname, "public")));
+
+// Handle WebSocket connections
+wss.on("connection", (ws) => {
+    console.log("Client connected");
+
+    ws.on("message", async (message) => {
+        console.log(`Received command: ${message}`);
+
+        // Simulate bot processing the command
+        let response = await processCommand(message);
+
+        // Send the response back to the client
+        ws.send(response);
     });
 
-    // Simulate receiving message
-    zk.ev.emit('messages.upsert', {
-        messages: [mockMsg],
-        type: 'notify'
-    });
+    ws.on("close", () => console.log("Client disconnected"));
+});
+
+// Function to process bot commands (modify as needed)
+async function processCommand(command) {
+    if (command === ".menu") {
+        return "Available commands: .menu, .ping, .info";
+    } else if (command === ".ping") {
+        return "Pong!";
+    } else if (command === ".info") {
+        return "BWM XMD bot by Ibrahim Adams is online!";
+    } else {
+        return "Unknown command";
+    }
+}
+
+// Start the server
+server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
 });
 
 
