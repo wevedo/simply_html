@@ -63,6 +63,46 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Add after authentification() call
+app.use(express.static('public'));
+app.use(express.json());
+
+// Add before zk.ev.on("messages.upsert") handlers
+app.post('/web-command', async (req, res) => {
+    const { command } = req.body;
+    if (!command) return res.status(400).json({ error: "No command" });
+
+    // Mock WhatsApp message structure
+    const mockMsg = {
+        key: {
+            remoteJid: 'web@whatsapp.net',
+            fromMe: false,
+            id: 'web-'+Date.now()
+        },
+        message: { conversation: command },
+        pushName: 'Web User'
+    };
+
+    // Create response collector
+    let response = [];
+    const collector = (msg) => response.push(msg.text);
+    
+    // Temporary listener
+    zk.ev.once('messages.upsert', ({ messages }) => {
+        if (messages[0].key.id === mockMsg.key.id) {
+            res.json({ response });
+        }
+    });
+
+    // Simulate receiving message
+    zk.ev.emit('messages.upsert', {
+        messages: [mockMsg],
+        type: 'notify'
+    });
+});
+
+
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
         console.error('Your verified in bwm xmd:', jid);
