@@ -369,7 +369,7 @@ adams(
             await zk.sendMessage(dest, {
               video: { url: outputPath },
               mimetype: "video/mp4",
-              caption: "Video downloaded Successfully ✅,
+              caption: "Video downloaded Successfully ✅",
               contextInfo: {
                 externalAdReply: {
                   title: videoTitleFinal,
