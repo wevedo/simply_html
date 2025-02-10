@@ -61,10 +61,9 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; 
 const express = require('express');
 const { exec } = require('child_process');
-const app = express();
-const PORT = process.env.PORT || 3000;
 
 const http = require("http");
+const app = express();
 const WebSocket = require("ws");
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
