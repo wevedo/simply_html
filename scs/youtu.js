@@ -40,10 +40,10 @@ adams({
       text: `🎶 *Downloading:* ${title}\n🕒 *Duration:* ${duration}\n👁 *Views:* ${views}\n📅 *Uploaded:* ${uploaded}\n🎭 *Channel:* ${channel}`,
       contextInfo: {
         externalAdReply: {
-          title: title,
+          title: "©Sir Ibrahim Adams",
           body: "Bwm xmd downloader",
           mediaType: 1,
-          thumbnailUrl: firstVideo.thumbnail,
+          thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_ijgrjr.webp",
           sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
           renderLargerThumbnail: false,
           showAdAttribution: true,
@@ -168,10 +168,10 @@ adams({
       text: `🎶 *Downloading:* ${title}\n🕒 *Duration:* ${duration}\n👁 *Views:* ${views}\n📅 *Uploaded:* ${uploaded}\n🎭 *Channel:* ${channel}`,
       contextInfo: {
         externalAdReply: {
-          title: title,
+          title: "©Sir Ibrahim Adams",
           body: "Bwm xmd downloader",
           mediaType: 1,
-          thumbnailUrl: firstVideo.thumbnail,
+          thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_ijgrjr.webp",
           sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
           renderLargerThumbnail: false,
           showAdAttribution: true,
@@ -299,10 +299,10 @@ adams(
         text: `🎬 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n👁 *Views:* ${videoViews}\n📅 *Uploaded:* ${videoUploaded}\n🎭 *Channel:* ${videoChannel}`,
         contextInfo: {
           externalAdReply: {
-            title: videoTitle,
+            title: "©Sir Ibrahim Adams",
             body: "Bwm xmd downloader",
             mediaType: 2,
-            thumbnailUrl: videoThumbnail,
+            thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_ijgrjr.webp",
             sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
             renderLargerThumbnail: false,
             showAdAttribution: true,
