@@ -1,0 +1,52 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BWM XMD Web Console</title>
+    <style>
+        body { font-family: Arial; margin: 0; padding: 20px; background: #111; color: #fff; }
+        #console { background: #222; padding: 20px; height: 70vh; overflow-y: auto; border-radius: 5px; }
+        .message { margin: 10px 0; padding: 8px; background: #333; border-radius: 4px; }
+        input { 
+            width: 100%; padding: 10px; margin-top: 20px; 
+            background: #333; border: none; color: white; border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="console"></div>
+    <input type="text" placeholder="Type command (e.g., .menu)" id="input" onkeypress="handleKey(event)">
+    <script>
+        const consoleDiv = document.getElementById('console');
+        async function sendCommand(cmd) {
+            // Add user input
+            consoleDiv.innerHTML += `<div class="message user">> ${cmd}</div>`;
+            
+            try {
+                const response = await fetch('/web-command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: cmd })
+                });
+                
+                const data = await response.json();
+                data.response.forEach(msg => {
+                    consoleDiv.innerHTML += `<div class="message bot">${msg}</div>`;
+                });
+            } catch (e) {
+                consoleDiv.innerHTML += `<div class="message error">Error: ${e}</div>`;
+            }
+            
+            // Scroll to bottom and clear input
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            document.getElementById('input').value = '';
+        }
+
+        function handleKey(e) {
+            if (e.key === 'Enter' && e.target.value.trim()) {
+                sendCommand(e.target.value.trim());
+            }
+        }
+    </script>
+</body>
+</html>
