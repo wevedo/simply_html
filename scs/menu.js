@@ -53,7 +53,7 @@ const fetchGitHubStats = async () => {
 };
 
 // Main menu command
-adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "menu0", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
