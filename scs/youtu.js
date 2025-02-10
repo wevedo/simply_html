@@ -55,7 +55,7 @@ adams({
 
     // **Primary API: OceanSaver**
     try {
-      const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(videoUrl)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
+      const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(videoUrl)}&api=8680fd586371ca03eeb722ce771790904ddda515`;
       let response = await axios.get(apiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
 
       if (response.data && response.data.success) {
@@ -183,7 +183,7 @@ adams({
 
     // **Primary API: OceanSaver**
     try {
-      const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(videoUrl)}&api=dfcb6d76f2f6a9894gjkege8a4ab232222`;
+      const apiUrl = `https://p.oceansaver.in/ajax/download.php?format=mp3&url=${encodeURIComponent(videoUrl)}&api=8680fd586371ca03eeb722ce771790904ddda515`;
       let response = await axios.get(apiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
 
       if (response.data && response.data.success) {
@@ -369,7 +369,7 @@ adams(
             await zk.sendMessage(dest, {
               video: { url: outputPath },
               mimetype: "video/mp4",
-              caption: `🎬 *${videoTitleFinal}*\n⏳ *Duration:* ${videoDuration}\n👁 *Views:* ${videoViews}\n📅 *Uploaded:* ${videoUploaded}\n🎭 *Channel:* ${videoChannel}`,
+              caption: "Video downloaded Successfully ✅,
               contextInfo: {
                 externalAdReply: {
                   title: videoTitleFinal,
