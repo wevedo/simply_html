@@ -70,8 +70,13 @@ const wss = new WebSocket.Server({ server });
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static files (like index.html)
+// Serve static files from the public directory
 app.use(express.static(path.join(__dirname, "public")));
+
+// Route to serve index.html
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 // Handle WebSocket connections
 wss.on("connection", (ws) => {
