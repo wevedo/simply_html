@@ -63,11 +63,9 @@ const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 const PORT = process.env.PORT || 3000;
+
 const http = require("http");
 const WebSocket = require("ws");
-
-
-const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
