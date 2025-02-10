@@ -61,57 +61,11 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; 
 const express = require('express');
 const { exec } = require('child_process');
-
+const PORT = process.env.PORT || 3000;
 const http = require("http");
 const app = express();
 const WebSocket = require("ws");
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-const PORT = process.env.PORT || 3000;
-
-// Serve static files from the public directory
-app.use(express.static(path.join(__dirname, "public")));
-
-// Route to serve index.html
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// Handle WebSocket connections
-wss.on("connection", (ws) => {
-    console.log("Client connected");
-
-    ws.on("message", async (message) => {
-        console.log(`Received command: ${message}`);
-
-        // Simulate bot processing the command
-        let response = await processCommand(message);
-
-        // Send the response back to the client
-        ws.send(response);
-    });
-
-    ws.on("close", () => console.log("Client disconnected"));
-});
-
-// Function to process bot commands (modify as needed)
-async function processCommand(command) {
-    if (command === ".menu") {
-        return "Available commands: .menu, .ping, .info";
-    } else if (command === ".ping") {
-        return "Pong!";
-    } else if (command === ".info") {
-        return "BWM XMD bot by Ibrahim Adams is online!";
-    } else {
-        return "Unknown command";
-    }
-}
-
-// Start the server
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
 
 
 function atbverifierEtatJid(jid) {
@@ -129,7 +83,7 @@ async function authentification() {
     try {
         if (!fs.existsSync(__dirname + "/Session/creds.json")) {
             console.log("Session connected...");
-            // Split the session string into header and Base64 data
+            // Split the session strihhhhng into header and Base64 data
             const [header, b64data] = conf.session.split(';;;'); 
 
             // Validate the session format
