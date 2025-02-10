@@ -1,4 +1,4 @@
-const { adams } = require("../Ibrahim/adams");
+/*const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
 const ytSearch = require("yt-search");
 
@@ -326,3 +326,4 @@ adams(
     }
   }
 );
+*/
