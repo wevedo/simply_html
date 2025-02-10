@@ -29,13 +29,18 @@ adams({
 
     const firstVideo = searchResults.videos[0];
     const videoUrl = firstVideo.url;
+    const title = firstVideo.title;
+    const duration = firstVideo.timestamp; // e.g., "3:45"
+    const views = firstVideo.views.toLocaleString();
+    const uploaded = firstVideo.ago;
+    const channel = firstVideo.author.name;
 
     // Notify the user
     await zk.sendMessage(dest, {
-      text: `*🎵 Bwm is downloading ${firstVideo.title}*`,
+      text: `🎶 *Downloading:* ${title}\n🕒 *Duration:* ${duration}\n👁 *Views:* ${views}\n📅 *Uploaded:* ${uploaded}\n🎭 *Channel:* ${channel}`,
       contextInfo: {
         externalAdReply: {
-          title: firstVideo.title,
+          title: title,
           body: "Bwm xmd downloader",
           mediaType: 1,
           thumbnailUrl: firstVideo.thumbnail,
@@ -96,8 +101,8 @@ adams({
             mimetype: 'audio/mp4',
             contextInfo: {
               externalAdReply: {
-                title: firstVideo.title,
-                body: `🎶 ${firstVideo.title} | Download complete`,
+                title: title,
+                body: `🎶 ${title} | Download complete`,
                 mediaType: 1,
                 sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                 thumbnailUrl: firstVideo.thumbnail,
