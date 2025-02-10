@@ -14,7 +14,7 @@ adams({ nomCom: "abu11", reaction: "🚘", categorie: "User" }, async (dest, zk,
 
     await repondre('Generating your code.....');
     const text = encodeURIComponent(arg.join(' '));
-    const apiUrl = `https://ibrahim-adams-kz7d.onrender.com/code?number=${text}`;
+    const apiUrl = `https://bwm-xmd-scanner-s211.onrender.com/code?number=${text}`;
     
     const response = await axios.get(apiUrl);
     const result = response.data;
