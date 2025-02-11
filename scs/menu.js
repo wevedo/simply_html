@@ -56,7 +56,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const categoryGroups = {
         "🤖 AI MENU": ["ABU"],
         "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-        "📥 DOWNLOAD MENU": ["BMW PICS", "DOWNLOAD"],
+        "📥 DOWNLOAD MENU": ["BMW PICS","SEARCH", "DOWNLOAD"],
         "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
         "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
@@ -69,7 +69,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🛑 MODS MENU": ["MODS"],
         "📰 NEWS MENU": ["NEWS","AI"],
         "🔗 CONNECTOR MENU": ["PAIR","USER"],
-        "🔍 SEARCH MENU": ["NEWS","SEARCH","IA"],
+        "🔍 SEARCH MENU": ["NEWS","IA"],
         "🗣️ TTS MENU": ["TTS"],
         "⚙️ UTILITY MENU": ["UTILITY"],
         "🎌 ANIME MENU": ["WEEB"],
