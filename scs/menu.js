@@ -44,16 +44,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
 
-    // **Prevent Duplicate Commands in Categories**
-    cm.forEach((com) => {
+    // Organize commands
+    cm.map((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!commandList[categoryUpper]) commandList[categoryUpper] = new Set();
-        commandList[categoryUpper].add(`🟢 ${com.nomCom}`);
-    });
-
-    // Convert sets to arrays
-    Object.keys(commandList).forEach((cat) => {
-        commandList[cat] = [...commandList[cat]];
+        if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
+        commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
     });
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
@@ -62,18 +57,18 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const totalUsers = await fetchGitHubStats();
     const image = randomImage();
 
-    // **Dynamic Greeting Based on Time**
+    // Dynamic Greeting Based on Time
     const hour = moment().hour();
     let greeting = "🌙 *Good Night! See you tomorrow!*";
     if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning! Let's kickstart your day!*";
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
-    // **Custom Categories with Emojis**
+    // Custom Categories with Emojis
     const categoryGroups = {
         "🤖 AI MENU": ["ABU"],
         "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-        "📥 DOWNLOAD MENU": ["BMW PICS","SEARCH", "DOWNLOAD"],
+        "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
         "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
         "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
@@ -84,54 +79,75 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
         "🔤 LOGO MENU": ["LOGO"],
         "🛑 MODS MENU": ["MODS"],
-        "📰 NEWS MENU": ["NEWS","AI"],
-        "🔗 CONNECTOR MENU": ["PAIR","USER"],
-        "🔍 SEARCH MENU": ["NEWS","IA"],
+        "📰 NEWS MENU": ["NEWS", "AI"],
+        "🔗 CONNECTOR MENU": ["PAIR", "USER"],
+        "🔍 SEARCH MENU": ["NEWS", "IA"],
         "🗣️ TTS MENU": ["TTS"],
         "⚙️ UTILITY MENU": ["UTILITY"],
         "🎌 ANIME MENU": ["WEEB"],
     };
 
-    const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
+    // Send Main Menu as Quote Reply
+    const sentMessage = await zk.sendMessage(dest, {
+        image: { url: image },
+        caption: `
+╭─❖ 𓆩 ⚡ 𓆪 ❖─╮
+       𝐁𝐖𝐌 𝐗𝐌𝐃    
+╰─❖ 𓆩 ⚡ 𓆪 ❖─╯  
+╭─❖
+┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
+┃📅 ᴅᴀᴛᴇ: ${date}
+┃⏰ ᴛɪᴍᴇ: ${time}
+┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
+╰─❖
 
-    try {
-        // **Send Main Menu**
-        await zk.sendMessage(dest, {
-            image: { url: image },
-            caption: `📜 *Main Menu*\n\n${greeting}\n\n${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}`,
-            contextInfo: { forwardingScore: 999, isForwarded: true },
-        }, { quoted: ms });
+${greeting}
 
-        // **Send Random Audio**
-        const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
-        await zk.sendMessage(dest, {
-            audio: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            ptt: true,
-        });
+📜 *Reply with the category number to select it*  
 
-    } catch (error) {
-        console.error("❌ Error sending menu:", error);
-    }
-});
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
+`,
+        contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures "message via aid"
+    }, { quoted: ms });
 
-// **Listen for Category Replies**
-zk.ev.on("messages.upsert", async (update) => {
-    const message = update.messages[0];
-    if (!message.message || !message.message.extendedTextMessage) return;
+    // **Category Selection Listener**
+    zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || !message.message.extendedTextMessage) return;
 
-    const responseText = message.message.extendedTextMessage.text.trim();
-    const selectedIndex = parseInt(responseText);
-    const categoryKeys = Object.keys(categoryGroups);
+        const responseText = message.message.extendedTextMessage.text.trim();
+        if (
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+        ) {
+            const selectedIndex = parseInt(responseText);
+            const categoryKeys = Object.keys(categoryGroups);
 
-    if (!isNaN(selectedIndex) && selectedIndex >= 1 && selectedIndex <= categoryKeys.length) {
-        const selectedCategory = categoryKeys[selectedIndex - 1];
-        const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
+                return repondre("*❌ Invalid number. Please select a valid category.*");
+            }
 
-        // **Send Category Commands**
-        await zk.sendMessage(message.key.remoteJid, {
-            text: `📜 *${selectedCategory}*\n\n${combinedCommands.join("\n") || "⚠️ No commands found."}`,
-            contextInfo: { forwardingScore: 999, isForwarded: true },
-        }, { quoted: message });
-    }
+            const selectedCategory = categoryKeys[selectedIndex - 1];
+            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+
+            // Display All Commands in Selected Category
+            const commandText = combinedCommands.length
+                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
+                : `⚠️ No commands found for ${selectedCategory}.`;
+
+            await zk.sendMessage(dest, {
+                text: commandText,
+                contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures forwarded message
+            }, { quoted: message });
+        }
+    });
+
+    // Send Random Audio
+    const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
+    await zk.sendMessage(dest, {
+        audio: { url: audioUrl },
+        mimetype: "audio/mpeg",
+        ptt: true,
+    });
+
 });
