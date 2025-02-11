@@ -40,15 +40,23 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage (only generated once)
+// Command list storage (Generate Once & Ensure All Categories Are Included)
 const commandList = (() => {
     let list = {};
     const { cm } = require(__dirname + "/../Ibrahim/adams");
+
+    // Ensure all defined category groups exist in commandList
+    Object.values(categoryGroups).flat().forEach((cat) => {
+        list[cat.toUpperCase()] = [];
+    });
+
+    // Store commands in respective categories
     cm.forEach((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!list[categoryUpper]) list[categoryUpper] = [];
+        if (!list[categoryUpper]) list[categoryUpper] = []; // Ensure category exists
         list[categoryUpper].push(`🟢 ${com.nomCom}`);
     });
+
     return list;
 })();
 
