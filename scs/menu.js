@@ -54,25 +54,25 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
     // **Custom Categories with Emojis**
     const categoryGroups = {
-        "🤖 AI MENU": ["ABU", "IA", "AI"],
+        "🤖 AI MENU": ["ABU"],
         "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
         "📥 DOWNLOAD MENU": ["BMW PICS", "DOWNLOAD"],
         "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
-        "💬 CONVERSATION MENU": ["CONVERSATION", "MPESA"],
-        "😂 FUN MENU": ["HENTER", "REACTION"],
-        "🎮 GAMES": ["GAMES"],
-        "🌍 GENERAL": ["GENERAL"],
-        "💻 GITHUB": ["GITHUB"],
-        "🖼️ IMAGE MENU": ["IMAGE"],
+        "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
+        "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
+        "🎮 GAMES MENU": ["GAMES"],
+        "🌍 GENERAL MENU": ["GENERAL"],
+        "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
+        "💻 GITHUB MENU": ["GITHUB"],
+        "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
         "🔤 LOGO MENU": ["LOGO"],
         "🛑 MODS MENU": ["MODS"],
-        "📰 NEWS MENU": ["NEWS"],
-        "🔗 CONNECTOR": ["PAIR"],
-        "🔍 SEARCH": ["NEWS"],
-        "🗣️ TTS": ["TTS"],
-        "👤 USER": ["USER"],
-        "⚙️ UTILITY": ["UTILITY"],
-        "🎌 ANIME": ["WEEB"],
+        "📰 NEWS MENU": ["NEWS","AI"],
+        "🔗 CONNECTOR MENU": ["PAIR","USER"],
+        "🔍 SEARCH MENU": ["NEWS","SEARCH","IA"],
+        "🗣️ TTS MENU": ["TTS"],
+        "⚙️ UTILITY MENU": ["UTILITY"],
+        "🎌 ANIME MENU": ["WEEB"],
     };
 
     // Add new categories dynamically
@@ -98,7 +98,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ╰───❖
 
 📜 *Select a category:*
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${footer}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1}♻️ ${cat}`).join("\n\n")}${footer}
 `,
         });
 
