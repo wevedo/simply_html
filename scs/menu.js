@@ -21,6 +21,9 @@ const menuImages = [
     "https://files.catbox.moe/sgl022.jpeg",
     "https://files.catbox.moe/xx6ags.jpeg",
 ];
+
+const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
+
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
 // GitHub repo stats
@@ -109,7 +112,7 @@ ${greeting}
 
 📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
         contextInfo: { forwardingScore: 999, isForwarded: true }, // Keeps "Forwarded via aid"
     }, { quoted: ms });
@@ -137,7 +140,7 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
 
             // Display All Commands in Selected Category
             const commandText = combinedCommands.length
-                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
+                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n\n")}${footer}`
                 : `⚠️ No commands found for ${selectedCategory}.`;
 
             await zk.sendMessage(dest, {
