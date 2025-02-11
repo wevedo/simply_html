@@ -59,7 +59,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
     // **Dynamic Greeting Based on Time**
     const hour = moment().hour();
-    let greeting = "🌙 *Good Night*";
+    let greeting = "🌙 *Good Night! See you tomorrow!*";
     if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning! Let's kickstart your day!*";
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
