@@ -6,14 +6,6 @@ const s = require(__dirname + "/../config");
 const more = String.fromCharCode(8206);
 const readmore = more.repeat(4001);
 
-// Dynamic greetings
-const greetings = {
-    morning: "🌄 Good Morning! Let's kickstart your day!",
-    afternoon: "☀️ Good Afternoon! Stay productive!",
-    evening: "🌆 Good Evening! Time to relax!",
-    night: "🌙 Good Night! See you tomorrow!",
-};
-
 // GitHub raw audio links
 const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
 const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
@@ -46,29 +38,6 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Custom category mappings
-const categoryMappings = {
-    "AI MENU": ["abu", "IA", "AI"],
-    "AUTO EDIT MENU": ["AUDIO-EDIT"],
-    "DOWNLOAD MENU": ["bmw pics", "download"],
-    "CONTROL MENU": ["control", "stickcmd", "tools"],
-    "CONVERSATION MENU": ["conversation", "mpesa"],
-    "FUN MENU": ["henter", "reaction"],
-    "GAMES": ["GAMES"],
-    "GENERAL": ["GENERAL"],
-    "GITHUB": ["GITHUB"],
-    "IMAGE MENU": ["IMAGE MENU"],
-    "LOGO MENU": ["LOGO MENU"],
-    "MODS MENU": ["MODS MENU"],
-    "NEWS MENU": ["NEWS MENU"],
-    "CONNECTOR": ["pair"],
-    "SEARCH": ["news"],
-    "TTS": ["TTS"],
-    "USER": ["USER"],
-    "UTILITY": ["UTILITY"],
-    "ANIME": ["weeb"]
-};
-
 // Function to split array into chunks
 const chunkArray = (array, size) => {
     return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
@@ -78,7 +47,7 @@ const chunkArray = (array, size) => {
 
 const commandChunks = {}; // Store chunks for each user
 
-adams({ nomCom: "menu", categorie: "General23" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
@@ -89,27 +58,6 @@ adams({ nomCom: "menu", categorie: "General23" }, async (dest, zk, commandeOptio
         coms[categoryUpper].push(com.nomCom);
     });
 
-    // Group categories based on the mapping
-    let groupedCategories = {};
-    Object.keys(categoryMappings).forEach((customCategory) => {
-        let includedCommands = [];
-        categoryMappings[customCategory].forEach((originalCategory) => {
-            if (coms[originalCategory]) {
-                includedCommands = includedCommands.concat(coms[originalCategory]);
-            }
-        });
-        if (includedCommands.length > 0) {
-            groupedCategories[customCategory] = includedCommands;
-        }
-    });
-
-    // Add any new categories that aren’t in the predefined list
-    Object.keys(coms).forEach((originalCategory) => {
-        if (!Object.values(categoryMappings).flat().includes(originalCategory)) {
-            groupedCategories[originalCategory] = coms[originalCategory];
-        }
-    });
-
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
     const time = moment().format("HH:mm:ss");
@@ -118,11 +66,41 @@ adams({ nomCom: "menu", categorie: "General23" }, async (dest, zk, commandeOptio
     const formattedTotalUsers = totalUsers.toLocaleString();
 
     const image = randomImage();
-    const renderLargerThumbnail = Math.random() < 0.5; // Random true or false
+
+    // Custom grouped categories
+    const categoryGroups = {
+        "AI MENU": ["ABU", "IA", "AI"],
+        "AUTO EDIT MENU": ["AUDIO-EDIT"],
+        "DOWNLOAD MENU": ["BMW PICS", "DOWNLOAD"],
+        "CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
+        "CONVERSATION MENU": ["CONVERSATION", "MPESA"],
+        "FUN MENU": ["HENTER", "REACTION"],
+        "GAMES": ["GAMES"],
+        "GENERAL": ["GENERAL"],
+        "GITHUB": ["GITHUB"],
+        "IMAGE MENU": ["IMAGE-EDIT"],
+        "LOGO MENU": ["LOGO"],
+        "MODS MENU": ["MODS"],
+        "NEWS MENU": ["NEWS"],
+        "CONNECTOR": ["PAIR"],
+        "SEARCH": ["NEWS"],
+        "TTS": ["TTS"],
+        "USER": ["USER"],
+        "UTILITY": ["UTILITY"],
+        "ANIME": ["WEEB"],
+    };
+
+    // Adding extra categories dynamically
+    Object.keys(coms).forEach((category) => {
+        if (!Object.values(categoryGroups).flat().includes(category)) {
+            categoryGroups[category] = [category];
+        }
+    });
 
     // Store command chunks per category
-    Object.keys(groupedCategories).forEach((cat) => {
-        commandChunks[cat] = chunkArray(groupedCategories[cat], 5); // 5 commands per page
+    Object.keys(categoryGroups).forEach((group) => {
+        const combinedCommands = categoryGroups[group].flatMap((cat) => coms[cat] || []);
+        commandChunks[group] = chunkArray(combinedCommands, 5); // 5 commands per page
     });
 
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
@@ -140,18 +118,9 @@ adams({ nomCom: "menu", categorie: "General23" }, async (dest, zk, commandeOptio
 ╰───❖
 
 Reply with a number to choose a category:
-${Object.keys(groupedCategories).map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${footer}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${footer}
 `,
-            contextInfo: {
-                externalAdReply: {
-                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                    body: "Tap here to Join our official channel!",
-                    thumbnailUrl: image,
-                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                    showAdAttribution: true,
-                    renderLargerThumbnail: renderLargerThumbnail,
-                },
-            },
+            forwarded: true, // Uses forwarded aid instead of context info
         });
 
         // Listen for category selection
@@ -165,29 +134,32 @@ ${Object.keys(groupedCategories).map((cat, index) => `${index + 1}⊷ ${cat}`).j
                 message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
             ) {
                 const selectedIndex = parseInt(responseText);
-                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > Object.keys(groupedCategories).length) {
+                const categoryKeys = Object.keys(categoryGroups);
+
+                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
                     return repondre("*Invalid number. Please select a valid category.*");
                 }
 
-                const selectedCategory = Object.keys(groupedCategories)[selectedIndex - 1];
+                const selectedCategory = categoryKeys[selectedIndex - 1];
                 let categoryCommands = commandChunks[selectedCategory];
 
                 // Track current page
                 let page = 0;
                 let totalPages = categoryCommands.length;
-                const randomCategoryImage = randomImage();
 
                 const sendCommandPage = async (pageIndex) => {
                     let commandList = `📜 *${selectedCategory}* (Page ${pageIndex + 1}/${totalPages}):\n\n`;
                     commandList += categoryCommands[pageIndex].map((cmd) => `🟢 ${cmd}`).join("\n");
 
+                    let navigationText = "\nReply with:\n1️⃣ - Previous Page\n2️⃣ - Next Page";
+
                     await zk.sendMessage(dest, {
-                        text: commandList,
+                        text: commandList + (totalPages > 1 ? navigationText : ""),
                         contextInfo: {
                             externalAdReply: {
-                                title: `𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝘆: ${selectedCategory}`,
-                                body: "Explore all commands here!",
-                                thumbnailUrl: randomCategoryImage,
+                                title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                                body: "Tap here to Join our official channel!",
+                                thumbnailUrl: image,
                                 sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                                 showAdAttribution: true,
                                 renderLargerThumbnail: Math.random() < 0.5,
@@ -197,6 +169,20 @@ ${Object.keys(groupedCategories).map((cat, index) => `${index + 1}⊷ ${cat}`).j
                 };
 
                 await sendCommandPage(page);
+
+                zk.ev.on("messages.upsert", async (update) => {
+                    const navMessage = update.messages[0];
+                    if (!navMessage.message || !navMessage.message.extendedTextMessage) return;
+
+                    const navText = navMessage.message.extendedTextMessage.text.trim();
+                    if (navText === "1" && page > 0) {
+                        page--;
+                        await sendCommandPage(page);
+                    } else if (navText === "2" && page < totalPages - 1) {
+                        page++;
+                        await sendCommandPage(page);
+                    }
+                });
             }
         });
     } catch (error) {
