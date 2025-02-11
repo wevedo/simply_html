@@ -98,7 +98,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ╰───❖
 
 📜 *Select a category:*
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1}♻️ ${cat}`).join("\n\n")}${footer}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
         });
 
