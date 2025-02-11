@@ -46,13 +46,20 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Main menu
+// Function to split array into chunks
+const chunkArray = (array, size) => {
+    return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
+        array.slice(i * size, i * size + size)
+    );
+};
+
+const commandChunks = {}; // Store chunks for each user
+
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
 
-    // Organize commands by category
     cm.map((com) => {
         const categoryUpper = com.categorie.toUpperCase();
         if (!coms[categoryUpper]) coms[categoryUpper] = [];
@@ -62,34 +69,23 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
     const time = moment().format("HH:mm:ss");
-    const hour = moment().hour();
-
-    // Determine greeting
-    let greeting = greetings.night;
-    if (hour >= 5 && hour < 12) greeting = greetings.morning;
-    else if (hour >= 12 && hour < 18) greeting = greetings.afternoon;
-    else if (hour >= 18 && hour <= 22) greeting = greetings.evening;
 
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Generate numbered category list
-    const sortedCategories = Object.keys(coms).sort();
-    let categoryMenu = "";
-    sortedCategories.forEach((cat, index) => {
-        categoryMenu += `${index + 1}⊷ ${cat}\n`;
-    });
-
-    // Select assets
     const image = randomImage();
-    const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
 
-    const menuType = s.MENUTYPE || (Math.random() < 0.5 ? "1" : "2"); // Randomly pick if blank
+    // Get sorted categories
+    const sortedCategories = Object.keys(coms).sort();
+
+    // Store command chunks per category
+    sortedCategories.forEach((cat) => {
+        commandChunks[cat] = chunkArray(coms[cat], 5); // 5 commands per page
+    });
 
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
 
     try {
-        // Send main menu with numbered categories
         const sentMessage = await zk.sendMessage(dest, {
             image: { url: image },
             caption: `
@@ -100,25 +96,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃⏰ ᴛɪᴍᴇ: ${time}
 ┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${formattedTotalUsers}
 ╰───❖
-${greeting}
 
 Reply with a number to choose a category:
-
-${categoryMenu}${footer}
+${sortedCategories.map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${footer}
 `,
-            contextInfo: {
-                externalAdReply: {
-                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                    body: "Tap here to Join our official channel!",
-                    thumbnailUrl: image,
-                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                    showAdAttribution: true,
-                    renderLargerThumbnail: true,
-                },
-            },
         });
 
-        // Listen for reply with number
+        // Listen for category selection
         zk.ev.on("messages.upsert", async (update) => {
             const message = update.messages[0];
             if (!message.message || !message.message.extendedTextMessage) return;
@@ -134,22 +118,43 @@ ${categoryMenu}${footer}
                 }
 
                 const selectedCategory = sortedCategories[selectedIndex - 1];
-                let categoryCommands = coms[selectedCategory];
+                let categoryCommands = commandChunks[selectedCategory];
 
-                let commandList = `\n📜 *${selectedCategory}*:\n\n`;
-                categoryCommands.forEach((cmd) => {
-                    commandList += `🟢 ${cmd}\n`;
-                });
+                // Track current page
+                let page = 0;
+                let totalPages = categoryCommands.length;
 
-                // Send selected category commands
-                await zk.sendMessage(dest, {
-                    text: `*${selectedCategory} Commands:*\n${commandList}`,
-                    contextInfo: { quotedMessage: { conversation: "Category Selection" } },
+                const sendCommandPage = async (pageIndex) => {
+                    let commandList = `📜 *${selectedCategory}* (Page ${pageIndex + 1}/${totalPages}):\n\n`;
+                    commandList += categoryCommands[pageIndex].map((cmd) => `🟢 ${cmd}`).join("\n");
+
+                    let navigationText = "\nReply with:\n1️⃣ - Previous Page\n2️⃣ - Next Page";
+
+                    await zk.sendMessage(dest, {
+                        text: commandList + (totalPages > 1 ? navigationText : ""),
+                    });
+                };
+
+                await sendCommandPage(page);
+
+                zk.ev.on("messages.upsert", async (update) => {
+                    const navMessage = update.messages[0];
+                    if (!navMessage.message || !navMessage.message.extendedTextMessage) return;
+
+                    const navText = navMessage.message.extendedTextMessage.text.trim();
+                    if (navText === "1" && page > 0) {
+                        page--;
+                        await sendCommandPage(page);
+                    } else if (navText === "2" && page < totalPages - 1) {
+                        page++;
+                        await sendCommandPage(page);
+                    }
                 });
             }
         });
 
         // Send audio
+        const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
         await zk.sendMessage(dest, {
             audio: { url: audioUrl },
             mimetype: getMimeType(audioUrl),
