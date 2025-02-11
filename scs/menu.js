@@ -52,17 +52,20 @@ const fetchGitHubStats = async () => {
     }
 };
 
+// Store command categories globally
+let commandCategories = {};
+
 // Main menu command
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
-    let coms = {};
 
     // Organize commands by category
+    commandCategories = {};
     cm.map((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!coms[categoryUpper]) coms[categoryUpper] = [];
-        coms[categoryUpper].push(com.nomCom);
+        if (!commandCategories[categoryUpper]) commandCategories[categoryUpper] = [];
+        commandCategories[categoryUpper].push(com.nomCom);
     });
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
@@ -79,20 +82,14 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const { totalUsers } = await fetchGitHubStats();
     const formattedTotalUsers = totalUsers.toLocaleString();
 
-    // Optimize command list to prevent WhatsApp bug
-    let commandList = "";
-    const sortedCategories = Object.keys(coms).sort();
-    sortedCategories.forEach((cat) => {
-        commandList += `\n📜 *${cat}*:\n`;
-        let categoryCommands = coms[cat];
-        let commandChunks = [];
-
-        for (let i = 0; i < categoryCommands.length; i += 3) {
-            commandChunks.push(categoryCommands.slice(i, i + 3).join(" | "));
-        }
-
-        commandList += commandChunks.join("\n") + "\n";
+    // Prepare category list with numbered replies
+    let categoryList = "📂 *Select a Category:* \n\n";
+    let index = 1;
+    let categoryKeys = Object.keys(commandCategories).sort();
+    categoryKeys.forEach((cat) => {
+        categoryList += `${index++}. ${cat}\n`;
     });
+    categoryList += `\n💡 Reply with a number to view commands from a specific category.`;
 
     // Select assets
     const image = randomImage();
@@ -105,42 +102,10 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
 
     try {
-        if (menuType === "1") {
-            await zk.sendMessage(dest, {
-                image: { url: image1 },
-                caption: `
-╭┈┈┈┈┈╮
-│  ʙᴡᴍ xᴍᴅ ɴᴇxᴜs
-├┈┈┈┈•➤
-│ 🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
-│ 📆 ᴅᴀᴛᴇ: ${date}
-│ ⏰ ᴛɪᴍᴇ: ${time}
-│ 👪 ʙᴡᴍ ᴜsᴇʀs: 1${formattedTotalUsers}
-╰┈┈┈┈┈╯
-${greeting}
-
-> ©Ibrahim Adams
-
-${commandList}${footer}
-`,
-                contextInfo: {
-                    quotedMessage: {
-                        conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
-                    },
-                    externalAdReply: {
-                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                        body: "Tap here to Join our official channel!",
-                        thumbnailUrl: image,
-                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        showAdAttribution: true,
-                        renderLargerThumbnail: false,
-                    },
-                },
-            });
-        } else {
-            await zk.sendMessage(dest, {
-                image: { url: image1 },
-                caption: `
+        // Send category selection message
+        await zk.sendMessage(dest, {
+            image: { url: image1 },
+            caption: `
 ╭───❖
 ┃🚀 ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
 ┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
@@ -152,30 +117,46 @@ ${greeting}
 
 > ©Ibrahim Adams
 
-${commandList}${footer}
+${categoryList}${footer}
 `,
-                contextInfo: {
-                    quotedMessage: {
-                        conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
-                    },
-                    externalAdReply: {
-                        title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
-                        body: "Tap here to Join our official channel!",
-                        thumbnailUrl: image,
-                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        showAdAttribution: true,
-                        mediaType: 1,
-                        renderLargerThumbnail: true,
-                    },
+            contextInfo: {
+                quotedMessage: {
+                    conversation: "ʙᴡᴍ xᴍᴅ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs 💫",
                 },
-            });
-        }
+                externalAdReply: {
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                    body: "Tap here to Join our official channel!",
+                    thumbnailUrl: image,
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                    showAdAttribution: true,
+                    mediaType: 1,
+                    renderLargerThumbnail: true,
+                },
+            },
+        });
 
+        // Listen for reply to display commands in the chosen category
+        zk.onMessage(async (msg) => {
+            if (!msg.text || isNaN(msg.text)) return;
+
+            let selectedIndex = parseInt(msg.text) - 1;
+            if (selectedIndex < 0 || selectedIndex >= categoryKeys.length) return;
+
+            let selectedCategory = categoryKeys[selectedIndex];
+            let commands = commandCategories[selectedCategory].map(cmd => `🟢 ${cmd}`).join("\n");
+
+            await zk.sendMessage(dest, {
+                text: `📜 *${selectedCategory} Commands:*\n\n${commands}\n\n💡 Reply with another number to view a different category.`,
+            });
+        });
+
+        // Send audio
         await zk.sendMessage(dest, {
             audio: { url: audioUrl },
             mimetype: getMimeType(audioUrl),
             ptt: true,
         });
+
     } catch (error) {
         console.error("Error sending menu:", error);
     }
