@@ -16,10 +16,6 @@ const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg",
     "https://bwm-xmd-files.vercel.app/bwmxmd_v4jirh.jpeg",
     "https://bwm-xmd-files.vercel.app/bwmxmd_d8cv2v.png",
-    "https://files.catbox.moe/jwwjd3.jpeg",
-    "https://files.catbox.moe/3k35q4.jpeg",
-    "https://files.catbox.moe/sgl022.jpeg",
-    "https://files.catbox.moe/xx6ags.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
@@ -66,7 +62,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const hour = moment().hour();
     let greeting = "🌙 *Good Night! See you tomorrow!*";
     if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning! Let's kickstart your day!*";
-    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive!*";
+    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
     // **Custom Categories with Emojis**
@@ -95,7 +91,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
     try {
-        // **Send Main Menu with "message via aid" as a quoted reply**
+        // **Send Main Menu**
         const sentMessage = await zk.sendMessage(dest, {
             image: { url: image },
             caption: `
@@ -111,15 +107,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
 ${greeting}
 
-‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎
-
-
-📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*    
+📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
 ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
             contextInfo: { forwardingScore: 999, isForwarded: true }, // **Ensures "message via aid"**
         }, { quoted: ms }); // **Quotes the original message**
+        });
 
         // **Category Selection Listener**
         zk.ev.on("messages.upsert", async (update) => {
@@ -136,13 +130,22 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
                 }
 
                 const selectedCategory = categoryKeys[selectedIndex - 1];
-                const combinedCommands = [...new Set(categoryGroups[selectedCategory].flatMap(cat => commandList[cat] || []))];
 
-                await zk.sendMessage(dest, { text: `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`, quoted: message });
+                // **Fix: Use Set to eliminate duplicates**
+                const uniqueCommands = new Set();
+                categoryGroups[selectedCategory].forEach((cat) => {
+                    (commandList[cat] || []).forEach(cmd => uniqueCommands.add(cmd));
+                });
+
+                const combinedCommands = Array.from(uniqueCommands);
+
+                await zk.sendMessage(dest, {
+                    text: `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`,
+                });
             }
         });
 
-// **Send Random Audio**
+        // **Send Random Audio**
         const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
         await zk.sendMessage(dest, {
             audio: { url: audioUrl },
@@ -154,4 +157,3 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
         console.error("❌ Error sending menu:", error);
     }
 });
-        
