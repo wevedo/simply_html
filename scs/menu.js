@@ -23,6 +23,29 @@ const menuImages = [
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
+// Predefined Categories with Commands
+const categories = {
+    "🤖 AI MENU": ["ABU"],
+    "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
+    "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
+    "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
+    "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
+    "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
+    "🎮 GAMES MENU": ["GAMES"],
+    "🌍 GENERAL MENU": ["GENERAL"],
+    "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
+    "💻 GITHUB MENU": ["GITHUB"],
+    "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
+    "🔤 LOGO MENU": ["LOGO"],
+    "🛑 MODS MENU": ["MODS"],
+    "📰 NEWS MENU": ["NEWS", "AI"],
+    "🔗 CONNECTOR MENU": ["PAIR", "USER"],
+    "🔍 SEARCH MENU": ["NEWS", "IA"],
+    "🗣️ TTS MENU": ["TTS"],
+    "⚙️ UTILITY MENU": ["UTILITY"],
+    "🎌 ANIME MENU": ["WEEB"],
+};
+
 // GitHub repo stats
 const fetchGitHubStats = async () => {
     try {
@@ -37,24 +60,20 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage
-let coms = {};
-
-// Fetch all categories and commands
-const fetchCategoriesAndCommands = async () => {
-    let { cm } = require(__dirname + "/../Ibrahim//adams");
-    cm.map((com, index) => {
-        if (!coms[com.categorie]) coms[com.categorie] = [];
-        coms[com.categorie].push(com.nomCom);
+// Register command only once
+const commandSet = new Set();
+const registerCommands = () => {
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
+    cm.forEach((com) => {
+        if (!commandSet.has(com.nomCom)) {
+            commandSet.add(com.nomCom);
+        }
     });
 };
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
-    let { cm } = require(__dirname + "/../Ibrahim/adams");
-
-    // Fetch categories and commands
-    await fetchCategoriesAndCommands();
+    registerCommands();
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
@@ -87,9 +106,9 @@ ${greeting}
 
 📜 *Reply with the category number to select it*  
 
-${Object.keys(coms).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
+${Object.keys(categories).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
 `,
-        contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures "message via aid"
+        contextInfo: { forwardingScore: 999, isForwarded: true },
     }, { quoted: ms });
 
     // **Category Selection Listener**
@@ -103,14 +122,14 @@ ${Object.keys(coms).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
             message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
         ) {
             const selectedIndex = parseInt(responseText);
-            const categoryKeys = Object.keys(coms);
+            const categoryKeys = Object.keys(categories);
 
             if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
                 return repondre("*❌ Invalid number. Please select a valid category.*");
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
-            const combinedCommands = coms[selectedCategory];
+            const combinedCommands = categories[selectedCategory];
 
             // Display All Commands in Selected Category
             const commandText = combinedCommands.length
@@ -119,7 +138,7 @@ ${Object.keys(coms).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
 
             await zk.sendMessage(dest, {
                 text: commandText,
-                contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures forwarded message
+                contextInfo: { forwardingScore: 999, isForwarded: true },
             }, { quoted: message });
         }
     });
@@ -131,5 +150,4 @@ ${Object.keys(coms).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
         mimetype: "audio/mpeg",
         ptt: true,
     });
-
 });
