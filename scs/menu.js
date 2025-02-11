@@ -42,7 +42,7 @@ let coms = {};
 
 // Fetch all categories and commands
 const fetchCategoriesAndCommands = async () => {
-    let { cm } = require(__dirname + "/../Ibrahim/adams");
+    let { cm } = require(__dirname + "/../Ibrahim//adams");
     cm.map((com, index) => {
         if (!coms[com.categorie]) coms[com.categorie] = [];
         coms[com.categorie].push(com.nomCom);
