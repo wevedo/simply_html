@@ -21,7 +21,7 @@ const menuImages = [
     "https://files.catbox.moe/sgl022.jpeg",
     "https://files.catbox.moe/xx6ags.jpeg",
 ];
-const getRandomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
+const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
 // GitHub repo stats
 const fetchGitHubStats = async () => {
@@ -37,49 +37,30 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Store categories and commands at once
-const commandList = {};
-const categoryGroups = {
-    "🤖 AI MENU": ["ABU"],
-    "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-    "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
-    "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
-    "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
-    "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
-    "🎮 GAMES MENU": ["GAMES"],
-    "🌍 GENERAL MENU": ["GENERAL"],
-    "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
-    "💻 GITHUB MENU": ["GITHUB"],
-    "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
-    "🔤 LOGO MENU": ["LOGO"],
-    "🛑 MODS MENU": ["MODS"],
-    "📰 NEWS MENU": ["NEWS", "AI"],
-    "🔗 CONNECTOR MENU": ["PAIR", "USER"],
-    "🔍 SEARCH MENU": ["NEWS", "IA"],
-    "🗣️ TTS MENU": ["TTS"],
-    "⚙️ UTILITY MENU": ["UTILITY"],
-    "🎌 ANIME MENU": ["WEEB"],
-};
+// Command list storage
+let coms = {};
 
-// Populate commandList with all commands at once
-const populateCommands = () => {
+// Fetch all categories and commands
+const fetchCategoriesAndCommands = async () => {
     let { cm } = require(__dirname + "/../Ibrahim/adams");
-    cm.forEach((com) => {
-        const categoryUpper = com.categorie.toUpperCase();
-        if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
-        commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
+    cm.map((com, index) => {
+        if (!coms[com.categorie]) coms[com.categorie] = [];
+        coms[com.categorie].push(com.nomCom);
     });
 };
-populateCommands(); // Call this function once at startup
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
+
+    // Fetch categories and commands
+    await fetchCategoriesAndCommands();
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
     const time = moment().format("HH:mm:ss");
     const totalUsers = await fetchGitHubStats();
-    const image = getRandomImage();
+    const image = randomImage();
 
     // Dynamic Greeting Based on Time
     const hour = moment().hour();
@@ -88,7 +69,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
-    // Send Main Category Menu
+    // Send Main Menu as Quote Reply
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
@@ -106,9 +87,9 @@ ${greeting}
 
 📜 *Reply with the category number to select it*  
 
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
+${Object.keys(coms).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
 `,
-        contextInfo: { forwardingScore: 999, isForwarded: true },
+        contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures "message via aid"
     }, { quoted: ms });
 
     // **Category Selection Listener**
@@ -122,22 +103,23 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
             message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
         ) {
             const selectedIndex = parseInt(responseText);
-            const categoryKeys = Object.keys(categoryGroups);
+            const categoryKeys = Object.keys(coms);
 
             if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
                 return repondre("*❌ Invalid number. Please select a valid category.*");
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
-            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+            const combinedCommands = coms[selectedCategory];
 
-            const categoryImage = getRandomImage();
+            // Display All Commands in Selected Category
+            const commandText = combinedCommands.length
+                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
+                : `⚠️ No commands found for ${selectedCategory}.`;
 
-            // Display All Commands in Selected Category with Random Image
             await zk.sendMessage(dest, {
-                image: { url: categoryImage },
-                caption: `📜 *${selectedCategory}*:\n\n${combinedCommands.length ? combinedCommands.join("\n") : "⚠️ No commands found."}`,
-                contextInfo: { forwardingScore: 999, isForwarded: true },
+                text: commandText,
+                contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures forwarded message
             }, { quoted: message });
         }
     });
