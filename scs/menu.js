@@ -10,11 +10,16 @@ const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.le
 
 // Menu images
 const menuImages = [
-    "https://files.catbox.moe/13i93y.jpeg",
-    "https://files.catbox.moe/2696sn.jpeg",
-    "https://files.catbox.moe/soj3q4.jpeg",
-    "https://files.catbox.moe/bddwnw.jpeg",
-    "https://files.catbox.moe/f6zee8.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd_9s9jr8.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd_psaclm.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd_v4jirh.jpeg",
+    "https://bwm-xmd-files.vercel.app/bwmxmd_d8cv2v.png",
+    "https://files.catbox.moe/jwwjd3.jpeg",
+    "https://files.catbox.moe/3k35q4.jpeg",
+    "https://files.catbox.moe/sgl022.jpeg",
+    "https://files.catbox.moe/xx6ags.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
@@ -104,6 +109,8 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 👥 ᴜsᴇʀs: ${totalUsers}  
 
 ${greeting}, *${nomAuteurMessage}!*
+
+╰•┈•➤ ${readmore}
 
 📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
