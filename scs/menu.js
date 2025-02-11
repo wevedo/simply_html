@@ -37,20 +37,44 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage
-const commandList = {};
+// Command list storage (only generated once)
+const commandList = (() => {
+    let list = {};
+    const { cm } = require(__dirname + "/../Ibrahim/adams");
+    cm.forEach((com) => {
+        const categoryUpper = com.categorie.toUpperCase();
+        if (!list[categoryUpper]) list[categoryUpper] = [];
+        list[categoryUpper].push(`🟢 ${com.nomCom}`);
+    });
+    return list;
+})();
+
+// Category groups with emojis
+const categoryGroups = {
+    "🤖 AI MENU": ["ABU"],
+    "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
+    "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
+    "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
+    "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
+    "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
+    "🎮 GAMES MENU": ["GAMES"],
+    "🌍 GENERAL MENU": ["GENERAL"],
+    "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
+    "💻 GITHUB MENU": ["GITHUB"],
+    "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
+    "🔤 LOGO MENU": ["LOGO"],
+    "🛑 MODS MENU": ["MODS"],
+    "📰 NEWS MENU": ["NEWS", "AI"],
+    "🔗 CONNECTOR MENU": ["PAIR", "USER"],
+    "🔍 SEARCH MENU": ["NEWS", "IA"],
+    "🗣️ TTS MENU": ["TTS"],
+    "⚙️ UTILITY MENU": ["UTILITY"],
+    "🎌 ANIME MENU": ["WEEB"],
+};
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
-    let { cm } = require(__dirname + "/../Ibrahim/adams");
-
-    // Organize commands
-    cm.map((com) => {
-        const categoryUpper = com.categorie.toUpperCase();
-        if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
-        commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
-    });
-
+    
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
     const time = moment().format("HH:mm:ss");
@@ -64,30 +88,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
-    // Custom Categories with Emojis
-    const categoryGroups = {
-        "🤖 AI MENU": ["ABU"],
-        "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-        "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
-        "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
-        "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
-        "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
-        "🎮 GAMES MENU": ["GAMES"],
-        "🌍 GENERAL MENU": ["GENERAL"],
-        "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
-        "💻 GITHUB MENU": ["GITHUB"],
-        "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
-        "🔤 LOGO MENU": ["LOGO"],
-        "🛑 MODS MENU": ["MODS"],
-        "📰 NEWS MENU": ["NEWS", "AI"],
-        "🔗 CONNECTOR MENU": ["PAIR", "USER"],
-        "🔍 SEARCH MENU": ["NEWS", "IA"],
-        "🗣️ TTS MENU": ["TTS"],
-        "⚙️ UTILITY MENU": ["UTILITY"],
-        "🎌 ANIME MENU": ["WEEB"],
-    };
-
-    // Send Main Menu as Quote Reply
+    // Send Main Menu
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
@@ -101,7 +102,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
 ╰─❖
 
-${{greeting}
+${greeting}
 
 ‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎
 
@@ -110,7 +111,7 @@ ${{greeting}
 
 ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
 `,
-        contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures "message via aid"
+        contextInfo: { forwardingScore: 999, isForwarded: true }, // Keeps "Forwarded via aid"
     }, { quoted: ms });
 
     // **Category Selection Listener**
@@ -132,6 +133,7 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
             const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+            const categoryImage = randomImage(); // Selects a random image for the category menu
 
             // Display All Commands in Selected Category
             const commandText = combinedCommands.length
@@ -139,8 +141,9 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
                 : `⚠️ No commands found for ${selectedCategory}.`;
 
             await zk.sendMessage(dest, {
-                text: commandText,
-                contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures forwarded message
+                image: { url: categoryImage },
+                caption: commandText,
+                contextInfo: { forwardingScore: 999, isForwarded: true },
             }, { quoted: message });
         }
     });
@@ -152,5 +155,4 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
         mimetype: "audio/mpeg",
         ptt: true,
     });
-
 });
