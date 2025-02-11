@@ -46,6 +46,29 @@ const fetchGitHubStats = async () => {
     }
 };
 
+// Custom category mappings
+const categoryMappings = {
+    "AI MENU": ["abu", "IA", "AI"],
+    "AUTO EDIT MENU": ["AUDIO-EDIT"],
+    "DOWNLOAD MENU": ["bmw pics", "download"],
+    "CONTROL MENU": ["control", "stickcmd", "tools"],
+    "CONVERSATION MENU": ["conversation", "mpesa"],
+    "FUN MENU": ["henter", "reaction"],
+    "GAMES": ["GAMES"],
+    "GENERAL": ["GENERAL"],
+    "GITHUB": ["GITHUB"],
+    "IMAGE MENU": ["IMAGE MENU"],
+    "LOGO MENU": ["LOGO MENU"],
+    "MODS MENU": ["MODS MENU"],
+    "NEWS MENU": ["NEWS MENU"],
+    "CONNECTOR": ["pair"],
+    "SEARCH": ["news"],
+    "TTS": ["TTS"],
+    "USER": ["USER"],
+    "UTILITY": ["UTILITY"],
+    "ANIME": ["weeb"]
+};
+
 // Function to split array into chunks
 const chunkArray = (array, size) => {
     return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
@@ -55,7 +78,7 @@ const chunkArray = (array, size) => {
 
 const commandChunks = {}; // Store chunks for each user
 
-adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "menu", categorie: "General23" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     let coms = {};
@@ -66,6 +89,27 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         coms[categoryUpper].push(com.nomCom);
     });
 
+    // Group categories based on the mapping
+    let groupedCategories = {};
+    Object.keys(categoryMappings).forEach((customCategory) => {
+        let includedCommands = [];
+        categoryMappings[customCategory].forEach((originalCategory) => {
+            if (coms[originalCategory]) {
+                includedCommands = includedCommands.concat(coms[originalCategory]);
+            }
+        });
+        if (includedCommands.length > 0) {
+            groupedCategories[customCategory] = includedCommands;
+        }
+    });
+
+    // Add any new categories that aren’t in the predefined list
+    Object.keys(coms).forEach((originalCategory) => {
+        if (!Object.values(categoryMappings).flat().includes(originalCategory)) {
+            groupedCategories[originalCategory] = coms[originalCategory];
+        }
+    });
+
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
     const time = moment().format("HH:mm:ss");
@@ -74,13 +118,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const formattedTotalUsers = totalUsers.toLocaleString();
 
     const image = randomImage();
-
-    // Get sorted categories
-    const sortedCategories = Object.keys(coms).sort();
+    const renderLargerThumbnail = Math.random() < 0.5; // Random true or false
 
     // Store command chunks per category
-    sortedCategories.forEach((cat) => {
-        commandChunks[cat] = chunkArray(coms[cat], 5); // 5 commands per page
+    Object.keys(groupedCategories).forEach((cat) => {
+        commandChunks[cat] = chunkArray(groupedCategories[cat], 5); // 5 commands per page
     });
 
     const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
@@ -98,8 +140,18 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ╰───❖
 
 Reply with a number to choose a category:
-${sortedCategories.map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${footer}
+${Object.keys(groupedCategories).map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${footer}
 `,
+            contextInfo: {
+                externalAdReply: {
+                    title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                    body: "Tap here to Join our official channel!",
+                    thumbnailUrl: image,
+                    sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                    showAdAttribution: true,
+                    renderLargerThumbnail: renderLargerThumbnail,
+                },
+            },
         });
 
         // Listen for category selection
@@ -113,52 +165,39 @@ ${sortedCategories.map((cat, index) => `${index + 1}⊷ ${cat}`).join("\n")}${fo
                 message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
             ) {
                 const selectedIndex = parseInt(responseText);
-                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > sortedCategories.length) {
+                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > Object.keys(groupedCategories).length) {
                     return repondre("*Invalid number. Please select a valid category.*");
                 }
 
-                const selectedCategory = sortedCategories[selectedIndex - 1];
+                const selectedCategory = Object.keys(groupedCategories)[selectedIndex - 1];
                 let categoryCommands = commandChunks[selectedCategory];
 
                 // Track current page
                 let page = 0;
                 let totalPages = categoryCommands.length;
+                const randomCategoryImage = randomImage();
 
                 const sendCommandPage = async (pageIndex) => {
                     let commandList = `📜 *${selectedCategory}* (Page ${pageIndex + 1}/${totalPages}):\n\n`;
                     commandList += categoryCommands[pageIndex].map((cmd) => `🟢 ${cmd}`).join("\n");
 
-                    let navigationText = "\nReply with:\n1️⃣ - Previous Page\n2️⃣ - Next Page";
-
                     await zk.sendMessage(dest, {
-                        text: commandList + (totalPages > 1 ? navigationText : ""),
+                        text: commandList,
+                        contextInfo: {
+                            externalAdReply: {
+                                title: `𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝘆: ${selectedCategory}`,
+                                body: "Explore all commands here!",
+                                thumbnailUrl: randomCategoryImage,
+                                sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                                showAdAttribution: true,
+                                renderLargerThumbnail: Math.random() < 0.5,
+                            },
+                        },
                     });
                 };
 
                 await sendCommandPage(page);
-
-                zk.ev.on("messages.upsert", async (update) => {
-                    const navMessage = update.messages[0];
-                    if (!navMessage.message || !navMessage.message.extendedTextMessage) return;
-
-                    const navText = navMessage.message.extendedTextMessage.text.trim();
-                    if (navText === "1" && page > 0) {
-                        page--;
-                        await sendCommandPage(page);
-                    } else if (navText === "2" && page < totalPages - 1) {
-                        page++;
-                        await sendCommandPage(page);
-                    }
-                });
             }
-        });
-
-        // Send audio
-        const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
-        await zk.sendMessage(dest, {
-            audio: { url: audioUrl },
-            mimetype: getMimeType(audioUrl),
-            ptt: true,
         });
     } catch (error) {
         console.error("Error sending menu:", error);
