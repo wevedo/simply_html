@@ -37,18 +37,23 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage
+// Command list storage (Fix: Use Set to prevent duplicates)
 const commandList = {};
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
 
-    // Organize commands
-    cm.map((com) => {
+    // Organize commands (Fix: Ensure no duplicate commands)
+    cm.forEach((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
-        commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
+        if (!commandList[categoryUpper]) commandList[categoryUpper] = new Set(); // Use Set to prevent duplicates
+        commandList[categoryUpper].add(`🟢 ${com.nomCom}`);
+    });
+
+    // Convert Sets back to arrays for display
+    Object.keys(commandList).forEach(category => {
+        commandList[category] = Array.from(commandList[category]);
     });
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
@@ -64,12 +69,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
-        
     // **Custom Categories with Emojis**
     const categoryGroups = {
         "🤖 AI MENU": ["ABU"],
         "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-        "📥 DOWNLOAD MENU": ["BMW PICS","SEARCH", "DOWNLOAD"],
+        "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
         "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
         "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
         "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
@@ -80,20 +84,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
         "🔤 LOGO MENU": ["LOGO"],
         "🛑 MODS MENU": ["MODS"],
-        "📰 NEWS MENU": ["NEWS","AI"],
-        "🔗 CONNECTOR MENU": ["PAIR","USER"],
-        "🔍 SEARCH MENU": ["NEWS","IA"],
+        "📰 NEWS MENU": ["NEWS", "AI"],
+        "🔗 CONNECTOR MENU": ["PAIR", "USER"],
+        "🔍 SEARCH MENU": ["NEWS", "IA"],
         "🗣️ TTS MENU": ["TTS"],
         "⚙️ UTILITY MENU": ["UTILITY"],
         "🎌 ANIME MENU": ["WEEB"],
     };
-
-    // Add new categories dynamically
-    Object.keys(commandList).forEach((category) => {
-        if (!Object.values(categoryGroups).flat().includes(category)) {
-            categoryGroups[category] = [category];
-        }
-    });
 
     const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
@@ -109,13 +106,10 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
 ┃📅 ᴅᴀᴛᴇ: ${date}
 ┃⏰ ᴛɪᴍᴇ: ${time}
-┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
+┃👥 ʙᴡᴍ ᴜsᴇʀs: ${totalUsers}  
 ╰─❖
 
 ${greeting}
-
-‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎
-
 
 📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
@@ -129,10 +123,7 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
             if (!message.message || !message.message.extendedTextMessage) return;
 
             const responseText = message.message.extendedTextMessage.text.trim();
-            if (
-                message.message.extendedTextMessage.contextInfo &&
-                message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
-            ) {
+            if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
                 const selectedIndex = parseInt(responseText);
                 const categoryKeys = Object.keys(categoryGroups);
 
@@ -141,26 +132,17 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
                 }
 
                 const selectedCategory = categoryKeys[selectedIndex - 1];
-                const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
 
-                // **Display All Commands in Selected Category**
-                const commandText = combinedCommands.length
-                    ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
-                    : `⚠️ No commands found for ${selectedCategory}.`;
+                // **Fix: Use Set to eliminate duplicates**
+                const uniqueCommands = new Set();
+                categoryGroups[selectedCategory].forEach((cat) => {
+                    (commandList[cat] || []).forEach(cmd => uniqueCommands.add(cmd));
+                });
+
+                const combinedCommands = Array.from(uniqueCommands);
 
                 await zk.sendMessage(dest, {
-                    text: commandText,
-                    contextInfo: {
-                        externalAdReply: {
-                            title: "𝗕𝗪𝗠 𝗫𝗠𝗗 🚀",
-                            body: "Tap here to Join our official channel!",
-                            thumbnailUrl: image,
-                            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                            showAdAttribution: true,
-                            renderLargerThumbnail: Math.random() < 0.5,
-                        },
-                    },
-                    quoted: message, // **Ensures context is applied correctly**
+                    text: `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`,
                 });
             }
         });
