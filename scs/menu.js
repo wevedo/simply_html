@@ -16,6 +16,10 @@ const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg",
     "https://bwm-xmd-files.vercel.app/bwmxmd_v4jirh.jpeg",
     "https://bwm-xmd-files.vercel.app/bwmxmd_d8cv2v.png",
+    "https://files.catbox.moe/jwwjd3.jpeg",
+    "https://files.catbox.moe/3k35q4.jpeg",
+    "https://files.catbox.moe/sgl022.jpeg",
+    "https://files.catbox.moe/xx6ags.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
@@ -33,23 +37,18 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage (Fix: Use Set to prevent duplicates)
+// Command list storage
 const commandList = {};
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    let { nomAuteurMessage, ms, repondre } = commandeOptions;
+    let { nomAuteurMessage, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
 
-    // Organize commands (Fix: Ensure no duplicate commands)
+    // Organize commands (remove duplicates)
     cm.forEach((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!commandList[categoryUpper]) commandList[categoryUpper] = new Set(); // Use Set to prevent duplicates
+        if (!commandList[categoryUpper]) commandList[categoryUpper] = new Set();
         commandList[categoryUpper].add(`🟢 ${com.nomCom}`);
-    });
-
-    // Convert Sets back to arrays for display
-    Object.keys(commandList).forEach(category => {
-        commandList[category] = Array.from(commandList[category]);
     });
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
@@ -58,11 +57,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const totalUsers = await fetchGitHubStats();
     const image = randomImage();
 
-    // **Dynamic Greeting Based on Time**
+    // **Dynamic Greeting**
     const hour = moment().hour();
     let greeting = "🌙 *Good Night! See you tomorrow!*";
     if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning! Let's kickstart your day!*";
-    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
+    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive!*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
     // **Custom Categories with Emojis**
@@ -92,7 +91,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
     try {
         // **Send Main Menu**
-        const sentMessage = await zk.sendMessage(dest, {
+        await zk.sendMessage(dest, {
             image: { url: image },
             caption: `
 ╭─❖ 𓆩 ⚡ 𓆪 ❖─╮
@@ -102,10 +101,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 ┃🕵️ ᴜsᴇʀ ɴᴀᴍᴇ: ${nomAuteurMessage}
 ┃📅 ᴅᴀᴛᴇ: ${date}
 ┃⏰ ᴛɪᴍᴇ: ${time}
-┃👥 ʙᴡᴍ ᴜsᴇʀs: ${totalUsers}  
+┃👥 ʙᴡᴍ ᴜsᴇʀs: 1${totalUsers}  
 ╰─❖
 
 ${greeting}
+
+‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎
+
 
 📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
@@ -113,39 +115,9 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
 `,
             contextInfo: { forwardingScore: 999, isForwarded: true }, // **Ensures "message via aid"**
         }, { quoted: ms }); // **Quotes the original message**
-        });
+    
 
-        // **Category Selection Listener**
-        zk.ev.on("messages.upsert", async (update) => {
-            const message = update.messages[0];
-            if (!message.message || !message.message.extendedTextMessage) return;
-
-            const responseText = message.message.extendedTextMessage.text.trim();
-            if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
-                const selectedIndex = parseInt(responseText);
-                const categoryKeys = Object.keys(categoryGroups);
-
-                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
-                    return repondre("*❌ Invalid number. Please select a valid category.*");
-                }
-
-                const selectedCategory = categoryKeys[selectedIndex - 1];
-
-                // **Fix: Use Set to eliminate duplicates**
-                const uniqueCommands = new Set();
-                categoryGroups[selectedCategory].forEach((cat) => {
-                    (commandList[cat] || []).forEach(cmd => uniqueCommands.add(cmd));
-                });
-
-                const combinedCommands = Array.from(uniqueCommands);
-
-                await zk.sendMessage(dest, {
-                    text: `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`,
-                });
-            }
-        });
-
-        // **Send Random Audio**
+       // **Send Random Audio**
         const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
         await zk.sendMessage(dest, {
             audio: { url: audioUrl },
@@ -156,4 +128,25 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
     } catch (error) {
         console.error("❌ Error sending menu:", error);
     }
+});
+
+// **Category Selection Without Forcing Immediate Reply**
+zk.ev.on("messages.upsert", async (update) => {
+    const message = update.messages[0];
+    if (!message.message || !message.message.conversation) return;
+
+    const responseText = message.message.conversation.trim();
+    const selectedIndex = parseInt(responseText);
+    const categoryKeys = Object.keys(categoryGroups);
+
+    if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) return;
+
+    const selectedCategory = categoryKeys[selectedIndex - 1];
+    const combinedCommands = [...new Set(categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []))];
+
+    const commandText = combinedCommands.length
+        ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
+        : `⚠️ No commands found for ${selectedCategory}.`;
+
+    await zk.sendMessage(message.key.remoteJid, { text: commandText });
 });
