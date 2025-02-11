@@ -37,19 +37,23 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage
+// Command list storage (ensures commands are stored only once)
 const commandList = {};
+let commandsStored = false;
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
 
-    // Organize commands
-    cm.map((com) => {
-        const categoryUpper = com.categorie.toUpperCase();
-        if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
-        commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
-    });
+    // Store commands only once
+    if (!commandsStored) {
+        cm.forEach((com) => {
+            const categoryUpper = com.categorie.toUpperCase();
+            if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
+            commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
+        });
+        commandsStored = true; // Prevents further storing
+    }
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
@@ -87,7 +91,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         "🎌 ANIME MENU": ["WEEB"],
     };
 
-    // Send Main Menu as Quote Reply
+    // Send Main Menu as Quote Reply with Random Image
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
@@ -129,15 +133,15 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
             const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+            const categoryImage = randomImage(); // Random image for category selection
 
             // Display All Commands in Selected Category
-            const commandText = combinedCommands.length
-                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
-                : `⚠️ No commands found for ${selectedCategory}.`;
-
             await zk.sendMessage(dest, {
-                text: commandText,
-                contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures forwarded message
+                image: { url: categoryImage },
+                caption: combinedCommands.length
+                    ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
+                    : `⚠️ No commands found for ${selectedCategory}.`,
+                contextInfo: { forwardingScore: 999, isForwarded: true },
             }, { quoted: message });
         }
     });
@@ -149,5 +153,4 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
         mimetype: "audio/mpeg",
         ptt: true,
     });
-
 });
