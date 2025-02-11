@@ -96,16 +96,17 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         const sentMessage = await zk.sendMessage(dest, {
             image: { url: image },
             caption: `
-╭─❖ 𓆩 ⚡ 𓆪 ❖──╮
-   ✨  ʙᴡᴍ xᴍᴅ  ✨  
-╰─❖ 𓆩 ⚡ 𓆪 ❖──╯
-
-🌟 ${greeting}, *${nomAuteurMessage}!*  
+╭─❖ 𓆩 ⚡ 𓆪 ❖─╮
+      𝐁𝐖𝐌 𝐗𝐌𝐃    
+╰─❖ 𓆩 ⚡ 𓆪 ❖─╯  
 📆 ᴅᴀᴛᴇ: ${date}  
 ⏰ ᴛɪᴍᴇ: ${time}  
 👥 ᴜsᴇʀs: ${totalUsers}  
 
-📜 *Select a category:*  
+${greeting}, *${nomAuteurMessage}!*
+
+📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
+
 ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
         });
