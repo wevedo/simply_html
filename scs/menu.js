@@ -95,7 +95,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         }
     });
 
-    const footer = "\n\n©Sir Ibrahim Adams\n\n🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ: https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥,";
+    const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
     try {
         // **Send Main Menu**
