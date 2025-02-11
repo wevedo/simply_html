@@ -21,10 +21,7 @@ const menuImages = [
     "https://files.catbox.moe/sgl022.jpeg",
     "https://files.catbox.moe/xx6ags.jpeg",
 ];
-
-const footer = "\n\n©Sir Ibrahim Adams\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
-
-const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
+const getRandomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
 // GitHub repo stats
 const fetchGitHubStats = async () => {
@@ -40,11 +37,12 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Category groups with emojis
+// Store categories and commands at once
+const commandList = {};
 const categoryGroups = {
     "🤖 AI MENU": ["ABU"],
     "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-    "📥 DOWNLOAD MENU": ["BMW PICS","SEARCH", "DOWNLOAD"],
+    "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
     "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
     "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
     "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
@@ -55,42 +53,33 @@ const categoryGroups = {
     "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
     "🔤 LOGO MENU": ["LOGO"],
     "🛑 MODS MENU": ["MODS"],
-    "📰 NEWS MENU": ["NEWS","AI"],
-    "🔗 CONNECTOR MENU": ["PAIR","USER"],
-    "🔍 SEARCH MENU": ["NEWS","IA"],
+    "📰 NEWS MENU": ["NEWS", "AI"],
+    "🔗 CONNECTOR MENU": ["PAIR", "USER"],
+    "🔍 SEARCH MENU": ["NEWS", "IA"],
     "🗣️ TTS MENU": ["TTS"],
     "⚙️ UTILITY MENU": ["UTILITY"],
     "🎌 ANIME MENU": ["WEEB"],
 };
 
-// Command list storage (Ensure all categories are stored correctly)
-const commandList = (() => {
-    let list = {};
-    const { cm } = require(__dirname + "/../Ibrahim/adams");
-
-    // Initialize all categories in list
-    Object.values(categoryGroups).flat().forEach((cat) => {
-        list[cat.toUpperCase()] = [];
-    });
-
-    // Store commands in their respective categories
+// Populate commandList with all commands at once
+const populateCommands = () => {
+    let { cm } = require(__dirname + "/../Ibrahim/adams");
     cm.forEach((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!list[categoryUpper]) list[categoryUpper] = [];
-        list[categoryUpper].push(`🟢 ${com.nomCom}`);
+        if (!commandList[categoryUpper]) commandList[categoryUpper] = [];
+        commandList[categoryUpper].push(`🟢 ${com.nomCom}`);
     });
-
-    return list;
-})();
+};
+populateCommands(); // Call this function once at startup
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
-    
+
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
     const date = moment().format("DD/MM/YYYY");
     const time = moment().format("HH:mm:ss");
     const totalUsers = await fetchGitHubStats();
-    const image = randomImage();
+    const image = getRandomImage();
 
     // Dynamic Greeting Based on Time
     const hour = moment().hour();
@@ -99,7 +88,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
-    // Send Main Menu
+    // Send Main Category Menu
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
@@ -115,9 +104,9 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
 ${greeting}
 
-📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
+📜 *Reply with the category number to select it*  
 
-${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
+${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
 `,
         contextInfo: { forwardingScore: 999, isForwarded: true },
     }, { quoted: ms });
@@ -140,16 +129,15 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
-            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat.toUpperCase()] || []);
-            const categoryImage = randomImage();
+            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
 
-            const commandText = combinedCommands.length
-                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n\n")}${footer}`
-                : `⚠️ No commands found for ${selectedCategory}.`;
+            const categoryImage = getRandomImage();
 
+            // Display All Commands in Selected Category with Random Image
             await zk.sendMessage(dest, {
                 image: { url: categoryImage },
-                caption: commandText,
+                caption: `📜 *${selectedCategory}*:\n\n${combinedCommands.length ? combinedCommands.join("\n") : "⚠️ No commands found."}`,
+                contextInfo: { forwardingScore: 999, isForwarded: true },
             }, { quoted: message });
         }
     });
@@ -161,4 +149,5 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
         mimetype: "audio/mpeg",
         ptt: true,
     });
+
 });
