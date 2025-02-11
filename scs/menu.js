@@ -40,48 +40,48 @@ const fetchGitHubStats = async () => {
     }
 };
 
-// Command list storage (Generate Once & Ensure All Categories Are Included)
+// Category groups with emojis
+const categoryGroups = {
+    "🤖 AI MENU": ["ABU"],
+    "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
+    "📥 DOWNLOAD MENU": ["BMW PICS","SEARCH", "DOWNLOAD"],
+    "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
+    "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
+    "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
+    "🎮 GAMES MENU": ["GAMES"],
+    "🌍 GENERAL MENU": ["GENERAL"],
+    "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
+    "💻 GITHUB MENU": ["GITHUB"],
+    "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
+    "🔤 LOGO MENU": ["LOGO"],
+    "🛑 MODS MENU": ["MODS"],
+    "📰 NEWS MENU": ["NEWS","AI"],
+    "🔗 CONNECTOR MENU": ["PAIR","USER"],
+    "🔍 SEARCH MENU": ["NEWS","IA"],
+    "🗣️ TTS MENU": ["TTS"],
+    "⚙️ UTILITY MENU": ["UTILITY"],
+    "🎌 ANIME MENU": ["WEEB"],
+};
+
+// Command list storage (Ensure all categories are stored correctly)
 const commandList = (() => {
     let list = {};
     const { cm } = require(__dirname + "/../Ibrahim/adams");
 
-    // Ensure all defined category groups exist in commandList
+    // Initialize all categories in list
     Object.values(categoryGroups).flat().forEach((cat) => {
         list[cat.toUpperCase()] = [];
     });
 
-    // Store commands in respective categories
+    // Store commands in their respective categories
     cm.forEach((com) => {
         const categoryUpper = com.categorie.toUpperCase();
-        if (!list[categoryUpper]) list[categoryUpper] = []; // Ensure category exists
+        if (!list[categoryUpper]) list[categoryUpper] = [];
         list[categoryUpper].push(`🟢 ${com.nomCom}`);
     });
 
     return list;
 })();
-
-// Category groups with emojis
-const categoryGroups = {
-        "🤖 AI MENU": ["ABU"],
-        "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
-        "📥 DOWNLOAD MENU": ["BMW PICS","SEARCH", "DOWNLOAD"],
-        "🛠️ CONTROL MENU": ["CONTROL", "STICKCMD", "TOOLS"],
-        "💬 CONVERSATION MENU": ["CONVERSION", "MPESA"],
-        "😂 FUN MENU": ["HENTAI", "FUN", "REACTION"],
-        "🎮 GAMES MENU": ["GAMES"],
-        "🌍 GENERAL MENU": ["GENERAL"],
-        "👨‍👨‍👦‍👦 GROUP MENU": ["GROUP"],
-        "💻 GITHUB MENU": ["GITHUB"],
-        "🖼️ IMAGE MENU": ["IMAGE-EDIT"],
-        "🔤 LOGO MENU": ["LOGO"],
-        "🛑 MODS MENU": ["MODS"],
-        "📰 NEWS MENU": ["NEWS","AI"],
-        "🔗 CONNECTOR MENU": ["PAIR","USER"],
-        "🔍 SEARCH MENU": ["NEWS","IA"],
-        "🗣️ TTS MENU": ["TTS"],
-        "⚙️ UTILITY MENU": ["UTILITY"],
-        "🎌 ANIME MENU": ["WEEB"],
-};
 
 adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
@@ -115,14 +115,11 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
 
 ${greeting}
 
-‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎‎
-
-
 📜 *ʀᴇᴘʟʏ ᴀ ᴄᴀᴛᴇɢᴏʀʏ ᴡɪᴛʜ ɪᴛs ɴᴜᴍʙᴇʀ*  
 
 ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
-        contextInfo: { forwardingScore: 999, isForwarded: true }, // Keeps "Forwarded via aid"
+        contextInfo: { forwardingScore: 999, isForwarded: true },
     }, { quoted: ms });
 
     // **Category Selection Listener**
@@ -143,10 +140,9 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
-            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
-            const categoryImage = randomImage(); // Selects a random image for the category menu
+            const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat.toUpperCase()] || []);
+            const categoryImage = randomImage();
 
-            // Display All Commands in Selected Category
             const commandText = combinedCommands.length
                 ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n\n")}${footer}`
                 : `⚠️ No commands found for ${selectedCategory}.`;
@@ -154,7 +150,6 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
             await zk.sendMessage(dest, {
                 image: { url: categoryImage },
                 caption: commandText,
-                contextInfo: { forwardingScore: 999, isForwarded: true },
             }, { quoted: message });
         }
     });
