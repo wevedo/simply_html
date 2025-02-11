@@ -23,8 +23,8 @@ const menuImages = [
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
 
-// Predefined Categories with Commands
-const categories = {
+// Menu Mapping: Displayed Menu → Bot Command Categories
+const menuMappings = {
     "🤖 AI MENU": ["ABU"],
     "🎵 AUTO EDIT MENU": ["AUDIO-EDIT"],
     "📥 DOWNLOAD MENU": ["BMW PICS", "SEARCH", "DOWNLOAD"],
@@ -51,23 +51,20 @@ const fetchGitHubStats = async () => {
     try {
         const repo = "devibraah/BWM-XMD";
         const response = await axios.get(`https://api.github.com/repos/${repo}`);
-        const forks = response.data.forks_count || 0;
-        const stars = response.data.stargazers_count || 0;
-        return (forks * 2) + (stars * 2);
+        return (response.data.forks_count || 0) * 2 + (response.data.stargazers_count || 0) * 2;
     } catch (error) {
         console.error("Error fetching GitHub stats:", error);
         return 0;
     }
 };
 
-// Register command only once
-const commandSet = new Set();
+// Fetch commands from Ibrahim/adams without duplicates
+const commandMap = {};
 const registerCommands = () => {
     let { cm } = require(__dirname + "/../Ibrahim/adams");
     cm.forEach((com) => {
-        if (!commandSet.has(com.nomCom)) {
-            commandSet.add(com.nomCom);
-        }
+        if (!commandMap[com.categorie]) commandMap[com.categorie] = new Set();
+        commandMap[com.categorie].add(com.nomCom);
     });
 };
 
@@ -88,7 +85,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon! Stay productive*";
     else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening! Time to relax!*";
 
-    // Send Main Menu as Quote Reply
+    // Send Main Menu
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: `
@@ -106,7 +103,7 @@ ${greeting}
 
 📜 *Reply with the category number to select it*  
 
-${Object.keys(categories).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
+${Object.keys(menuMappings).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}
 `,
         contextInfo: { forwardingScore: 999, isForwarded: true },
     }, { quoted: ms });
@@ -122,18 +119,22 @@ ${Object.keys(categories).map((cat, index) => `${index + 1} ${cat}`).join("\n\n"
             message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
         ) {
             const selectedIndex = parseInt(responseText);
-            const categoryKeys = Object.keys(categories);
+            const categoryKeys = Object.keys(menuMappings);
 
             if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
                 return repondre("*❌ Invalid number. Please select a valid category.*");
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
-            const combinedCommands = categories[selectedCategory];
+            const botCategories = menuMappings[selectedCategory];
 
-            // Display All Commands in Selected Category
-            const commandText = combinedCommands.length
-                ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}`
+            // Gather all commands from mapped bot categories
+            const commands = botCategories.flatMap((cat) =>
+                commandMap[cat] ? [...commandMap[cat]] : []
+            );
+
+            const commandText = commands.length
+                ? `📜 *${selectedCategory}*:\n\n${commands.join("\n")}`
                 : `⚠️ No commands found for ${selectedCategory}.`;
 
             await zk.sendMessage(dest, {
