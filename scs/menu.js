@@ -52,6 +52,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
     const totalUsers = await fetchGitHubStats();
     const image = randomImage();
 
+    // **Dynamic Greeting Based on Time**
+    const hour = moment().hour();
+    let greeting = "🌙 *Good Night*";
+    if (hour >= 5 && hour < 12) greeting = "🌅 *Good Morning*";
+    else if (hour >= 12 && hour < 18) greeting = "☀️ *Good Afternoon*";
+    else if (hour >= 18 && hour < 22) greeting = "🌆 *Good Evening*";
+
     // **Custom Categories with Emojis**
     const categoryGroups = {
         "🤖 AI MENU": ["ABU"],
@@ -82,22 +89,23 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
         }
     });
 
-    const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ";
+    const footer = "\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥";
 
     try {
         // **Send Main Menu**
         const sentMessage = await zk.sendMessage(dest, {
             image: { url: image },
             caption: `
-╭───❖
-┃🚀 ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
-┃🕵️ ᴜsᴇʀ: ${nomAuteurMessage}
-┃📅 ᴅᴀᴛᴇ: ${date}
-┃⏰ ᴛɪᴍᴇ: ${time}
-┃👥 ᴜsᴇʀs: ${totalUsers}
-╰───❖
+╭─❖ 𓆩 ⚡ 𓆪 ❖──╮
+   ✨  ʙᴡᴍ xᴍᴅ  ✨  
+╰─❖ 𓆩 ⚡ 𓆪 ❖──╯
 
-📜 *Select a category:*
+🌟 ${greeting}, *${nomAuteurMessage}!*  
+📆 ᴅᴀᴛᴇ: ${date}  
+⏰ ᴛɪᴍᴇ: ${time}  
+👥 ᴜsᴇʀs: ${totalUsers}  
+
+📜 *Select a category:*  
 ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
         });
@@ -131,7 +139,7 @@ ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\
                     text: commandText,
                     contextInfo: {
                         externalAdReply: {
-                            title: "𝗕𝗪𝗠 𝗫𝗠𝗗",
+                            title: "𝗕𝗪𝗠 𝗫𝗠𝗗 🚀",
                             body: "Tap here to Join our official channel!",
                             thumbnailUrl: image,
                             sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
