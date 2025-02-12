@@ -19,7 +19,7 @@ const getName = (dest, commandeOptions) => {
 // Command: Advanced Ping
 adams(
   {
-    nomCom: "ping",
+    nomCom: "ping2",
     desc: "Check bot response time with accuracy",
     Categorie: "General",
     reaction: "⚡",
