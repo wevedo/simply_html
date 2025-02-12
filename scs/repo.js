@@ -1,9 +1,9 @@
-/*'use strict';
+'use strict';
 
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-const webPageUrl = 'https://www.ibrahimadams.site/files';
+const webPageUrl = 'https://bwm-xmd-files.vercel.app/files';
 
 async function fetchRepoUrl() {
     try {
@@ -26,11 +26,11 @@ async function fetchRepoUrl() {
 }
 
 fetchRepoUrl();
-    */
+    
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
 
-
+/**
 const axios = require('axios');
 const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
@@ -147,3 +147,4 @@ commands.forEach((command) => {
         }
     });
 });
+*/
