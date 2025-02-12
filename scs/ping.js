@@ -1,97 +1,85 @@
 const { adams } = require("../Ibrahim/adams");
 const speed = require("performance-now");
-const os = require('os');
 
-// Function to calculate network timings
-async function calculatePing(zk, dest) {
-    const start = speed();
-    await zk.sendMessage(dest, { text: '🚀 Calculating network metrics...' });
-    const end = speed();
-    return (end - start).toFixed(2);
-}
+// Function to measure execution time
+const getPing = () => {
+  const start = speed();
+  return Math.floor(speed() - start);
+};
 
-// Advanced ping command with multiple diagnostics
+// Helper function to get sender's name
+const getName = (dest, commandeOptions) => {
+  return (
+    commandeOptions.pushName ||
+    commandeOptions.name ||
+    (dest.sender ? dest.sender.split("@")[0] : "Unknown User")
+  );
+};
+
+// Command: Advanced Ping
 adams(
-    {
-        nomCom: 'ping2',
-        desc: 'Advanced system diagnostics and latency check',
-        Categorie: 'System',
-        reaction: '📶',
-        fromMe: 'true',
-    },
-    async (dest, zk, commandeOptions) => {
-        try {
-            const startTimestamp = Date.now();
-            
-            // Show processing indicator
-            await zk.sendPresenceUpdate('composing', dest.chat);
+  {
+    nomCom: "ping",
+    desc: "Check bot response time with accuracy",
+    Categorie: "General",
+    reaction: "⚡",
+    fromMe: true, // Ensure it works properly from the bot's side
+  },
+  async (dest, zk, commandeOptions) => {
+    const name = getName(dest, commandeOptions);
+    const start = speed(); // Start measuring response time
 
-            // Get performance metrics
-            const latency = await calculatePing(zk, dest);
-            const serverTime = new Date().toLocaleTimeString();
-            const uptime = process.uptime().toFixed(2);
-            const memoryUsage = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
-            const platform = `${os.platform()} ${os.release()}`;
+    // URLs for images and links
+    const images = [
+      "https://files.catbox.moe/fxcksg.webp",
+      "https://files.catbox.moe/o3m97m.webp",
+      "https://files.catbox.moe/abcdef.webp",
+    ];
+    const img = images[Math.floor(Math.random() * images.length)]; // Randomize image
+    const channelLink = "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y";
 
-            // Network quality indicator
-            const networkQuality = latency < 500 ? 'Excellent' : 
-                                latency < 1000 ? 'Good' : 
-                                'Poor';
+    // Wait to simulate response time
+    await new Promise((resolve) => setTimeout(resolve, 300)); // Simulated slight delay
 
-            // Build status message
-            const statusMessage = `
-🏁 *BWM XMD SYSTEM DIAGNOSTICS* 🏁
+    const end = speed(); // End response time measurement
+    const responseTime = Math.floor(end - start); // Calculate ping
 
-📅 *Timestamp:* ${serverTime}
-⏱️ *Response Time:* ${latency}ms
-📊 *Network Quality:* ${networkQuality}
-🖥️ *Server Uptime:* ${uptime}s
-💾 *Memory Usage:* ${memoryUsage}MB
-🔧 *Platform:* ${platform}
+    console.log(`📡 Ping measured: ${responseTime}ms`);
 
-⚡ *Speed Test Results:*
-┌───────────────⭓
-│ 🔄 *Latency:* ${latency}ms
-│ ⬇️ *Download:* ${(1000/latency).toFixed(2)}MB/s
-│ ⬆️ *Upload:* ${(500/latency).toFixed(2)}MB/s
-└───────────────⭓
+    // Construct the contact message
+    const con = {
+      key: {
+        fromMe: false,
+        participant: `${dest.sender ? dest.sender.split("@")[0] : "unknown"}@s.whatsapp.net`,
+        ...(dest.chat ? { remoteJid: dest.chat } : {}),
+      },
+      message: {
+        contactMessage: {
+          displayName: name,
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;waid=${dest.sender ? dest.sender.split("@")[0] : "unknown"}\nEND:VCARD`,
+        },
+      },
+    };
 
-🚦 *System Status:* Operational
-✅ *Security:* Verified
-            `.trim();
+    // Send Ping Response
+    await zk.sendMessage(dest, {
+      text: `🚀 *BWM XMD PING* 🚀\n\n✅ *Bot is online!*\n⏱️ *Response Time:* *${responseTime}ms*`,
+      contextInfo: {
+        mentionedJid: [dest.sender || ""],
+        externalAdReply: {
+          title: "BWM XMD - Ultra-Fast Response",
+          body: `⚡ Response Time: ${responseTime}ms`,
+          thumbnailUrl: img,
+          sourceUrl: channelLink,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+        },
+      },
+      quoted: con,
+    });
 
-            // System status image
-            const statusImage = {
-                url: 'https://files.catbox.moe/2x8g9a.png',
-                caption: 'BWM XMD Network Status'
-            };
-
-            // Send final report
-            await zk.sendMessage(dest, { 
-                image: statusImage,
-                text: statusMessage,
-                contextInfo: {
-                    mentionedJid: [dest.sender],
-                    externalAdReply: {
-                        title: "BWM XMD Network Diagnostics",
-                        body: `Response Time: ${latency}ms | Quality: ${networkQuality}`,
-                        thumbnail: await (await fetch(statusImage.url)).buffer(),
-                        mediaUrl: 'https://bwm-xmd.com/status',
-                        mediaType: 2
-                    }
-                }
-            });
-
-            // Log performance
-            console.log(`[PERF] Ping executed in ${Date.now() - startTimestamp}ms`);
-
-        } catch (error) {
-            console.error('[ERROR] Ping command failed:', error);
-            await zk.sendMessage(dest, {
-                text: '❌ System diagnostics failed. Please try again later.'
-            });
-        }
-    }
+    console.log("✅ Ping response sent successfully!");
+  }
 );
 
 
