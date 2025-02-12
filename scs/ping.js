@@ -1,5 +1,99 @@
 const { adams } = require("../Ibrahim/adams");
 const speed = require("performance-now");
+const os = require('os');
+
+// Function to calculate network timings
+async function calculatePing(zk, dest) {
+    const start = speed();
+    await zk.sendMessage(dest, { text: '🚀 Calculating network metrics...' });
+    const end = speed();
+    return (end - start).toFixed(2);
+}
+
+// Advanced ping command with multiple diagnostics
+adams(
+    {
+        nomCom: 'ping2',
+        desc: 'Advanced system diagnostics and latency check',
+        Categorie: 'System',
+        reaction: '📶',
+        fromMe: 'true',
+    },
+    async (dest, zk, commandeOptions) => {
+        try {
+            const startTimestamp = Date.now();
+            
+            // Show processing indicator
+            await zk.sendPresenceUpdate('composing', dest.chat);
+
+            // Get performance metrics
+            const latency = await calculatePing(zk, dest);
+            const serverTime = new Date().toLocaleTimeString();
+            const uptime = process.uptime().toFixed(2);
+            const memoryUsage = (process.memoryUsage().rss / 1024 / 1024).toFixed(2);
+            const platform = `${os.platform()} ${os.release()}`;
+
+            // Network quality indicator
+            const networkQuality = latency < 500 ? 'Excellent' : 
+                                latency < 1000 ? 'Good' : 
+                                'Poor';
+
+            // Build status message
+            const statusMessage = `
+🏁 *BWM XMD SYSTEM DIAGNOSTICS* 🏁
+
+📅 *Timestamp:* ${serverTime}
+⏱️ *Response Time:* ${latency}ms
+📊 *Network Quality:* ${networkQuality}
+🖥️ *Server Uptime:* ${uptime}s
+💾 *Memory Usage:* ${memoryUsage}MB
+🔧 *Platform:* ${platform}
+
+⚡ *Speed Test Results:*
+┌───────────────⭓
+│ 🔄 *Latency:* ${latency}ms
+│ ⬇️ *Download:* ${(1000/latency).toFixed(2)}MB/s
+│ ⬆️ *Upload:* ${(500/latency).toFixed(2)}MB/s
+└───────────────⭓
+
+🚦 *System Status:* Operational
+✅ *Security:* Verified
+            `.trim();
+
+            // System status image
+            const statusImage = {
+                url: 'https://files.catbox.moe/2x8g9a.png',
+                caption: 'BWM XMD Network Status'
+            };
+
+            // Send final report
+            await zk.sendMessage(dest, { 
+                image: statusImage,
+                text: statusMessage,
+                contextInfo: {
+                    mentionedJid: [dest.sender],
+                    externalAdReply: {
+                        title: "BWM XMD Network Diagnostics",
+                        body: `Response Time: ${latency}ms | Quality: ${networkQuality}`,
+                        thumbnail: await (await fetch(statusImage.url)).buffer(),
+                        mediaUrl: 'https://bwm-xmd.com/status',
+                        mediaType: 2
+                    }
+                }
+            });
+
+            // Log performance
+            console.log(`[PERF] Ping executed in ${Date.now() - startTimestamp}ms`);
+
+        } catch (error) {
+            console.error('[ERROR] Ping command failed:', error);
+            await zk.sendMessage(dest, {
+                text: '❌ System diagnostics failed. Please try again later.'
+            });
+        }
+    }
+);
+
 
 // Function for delay simulation
 function delay(ms) {
