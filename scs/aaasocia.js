@@ -82,7 +82,7 @@ adams({
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: Bwm xmd,
+        caption: "Bwm xmd",
         gifPlayback: false
       }, { quoted: ms });
 
@@ -123,7 +123,7 @@ adams({
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: Bwm xmd,
+        caption: "Bwm xmd",
         gifPlayback: false
       }, { quoted: ms });
 
@@ -207,7 +207,7 @@ adams({
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: `TikTok video by Bwm xmd\n About: ${description}\n Name: ${nickname}`  ,
+        caption: `TikTok video by Bwm xmd\n About: ${description}\n Name: ${nickname}`,
         gifPlayback: false
       }, { quoted: ms });
 
