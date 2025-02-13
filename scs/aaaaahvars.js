@@ -1,5 +1,5 @@
 const { adams } = require("../Ibrahim/adams");
-const Heroku = require('heroku-client');
+const Heroku = require("heroku-client");
 
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
@@ -9,9 +9,9 @@ function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
     repondre(
       "⚠️ *Missing Configuration!*\n\n" +
-      "Ensure that the following environment variables are properly set:\n" +
-      "- `HEROKU_API_KEY`\n" +
-      "- `HEROKU_APP_NAME`"
+        "Ensure that the following environment variables are properly set:\n" +
+        "- `HEROKU_API_KEY`\n" +
+        "- `HEROKU_APP_NAME`"
     );
     return false;
   }
@@ -31,103 +31,111 @@ const EXCLUDED_KEYS = [
   "PREFIX",
   "WARN_COUNT",
   "SESSION_ID",
-  "EXCLUDED_VARS"
+  "EXCLUDED_VARS",
 ];
 
 // Special mappings for PRESENCE variable
 const PRESENCE_MAPPING = {
-  "Auto typing on": "PRESENCE=2",
-  "Auto typing off": "PRESENCE=0",
-  "Always online on": "PRESENCE=1",
-  "Always online off": "PRESENCE=0",
-  "Auto recording on": "PRESENCE=3",
-  "Auto recording off": "PRESENCE=0"
+  "Auto typing on": "2",
+  "Auto typing off": "0",
+  "Always online on": "1",
+  "Always online off": "0",
+  "Auto recording on": "3",
+  "Auto recording off": "0",
 };
 
 // Command to display all Heroku environment variables
-adams({
-  nomCom: 'getallvar',
-  categorie: "Control"
-}, async (chatId, zk, context) => {
-  const { repondre, superUser } = context;
+adams(
+  {
+    nomCom: "getallvar",
+    categorie: "Control",
+  },
+  async (chatId, zk, context) => {
+    const { repondre, superUser } = context;
 
-  if (!superUser) {
-    return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
-  }
+    if (!superUser) {
+      return repondre(
+        "🚫 *Access Denied!* This command is restricted to the bot owner."
+      );
+    }
 
-  if (!validateHerokuConfig(repondre)) return;
+    if (!validateHerokuConfig(repondre)) return;
 
-  try {
-    const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-    let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
-    let numberedList = [];
-    let index = 1;
+    try {
+      const configVars = await heroku.get(`/apps/${appName}/config-vars`);
+      let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
+      let configMapping = {};
+      let index = 1;
 
-    // Handle regular variables
-    for (const [key, value] of Object.entries(configVars)) {
-      if (!EXCLUDED_KEYS.includes(key)) {
-        const status = value === "yes" ? "on" : "off";
-        message += `${index}. ${key.replace(/_/g, " ")} is *${status.toUpperCase()}*\n   - Turn On: ${key}=yes\n   - Turn Off: ${key}=no\n\n`;
-        numberedList.push({ index, key });
+      // Handle regular variables
+      for (const [key, value] of Object.entries(configVars)) {
+        if (!EXCLUDED_KEYS.includes(key)) {
+          const status = value === "yes" ? "on" : "off";
+          message += `${index}. ${key.replace(/_/g, " ")} is *${status.toUpperCase()}*\n   - Turn On: ${key}=yes\n   - Turn Off: ${key}=no\n\n`;
+          configMapping[index] = { key, value: value === "yes" ? "no" : "yes" };
+          index++;
+        }
+      }
+
+      // Handle PRESENCE separately
+      for (const [label, presValue] of Object.entries(PRESENCE_MAPPING)) {
+        const currentPresence = configVars["PRESENCE"] || "0";
+        const isActive = presValue === currentPresence;
+        message += `${index}. ${label} is *${isActive ? "ON" : "OFF"}*\n   - Set: PRESENCE=${presValue}\n\n`;
+        configMapping[index] = { key: "PRESENCE", value: presValue };
         index++;
       }
-    }
 
-    // Handle PRESENCE separately
-    for (const [label, presValue] of Object.entries(PRESENCE_MAPPING)) {
-      const currentPresence = configVars["PRESENCE"] || "0";
-      const isActive = presValue.endsWith(currentPresence);
-      message += `${index}. ${label} is *${isActive ? "ON" : "OFF"}*\n   - Set: ${presValue}\n\n`;
-      numberedList.push({ index, key: "PRESENCE", value: presValue });
-      index++;
-    }
+      const sentMessage = await zk.sendMessage(chatId, { text: message });
 
-    await zk.sendMessage(chatId, { text: message });
+      // Listen for user response to toggle variables
+      zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || !message.message.extendedTextMessage) return;
 
-    // Listen for user response to toggle variables
-    zk.ev.on("messages.upsert", async (update) => {
-      const message = update.messages[0];
-      if (!message.message || !message.message.extendedTextMessage) return;
+        const responseText = message.message.extendedTextMessage.text.trim();
 
-      const responseText = message.message.extendedTextMessage.text.trim();
-      const selectedIndex = parseInt(responseText);
+        if (
+          message.message.extendedTextMessage.contextInfo &&
+          message.message.extendedTextMessage.contextInfo.stanzaId ===
+            sentMessage.key.id
+        ) {
+          const selectedIndex = parseInt(responseText);
 
-      if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > numberedList.length) {
-        return repondre("❌ *Invalid number. Please select a valid setting.*");
-      }
+          if (isNaN(selectedIndex) || !configMapping[selectedIndex]) {
+            return repondre(
+              "❌ *Invalid number. Please select a valid setting.*"
+            );
+          }
 
-      const selectedVar = numberedList.find(item => item.index === selectedIndex);
-      if (!selectedVar) return;
+          const selectedVar = configMapping[selectedIndex];
 
-      let newValue;
-      if (selectedVar.key === "PRESENCE") {
-        newValue = selectedVar.value.split("=")[1];
-      } else {
-        const currentValue = configVars[selectedVar.key] || "no";
-        newValue = currentValue === "yes" ? "no" : "yes";
-      }
+          // Update Heroku environment variable
+          await heroku.patch(`/apps/${appName}/config-vars`, {
+            body: {
+              [selectedVar.key]: selectedVar.value,
+            },
+          });
 
-      // Update Heroku environment variable
-      await heroku.patch(`/apps/${appName}/config-vars`, {
-        body: {
-          [selectedVar.key]: newValue,
-        },
+          // Restart Heroku dynos after update
+          await heroku.delete(`/apps/${appName}/dynos`);
+
+          await zk.sendMessage(chatId, {
+            text: `✅ *${selectedVar.key.replace(
+              /_/g,
+              " "
+            )} updated successfully!*\n\n🔄 *Bot is restarting...*`,
+          });
+        }
       });
-
-      // Restart Heroku dynos after update
-      await heroku.delete(`/apps/${appName}/dynos`);
-
+    } catch (error) {
+      console.error("Error fetching Heroku vars:", error);
       await zk.sendMessage(chatId, {
-        text: `✅ *${selectedVar.key.replace(/_/g, " ")} updated successfully!*\n\n🔄 *Bot is restarting...*`
+        text: "⚠️ *Failed to fetch Heroku environment variables!*",
       });
-    });
-
-  } catch (error) {
-    console.error("Error fetching Heroku vars:", error);
-    await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch Heroku environment variables!*" });
+    }
   }
-});
-
+);
 // Command to set or update Heroku environment variables
 adams({
   nomCom: 'setvar',
