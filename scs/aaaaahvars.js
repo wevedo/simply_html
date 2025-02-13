@@ -4,7 +4,7 @@ const Heroku = require("heroku-client");
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
 
-// Helper function to check required environment variables
+// Helper function to check Heroku configuration
 function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
     repondre(
@@ -18,23 +18,21 @@ function validateHerokuConfig(repondre) {
   return true;
 }
 
-// **EXCLUDED VARS - Managed by setvar**
+// Excluded Variables (Set only via `setvar` command)
 const EXCLUDED_VARS = [
-  "DATA_BASE_URL",
+  "DATABASE_URL",
   "MENU_TYPE",
   "CHATBOT1",
   "NUMERO_OWNER",
   "HEROKU_API_KEY",
   "HEROKU_APP_NAME",
-  "BOT_MENU_LINK",
-  "BOT_NAME",
   "PM_PERMIT",
   "PREFIX",
   "WARN_COUNT",
   "SESSION_ID",
 ];
 
-// **Mapping of Environment Variables to User-Friendly Names**
+// Variable Display Names
 const configMapping = {
   ANTICALL: "Anti Call",
   ANTIDELETE_MESSAGES: "Anti Delete Messages",
@@ -50,11 +48,10 @@ const configMapping = {
   CHATBOT: "Chatbot",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
-  PRESENCE: "Presence Mode",
 };
 
-// **Presence ON/OFF Values**
-const presenceOptions = {
+// Presence Variables
+const presenceMapping = {
   "Auto Typing On": "2",
   "Auto Typing Off": "0",
   "Always Online On": "1",
@@ -63,7 +60,13 @@ const presenceOptions = {
   "Auto Recording Off": "0",
 };
 
-// **Command to Display All Heroku Environment Variables in a User-Friendly Format**
+// Image backgrounds (random selection)
+const menuImages = [
+  "https://files.catbox.moe/xx6ags.jpeg",
+  "https://files.catbox.moe/dwdau2.jpeg",
+];
+
+// Command to Display Heroku Environment Variables
 adams(
   {
     nomCom: "getallvar",
@@ -82,54 +85,40 @@ adams(
 
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-      let variableList = [];
+      let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
 
-      // Generate list of variables excluding EXCLUDED_VARS
+      let numberedList = [];
+      let index = 1;
+
+      // Add Normal Variables
       Object.keys(configVars).forEach((key) => {
-        if (!EXCLUDED_VARS.includes(key)) {
-          const displayName = configMapping[key] || key;
-          let value = configVars[key];
-
-          value = value.toLowerCase() === "yes" ? "ON" : "OFF";
-
-          variableList.push(
-            `✅ *${displayName}*`,
-            `   ➖ Currently: *${value}*`
-          );
+        if (!EXCLUDED_VARS.includes(key) && configMapping[key]) {
+          const value = configVars[key] === "yes" ? `Off ${configMapping[key]}` : `On ${configMapping[key]}`;
+          numberedList.push(`${index}. ${value}`);
+          index++;
         }
       });
 
-      // Add Presence settings
-      Object.entries(presenceOptions).forEach(([label, value]) => {
-        const isActive = configVars["PRESENCE"] === value;
-        variableList.push(
-          `✅ *${label}*`,
-          `   ➖ Currently: *${isActive ? "ON" : "OFF"}*`
-        );
+      // Add Presence Variables
+      Object.keys(presenceMapping).forEach((key) => {
+        const isActive = configVars["PRESENCE"] === presenceMapping[key];
+        const value = isActive ? `Off ${key}` : `On ${key}`;
+        numberedList.push(`${index}. ${value}`);
+        index++;
       });
 
-      // **Paginate Variables into Two Pages**
-      const half = Math.ceil(variableList.length / 2);
-      const page1 = variableList.slice(0, half);
-      const page2 = variableList.slice(half);
+      message += numberedList.join("\n") + "\n📌 *Reply with a number to toggle a setting.*";
 
-      // **Randomly Choose Image**
-      const images = [
-        "https://files.catbox.moe/xx6ags.jpeg",
-        "https://files.catbox.moe/dwdau2.jpeg",
-      ];
-      const selectedImage = images[Math.floor(Math.random() * images.length)];
+      // Select a random image
+      const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
 
-      // **Randomly Select Page**
-      const selectedPage = Math.random() > 0.5 ? page1 : page2;
-      const message = selectedPage.join("\n") + `\n\n📌 *Reply with a number to toggle ON/OFF*`;
-
+      // Send the menu as an image with a caption
       const sentMessage = await zk.sendMessage(chatId, {
-        image: { url: selectedImage },
+        image: { url: randomImage },
         caption: message,
       });
 
-      // **Listen for User Response**
+      // Listen for Reply
       zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
         if (!message.message || !message.message.extendedTextMessage) return;
@@ -140,36 +129,39 @@ adams(
           message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
         ) {
           const selectedIndex = parseInt(responseText);
-          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > variableList.length / 2) {
+          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > numberedList.length) {
             return repondre("❌ *Invalid number. Please select a valid option.*");
           }
 
-          const variableKeys = Object.keys(configVars).filter((key) => !EXCLUDED_VARS.includes(key));
-          let selectedKey, newValue;
+          const selectedOption = numberedList[selectedIndex - 1];
+          const [status, variableName] = selectedOption.split(" ", 2);
 
-          if (selectedIndex <= variableKeys.length) {
-            // Regular ON/OFF variables
-            selectedKey = variableKeys[selectedIndex - 1];
-            newValue = configVars[selectedKey].toLowerCase() === "yes" ? "no" : "yes";
+          let newValue;
+          let variableKey = Object.keys(configMapping).find((key) => configMapping[key] === variableName);
+
+          if (!variableKey) {
+            // Check if it's a Presence Variable
+            variableKey = "PRESENCE";
+            newValue = Object.keys(presenceMapping).find((key) => key === variableName) ? presenceMapping[variableName] : null;
           } else {
-            // Presence settings
-            const presenceOptionsArray = Object.entries(presenceOptions);
-            selectedKey = "PRESENCE";
-            newValue = presenceOptionsArray[selectedIndex - variableKeys.length - 1][1];
+            // Toggle ON/OFF for normal vars
+            newValue = status === "On" ? "yes" : "no";
+          }
+
+          if (newValue === null) {
+            return repondre("❌ *Error: Could not update variable.*");
           }
 
           // Update Heroku Environment Variable
           await heroku.patch(`/apps/${appName}/config-vars`, {
-            body: {
-              [selectedKey]: newValue,
-            },
+            body: { [variableKey]: newValue },
           });
 
           // Restart Heroku Dynos
           await heroku.delete(`/apps/${appName}/dynos`);
 
           await zk.sendMessage(chatId, {
-            text: `✅ *${configMapping[selectedKey] || selectedKey} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
+            text: `✅ *${variableName} is now set to ${status.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
           });
         }
       });
