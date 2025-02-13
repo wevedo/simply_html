@@ -4,28 +4,22 @@ const Heroku = require("heroku-client");
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
 
-// Validate Heroku Configuration
 function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
     repondre(
-      "⚠️ *Missing Configuration!*\n\n" +
-        "Ensure that the following environment variables are properly set:\n" +
-        "- `HEROKU_API_KEY`\n" +
-        "- `HEROKU_APP_NAME`"
+      "⚠️ *Missing Configuration!*\n\nEnsure that the following env variables are set:\n- `HEROKU_API_KEY`\n- `HEROKU_APP_NAME`"
     );
     return false;
   }
   return true;
 }
 
-// Excluded Variables (These won't be displayed)
 const excludedVars = [
   "DATA_BASE_URL", "MENU_TYPE", "CHATBOT1", "OWNER_NAME",
   "HEROKU_API_KEY", "HEROKU_APP_NAME", "NUMERO_OWNER",
   "PM_PERMIT", "PREFIX", "WARN_COUNT", "SESSION_ID"
 ];
 
-// Variables to Show in the Menu
 const configMapping = {
   ANTICALL: "Anti Call",
   ANTIDELETE_MESSAGES: "Anti Delete Messages",
@@ -34,28 +28,24 @@ const configMapping = {
   AUTO_BIO: "Auto Bio",
   AUTO_DOWNLOAD_STATUS: "Auto Download Status",
   AUTO_REACT: "Auto React",
-  AUTO_REACT_STATUS: "Auto React Status",
   AUTO_READ: "Auto Read",
-  AUTO_READ_STATUS: "Auto Read Status",
   AUTO_SAVE_CONTACTS: "Auto Save Contacts",
   CHATBOT: "Chatbot",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
+  "Auto Recording On": "PRESENCE=3",
+  "Auto Recording Off": "PRESENCE=0",
   "Always Online On": "PRESENCE=1",
   "Always Online Off": "PRESENCE=0",
   "Auto Typing On": "PRESENCE=2",
   "Auto Typing Off": "PRESENCE=3",
-  "Auto Recording On": "PRESENCE=3",
-  "Auto Recording Off": "PRESENCE=0",
 };
 
-// Image Backgrounds for Random Selection
 const menuImages = [
   "https://files.catbox.moe/xx6ags.jpeg",
   "https://files.catbox.moe/dwdau2.jpeg"
 ];
 
-// Command to Display Paginated Heroku Variables
 adams(
   {
     nomCom: "getallvar",
@@ -65,19 +55,18 @@ adams(
     const { repondre, superUser } = context;
 
     if (!superUser) {
-      return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
+      return repondre("🚫 *Access Denied!* Only the bot owner can use this command.");
     }
 
     if (!validateHerokuConfig(repondre)) return;
 
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-      const variableKeys = Object.keys(configMapping);
-      const varsPerPage = 3; // Adjust the number of variables per page
+      const variableKeys = Object.keys(configMapping).filter((key) => !excludedVars.includes(key));
+      const varsPerPage = 5;
       let currentPage = 1;
       const totalPages = Math.ceil(variableKeys.length / varsPerPage);
 
-      // Function to send a page of variables
       async function sendPage(page) {
         if (page < 1 || page > totalPages) return;
 
@@ -85,28 +74,28 @@ adams(
         const pageVars = variableKeys.slice(startIndex, startIndex + varsPerPage);
 
         let message = `🌟 *BWM XMD VARS LIST* 🌟\n\n📄 Page ${page}/${totalPages}\n\n`;
-        let index = 1 + (page - 1) * varsPerPage * 2; // Adjust indexing for pagination
+        let index = 1 + (page - 1) * varsPerPage * 2;
         let numberedList = [];
 
         pageVars.forEach((key) => {
-          let value = configVars["PRESENCE"] === configMapping[key].split("=")[1] ? "ON" : "OFF";
+          let value = configVars[key] === "yes" ? "ON" : "OFF";
+          if (configMapping[key].startsWith("PRESENCE")) {
+            value = configVars["PRESENCE"] === configMapping[key].split("=")[1] ? "ON" : "OFF";
+          }
 
           numberedList.push(
-            `🔹 *${key}*`,
-            ` ${index}. Turn ON ${key}`,
-            ` ${index + 1}. Turn OFF ${key}`,
+            `🔹 *${configMapping[key]}*`,
+            ` ${index}. Set ${configMapping[key]}`,
             `     ✅ Currently: *${value}*\n`
           );
-          index += 2;
+          index += 1;
         });
 
-        message += numberedList.join("\n") + "\n📌 *Reply with a number to choose an option.*";
+        message += numberedList.join("\n") + "\n📌 *Reply with a number to select an option.*";
 
-        // Navigation Numbers
         if (page > 1) message += `\n⬅️ *Reply ${index} to go to Previous Page*`;
         if (page < totalPages) message += `\n➡️ *Reply ${index + 1} to go to Next Page*`;
 
-        // Select a random image
         const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
 
         const sentMessage = await zk.sendMessage(chatId, {
@@ -114,7 +103,6 @@ adams(
           caption: message,
         });
 
-        // Listen for Reply
         zk.ev.on("messages.upsert", async (update) => {
           const message = update.messages[0];
           if (!message.message || !message.message.extendedTextMessage) return;
@@ -127,7 +115,6 @@ adams(
             const selectedIndex = parseInt(responseText);
             if (isNaN(selectedIndex)) return repondre("❌ *Invalid number. Please select a valid option.*");
 
-            // Handle Pagination
             if (selectedIndex === index && page > 1) {
               return sendPage(page - 1);
             }
@@ -135,33 +122,34 @@ adams(
               return sendPage(page + 1);
             }
 
-            // Determine Variable to Change
-            const variableIndex = Math.floor((selectedIndex - 1) / 2);
+            const variableIndex = Math.floor((selectedIndex - 1));
             const selectedKey = variableKeys[variableIndex];
             if (!selectedKey) return repondre("❌ *Invalid selection.*");
 
-            let newValue = configMapping[selectedKey].split("=")[1]; // Extract the value
+            let newValue;
+            if (configMapping[selectedKey].includes("PRESENCE")) {
+              newValue = configMapping[selectedKey].split("=")[1];
+            } else {
+              newValue = configVars[selectedKey] === "yes" ? "no" : "yes";
+            }
 
-            // Update Heroku Variable
             await heroku.patch(`/apps/${appName}/config-vars`, {
               body: {
-                PRESENCE: newValue, // Set PRESENCE to the selected value
+                [selectedKey]: newValue,
               },
             });
 
-            // Restart Heroku Dynos
             await heroku.delete(`/apps/${appName}/dynos`);
 
             await zk.sendMessage(chatId, {
-              text: `✅ *${selectedKey} is now set to ${newValue}*\n\n🔄 *Bot is restarting...*`,
+              text: `✅ *${configMapping[selectedKey]} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
             });
 
-            sendPage(page); // Refresh the page
+            sendPage(page);
           }
         });
       }
 
-      // Start with Page 1
       sendPage(1);
     } catch (error) {
       console.error("Error fetching Heroku vars:", error);
