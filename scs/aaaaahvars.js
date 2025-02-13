@@ -18,11 +18,11 @@ function validateHerokuConfig(repondre) {
   return true;
 }
 
-// Variables to exclude from display
-const EXCLUDED_KEYS = [
+// **EXCLUDED VARS - Managed by setvar**
+const EXCLUDED_VARS = [
   "BOT_MENU_LINK",
   "BOT_NAME",
-  "DATABASE_URL",
+  "DATA_BASE_URL",
   "HEROKU_API_KEY",
   "HEROKU_APP_NAME",
   "MENU_TYPE",
@@ -31,20 +31,29 @@ const EXCLUDED_KEYS = [
   "PREFIX",
   "WARN_COUNT",
   "SESSION_ID",
-  "EXCLUDED_VARS",
 ];
 
-// Special mappings for PRESENCE variable
-const PRESENCE_MAPPING = {
-  "Auto typing on": "2",
-  "Auto typing off": "0",
-  "Always online on": "1",
-  "Always online off": "0",
-  "Auto recording on": "3",
-  "Auto recording off": "0",
+// **Mapping of Environment Variables to User-Friendly Names**
+const configMapping = {
+  ANTICALL: "Anti Call",
+  ANTIDELETE_MESSAGES: "Anti Delete Messages",
+  ANTILINK_GROUP: "Anti Link in Groups",
+  AUDIO_CHATBOT: "Audio Chatbot",
+  AUTO_BIO: "Auto Bio",
+  AUTO_DOWNLOAD_STATUS: "Auto Download Status",
+  AUTO_REACT: "Auto React",
+  AUTO_REACT_STATUS: "Auto React Status",
+  AUTO_READ: "Auto Read",
+  AUTO_READ_STATUS: "Auto Read Status",
+  AUTO_SAVE_CONTACTS: "Auto Save Contacts",
+  CHATBOT: "Chatbot",
+  CHATBOT1: "Chatbot1",
+  PUBLIC_MODE: "Public Mode",
+  STARTING_BOT_MESSAGE: "Starting Bot Message",
+  PRESENCE: "Presence Status",
 };
 
-// Command to display all Heroku environment variables
+// **Command to Display All Heroku Environment Variables in a User-Friendly Format**
 adams(
   {
     nomCom: "getallvar",
@@ -64,75 +73,94 @@ adams(
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
       let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
-      let configMapping = {};
+
+      // Generate Numbered List with ON/OFF options
+      let numberedList = [];
       let index = 1;
 
-      // Handle regular variables
-      for (const [key, value] of Object.entries(configVars)) {
-        if (!EXCLUDED_KEYS.includes(key)) {
-          const status = value === "yes" ? "on" : "off";
-          message += `${index}. ${key.replace(/_/g, " ")} is *${status.toUpperCase()}*\n   - Turn On: ${key}=yes\n   - Turn Off: ${key}=no\n\n`;
-          configMapping[index] = { key, value: value === "yes" ? "no" : "yes" };
-          index++;
-        }
-      }
+      Object.keys(configVars).forEach((key) => {
+        if (EXCLUDED_VARS.includes(key)) return;
 
-      // Handle PRESENCE separately
-      for (const [label, presValue] of Object.entries(PRESENCE_MAPPING)) {
-        const currentPresence = configVars["PRESENCE"] || "0";
-        const isActive = presValue === currentPresence;
-        message += `${index}. ${label} is *${isActive ? "ON" : "OFF"}*\n   - Set: PRESENCE=${presValue}\n\n`;
-        configMapping[index] = { key: "PRESENCE", value: presValue };
-        index++;
-      }
+        const displayName = configMapping[key] || key;
+        let value = configVars[key];
+
+        if (key === "PRESENCE") {
+          value =
+            value == "2"
+              ? "Auto Typing"
+              : value == "1"
+              ? "Always Online"
+              : value == "3"
+              ? "Auto Recording"
+              : "OFF";
+        } else {
+          value = value.toLowerCase() === "yes" ? "ON" : "OFF";
+        }
+
+        numberedList.push(
+          `${index}. Turn ON ${displayName}`,
+          `${index + 1}. Turn OFF ${displayName}`,
+          `    ✅ Currently: *${value}*\n`
+        );
+        index += 2;
+      });
+
+      message += numberedList.join("\n") + "\n📌 *Reply with a number to choose an option.*";
 
       const sentMessage = await zk.sendMessage(chatId, { text: message });
 
-      // Listen for user response to toggle variables
+      // Listen for Reply
       zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
         if (!message.message || !message.message.extendedTextMessage) return;
 
         const responseText = message.message.extendedTextMessage.text.trim();
-
         if (
           message.message.extendedTextMessage.contextInfo &&
-          message.message.extendedTextMessage.contextInfo.stanzaId ===
-            sentMessage.key.id
+          message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
         ) {
           const selectedIndex = parseInt(responseText);
-
-          if (isNaN(selectedIndex) || !configMapping[selectedIndex]) {
-            return repondre(
-              "❌ *Invalid number. Please select a valid setting.*"
-            );
+          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > numberedList.length) {
+            return repondre("❌ *Invalid number. Please select a valid option.*");
           }
 
-          const selectedVar = configMapping[selectedIndex];
+          // Determine which variable is being changed
+          const variableIndex = Math.floor((selectedIndex - 1) / 2);
+          const variableKeys = Object.keys(configVars).filter((key) => !EXCLUDED_VARS.includes(key));
+          const selectedKey = variableKeys[variableIndex];
 
-          // Update Heroku environment variable
+          let newValue;
+          if (selectedKey === "PRESENCE") {
+            newValue =
+              selectedIndex % 2 === 1
+                ? selectedIndex === 1
+                  ? "2"
+                  : selectedIndex === 3
+                  ? "1"
+                  : "3"
+                : "0";
+          } else {
+            newValue = selectedIndex % 2 === 1 ? "yes" : "no";
+          }
+
+          // Update Heroku Environment Variable
           await heroku.patch(`/apps/${appName}/config-vars`, {
             body: {
-              [selectedVar.key]: selectedVar.value,
+              [selectedKey]: newValue,
             },
           });
 
-          // Restart Heroku dynos after update
+          // Restart Heroku Dynos
           await heroku.delete(`/apps/${appName}/dynos`);
 
           await zk.sendMessage(chatId, {
-            text: `✅ *${selectedVar.key.replace(
-              /_/g,
-              " "
-            )} updated successfully!*\n\n🔄 *Bot is restarting...*`,
+            text: `✅ *${configMapping[selectedKey] || selectedKey} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
           });
         }
       });
     } catch (error) {
       console.error("Error fetching Heroku vars:", error);
-      await zk.sendMessage(chatId, {
-        text: "⚠️ *Failed to fetch Heroku environment variables!*",
-      });
+      await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch Heroku environment variables!*" });
     }
   }
 );
