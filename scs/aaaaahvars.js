@@ -4,7 +4,7 @@ const Heroku = require("heroku-client");
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
 
-// Helper function to check required environment variables
+// Validate Heroku Configuration
 function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
     repondre(
@@ -18,23 +18,13 @@ function validateHerokuConfig(repondre) {
   return true;
 }
 
-// **EXCLUDED VARS - Managed by setvar**
-const EXCLUDED_VARS = [
-  "DATA_BASE_URL",
-  "MENU_TYPE",
-  "CHATBOT1",
-  "NUMERO_OWNER",
-  "HEROKU_API_KEY",
-  "HEROKU_APP_NAME",
-  "BOT_MENU_LINK",
-  "BOT_NAME",
-  "PM_PERMIT",
-  "PREFIX",
-  "WARN_COUNT",
-  "SESSION_ID",
+// Variables Mapping (Excluding Unwanted Ones)
+const excludedVars = [
+  "DATA_BASE_URL", "MENU_TYPE", "CHATBOT1", "OWNER_NAME",
+  "HEROKU_API_KEY", "HEROKU_APP_NAME", "NUMERO_OWNER",
+  "PM_PERMIT", "PREFIX", "WARN_COUNT", "SESSION_ID"
 ];
 
-// **Mapping of Environment Variables to User-Friendly Names**
 const configMapping = {
   ANTICALL: "Anti Call",
   ANTIDELETE_MESSAGES: "Anti Delete Messages",
@@ -43,27 +33,27 @@ const configMapping = {
   AUTO_BIO: "Auto Bio",
   AUTO_DOWNLOAD_STATUS: "Auto Download Status",
   AUTO_REACT: "Auto React",
-  AUTO_REACT_STATUS: "Auto React Status",
   AUTO_READ: "Auto Read",
-  AUTO_READ_STATUS: "Auto Read Status",
   AUTO_SAVE_CONTACTS: "Auto Save Contacts",
   CHATBOT: "Chatbot",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
-  PRESENCE: "Presence Mode",
+  // Presence Variables
+  "Auto Typing On": "PRESENCE=2",
+  "Auto Typing Off": "PRESENCE=0",
+  "Always Online On": "PRESENCE=1",
+  "Always Online Off": "PRESENCE=0",
+  "Auto Recording On": "PRESENCE=3",
+  "Auto Recording Off": "PRESENCE=0",
 };
 
-// **Presence ON/OFF Values**
-const presenceOptions = {
-  "Auto Typing On": "2",
-  "Auto Typing Off": "0",
-  "Always Online On": "1",
-  "Always Online Off": "0",
-  "Auto Recording On": "3",
-  "Auto Recording Off": "0",
-};
+// Image Backgrounds for Random Selection
+const menuImages = [
+  "https://files.catbox.moe/xx6ags.jpeg",
+  "https://files.catbox.moe/dwdau2.jpeg"
+];
 
-// **Command to Display All Heroku Environment Variables in a User-Friendly Format**
+// Command to Display Paginated Heroku Variables
 adams(
   {
     nomCom: "getallvar",
@@ -73,97 +63,112 @@ adams(
     const { repondre, superUser } = context;
 
     if (!superUser) {
-      return repondre(
-        "🚫 *Access Denied!* This command is restricted to the bot owner."
-      );
+      return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
     }
 
     if (!validateHerokuConfig(repondre)) return;
 
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-      let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
+      const variableKeys = Object.keys(configMapping).filter((key) => !excludedVars.includes(key));
+      const varsPerPage = 5; // Adjust the number of variables per page
+      let currentPage = 1;
+      const totalPages = Math.ceil(variableKeys.length / varsPerPage);
 
-      // Generate Numbered List with ON/OFF options
-      let numberedList = [];
-      let index = 1;
+      // Function to send a page of variables
+      async function sendPage(page) {
+        if (page < 1 || page > totalPages) return;
 
-      // Display regular variables (excluding EXCLUDED_VARS)
-      Object.keys(configVars).forEach((key) => {
-        if (EXCLUDED_VARS.includes(key)) return;
+        const startIndex = (page - 1) * varsPerPage;
+        const pageVars = variableKeys.slice(startIndex, startIndex + varsPerPage);
 
-        const displayName = configMapping[key] || key;
-        let value = configVars[key];
+        let message = `🌟 *BWM XMD VARS LIST* 🌟\n\n📄 Page ${page}/${totalPages}\n\n`;
+        let index = 1 + (page - 1) * varsPerPage * 2; // Adjust indexing for pagination
+        let numberedList = [];
 
-        value = value.toLowerCase() === "yes" ? "ON" : "OFF";
-
-        numberedList.push(
-          `${index}. Turn ON ${displayName}`,
-          `${index + 1}. Turn OFF ${displayName}`,
-          `    ✅ Currently: *${value}*\n`
-        );
-        index += 2;
-      });
-
-      // Add Presence settings inside the main list
-      Object.entries(presenceOptions).forEach(([label, value]) => {
-        const isActive = configVars["PRESENCE"] === value;
-        numberedList.push(
-          `${index}. ${label}`,
-          `    ✅ Currently: *${isActive ? "ON" : "OFF"}*\n`
-        );
-        index++;
-      });
-
-      message += numberedList.join("\n") + "\n📌 *Reply with a number to choose an option.*";
-
-      const sentMessage = await zk.sendMessage(chatId, { text: message });
-
-      // Listen for Reply
-      zk.ev.on("messages.upsert", async (update) => {
-        const message = update.messages[0];
-        if (!message.message || !message.message.extendedTextMessage) return;
-
-        const responseText = message.message.extendedTextMessage.text.trim();
-        if (
-          message.message.extendedTextMessage.contextInfo &&
-          message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
-        ) {
-          const selectedIndex = parseInt(responseText);
-          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > numberedList.length) {
-            return repondre("❌ *Invalid number. Please select a valid option.*");
+        pageVars.forEach((key) => {
+          let value = configVars[key] === "yes" ? "ON" : "OFF";
+          if (key.startsWith("Auto Typing") || key.startsWith("Always Online") || key.startsWith("Auto Recording")) {
+            value = configVars["PRESENCE"] === configMapping[key].split("=")[1] ? "ON" : "OFF";
           }
 
-          const variableKeys = Object.keys(configVars).filter((key) => !EXCLUDED_VARS.includes(key));
-          let selectedKey, newValue;
+          numberedList.push(
+            `🔹 *${configMapping[key]}*`,
+            ` ${index}. Turn ON ${configMapping[key]}`,
+            ` ${index + 1}. Turn OFF ${configMapping[key]}`,
+            `     ✅ Currently: *${value}*\n`
+          );
+          index += 2;
+        });
 
-          if (selectedIndex <= variableKeys.length * 2) {
-            // Regular ON/OFF variables
+        message += numberedList.join("\n") + "\n📌 *Reply with a number to choose an option.*";
+
+        // Navigation Numbers
+        if (page > 1) message += `\n⬅️ *Reply ${index} to go to Previous Page*`;
+        if (page < totalPages) message += `\n➡️ *Reply ${index + 1} to go to Next Page*`;
+
+        // Select a random image
+        const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
+
+        const sentMessage = await zk.sendMessage(chatId, {
+          image: { url: randomImage },
+          caption: message,
+        });
+
+        // Listen for Reply
+        zk.ev.on("messages.upsert", async (update) => {
+          const message = update.messages[0];
+          if (!message.message || !message.message.extendedTextMessage) return;
+
+          const responseText = message.message.extendedTextMessage.text.trim();
+          if (
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+          ) {
+            const selectedIndex = parseInt(responseText);
+            if (isNaN(selectedIndex)) return repondre("❌ *Invalid number. Please select a valid option.*");
+
+            // Handle Pagination
+            if (selectedIndex === index && page > 1) {
+              return sendPage(page - 1);
+            }
+            if (selectedIndex === index + 1 && page < totalPages) {
+              return sendPage(page + 1);
+            }
+
+            // Determine Variable to Change
             const variableIndex = Math.floor((selectedIndex - 1) / 2);
-            selectedKey = variableKeys[variableIndex];
-            newValue = selectedIndex % 2 === 1 ? "yes" : "no";
-          } else {
-            // Presence settings
-            const presenceOptionsArray = Object.entries(presenceOptions);
-            selectedKey = "PRESENCE";
-            newValue = presenceOptionsArray[selectedIndex - variableKeys.length * 2 - 1][1];
+            const selectedKey = variableKeys[variableIndex];
+            if (!selectedKey) return repondre("❌ *Invalid selection.*");
+
+            let newValue;
+            if (configMapping[selectedKey].includes("PRESENCE")) {
+              newValue = configMapping[selectedKey].split("=")[1]; // Extract Presence value
+            } else {
+              newValue = selectedIndex % 2 === 1 ? "yes" : "no";
+            }
+
+            // Update Heroku Variable
+            await heroku.patch(`/apps/${appName}/config-vars`, {
+              body: {
+                [selectedKey]: newValue,
+              },
+            });
+
+            // Restart Heroku Dynos
+            await heroku.delete(`/apps/${appName}/dynos`);
+
+            await zk.sendMessage(chatId, {
+              text: `✅ *${configMapping[selectedKey]} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
+            });
+
+            sendPage(page); // Refresh the page
           }
+        });
+      }
 
-          // Update Heroku Environment Variable
-          await heroku.patch(`/apps/${appName}/config-vars`, {
-            body: {
-              [selectedKey]: newValue,
-            },
-          });
-
-          // Restart Heroku Dynos
-          await heroku.delete(`/apps/${appName}/dynos`);
-
-          await zk.sendMessage(chatId, {
-            text: `✅ *${configMapping[selectedKey] || selectedKey} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
-          });
-        }
-      });
+      // Start with Page 1
+      sendPage(1);
     } catch (error) {
       console.error("Error fetching Heroku vars:", error);
       await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch Heroku environment variables!*" });
