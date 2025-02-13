@@ -118,6 +118,7 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 });
 
 
+
 async function convertToMp3(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
         ffmpeg(inputPath)
@@ -144,17 +145,22 @@ adams({ nomCom: "tomp3", categorie: "General", reaction: "🎵" }, async (origin
 
     try {
         // Download the video
-        const videoPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
-        const audioPath = `${videoPath}.mp3`;
+        let media = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        const audioPath = `${media}.mp3`;
 
         repondre("Processing video to audio, please wait...");
 
         // Convert to MP3
-        await convertToMp3(videoPath, audioPath);
-        fs.unlinkSync(videoPath); // Delete the original video
+        await convertToMp3(media, audioPath);
+        fs.unlinkSync(media); // Delete the original video
 
-        // Send the MP3 file back
-        await zk.sendMessage(from, { audio: fs.readFileSync(audioPath), mimetype: 'audio/mpeg' }, { quoted: origineMessage });
+        // Send the MP3 file back to the **same conversation**
+        let msg = {
+            audio: { url: audioPath },
+            mimetype: 'audio/mp4',
+        };
+
+        await zk.sendMessage(from, msg, { quoted: origineMessage });
         fs.unlinkSync(audioPath); // Delete MP3 after sending
     } catch (error) {
         console.error("Error converting video to audio:", error);
