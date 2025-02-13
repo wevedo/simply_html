@@ -79,7 +79,7 @@ adams({
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: conf.BOT,
+        caption: Bwm xmd,
         gifPlayback: false
       }, { quoted: ms });
 
@@ -120,7 +120,7 @@ adams({
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: conf.BOT,
+        caption: Bwm xmd,
         gifPlayback: false
       }, { quoted: ms });
 
@@ -160,7 +160,7 @@ adams({
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: conf.BOT,
+        caption: "Bwm xmd Pinterest",
         gifPlayback: false
       }, { quoted: ms });
 
@@ -199,12 +199,12 @@ adams({
       const musicTitle = response.data.BK9.music_info.title;
 
       await zk.sendMessage(dest, {
-        text: `Description: ${description}\nComments: ${commentCount}\nLikes: ${likesCount}\nUser ID: ${uid}\nNickname: ${nickname}\nMusic: ${musicTitle}`,
+        text: "Dowloding...!",
       }, { quoted: ms });
 
       await zk.sendMessage(dest, {
         video: { url: videoUrl },
-        caption: conf.BOT,
+        caption: `TikTok video by Bwm xmd\n About: ${description}\n Name: ${nickname}`  ,
         gifPlayback: false
       }, { quoted: ms });
 
@@ -249,7 +249,7 @@ adams({
             title: "Video Downloader",
             body: title,
             thumbnailUrl: thumbnail,
-            sourceUrl: conf.GURL,
+            sourceUrl: "Bwm xmd xvideo",
             mediaType: 1,
             showAdAttribution: true, // Verified badge
           },
