@@ -20,13 +20,14 @@ function validateHerokuConfig(repondre) {
 
 // **EXCLUDED VARS - Managed by setvar**
 const EXCLUDED_VARS = [
-  "BOT_MENU_LINK",
-  "BOT_NAME",
   "DATA_BASE_URL",
+  "MENU_TYPE",
+  "CHATBOT1",
+  "NUMERO_OWNER",
   "HEROKU_API_KEY",
   "HEROKU_APP_NAME",
-  "MENU_TYPE",
-  "NUMERO_OWNER",
+  "BOT_MENU_LINK",
+  "BOT_NAME",
   "PM_PERMIT",
   "PREFIX",
   "WARN_COUNT",
@@ -47,14 +48,19 @@ const configMapping = {
   AUTO_READ_STATUS: "Auto Read Status",
   AUTO_SAVE_CONTACTS: "Auto Save Contacts",
   CHATBOT: "Chatbot",
-  CHATBOT1: "Chatbot1",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
-  "PRESENCE=2": "Auto Typing On",
-  "PRESENCE=0": "Auto Typing Off",
-  "PRESENCE=1": "Always Online On",
-  "PRESENCE=0": "Always Online Off",
-  "PRESENCE=3": "Auto Recording On",
+  PRESENCE: "Presence Mode",
+};
+
+// **Presence ON/OFF Values**
+const presenceOptions = {
+  "Auto Typing On": "2",
+  "Auto Typing Off": "0",
+  "Always Online On": "1",
+  "Always Online Off": "0",
+  "Auto Recording On": "3",
+  "Auto Recording Off": "0",
 };
 
 // **Command to Display All Heroku Environment Variables in a User-Friendly Format**
@@ -82,6 +88,7 @@ adams(
       let numberedList = [];
       let index = 1;
 
+      // Display regular variables (excluding EXCLUDED_VARS)
       Object.keys(configVars).forEach((key) => {
         if (EXCLUDED_VARS.includes(key)) return;
 
@@ -96,6 +103,16 @@ adams(
           `    ✅ Currently: *${value}*\n`
         );
         index += 2;
+      });
+
+      // Add Presence settings inside the main list
+      Object.entries(presenceOptions).forEach(([label, value]) => {
+        const isActive = configVars["PRESENCE"] === value;
+        numberedList.push(
+          `${index}. ${label}`,
+          `    ✅ Currently: *${isActive ? "ON" : "OFF"}*\n`
+        );
+        index++;
       });
 
       message += numberedList.join("\n") + "\n📌 *Reply with a number to choose an option.*";
@@ -117,12 +134,20 @@ adams(
             return repondre("❌ *Invalid number. Please select a valid option.*");
           }
 
-          // Determine which variable is being changed
-          const variableIndex = Math.floor((selectedIndex - 1) / 2);
           const variableKeys = Object.keys(configVars).filter((key) => !EXCLUDED_VARS.includes(key));
-          const selectedKey = variableKeys[variableIndex];
+          let selectedKey, newValue;
 
-          let newValue = selectedIndex % 2 === 1 ? "yes" : "no";
+          if (selectedIndex <= variableKeys.length * 2) {
+            // Regular ON/OFF variables
+            const variableIndex = Math.floor((selectedIndex - 1) / 2);
+            selectedKey = variableKeys[variableIndex];
+            newValue = selectedIndex % 2 === 1 ? "yes" : "no";
+          } else {
+            // Presence settings
+            const presenceOptionsArray = Object.entries(presenceOptions);
+            selectedKey = "PRESENCE";
+            newValue = presenceOptionsArray[selectedIndex - variableKeys.length * 2 - 1][1];
+          }
 
           // Update Heroku Environment Variable
           await heroku.patch(`/apps/${appName}/config-vars`, {
