@@ -1,4 +1,116 @@
+const { adams } = require("../Ibrahim/adams");
+const Heroku = require("heroku-client");
 
+const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
+const appName = process.env.HEROKU_APP_NAME;
+
+// Helper function to check required environment variables
+function validateHerokuConfig(repondre) {
+  if (!process.env.HEROKU_API_KEY || !appName) {
+    repondre(
+      "⚠️ *Missing Configuration!*\n\n" +
+        "Ensure that the following environment variables are properly set:\n" +
+        "- `HEROKU_API_KEY`\n" +
+        "- `HEROKU_APP_NAME`"
+    );
+    return false;
+  }
+  return true;
+}
+
+// Function to format variable names
+function formatVariableName(varName) {
+  return varName
+    .replace(/_/g, " ") // Replace underscores with spaces
+    .toLowerCase() // Convert to lowercase
+    .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize each word
+}
+
+// Command to display all Heroku environment variables dynamically
+adams(
+  {
+    nomCom: "getallvar",
+    categorie: "Control",
+  },
+  async (chatId, zk, context) => {
+    const { repondre, superUser } = context;
+
+    if (!superUser) {
+      return repondre(
+        "🚫 *Access Denied!* This command is restricted to the bot owner."
+      );
+    }
+
+    if (!validateHerokuConfig(repondre)) return;
+
+    try {
+      const configVars = await heroku.get(`/apps/${appName}/config-vars`);
+      let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
+
+      let numberedList = [];
+      let index = 1;
+      const variableKeys = Object.keys(configVars).sort(); // Get all variables and sort alphabetically
+
+      variableKeys.forEach((key) => {
+        const displayName = formatVariableName(key);
+        const value = configVars[key] === "yes" ? "ON" : "OFF";
+
+        numberedList.push(
+          `🔹 *${displayName}*`,
+          ` ${index}️⃣ Turn ON ${displayName}`,
+          ` ${index + 1}️⃣ Turn OFF ${displayName}`,
+          `     ✅ Currently: *${value}*\n`
+        );
+        index += 2;
+      });
+
+      message += numberedList.join("\n") + "\n📌 *Reply with a number to choose an option.*";
+
+      const sentMessage = await zk.sendMessage(chatId, { text: message });
+
+      // Listen for Reply
+      zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || !message.message.extendedTextMessage) return;
+
+        const responseText = message.message.extendedTextMessage.text.trim();
+        if (
+          message.message.extendedTextMessage.contextInfo &&
+          message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+        ) {
+          const selectedIndex = parseInt(responseText);
+          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > variableKeys.length * 2) {
+            return repondre("❌ *Invalid number. Please select a valid option.*");
+          }
+
+          // Determine which variable is being changed
+          const variableIndex = Math.floor((selectedIndex - 1) / 2);
+          const selectedKey = variableKeys[variableIndex];
+          const newValue = selectedIndex % 2 === 1 ? "yes" : "no";
+
+          // Update Heroku Environment Variable
+          await heroku.patch(`/apps/${appName}/config-vars`, {
+            body: {
+              [selectedKey]: newValue,
+            },
+          });
+
+          // Restart Heroku Dynos
+          await heroku.delete(`/apps/${appName}/dynos`);
+
+          await zk.sendMessage(chatId, {
+            text: `✅ *${formatVariableName(selectedKey)} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching Heroku vars:", error);
+      await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch Heroku environment variables!*" });
+    }
+  }
+);
+
+/*
 const { adams } = require("../Ibrahim/adams");
 const Heroku = require('heroku-client');
 
@@ -135,3 +247,4 @@ adams({
     });
   }
 });
+*/
