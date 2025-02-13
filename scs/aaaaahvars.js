@@ -4,7 +4,7 @@ const Heroku = require("heroku-client");
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
 
-// Helper function to check Heroku configuration
+// Helper function to check required environment variables
 function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
     repondre(
@@ -18,21 +18,7 @@ function validateHerokuConfig(repondre) {
   return true;
 }
 
-// Excluded Variables (Set only via `setvar` command)
-const EXCLUDED_VARS = [
-  "DATABASE_URL",
-  "MENU_TYPE",
-  "CHATBOT1",
-  "NUMERO_OWNER",
-  "HEROKU_API_KEY",
-  "HEROKU_APP_NAME",
-  "PM_PERMIT",
-  "PREFIX",
-  "WARN_COUNT",
-  "SESSION_ID",
-];
-
-// Variable Display Names
+// **Mapping of Environment Variables to User-Friendly Names**
 const configMapping = {
   ANTICALL: "Anti Call",
   ANTIDELETE_MESSAGES: "Anti Delete Messages",
@@ -48,22 +34,32 @@ const configMapping = {
   CHATBOT: "Chatbot",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
+  // Presence-related settings
+  "Auto Typing On": "PRESENCE=2",
+  "Auto Typing Off": "PRESENCE=0",
+  "Always Online On": "PRESENCE=1",
+  "Always Online Off": "PRESENCE=0",
+  "Auto Recording On": "PRESENCE=3",
+  "Auto Recording Off": "PRESENCE=0",
 };
 
-// Presence Variables
-const presenceMapping = {
-  "Auto Typing": "2",
-  "Always Online": "1",
-  "Auto Recording": "3",
-};
-
-// Image backgrounds (random selection)
-const menuImages = [
-  "https://files.catbox.moe/xx6ags.jpeg",
-  "https://files.catbox.moe/dwdau2.jpeg",
+// **List of Excluded Variables**
+const EXCLUDED_VARS = [
+  "DATA_BASE_URL",
+  "MENU_TYPE",
+  "CHATBOT1",
+  "NUMERO_OWNER",
+  "HEROKU_API_KEY",
+  "HEROKU_APP_NAME",
+  "BOT_MENU_LINK",
+  "BOT_NAME",
+  "PM_PERMIT",
+  "PREFIX",
+  "WARN_COUNT",
+  "SESSION_ID",
 ];
 
-// Command to Display Heroku Environment Variables
+// **Command to Display All Heroku Environment Variables in a User-Friendly Format**
 adams(
   {
     nomCom: "getallvar",
@@ -82,34 +78,34 @@ adams(
 
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-      let message = "🌟 *BWM XMD VARS LIST* 🌟\n\n";
-
       let numberedList = [];
       let index = 1;
 
-      // Add Normal Variables
-      Object.keys(configVars).forEach((key) => {
-        if (!EXCLUDED_VARS.includes(key) && configMapping[key]) {
-          const value = configVars[key] === "yes" ? `Off ${configMapping[key]}` : `On ${configMapping[key]}`;
-          numberedList.push(`${index}. ${value}`);
-          index++;
-        }
+      // Get keys that are not excluded
+      const variableKeys = Object.keys(configMapping).filter(
+        (key) => !EXCLUDED_VARS.includes(key)
+      );
+
+      variableKeys.forEach((key) => {
+        let currentValue =
+          configVars[key] === "yes" || configVars[key] === "2" || configVars[key] === "1" || configVars[key] === "3"
+            ? "ON"
+            : "OFF";
+
+        let toggleOn = `On ${configMapping[key]} (Currently: ${currentValue})`;
+        let toggleOff = `Off ${configMapping[key]} (Currently: ${currentValue})`;
+
+        numberedList.push(`${index}. ${toggleOn}`);
+        numberedList.push(`${index + 1}. ${toggleOff}`);
+        index += 2;
       });
 
-      // Add Presence Variables
-      Object.keys(presenceMapping).forEach((key) => {
-        const isActive = configVars["PRESENCE"] === presenceMapping[key];
-        const value = isActive ? `Off ${key}` : `On ${key}`;
-        numberedList.push(`${index}. ${value}`);
-        index++;
-      });
+      const randomImage = Math.random() < 0.5
+        ? "https://files.catbox.moe/xx6ags.jpeg"
+        : "https://files.catbox.moe/dwdau2.jpeg";
 
-      message += numberedList.join("\n") + "\n📌 *Reply with a number to toggle a setting.*";
+      const message = `🌟 *BWM XMD VARS LIST* 🌟\n\n${numberedList.join("\n")}\n📌 *Reply with a number to choose an option.*`;
 
-      // Select a random image
-      const randomImage = menuImages[Math.floor(Math.random() * menuImages.length)];
-
-      // Send the menu as an image with a caption
       const sentMessage = await zk.sendMessage(chatId, {
         image: { url: randomImage },
         caption: message,
@@ -126,39 +122,44 @@ adams(
           message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
         ) {
           const selectedIndex = parseInt(responseText);
-          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > numberedList.length) {
+          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > variableKeys.length * 2) {
             return repondre("❌ *Invalid number. Please select a valid option.*");
           }
 
-          const selectedOption = numberedList[selectedIndex - 1];
-          const [status, variableName] = selectedOption.split(" ", 2);
+          // Determine which variable is being changed
+          const variableIndex = Math.floor((selectedIndex - 1) / 2);
+          const selectedKey = variableKeys[variableIndex];
+          const newValue = selectedIndex % 2 === 1 ? "yes" : "no";
 
-          let newValue;
-          let variableKey = Object.keys(configMapping).find((key) => configMapping[key] === variableName);
-
-          if (!variableKey) {
-            // Check if it's a Presence Variable
-            variableKey = "PRESENCE";
-            newValue = Object.keys(presenceMapping).find((key) => key === variableName) ? presenceMapping[variableName] : null;
+          // Handle PRESENCE variable separately
+          if (selectedKey.startsWith("PRESENCE")) {
+            const presenceValues = {
+              "Auto Typing On": "2",
+              "Auto Typing Off": "0",
+              "Always Online On": "1",
+              "Always Online Off": "0",
+              "Auto Recording On": "3",
+              "Auto Recording Off": "0",
+            };
+            await heroku.patch(`/apps/${appName}/config-vars`, {
+              body: {
+                PRESENCE: presenceValues[configMapping[selectedKey]],
+              },
+            });
           } else {
-            // Toggle ON/OFF for normal vars
-            newValue = status === "On" ? "yes" : "no";
+            // Update Heroku Environment Variable
+            await heroku.patch(`/apps/${appName}/config-vars`, {
+              body: {
+                [selectedKey]: newValue,
+              },
+            });
           }
-
-          if (newValue === null) {
-            return repondre("❌ *Error: Could not update variable.*");
-          }
-
-          // Update Heroku Environment Variable
-          await heroku.patch(`/apps/${appName}/config-vars`, {
-            body: { [variableKey]: newValue },
-          });
 
           // Restart Heroku Dynos
           await heroku.delete(`/apps/${appName}/dynos`);
 
           await zk.sendMessage(chatId, {
-            text: `✅ *${variableName} is now set to ${status.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
+            text: `✅ *${configMapping[selectedKey]} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
           });
         }
       });
