@@ -2,23 +2,6 @@ const { adams } = require('../Ibrahim/adams');
 const axios = require("axios");
 
 /**
- * Generic Function to Handle Video Downloading
- */
-async function fetchVideo(url, apiUrl) {
-  try {
-    const response = await axios.get(`${apiUrl}${encodeURIComponent(url)}`);
-    
-    if (!response.data || !response.data.data || response.data.data.length === 0) {
-      throw new Error("Invalid response from API");
-    }
-
-    return response.data.data[0].url; // Get the first video URL
-  } catch (error) {
-    throw new Error(`Error fetching video: ${error.message}`);
-  }
-}
-
-/**
  * Facebook Video Downloader
  */
 adams({
@@ -29,21 +12,24 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg } = commandeOptions;
 
-  if (!arg[0] || !arg[0].includes('facebook.com')) {
-    return repondre("Please provide a valid Facebook video link!");
-  }
+  if (!arg[0]) return repondre("*Please provide a Facebook video link!*");
 
   try {
-    const videoUrl = await fetchVideo(arg[0], "https://api-aswin-sparky.koyeb.app/api/downloader/fbdl?url=");
+    const { data } = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/fbdl?url=${encodeURIComponent(arg[0])}`);
+    
+    if (!data.result || !data.result.HD) return repondre("*Failed to fetch the video. Try a different link!*");
 
-    await zk.sendMessage(dest, {
-      video: { url: videoUrl },
-      mimetype: 'video/mp4',
-      caption: "*Facebook video by BWM XMD*",
-    });
-
+    await zk.sendMessage(
+      dest, 
+      {
+        video: { url: data.result.HD || data.result.SD },
+        caption: "*Facebook video by BWM XMD*",
+        mimetype: "video/mp4",
+      }
+    );
   } catch (error) {
-    repondre(error.message);
+    console.error(error);
+    repondre(`*Error fetching Facebook video:* ${error.message}`);
   }
 });
 
@@ -58,21 +44,24 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg } = commandeOptions;
 
-  if (!arg[0] || !arg[0].includes('tiktok.com')) {
-    return repondre("Please provide a valid TikTok video link!");
-  }
+  if (!arg[0]) return repondre("*Please provide a TikTok video link!*");
 
   try {
-    const videoUrl = await fetchVideo(arg[0], "https://api-aswin-sparky.koyeb.app/api/downloader/tiktok?url=");
+    const { data } = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/tiktok?url=${encodeURIComponent(arg[0])}`);
+    
+    if (!data.result || !data.result.video) return repondre("*Failed to fetch the TikTok video. Try another link!*");
 
-    await zk.sendMessage(dest, {
-      video: { url: videoUrl },
-      mimetype: 'video/mp4',
-      caption: "*TikTok video by BWM XMD*",
-    });
-
+    await zk.sendMessage(
+      dest, 
+      {
+        video: { url: data.result.video },
+        caption: "*TikTok video by BWM XMD*",
+        mimetype: "video/mp4",
+      }
+    );
   } catch (error) {
-    repondre(error.message);
+    console.error(error);
+    repondre(`*Error fetching TikTok video:* ${error.message}`);
   }
 });
 
@@ -87,21 +76,24 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg } = commandeOptions;
 
-  if (!arg[0] || !arg[0].includes('twitter.com')) {
-    return repondre("Please provide a valid Twitter video link!");
-  }
+  if (!arg[0]) return repondre("*Please provide a Twitter video link!*");
 
   try {
-    const videoUrl = await fetchVideo(arg[0], "https://api-aswin-sparky.koyeb.app/api/downloader/twiter?url=");
+    const { data } = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/twiter?url=${encodeURIComponent(arg[0])}`);
+    
+    if (!data.result || !data.result.video) return repondre("*Failed to fetch Twitter video. Try another link!*");
 
-    await zk.sendMessage(dest, {
-      video: { url: videoUrl },
-      mimetype: 'video/mp4',
-      caption: "*Twitter video by BWM XMD*",
-    });
-
+    await zk.sendMessage(
+      dest, 
+      {
+        video: { url: data.result.video },
+        caption: "*Twitter video by BWM XMD*",
+        mimetype: "video/mp4",
+      }
+    );
   } catch (error) {
-    repondre(error.message);
+    console.error(error);
+    repondre(`*Error fetching Twitter video:* ${error.message}`);
   }
 });
 
@@ -116,20 +108,23 @@ adams({
 }, async (dest, zk, commandeOptions) => {
   const { repondre, arg } = commandeOptions;
 
-  if (!arg[0] || !arg[0].includes('threads.net')) {
-    return repondre("Please provide a valid Threads post link!");
-  }
+  if (!arg[0]) return repondre("*Please provide a Threads video link!*");
 
   try {
-    const videoUrl = await fetchVideo(arg[0], "https://api-aswin-sparky.koyeb.app/api/downloader/threds?url=");
+    const { data } = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/threds?url=${encodeURIComponent(arg[0])}`);
+    
+    if (!data.result || !data.result.video) return repondre("*Failed to fetch Threads video. Try another link!*");
 
-    await zk.sendMessage(dest, {
-      video: { url: videoUrl },
-      mimetype: 'video/mp4',
-      caption: "*Threads video by BWM XMD*",
-    });
-
+    await zk.sendMessage(
+      dest, 
+      {
+        video: { url: data.result.video },
+        caption: "*Threads video by BWM XMD*",
+        mimetype: "video/mp4",
+      }
+    );
   } catch (error) {
-    repondre(error.message);
+    console.error(error);
+    repondre(`*Error fetching Threads video:* ${error.message}`);
   }
 });
