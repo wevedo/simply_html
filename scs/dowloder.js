@@ -1,4 +1,4 @@
-const { adams } = require('../Ibrahim/adams');
+/*const { adams } = require('../Ibrahim/adams');
 const axios = require("axios");
 const fs = require('fs');
 const { igdl } = require("ruhend-scraper");
@@ -253,3 +253,4 @@ adams({
     await repondre("Sorry, there was an error generating the response.");
   }
 });
+*/
