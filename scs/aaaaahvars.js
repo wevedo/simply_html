@@ -1,10 +1,11 @@
+
 const { adams } = require("../Ibrahim/adams");
 const Heroku = require("heroku-client");
 
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
 
-// Helper function to check required environment variables
+// Helper function to validate Heroku config
 function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
     repondre(
@@ -39,7 +40,7 @@ const configMapping = {
   "Auto Recording": "Auto Recording",
 };
 
-// **List of Excluded Variables**
+// **Excluded Variables**
 const EXCLUDED_VARS = [
   "DATA_BASE_URL",
   "MENU_TYPE",
@@ -55,7 +56,7 @@ const EXCLUDED_VARS = [
   "SESSION_ID",
 ];
 
-// **Command to Display All Heroku Environment Variables in a User-Friendly Format**
+// **Command to Display All Heroku Environment Variables with Pagination**
 adams(
   {
     nomCom: "getallvar",
@@ -85,7 +86,6 @@ adams(
       variableKeys.forEach((key) => {
         let currentValue;
 
-        // Handle `PRESENCE` variables separately
         if (key === "Auto Typing") {
           currentValue = configVars.PRESENCE === "2" ? "ON" : "OFF";
         } else if (key === "Always Online") {
@@ -100,95 +100,111 @@ adams(
         }
 
         let toggleOn = `On ${configMapping[key]}`;
-        let toggleOff = `Off ${configMapping[key]}\n Currently: ${currentValue}\n\n`;
+        let toggleOff = `Off ${configMapping[key]} (Currently: ${currentValue})`;
 
         numberedList.push(`${index}. ${toggleOn}`);
         numberedList.push(`${index + 1}. ${toggleOff}`);
         index += 2;
       });
 
-      const randomImage =
-        Math.random() < 0.5
-          ? "https://files.catbox.moe/xx6ags.jpeg"
-          : "https://files.catbox.moe/dwdau2.jpeg";
+      // Split into two pages
+      const chunkSize = Math.ceil(numberedList.length / 2);
+      const pages = [
+        numberedList.slice(0, chunkSize),
+        numberedList.slice(chunkSize),
+      ];
 
-      const message = `🌟 *BWM XMD VARS LIST* 🌟\n\n${numberedList.join(
-        "\n"
-      )}\n📌 *Reply with a number to choose an option.*`;
+      const sendPage = async (pageIndex) => {
+        if (pageIndex < 0 || pageIndex >= pages.length) return;
 
-      const sentMessage = await zk.sendMessage(chatId, {
-        image: { url: randomImage },
-        caption: message,
-      });
+        const randomImage =
+          Math.random() < 0.5
+            ? "https://files.catbox.moe/xx6ags.jpeg"
+            : "https://files.catbox.moe/dwdau2.jpeg";
 
-      // Listen for Reply
-      zk.ev.on("messages.upsert", async (update) => {
-        const message = update.messages[0];
-        if (!message.message || !message.message.extendedTextMessage) return;
+        const message = `🌟 *BWM XMD VARS LIST (Page ${
+          pageIndex + 1
+        }/${pages.length})* 🌟\n\n${pages[pageIndex].join(
+          "\n"
+        )}\n\n📌 *Reply with a number to toggle a variable or navigate pages:*\n▶️ *${chunkSize * 2 + 1}* Next Page\n◀️ *${
+          chunkSize * 2 + 2
+        }* Previous Page`;
 
-        const responseText = message.message.extendedTextMessage.text.trim();
-        if (
-          message.message.extendedTextMessage.contextInfo &&
-          message.message.extendedTextMessage.contextInfo.stanzaId ===
-            sentMessage.key.id
-        ) {
-          const selectedIndex = parseInt(responseText);
+        const sentMessage = await zk.sendMessage(chatId, {
+          image: { url: randomImage },
+          caption: message,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+          },
+        });
+
+        // Listen for Reply
+        zk.ev.on("messages.upsert", async (update) => {
+          const message = update.messages[0];
+          if (!message.message || !message.message.extendedTextMessage) return;
+
+          const responseText = message.message.extendedTextMessage.text.trim();
           if (
-            isNaN(selectedIndex) ||
-            selectedIndex < 1 ||
-            selectedIndex > variableKeys.length * 2
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId ===
+              sentMessage.key.id
           ) {
-            return repondre(
-              "❌ *Invalid number. Please select a valid option.*"
-            );
-          }
+            const selectedIndex = parseInt(responseText);
+            if (
+              isNaN(selectedIndex) ||
+              (selectedIndex < 1 && selectedIndex > chunkSize * 2 + 2)
+            ) {
+              return repondre(
+                "❌ *Invalid number. Please select a valid option.*"
+              );
+            }
 
-          // Determine which variable is being changed
-          const variableIndex = Math.floor((selectedIndex - 1) / 2);
-          const selectedKey = variableKeys[variableIndex];
+            if (selectedIndex === chunkSize * 2 + 1) {
+              return sendPage(pageIndex + 1);
+            } else if (selectedIndex === chunkSize * 2 + 2) {
+              return sendPage(pageIndex - 1);
+            }
 
-          let newValue;
-          if (selectedIndex % 2 === 1) {
-            newValue = "ON";
-          } else {
-            newValue = "OFF";
-          }
+            const variableIndex = Math.floor((selectedIndex - 1) / 2);
+            const selectedKey = variableKeys[variableIndex];
 
-          let presenceValue = "0"; // Default to OFF
+            let newValue =
+              selectedIndex % 2 === 1 ? "ON" : "OFF";
+            let presenceValue = "0";
 
-          // Update PRESENCE values correctly
-          if (selectedKey === "Auto Typing") {
-            presenceValue = newValue === "ON" ? "2" : "0";
-          } else if (selectedKey === "Always Online") {
-            presenceValue = newValue === "ON" ? "1" : "0";
-          } else if (selectedKey === "Auto Recording") {
-            presenceValue = newValue === "ON" ? "3" : "0";
-          }
+            if (selectedKey === "Auto Typing") {
+              presenceValue = newValue === "ON" ? "2" : "0";
+            } else if (selectedKey === "Always Online") {
+              presenceValue = newValue === "ON" ? "1" : "0";
+            } else if (selectedKey === "Auto Recording") {
+              presenceValue = newValue === "ON" ? "3" : "0";
+            }
 
-          if (
-            selectedKey === "Auto Typing" ||
-            selectedKey === "Always Online" ||
-            selectedKey === "Auto Recording"
-          ) {
-            // Update only PRESENCE variable
-            await heroku.patch(`/apps/${appName}/config-vars`, {
-              body: { PRESENCE: presenceValue },
+            if (
+              selectedKey === "Auto Typing" ||
+              selectedKey === "Always Online" ||
+              selectedKey === "Auto Recording"
+            ) {
+              await heroku.patch(`/apps/${appName}/config-vars`, {
+                body: { PRESENCE: presenceValue },
+              });
+            } else {
+              await heroku.patch(`/apps/${appName}/config-vars`, {
+                body: { [selectedKey]: newValue.toLowerCase() },
+              });
+            }
+
+            await heroku.delete(`/apps/${appName}/dynos`);
+
+            await zk.sendMessage(chatId, {
+              text: `✅ *${configMapping[selectedKey]} is now set to ${newValue}*\n\n🔄 *Bot is restarting...*`,
             });
-          } else {
-            // Update other variables normally
-            await heroku.patch(`/apps/${appName}/config-vars`, {
-              body: { [selectedKey]: newValue.toLowerCase() },
-            });
           }
+        });
+      };
 
-          // Restart Heroku Dynos
-          await heroku.delete(`/apps/${appName}/dynos`);
-
-          await zk.sendMessage(chatId, {
-            text: `✅ *${configMapping[selectedKey]} is now set to ${newValue}*\n\n🔄 *Bot is restarting...*`,
-          });
-        }
-      });
+      sendPage(0);
     } catch (error) {
       console.error("Error fetching Heroku vars:", error);
       await zk.sendMessage(chatId, {
