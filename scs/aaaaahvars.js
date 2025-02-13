@@ -35,12 +35,12 @@ const configMapping = {
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
   // Presence-related settings
-  "Auto Typing On": "PRESENCE=2",
-  "Auto Typing Off": "PRESENCE=0",
-  "Always Online On": "PRESENCE=1",
-  "Always Online Off": "PRESENCE=0",
-  "Auto Recording On": "PRESENCE=3",
-  "Auto Recording Off": "PRESENCE=0",
+  "Auto Typing On": "Auto Typing",
+  "Auto Typing Off": "Auto Typing",
+  "Always Online On": "Always Online",
+  "Always Online Off": "Always Online",
+  "Auto Recording On": "Auto Recording",
+  "Auto Recording Off": "Auto Recording",
 };
 
 // **List of Excluded Variables**
@@ -92,8 +92,8 @@ adams(
             ? "ON"
             : "OFF";
 
-        let toggleOn = `On ${configMapping[key]} (Currently: ${currentValue})`;
-        let toggleOff = `Off ${configMapping[key]} (Currently: ${currentValue})`;
+        let toggleOn = `On ${configMapping[key]} `;
+        let toggleOff = `Off ${configMapping[key]}\n Currently: ${currentValue}\n\n`;
 
         numberedList.push(`${index}. ${toggleOn}`);
         numberedList.push(`${index + 1}. ${toggleOff}`);
