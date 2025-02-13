@@ -119,7 +119,7 @@ adams(
             ? "https://files.catbox.moe/xx6ags.jpeg"
             : "https://files.catbox.moe/dwdau2.jpeg";
 
-        const message = `🌟 *BWM XMD VARS LIST* 🌟 \n *📌 *Reply with a number to toggle a variable*\n (Page ${
+        const message = `🌟 *BWM XMD VARS LIST* 🌟 \n *📌 Reply with a number to toggle a variable\n (Page ${
           pageIndex + 1
         }/${pages.length})*\n\n${pages[pageIndex].join(
           "\n"
