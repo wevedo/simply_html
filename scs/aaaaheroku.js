@@ -209,6 +209,160 @@ adams(
     }
   }
 );
+
+
+adams(
+  {
+    nomCom: "settings",
+    categorie: "Control",
+  },
+  async (chatId, zk, context) => {
+    const { repondre, superUser } = context;
+
+    if (!superUser) {
+      return repondre(
+        "🚫 *Access Denied!* This command is restricted to the bot owner."
+      );
+    }
+
+    if (!validateHerokuConfig(repondre)) return;
+
+    try {
+      const configVars = await heroku.get(`/apps/${appName}/config-vars`);
+      let numberedList = [];
+      let index = 1;
+
+      // Get keys that are not excluded
+      const variableKeys = Object.keys(configMapping).filter(
+        (key) => !EXCLUDED_VARS.includes(key)
+      );
+
+      variableKeys.forEach((key) => {
+        let currentValue;
+
+        if (key === "Auto Typing") {
+          currentValue = configVars.PRESENCE === "2" ? "yes" : "no";
+        } else if (key === "Always Online") {
+          currentValue = configVars.PRESENCE === "1" ? "yes" : "no";
+        } else if (key === "Auto Recording") {
+          currentValue = configVars.PRESENCE === "3" ? "yes" : "no";
+        } else {
+          currentValue = configVars[key] === "yes" ? "yes" : "no";
+        }
+
+        let toggleOn = `Enable ${configMapping[key]}`;
+        let toggleOff = `Disable ${configMapping[key]}\n♻️ Currently: ${currentValue}\n▱▱▱▱▱▱▱▰▰▰▰▰▰▰▰▰\n\n`;
+
+        numberedList.push(`${index}. ${toggleOn}`);
+        numberedList.push(`${index + 1}. ${toggleOff}`);
+        index += 2;
+      });
+
+      // Split into two pages
+      const chunkSize = Math.ceil(numberedList.length / 2);
+      const pages = [
+        numberedList.slice(0, chunkSize),
+        numberedList.slice(chunkSize),
+      ];
+
+      const sendPage = async (pageIndex) => {
+        if (pageIndex < 0 || pageIndex >= pages.length) return;
+
+        const randomImage =
+          Math.random() < 0.5
+            ? "https://files.catbox.moe/xx6ags.jpeg"
+            : "https://files.catbox.moe/dwdau2.jpeg";
+
+        const message = `🌟 *BWM XMD VARS LIST* 🌟 \n *📌 Reply with a number to toggle a variable\n (Page ${
+          pageIndex + 1
+        }/${pages.length})*\n\n${pages[pageIndex].join(
+          "\n"
+        )}\n\n📌 *Reply with a number to toggle a variable or navigate pages:*\n▶️ *${chunkSize * 2 + 1}* Next Page\n◀️ *${
+          chunkSize * 2 + 2
+        }* Previous Page`;
+
+        const sentMessage = await zk.sendMessage(chatId, {
+          image: { url: randomImage },
+          caption: message,
+          contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+          },
+        });
+
+        // Listen for Reply
+        zk.ev.on("messages.upsert", async (update) => {
+          const message = update.messages[0];
+          if (!message.message || !message.message.extendedTextMessage) return;
+
+          const responseText = message.message.extendedTextMessage.text.trim();
+          if (
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId ===
+              sentMessage.key.id
+          ) {
+            const selectedIndex = parseInt(responseText);
+            if (
+              isNaN(selectedIndex) ||
+              (selectedIndex < 1 && selectedIndex > chunkSize * 2 + 2)
+            ) {
+              return repondre(
+                "❌ *Invalid number. Please select a valid option.*"
+              );
+            }
+
+            if (selectedIndex === chunkSize * 2 + 1) {
+              return sendPage(pageIndex + 1);
+            } else if (selectedIndex === chunkSize * 2 + 2) {
+              return sendPage(pageIndex - 1);
+            }
+
+            const variableIndex = Math.floor((selectedIndex - 1) / 2);
+            const selectedKey = variableKeys[variableIndex];
+
+            let newValue = selectedIndex % 2 === 1 ? "yes" : "no";
+            let presenceValue = "0";
+
+            if (selectedKey === "Auto Typing") {
+              presenceValue = newValue === "yes" ? "2" : "0";
+            } else if (selectedKey === "Always Online") {
+              presenceValue = newValue === "yes" ? "1" : "0";
+            } else if (selectedKey === "Auto Recording") {
+              presenceValue = newValue === "yes" ? "3" : "0";
+            }
+
+            if (
+              selectedKey === "Auto Typing" ||
+              selectedKey === "Always Online" ||
+              selectedKey === "Auto Recording"
+            ) {
+              await heroku.patch(`/apps/${appName}/config-vars`, {
+                body: { PRESENCE: presenceValue },
+              });
+            } else {
+              await heroku.patch(`/apps/${appName}/config-vars`, {
+                body: { [selectedKey]: newValue },
+              });
+            }
+
+            await heroku.delete(`/apps/${appName}/dynos`);
+
+            await zk.sendMessage(chatId, {
+              text: `✅ *${configMapping[selectedKey]} is now set to ${newValue}*\n\n🔄 *Bot is restarting...*`,
+            });
+          }
+        });
+      };
+
+      sendPage(0);
+    } catch (error) {
+      console.error("Error fetching Heroku vars:", error);
+      await zk.sendMessage(chatId, {
+        text: "⚠️ *Failed to fetch Heroku environment variables!*",
+      });
+    }
+  }
+);
 // Command to set or update Heroku environment variables
 adams({
   nomCom: 'setvar',
