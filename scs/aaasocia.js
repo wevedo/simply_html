@@ -1,5 +1,32 @@
 const { adams } = require('../Ibrahim/adams');
 const axios = require("axios");
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Function to download a file from a URL
+ * @param {string} url - File URL to download
+ * @param {string} type - File type (video/audio)
+ * @returns {Promise<string>} - Local file path
+ */
+const downloadFile = async (url, type) => {
+  const fileExtension = type === 'audio' ? '.mp3' : '.mp4';
+  const fileName = `download_${Date.now()}${fileExtension}`;
+  const filePath = path.join(__dirname, fileName);
+
+  const response = await axios({
+    url,
+    method: 'GET',
+    responseType: 'stream',
+  });
+
+  return new Promise((resolve, reject) => {
+    const fileStream = fs.createWriteStream(filePath);
+    response.data.pipe(fileStream);
+    fileStream.on('finish', () => resolve(filePath));
+    fileStream.on('error', reject);
+  });
+};
 
 /**
  * Facebook Video Downloader
@@ -18,24 +45,26 @@ adams({
 
   try {
     const response = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/fbdl?url=${encodeURIComponent(arg[0])}`);
-    const videoLinks = response.data.result;
+    const videoUrl = response.data.result.HD || response.data.result.SD;
 
-    if (!videoLinks.HD && !videoLinks.SD) {
-      return repondre("Failed to fetch video. Try a different link.");
-    }
+    if (!videoUrl) return repondre("Failed to fetch video.");
+
+    const filePath = await downloadFile(videoUrl, 'video');
 
     await zk.sendMessage(dest, {
-      video: { url: videoLinks.HD || videoLinks.SD },
+      video: fs.readFileSync(filePath),
       caption: "*Facebook video by BWM XMD*",
     });
+
+    fs.unlinkSync(filePath);
   } catch (error) {
     console.error(error);
-    repondre("An error occurred while fetching the Facebook video.");
+    repondre("An error occurred while downloading the Facebook video.");
   }
 });
 
 /**
- * TikTok Video Downloader
+ * TikTok Video & Audio Downloader
  */
 adams({
   nomCom: "tiktok",
@@ -51,27 +80,30 @@ adams({
 
   try {
     const response = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/tiktok?url=${encodeURIComponent(arg[0])}`);
-    const videoLinks = response.data.result;
+    const videoUrl = response.data.result.video;
+    const audioUrl = response.data.result.audio;
 
-    if (!videoLinks.video) {
-      return repondre("Failed to fetch TikTok video. Try a different link.");
-    }
+    if (!videoUrl) return repondre("Failed to fetch TikTok video.");
 
+    const videoPath = await downloadFile(videoUrl, 'video');
     await zk.sendMessage(dest, {
-      video: { url: videoLinks.video },
+      video: fs.readFileSync(videoPath),
       caption: "*TikTok video by BWM XMD*",
     });
+    fs.unlinkSync(videoPath);
 
-    if (videoLinks.audio) {
+    if (audioUrl) {
+      const audioPath = await downloadFile(audioUrl, 'audio');
       await zk.sendMessage(dest, {
-        audio: { url: videoLinks.audio },
+        audio: fs.readFileSync(audioPath),
         mimetype: "audio/mpeg",
         caption: "*TikTok audio by BWM XMD*",
       });
+      fs.unlinkSync(audioPath);
     }
   } catch (error) {
     console.error(error);
-    repondre("An error occurred while fetching the TikTok video.");
+    repondre("An error occurred while downloading the TikTok video.");
   }
 });
 
@@ -92,19 +124,21 @@ adams({
 
   try {
     const response = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/twiter?url=${encodeURIComponent(arg[0])}`);
-    const videoLinks = response.data.result;
+    const videoUrl = response.data.result.video;
 
-    if (!videoLinks.video) {
-      return repondre("Failed to fetch Twitter video. Try a different link.");
-    }
+    if (!videoUrl) return repondre("Failed to fetch Twitter video.");
+
+    const filePath = await downloadFile(videoUrl, 'video');
 
     await zk.sendMessage(dest, {
-      video: { url: videoLinks.video },
+      video: fs.readFileSync(filePath),
       caption: "*Twitter video by BWM XMD*",
     });
+
+    fs.unlinkSync(filePath);
   } catch (error) {
     console.error(error);
-    repondre("An error occurred while fetching the Twitter video.");
+    repondre("An error occurred while downloading the Twitter video.");
   }
 });
 
@@ -125,18 +159,20 @@ adams({
 
   try {
     const response = await axios.get(`https://api-aswin-sparky.koyeb.app/api/downloader/threds?url=${encodeURIComponent(arg[0])}`);
-    const videoLinks = response.data.result;
+    const videoUrl = response.data.result.video;
 
-    if (!videoLinks.video) {
-      return repondre("Failed to fetch Threads video. Try a different link.");
-    }
+    if (!videoUrl) return repondre("Failed to fetch Threads video.");
+
+    const filePath = await downloadFile(videoUrl, 'video');
 
     await zk.sendMessage(dest, {
-      video: { url: videoLinks.video },
+      video: fs.readFileSync(filePath),
       caption: "*Threads video by BWM XMD*",
     });
+
+    fs.unlinkSync(filePath);
   } catch (error) {
     console.error(error);
-    repondre("An error occurred while fetching the Threads video.");
+    repondre("An error occurred while downloading the Threads video.");
   }
 });
