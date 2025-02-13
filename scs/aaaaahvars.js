@@ -63,16 +63,7 @@ const presenceOptions = {
   "Auto Recording Off": "0",
 };
 
-// **Randomly select one of the provided images**
-function getRandomImage() {
-  const images = [
-    "https://files.catbox.moe/xx6ags.jpeg",
-    "https://files.catbox.moe/dwdau2.jpeg",
-  ];
-  return images[Math.floor(Math.random() * images.length)];
-}
-
-// **Command to Display All Heroku Environment Variables in Two Pages**
+// **Command to Display All Heroku Environment Variables in a User-Friendly Format**
 adams(
   {
     nomCom: "getallvar",
@@ -91,48 +82,94 @@ adams(
 
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-      let variables = [];
+      let variableList = [];
 
-      // Display regular variables (excluding EXCLUDED_VARS)
+      // Generate list of variables excluding EXCLUDED_VARS
       Object.keys(configVars).forEach((key) => {
-        if (EXCLUDED_VARS.includes(key)) return;
+        if (!EXCLUDED_VARS.includes(key)) {
+          const displayName = configMapping[key] || key;
+          let value = configVars[key];
 
-        const displayName = configMapping[key] || key;
-        let value = configVars[key];
+          value = value.toLowerCase() === "yes" ? "ON" : "OFF";
 
-        value = value.toLowerCase() === "yes" ? "ON" : "OFF";
-
-        variables.push(`🔹 *${displayName}:* ${value}`);
+          variableList.push(
+            `✅ *${displayName}*`,
+            `   ➖ Currently: *${value}*`
+          );
+        }
       });
 
-      // Add Presence settings inside the list
+      // Add Presence settings
       Object.entries(presenceOptions).forEach(([label, value]) => {
         const isActive = configVars["PRESENCE"] === value;
-        variables.push(`🔹 *${label}:* ${isActive ? "ON" : "OFF"}`);
+        variableList.push(
+          `✅ *${label}*`,
+          `   ➖ Currently: *${isActive ? "ON" : "OFF"}*`
+        );
       });
 
-      // Split into two pages
-      const midIndex = Math.ceil(variables.length / 2);
-      const page1 = variables.slice(0, midIndex).join("\n");
-      const page2 = variables.slice(midIndex).join("\n");
+      // **Paginate Variables into Two Pages**
+      const half = Math.ceil(variableList.length / 2);
+      const page1 = variableList.slice(0, half);
+      const page2 = variableList.slice(half);
 
-      // Send first page with a random image
-      await zk.sendMessage(chatId, {
-        image: { url: getRandomImage() },
-        caption: `🌟 *BWM XMD VARS LIST - Page 1* 🌟\n\n${page1}\n\n📌 *Reply 'next' to see Page 2.*`,
+      // **Randomly Choose Image**
+      const images = [
+        "https://files.catbox.moe/xx6ags.jpeg",
+        "https://files.catbox.moe/dwdau2.jpeg",
+      ];
+      const selectedImage = images[Math.floor(Math.random() * images.length)];
+
+      // **Randomly Select Page**
+      const selectedPage = Math.random() > 0.5 ? page1 : page2;
+      const message = selectedPage.join("\n") + `\n\n📌 *Reply with a number to toggle ON/OFF*`;
+
+      const sentMessage = await zk.sendMessage(chatId, {
+        image: { url: selectedImage },
+        caption: message,
       });
 
-      // Listen for Reply to send Page 2
+      // **Listen for User Response**
       zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
-        if (!message.message || !message.message.conversation) return;
+        if (!message.message || !message.message.extendedTextMessage) return;
 
-        const responseText = message.message.conversation.trim().toLowerCase();
+        const responseText = message.message.extendedTextMessage.text.trim();
+        if (
+          message.message.extendedTextMessage.contextInfo &&
+          message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+        ) {
+          const selectedIndex = parseInt(responseText);
+          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > variableList.length / 2) {
+            return repondre("❌ *Invalid number. Please select a valid option.*");
+          }
 
-        if (responseText === "next") {
+          const variableKeys = Object.keys(configVars).filter((key) => !EXCLUDED_VARS.includes(key));
+          let selectedKey, newValue;
+
+          if (selectedIndex <= variableKeys.length) {
+            // Regular ON/OFF variables
+            selectedKey = variableKeys[selectedIndex - 1];
+            newValue = configVars[selectedKey].toLowerCase() === "yes" ? "no" : "yes";
+          } else {
+            // Presence settings
+            const presenceOptionsArray = Object.entries(presenceOptions);
+            selectedKey = "PRESENCE";
+            newValue = presenceOptionsArray[selectedIndex - variableKeys.length - 1][1];
+          }
+
+          // Update Heroku Environment Variable
+          await heroku.patch(`/apps/${appName}/config-vars`, {
+            body: {
+              [selectedKey]: newValue,
+            },
+          });
+
+          // Restart Heroku Dynos
+          await heroku.delete(`/apps/${appName}/dynos`);
+
           await zk.sendMessage(chatId, {
-            image: { url: getRandomImage() },
-            caption: `🌟 *BWM XMD VARS LIST - Page 2* 🌟\n\n${page2}`,
+            text: `✅ *${configMapping[selectedKey] || selectedKey} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
           });
         }
       });
