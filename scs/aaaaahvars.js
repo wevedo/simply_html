@@ -35,12 +35,9 @@ const configMapping = {
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
   // Presence-related settings
-  "Auto Typing On": "Auto Typing",
-  "Auto Typing Off": "Auto Typing",
-  "Always Online On": "Always Online",
-  "Always Online Off": "Always Online",
-  "Auto Recording On": "Auto Recording",
-  "Auto Recording Off": "Auto Recording",
+  "Auto Typing On": "PRESENCE=2",
+  "Always Online On": "PRESENCE=1",
+  "Auto Recording On": "PRESENCE=3",
 };
 
 // **List of Excluded Variables**
