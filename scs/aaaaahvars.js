@@ -18,31 +18,19 @@ function validateHerokuConfig(repondre) {
   return true;
 }
 
-// Variables Mapping (Excluding Unwanted Ones)
+// Excluded Variables (These won't be displayed)
 const excludedVars = [
   "DATA_BASE_URL", "MENU_TYPE", "CHATBOT1", "OWNER_NAME",
   "HEROKU_API_KEY", "HEROKU_APP_NAME", "NUMERO_OWNER",
   "PM_PERMIT", "PREFIX", "WARN_COUNT", "SESSION_ID"
 ];
 
+// Variables to Show in the Menu
 const configMapping = {
-  ANTICALL: "Anti Call",
-  ANTIDELETE_MESSAGES: "Anti Delete Messages",
-  ANTILINK_GROUP: "Anti Link in Groups",
-  AUDIO_CHATBOT: "Audio Chatbot",
-  AUTO_BIO: "Auto Bio",
-  AUTO_DOWNLOAD_STATUS: "Auto Download Status",
-  AUTO_REACT: "Auto React",
-  AUTO_READ: "Auto Read",
-  AUTO_SAVE_CONTACTS: "Auto Save Contacts",
-  CHATBOT: "Chatbot",
-  PUBLIC_MODE: "Public Mode",
-  STARTING_BOT_MESSAGE: "Starting Bot Message",
-  // Presence Variables
-  "Auto Typing On": "PRESENCE=2",
-  "Auto Typing Off": "PRESENCE=0",
   "Always Online On": "PRESENCE=1",
   "Always Online Off": "PRESENCE=0",
+  "Auto Typing On": "PRESENCE=2",
+  "Auto Typing Off": "PRESENCE=3",
   "Auto Recording On": "PRESENCE=3",
   "Auto Recording Off": "PRESENCE=0",
 };
@@ -70,8 +58,8 @@ adams(
 
     try {
       const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-      const variableKeys = Object.keys(configMapping).filter((key) => !excludedVars.includes(key));
-      const varsPerPage = 5; // Adjust the number of variables per page
+      const variableKeys = Object.keys(configMapping);
+      const varsPerPage = 3; // Adjust the number of variables per page
       let currentPage = 1;
       const totalPages = Math.ceil(variableKeys.length / varsPerPage);
 
@@ -87,15 +75,12 @@ adams(
         let numberedList = [];
 
         pageVars.forEach((key) => {
-          let value = configVars[key] === "yes" ? "ON" : "OFF";
-          if (key.startsWith("Auto Typing") || key.startsWith("Always Online") || key.startsWith("Auto Recording")) {
-            value = configVars["PRESENCE"] === configMapping[key].split("=")[1] ? "ON" : "OFF";
-          }
+          let value = configVars["PRESENCE"] === configMapping[key].split("=")[1] ? "ON" : "OFF";
 
           numberedList.push(
-            `🔹 *${configMapping[key]}*`,
-            ` ${index}. Turn ON ${configMapping[key]}`,
-            ` ${index + 1}. Turn OFF ${configMapping[key]}`,
+            `🔹 *${key}*`,
+            ` ${index}. Turn ON ${key}`,
+            ` ${index + 1}. Turn OFF ${key}`,
             `     ✅ Currently: *${value}*\n`
           );
           index += 2;
@@ -141,17 +126,12 @@ adams(
             const selectedKey = variableKeys[variableIndex];
             if (!selectedKey) return repondre("❌ *Invalid selection.*");
 
-            let newValue;
-            if (configMapping[selectedKey].includes("PRESENCE")) {
-              newValue = configMapping[selectedKey].split("=")[1]; // Extract Presence value
-            } else {
-              newValue = selectedIndex % 2 === 1 ? "yes" : "no";
-            }
+            let newValue = configMapping[selectedKey].split("=")[1]; // Extract the value
 
             // Update Heroku Variable
             await heroku.patch(`/apps/${appName}/config-vars`, {
               body: {
-                [selectedKey]: newValue,
+                PRESENCE: newValue, // Set PRESENCE to the selected value
               },
             });
 
@@ -159,7 +139,7 @@ adams(
             await heroku.delete(`/apps/${appName}/dynos`);
 
             await zk.sendMessage(chatId, {
-              text: `✅ *${configMapping[selectedKey]} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
+              text: `✅ *${selectedKey} is now set to ${newValue}*\n\n🔄 *Bot is restarting...*`,
             });
 
             sendPage(page); // Refresh the page
