@@ -87,22 +87,22 @@ adams(
         let currentValue;
 
         if (key === "Auto Typing") {
-          currentValue = configVars.PRESENCE === "2" ? "ON" : "OFF";
+          currentValue = configVars.PRESENCE === "2" ? "YES" : "OFF";
         } else if (key === "Always Online") {
-          currentValue = configVars.PRESENCE === "1" ? "ON" : "OFF";
+          currentValue = configVars.PRESENCE === "1" ? "YES" : "OFF";
         } else if (key === "Auto Recording") {
-          currentValue = configVars.PRESENCE === "3" ? "ON" : "OFF";
+          currentValue = configVars.PRESENCE === "3" ? "YES" : "OFF";
         } else {
           currentValue =
             configVars[key] === "yes" || configVars[key] === "1"
-              ? "ON"
+              ? "YES"
               : "OFF";
         }
 
-        let toggleOn = `On ${configMapping[key]}`;
-        let toggleOff = `Off ${configMapping[key]} (Currently: ${currentValue})`;
+        let toggleyes = `On ${configMapping[key]}`;
+        let toggleOff = `Off ${configMapping[key]}\n♻️Currently: ${currentValue}\n▱▱▱▱▱▱▱▰▰▰▰▰▰▰▰▰\n\n`;
 
-        numberedList.push(`${index}. ${toggleOn}`);
+        numberedList.push(`${index}. ${toggleYes}`);
         numberedList.push(`${index + 1}. ${toggleOff}`);
         index += 2;
       });
@@ -170,15 +170,15 @@ adams(
             const selectedKey = variableKeys[variableIndex];
 
             let newValue =
-              selectedIndex % 2 === 1 ? "ON" : "OFF";
+              selectedIndex % 2 === 1 ? "YES" : "OFF";
             let presenceValue = "0";
 
             if (selectedKey === "Auto Typing") {
-              presenceValue = newValue === "ON" ? "2" : "0";
+              presenceValue = newValue === "YES" ? "2" : "0";
             } else if (selectedKey === "Always Online") {
-              presenceValue = newValue === "ON" ? "1" : "0";
+              presenceValue = newValue === "YES" ? "1" : "0";
             } else if (selectedKey === "Auto Recording") {
-              presenceValue = newValue === "ON" ? "3" : "0";
+              presenceValue = newValue === "YES" ? "3" : "0";
             }
 
             if (
