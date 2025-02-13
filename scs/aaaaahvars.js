@@ -50,7 +50,11 @@ const configMapping = {
   CHATBOT1: "Chatbot1",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
-  PRESENCE: "Presence Status",
+  "PRESENCE=2": "Auto Typing On",
+  "PRESENCE=0": "Auto Typing Off",
+  "PRESENCE=1": "Always Online On",
+  "PRESENCE=0": "Always Online Off",
+  "PRESENCE=3": "Auto Recording On",
 };
 
 // **Command to Display All Heroku Environment Variables in a User-Friendly Format**
@@ -84,18 +88,7 @@ adams(
         const displayName = configMapping[key] || key;
         let value = configVars[key];
 
-        if (key === "PRESENCE") {
-          value =
-            value == "2"
-              ? "Auto Typing"
-              : value == "1"
-              ? "Always Online"
-              : value == "3"
-              ? "Auto Recording"
-              : "OFF";
-        } else {
-          value = value.toLowerCase() === "yes" ? "ON" : "OFF";
-        }
+        value = value.toLowerCase() === "yes" ? "ON" : "OFF";
 
         numberedList.push(
           `${index}. Turn ON ${displayName}`,
@@ -129,19 +122,7 @@ adams(
           const variableKeys = Object.keys(configVars).filter((key) => !EXCLUDED_VARS.includes(key));
           const selectedKey = variableKeys[variableIndex];
 
-          let newValue;
-          if (selectedKey === "PRESENCE") {
-            newValue =
-              selectedIndex % 2 === 1
-                ? selectedIndex === 1
-                  ? "2"
-                  : selectedIndex === 3
-                  ? "1"
-                  : "3"
-                : "0";
-          } else {
-            newValue = selectedIndex % 2 === 1 ? "yes" : "no";
-          }
+          let newValue = selectedIndex % 2 === 1 ? "yes" : "no";
 
           // Update Heroku Environment Variable
           await heroku.patch(`/apps/${appName}/config-vars`, {
