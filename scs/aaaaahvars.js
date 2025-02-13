@@ -56,7 +56,7 @@ const EXCLUDED_VARS = [
   "SESSION_ID",
 ];
 
-// **Command to Display All Heroku Environment Variables with Pagination**
+// **Command to Display and Modify Heroku Variables**
 adams(
   {
     nomCom: "getallvar",
@@ -87,22 +87,19 @@ adams(
         let currentValue;
 
         if (key === "Auto Typing") {
-          currentValue = configVars.PRESENCE === "2" ? "YES" : "OFF";
+          currentValue = configVars.PRESENCE === "2" ? "yes" : "no";
         } else if (key === "Always Online") {
-          currentValue = configVars.PRESENCE === "1" ? "YES" : "OFF";
+          currentValue = configVars.PRESENCE === "1" ? "yes" : "no";
         } else if (key === "Auto Recording") {
-          currentValue = configVars.PRESENCE === "3" ? "YES" : "OFF";
+          currentValue = configVars.PRESENCE === "3" ? "yes" : "no";
         } else {
-          currentValue =
-            configVars[key] === "yes" || configVars[key] === "1"
-              ? "YES"
-              : "OFF";
+          currentValue = configVars[key] === "yes" ? "yes" : "no";
         }
 
-        let toggleyes = `On ${configMapping[key]}`;
-        let toggleOff = `Off ${configMapping[key]}\n♻️Currently: ${currentValue}\n▱▱▱▱▱▱▱▰▰▰▰▰▰▰▰▰\n\n`;
+        let toggleOn = `Enable ${configMapping[key]}`;
+        let toggleOff = `Disable ${configMapping[key]}\n♻️ Currently: ${currentValue})\n▱▱▱▱▱▱▱▰▰▰▰▰▰▰▰▰\n\n`;
 
-        numberedList.push(`${index}. ${toggleYes}`);
+        numberedList.push(`${index}. ${toggleOn}`);
         numberedList.push(`${index + 1}. ${toggleOff}`);
         index += 2;
       });
@@ -169,16 +166,15 @@ adams(
             const variableIndex = Math.floor((selectedIndex - 1) / 2);
             const selectedKey = variableKeys[variableIndex];
 
-            let newValue =
-              selectedIndex % 2 === 1 ? "YES" : "OFF";
+            let newValue = selectedIndex % 2 === 1 ? "yes" : "no";
             let presenceValue = "0";
 
             if (selectedKey === "Auto Typing") {
-              presenceValue = newValue === "YES" ? "2" : "0";
+              presenceValue = newValue === "yes" ? "2" : "0";
             } else if (selectedKey === "Always Online") {
-              presenceValue = newValue === "YES" ? "1" : "0";
+              presenceValue = newValue === "yes" ? "1" : "0";
             } else if (selectedKey === "Auto Recording") {
-              presenceValue = newValue === "YES" ? "3" : "0";
+              presenceValue = newValue === "yes" ? "3" : "0";
             }
 
             if (
@@ -191,7 +187,7 @@ adams(
               });
             } else {
               await heroku.patch(`/apps/${appName}/config-vars`, {
-                body: { [selectedKey]: newValue.toLowerCase() },
+                body: { [selectedKey]: newValue },
               });
             }
 
