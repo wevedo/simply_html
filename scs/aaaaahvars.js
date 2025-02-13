@@ -4,15 +4,15 @@ const Heroku = require('heroku-client');
 const heroku = new Heroku({ token: process.env.HEROKU_API_KEY });
 const appName = process.env.HEROKU_APP_NAME;
 
-// List of variables to exclude from display
+// Variables to exclude from the displayed list
 const EXCLUDED_VARS = [
   "BOT_MENU_LINK", "BOT_NAME", "DATABASE_URL", "HEROKU_API_KEY", 
   "HEROKU_APP_NAME", "MENU_TYPE", "NUMERO_OWNER", "PM_PERMIT", 
   "PREFIX", "WARN_COUNT", "SESSION_ID"
 ];
 
-// Mappings for better readability
-const VAR_MAPPINGS = {
+// Custom variable mappings for display
+const VAR_DISPLAY_NAMES = {
   "ANTICALL": "Anti Call",
   "ANTIDELETE_MESSAGES": "Anti Delete Messages",
   "ANTILINK_GROUP": "Anti Link in Groups",
@@ -28,110 +28,136 @@ const VAR_MAPPINGS = {
   "CHATBOT1": "Chatbot1",
   "PUBLIC_MODE": "Public Mode",
   "STARTING_BOT_MESSAGE": "Starting Bot Message",
-  "PRESENCE": "Presence"
+  "PRESENCE": "Presence Mode"
 };
 
-// Special handling for PRESENCE variable
-const PRESENCE_MAPPING = {
-  "2": "Auto Typing (On)",
-  "1": "Always Online (On)",
-  "3": "Auto Recording (On)",
-  "0": "Off"
+// Custom presence mode mappings
+const PRESENCE_MODES = {
+  "2": "Auto Typing On",
+  "0": "Auto Typing Off",
+  "1": "Always Online On",
+  "3": "Auto Recording On"
 };
 
-// Fetch and display all variables
-adams({
-  nomCom: 'getallvar',
-  categorie: "Control"
-}, async (chatId, zk, context) => {
-  const { repondre, superUser } = context;
-
-  if (!superUser) {
-    return repondre("Access Denied! This command is restricted to the bot owner.");
-  }
-
+// Validate Heroku config
+function validateHerokuConfig(repondre) {
   if (!process.env.HEROKU_API_KEY || !appName) {
-    return repondre("Missing Configuration! Please set HEROKU_API_KEY and HEROKU_APP_NAME.");
+    repondre("⚠️ Missing Configuration! Ensure HEROKU_API_KEY and HEROKU_APP_NAME are set.");
+    return false;
   }
+  return true;
+}
+
+// Command to display all variables in numbered format
+adams({ nomCom: 'getallvar', categorie: "Control" }, async (chatId, zk, context) => {
+  const { repondre, superUser } = context;
+  if (!superUser) return repondre("Access Denied! This command is for the bot owner.");
+
+  if (!validateHerokuConfig(repondre)) return;
 
   try {
     const configVars = await heroku.get(`/apps/${appName}/config-vars`);
     let message = "*BWM XMD VARS LIST*\n\n";
-    let optionNumber = 1;
-    let varOptions = {};
+    let i = 1;
+    let varOptions = [];
 
-    Object.entries(configVars).forEach(([key, value]) => {
-      if (!EXCLUDED_VARS.includes(key)) {
-        let varDisplay = VAR_MAPPINGS[key] || key;
-        let statusOn = `${varDisplay} is On`;
-        let statusOff = `${varDisplay} is Off`;
+    for (const [key, value] of Object.entries(configVars)) {
+      if (EXCLUDED_VARS.includes(key)) continue;
 
-        if (key === "PRESENCE") {
-          statusOn = `Auto Typing On: PRESENCE=2\nAlways Online On: PRESENCE=1\nAuto Recording On: PRESENCE=3`;
-          statusOff = `Auto Typing Off: PRESENCE=0\nAlways Online Off: PRESENCE=0\nAuto Recording Off: PRESENCE=0`;
-          message += `${optionNumber}. ${PRESENCE_MAPPING[value] || "Unknown"}\n`;
-        } else {
-          message += `${optionNumber}. ${value === "yes" ? statusOn : statusOff}\n`;
-        }
+      let displayName = VAR_DISPLAY_NAMES[key] || key;
+      let currentState = value.toLowerCase() === "yes" ? "On" : "Off";
+      let option1 = `${i}. ${displayName} is On → ${key}=yes`;
+      let option2 = `${i + 1}. ${displayName} is Off → ${key}=no`;
+      message += `${option1}\n${option2}\n(Currently: ${currentState})\n\n`;
 
-        varOptions[optionNumber] = key;
-        optionNumber++;
-      }
-    });
+      varOptions.push({ key, onValue: "yes", offValue: "no" });
+      i += 2;
+    }
 
-    message += "\nReply with the number to toggle a setting.";
-
-    // Store variable options in the context
-    context.varOptions = varOptions;
     await zk.sendMessage(chatId, { text: message });
+    context.varOptions = varOptions; // Store options for selection
 
   } catch (error) {
     console.error("Error fetching Heroku vars:", error);
-    await zk.sendMessage(chatId, { text: "Failed to fetch Heroku environment variables!" });
+    await zk.sendMessage(chatId, { text: "⚠️ Failed to fetch Heroku environment variables!" });
   }
 });
 
-// Handle user selection to toggle a variable
-adams({
-  nomCom: 'setvar',
-  categorie: "Control"
-}, async (chatId, zk, context) => {
-  const { repondre, superUser, body, varOptions } = context;
+// Command to toggle a variable by number
+adams({ nomCom: 'togglevar', categorie: "Control" }, async (chatId, zk, context) => {
+  const { repondre, superUser, arg, varOptions } = context;
+  if (!superUser) return repondre("Access Denied! This command is for the bot owner.");
 
-  if (!superUser) {
-    return repondre("Access Denied! This command is restricted to the bot owner.");
+  if (!validateHerokuConfig(repondre)) return;
+
+  const selectedIndex = parseInt(arg[0], 10);
+  if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > varOptions.length * 2) {
+    return repondre("Invalid selection! Reply with a valid number from the list.");
   }
 
-  const selectedOption = parseInt(body.trim());
-  if (!varOptions || !varOptions[selectedOption]) {
-    return repondre("Invalid selection. Use 'getallvar' to see available options.");
-  }
+  let varIndex = Math.floor((selectedIndex - 1) / 2);
+  let selectedVar = varOptions[varIndex];
 
-  const varName = varOptions[selectedOption];
+  let newValue = selectedIndex % 2 === 1 ? selectedVar.onValue : selectedVar.offValue;
 
   try {
-    const configVars = await heroku.get(`/apps/${appName}/config-vars`);
-    let newValue;
-
-    if (varName === "PRESENCE") {
-      newValue = configVars[varName] === "2" ? "0" : "2"; // Toggle between typing and off
-    } else {
-      newValue = configVars[varName] === "yes" ? "no" : "yes"; // Toggle yes/no
-    }
-
-    await heroku.patch(`/apps/${appName}/config-vars`, {
-      body: { [varName]: newValue }
-    });
-
-    await heroku.delete(`/apps/${appName}/dynos`); // Restart bot
+    await heroku.patch(`/apps/${appName}/config-vars`, { body: { [selectedVar.key]: newValue } });
+    await heroku.delete(`/apps/${appName}/dynos`);
 
     await zk.sendMessage(chatId, {
-      text: `Heroku Variable Updated!\n\n${VAR_MAPPINGS[varName] || varName} is now ${newValue.toUpperCase()}.\n\nPlease wait for one minute for the bot to restart.`
+      text: `✅ Updated *${selectedVar.key}* to *${newValue}*\n🔄 Restarting bot...`
     });
 
   } catch (error) {
     console.error("Error updating Heroku var:", error);
-    await zk.sendMessage(chatId, { text: "Failed to update Heroku variable!" });
+    await zk.sendMessage(chatId, { text: "⚠️ Failed to update Heroku variable!" });
+  }
+});
+
+// Command to manually set a variable
+adams({ nomCom: 'setvar', categorie: "Control" }, async (chatId, zk, context) => {
+  const { repondre, superUser, arg } = context;
+  if (!superUser) return repondre("Access Denied! This command is for the bot owner.");
+
+  if (!validateHerokuConfig(repondre)) return;
+
+  if (!arg[0] || !arg[0].includes('=')) {
+    return repondre("Usage: setvar VAR_NAME=value\nExample: setvar AUTO_REPLY=yes");
+  }
+
+  const [varName, value] = arg[0].split('=');
+  if (!varName || !value) return repondre("⚠️ Invalid format! Use VAR_NAME=value.");
+
+  try {
+    await heroku.patch(`/apps/${appName}/config-vars`, { body: { [varName]: value } });
+    await heroku.delete(`/apps/${appName}/dynos`);
+
+    await zk.sendMessage(chatId, {
+      text: `✅ *Updated Variable*\n\n🔑 *${varName}* = *${value}*\n🔄 Restarting bot...`
+    });
+
+  } catch (error) {
+    console.error("Error updating Heroku var:", error);
+    await zk.sendMessage(chatId, { text: "⚠️ Failed to update Heroku variable!" });
+  }
+});
+
+// Command to restart the bot
+adams({ nomCom: 'update', categorie: "Control" }, async (chatId, zk, context) => {
+  const { repondre, superUser } = context;
+  if (!superUser) return repondre("Access Denied! This command is for the bot owner.");
+
+  if (!validateHerokuConfig(repondre)) return;
+
+  try {
+    await heroku.delete(`/apps/${appName}/dynos`);
+    await zk.sendMessage(chatId, {
+      text: "✅ *Bot restarted successfully!*\n🔄 Wait a minute for it to come back online."
+    });
+
+  } catch (error) {
+    console.error("Error restarting Heroku dynos:", error);
+    await zk.sendMessage(chatId, { text: "⚠️ Failed to restart bot!" });
   }
 });
 
