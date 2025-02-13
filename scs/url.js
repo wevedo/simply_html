@@ -1,4 +1,4 @@
-const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
+/*const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
 //const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const { adams } = require("../Ibrahim/adams");
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
