@@ -118,6 +118,50 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
 });
 
 
+async function convertToMp3(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .toFormat("mp3")
+            .on("error", (err) => reject(err))
+            .on("end", () => resolve(outputPath))
+            .save(outputPath);
+    });
+}
+
+adams({ nomCom: "tomp3", categorie: "General", reaction: "🎵" }, async (origineMessage, zk, commandeOptions) => {
+    const { msgRepondu, repondre, from } = commandeOptions;
+
+    if (!msgRepondu || !msgRepondu.videoMessage) {
+        repondre('Please reply to a video to convert it to audio.');
+        return;
+    }
+
+    const videoSize = msgRepondu.videoMessage.fileLength;
+    if (videoSize > 50 * 1024 * 1024) {
+        repondre('The video is too large. Please send a smaller video.');
+        return;
+    }
+
+    try {
+        // Download the video
+        const videoPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        const audioPath = `${videoPath}.mp3`;
+
+        repondre("Processing video to audio, please wait...");
+
+        // Convert to MP3
+        await convertToMp3(videoPath, audioPath);
+        fs.unlinkSync(videoPath); // Delete the original video
+
+        // Send the MP3 file back
+        await zk.sendMessage(from, { audio: fs.readFileSync(audioPath), mimetype: 'audio/mpeg' }, { quoted: origineMessage });
+        fs.unlinkSync(audioPath); // Delete MP3 after sending
+    } catch (error) {
+        console.error("Error converting video to audio:", error);
+        repondre('Failed to process the video.');
+    }
+});
+
   adams({ nomCom: "tgs", categorie: "Mods" }, async (dest, zk, commandeOptions) => {
     const { ms, repondre, arg, nomAuteurMessage, superUser } = commandeOptions;
   
