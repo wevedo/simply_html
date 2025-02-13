@@ -27,6 +27,20 @@ const excludedVars = [
 
 // Variables to Show in the Menu
 const configMapping = {
+  ANTICALL: "Anti Call",
+  ANTIDELETE_MESSAGES: "Anti Delete Messages",
+  ANTILINK_GROUP: "Anti Link in Groups",
+  AUDIO_CHATBOT: "Audio Chatbot",
+  AUTO_BIO: "Auto Bio",
+  AUTO_DOWNLOAD_STATUS: "Auto Download Status",
+  AUTO_REACT: "Auto React",
+  AUTO_REACT_STATUS: "Auto React Status",
+  AUTO_READ: "Auto Read",
+  AUTO_READ_STATUS: "Auto Read Status",
+  AUTO_SAVE_CONTACTS: "Auto Save Contacts",
+  CHATBOT: "Chatbot",
+  PUBLIC_MODE: "Public Mode",
+  STARTING_BOT_MESSAGE: "Starting Bot Message",
   "Always Online On": "PRESENCE=1",
   "Always Online Off": "PRESENCE=0",
   "Auto Typing On": "PRESENCE=2",
