@@ -34,10 +34,9 @@ const configMapping = {
   CHATBOT: "Chatbot",
   PUBLIC_MODE: "Public Mode",
   STARTING_BOT_MESSAGE: "Starting Bot Message",
-  // Presence-related settings
-  "Auto Typing On": "PRESENCE=2",
-  "Always Online On": "PRESENCE=1",
-  "Auto Recording On": "PRESENCE=3",
+  "Auto Typing": "Auto Typing",
+  "Always Online": "Always Online",
+  "Auto Recording": "Auto Recording",
 };
 
 // **List of Excluded Variables**
@@ -84,12 +83,23 @@ adams(
       );
 
       variableKeys.forEach((key) => {
-        let currentValue =
-          configVars[key] === "yes" || configVars[key] === "2" || configVars[key] === "1" || configVars[key] === "3"
-            ? "ON"
-            : "OFF";
+        let currentValue;
 
-        let toggleOn = `On ${configMapping[key]} `;
+        // Handle `PRESENCE` variables separately
+        if (key === "Auto Typing") {
+          currentValue = configVars.PRESENCE === "2" ? "ON" : "OFF";
+        } else if (key === "Always Online") {
+          currentValue = configVars.PRESENCE === "1" ? "ON" : "OFF";
+        } else if (key === "Auto Recording") {
+          currentValue = configVars.PRESENCE === "3" ? "ON" : "OFF";
+        } else {
+          currentValue =
+            configVars[key] === "yes" || configVars[key] === "1"
+              ? "ON"
+              : "OFF";
+        }
+
+        let toggleOn = `On ${configMapping[key]}`;
         let toggleOff = `Off ${configMapping[key]}\n Currently: ${currentValue}\n\n`;
 
         numberedList.push(`${index}. ${toggleOn}`);
@@ -97,11 +107,14 @@ adams(
         index += 2;
       });
 
-      const randomImage = Math.random() < 0.5
-        ? "https://files.catbox.moe/xx6ags.jpeg"
-        : "https://files.catbox.moe/dwdau2.jpeg";
+      const randomImage =
+        Math.random() < 0.5
+          ? "https://files.catbox.moe/xx6ags.jpeg"
+          : "https://files.catbox.moe/dwdau2.jpeg";
 
-      const message = `🌟 *BWM XMD VARS LIST* 🌟\n\n${numberedList.join("\n")}\n📌 *Reply with a number to choose an option.*`;
+      const message = `🌟 *BWM XMD VARS LIST* 🌟\n\n${numberedList.join(
+        "\n"
+      )}\n📌 *Reply with a number to choose an option.*`;
 
       const sentMessage = await zk.sendMessage(chatId, {
         image: { url: randomImage },
@@ -116,39 +129,55 @@ adams(
         const responseText = message.message.extendedTextMessage.text.trim();
         if (
           message.message.extendedTextMessage.contextInfo &&
-          message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+          message.message.extendedTextMessage.contextInfo.stanzaId ===
+            sentMessage.key.id
         ) {
           const selectedIndex = parseInt(responseText);
-          if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > variableKeys.length * 2) {
-            return repondre("❌ *Invalid number. Please select a valid option.*");
+          if (
+            isNaN(selectedIndex) ||
+            selectedIndex < 1 ||
+            selectedIndex > variableKeys.length * 2
+          ) {
+            return repondre(
+              "❌ *Invalid number. Please select a valid option.*"
+            );
           }
 
           // Determine which variable is being changed
           const variableIndex = Math.floor((selectedIndex - 1) / 2);
           const selectedKey = variableKeys[variableIndex];
-          const newValue = selectedIndex % 2 === 1 ? "yes" : "no";
 
-          // Handle PRESENCE variable separately
-          if (selectedKey.startsWith("PRESENCE")) {
-            const presenceValues = {
-              "Auto Typing On": "2",
-              "Auto Typing Off": "0",
-              "Always Online On": "1",
-              "Always Online Off": "0",
-              "Auto Recording On": "3",
-              "Auto Recording Off": "0",
-            };
+          let newValue;
+          if (selectedIndex % 2 === 1) {
+            newValue = "ON";
+          } else {
+            newValue = "OFF";
+          }
+
+          let presenceValue = "0"; // Default to OFF
+
+          // Update PRESENCE values correctly
+          if (selectedKey === "Auto Typing") {
+            presenceValue = newValue === "ON" ? "2" : "0";
+          } else if (selectedKey === "Always Online") {
+            presenceValue = newValue === "ON" ? "1" : "0";
+          } else if (selectedKey === "Auto Recording") {
+            presenceValue = newValue === "ON" ? "3" : "0";
+          }
+
+          if (
+            selectedKey === "Auto Typing" ||
+            selectedKey === "Always Online" ||
+            selectedKey === "Auto Recording"
+          ) {
+            // Update only PRESENCE variable
             await heroku.patch(`/apps/${appName}/config-vars`, {
-              body: {
-                PRESENCE: presenceValues[configMapping[selectedKey]],
-              },
+              body: { PRESENCE: presenceValue },
             });
           } else {
-            // Update Heroku Environment Variable
+            // Update other variables normally
             await heroku.patch(`/apps/${appName}/config-vars`, {
-              body: {
-                [selectedKey]: newValue,
-              },
+              body: { [selectedKey]: newValue.toLowerCase() },
             });
           }
 
@@ -156,13 +185,15 @@ adams(
           await heroku.delete(`/apps/${appName}/dynos`);
 
           await zk.sendMessage(chatId, {
-            text: `✅ *${configMapping[selectedKey]} is now set to ${newValue.toUpperCase()}*\n\n🔄 *Bot is restarting...*`,
+            text: `✅ *${configMapping[selectedKey]} is now set to ${newValue}*\n\n🔄 *Bot is restarting...*`,
           });
         }
       });
     } catch (error) {
       console.error("Error fetching Heroku vars:", error);
-      await zk.sendMessage(chatId, { text: "⚠️ *Failed to fetch Heroku environment variables!*" });
+      await zk.sendMessage(chatId, {
+        text: "⚠️ *Failed to fetch Heroku environment variables!*",
+      });
     }
   }
 );
