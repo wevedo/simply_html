@@ -52,12 +52,9 @@ const configMapping = {
 
 // Presence Variables
 const presenceMapping = {
-  "Auto Typing On": "2",
-  "Auto Typing Off": "0",
-  "Always Online On": "1",
-  "Always Online Off": "0",
-  "Auto Recording On": "3",
-  "Auto Recording Off": "0",
+  "Auto Typing": "2",
+  "Always Online": "1",
+  "Auto Recording": "3",
 };
 
 // Image backgrounds (random selection)
