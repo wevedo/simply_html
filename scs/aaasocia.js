@@ -12,6 +12,7 @@ const conf = require(__dirname + "/../config");
 const ffmpeg = require("fluent-ffmpeg");
 const gis = require('g-i-s');
 const traduire = require("../Ibrahim/traduction") ;
+const ai = require('unlimited-ai');
 adams({
   nomCom: "twitter",
   aliases: ["xdl", "tweet"],
@@ -373,3 +374,53 @@ adams(
     }
   }
 );
+
+
+adams({
+  nomCom: "gpt",
+  aliases: ["gpt4", "ai"],
+  reaction: '🤔',
+  categorie: "ai"
+}, async (context, message, params) => {
+  const { repondre, arg } = params;  
+  const alpha = arg.join(" ").trim(); 
+
+  if (!alpha) return repondre("Please provide text.");
+
+  let conversationData = [];
+
+  try {
+    const rawData = fs.readFileSync('store.json', 'utf8');
+    if (rawData) {
+      conversationData = JSON.parse(rawData);
+      if (!Array.isArray(conversationData)) {
+        conversationData = [];
+      }
+    }
+  } catch (err) {
+    console.log('No previous conversation found, starting new one.');
+  }
+
+  const model = 'gpt-4-turbo-2024-04-09';
+  const userMessage = { role: 'user', content: alpha };  
+  const systemMessage = { role: 'system', content: 'Your called bwm xmd. You were made by Ibrahim adams. You respond to user commands.' };
+
+  // Ensure that the conversationData is an array before pushing
+  conversationData.push(userMessage);
+  conversationData.push(systemMessage);
+
+  try {
+    const aiResponse = await ai.generate(model, conversationData);
+
+    // Append AI response to the conversation
+    conversationData.push({ role: 'assistant', content: aiResponse });
+
+    // Save the conversation to file
+    fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+
+    await repondre(aiResponse);
+  } catch (error) {
+    console.error("Error with AI generation: ", error);
+    await repondre("Sorry, there was an error generating the response.");
+  }
+});
