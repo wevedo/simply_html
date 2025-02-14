@@ -36,7 +36,7 @@ adams(
       const videoChannel = firstVideo.author.name;
 
       // Notify user that download is starting
-      const downloadMessage = await zk.sendMessage(
+      await zk.sendMessage(
         dest,
         {
           text: `🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n🎭 *Channel:* ${videoChannel}`,
@@ -55,24 +55,21 @@ adams(
         { quoted: ms }
       );
 
-      // Start auto-counting in one message box
+      // Start auto-counting in a fast disappearing manner
       let count = 0;
-      let countingMessage = await zk.sendMessage(dest, { text: "⏳ Downloading... 0%" });
-
-      const countingInterval = setInterval(async () => {
-        count += Math.floor(Math.random() * 5) + 1; // Random increment (1-5%)
+      while (count < 100) {
+        count += Math.floor(Math.random() * 5) + 1; // Increase by 1-5%
         if (count > 99) count = 99; // Stop at 99% to avoid completion before actual download
 
         await zk.sendMessage(
           dest,
           {
             text: `⏳ Downloading... ${count}%`,
-            disappearingMessagesInChat: true,
-            ephemeralExpiration: 1, // Message disappears after 1 second 
+            disappearingMessagesInChat: true, // Auto-disappear when replaced
           },
-          { quoted: countingMessage }
+          { quoted: ms }
         );
-      }, 1000); // Update every second
+      }
 
       // List of APIs for MP3 download
       const apis = [
@@ -102,7 +99,6 @@ adams(
       }
 
       if (!downloadData || !downloadData.download_url) {
-        clearInterval(countingInterval); // Stop counting
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
@@ -127,9 +123,6 @@ adams(
           else resolve();
         });
       });
-
-      // Stop auto-counting
-      clearInterval(countingInterval);
 
       // Send the compressed audio file
       await zk.sendMessage(
