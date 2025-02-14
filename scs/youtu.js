@@ -39,11 +39,11 @@ adams(
       await zk.sendMessage(
         dest,
         {
-          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
+          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
           contextInfo: {
             externalAdReply: {
-              title: "Tap here to follow our official channel",
-              body: "©Sir Ibrahim Adams",
+              title: "©Sir Ibrahim Adams",
+              body: "Faster bot",
               mediaType: 1,
               thumbnailUrl: "https://files.catbox.moe/3ejs31.jpg",
               sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
@@ -185,11 +185,11 @@ adams(
       await zk.sendMessage(
         dest,
         {
-          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
+          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n\n⏳ *Duration:* ${videoDuration}\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
           contextInfo: {
             externalAdReply: {
-              title: "Tap here to follow our official channel",
-              body: "©Sir Ibrahim Adams",
+              title: "©Sir Ibrahim Adams",
+              body: "Faster bot",
               mediaType: 1,
               thumbnailUrl: "https://files.catbox.moe/3ejs31.jpg",
               sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
@@ -331,11 +331,11 @@ adams(
       await zk.sendMessage(
         dest,
         {
-          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
+          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n\n⏳ *Duration:* ${videoDuration}\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
           contextInfo: {
             externalAdReply: {
-              title: "Tap here to follow our official channel",
-              body: "©Sir Ibrahim Adams",
+              title: "©Sir Ibrahim Adams",
+              body: "Faster bot",
               mediaType: 1,
               thumbnailUrl: 'https://files.catbox.moe/3ejs31.jpg',
               sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
