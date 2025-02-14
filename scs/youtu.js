@@ -1,8 +1,11 @@
 const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
+const { exec } = require("child_process");
+const fs = require("fs");
 const ytSearch = require("yt-search");
+const path = require("path");
 
-// Command for downloading audio (MP3)
+// Command for downloading low-quality audio
 adams(
   {
     nomCom: "play",
@@ -33,7 +36,7 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // Notify user about the download instantly
+      // Notify user that download is starting
       await zk.sendMessage(
         dest,
         {
@@ -53,7 +56,7 @@ adams(
         { quoted: ms }
       );
 
-      // List of APIs for MP3 download (Standard Quality)
+      // List of APIs for MP3 download (HQ)
       const apis = [
         `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
         `https://api.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(videoUrl)}`,
@@ -85,12 +88,32 @@ adams(
       }
 
       const downloadUrl = downloadData.download_url;
+      const tempFile = path.join(__dirname, "audio_high.mp3");
+      const lowQualityFile = path.join(__dirname, "audio_low.mp3");
 
-      // Send the audio file directly for faster delivery
+      // Download the high-quality audio
+      const writer = fs.createWriteStream(tempFile);
+      const response = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      // Convert to low-quality (48kbps) using ffmpeg
+      await new Promise((resolve, reject) => {
+        exec(`ffmpeg -i ${tempFile} -b:a 48k ${lowQualityFile}`, (error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+
+      // Send the compressed audio file
       await zk.sendMessage(
         dest,
         {
-          audio: { url: downloadUrl },
+          audio: fs.readFileSync(lowQualityFile),
           mimetype: "audio/mp4",
           contextInfo: {
             externalAdReply: {
@@ -106,6 +129,10 @@ adams(
         },
         { quoted: ms }
       );
+
+      // Delete temp files after sending
+      fs.unlinkSync(tempFile);
+      fs.unlinkSync(lowQualityFile);
     } catch (error) {
       console.error("Error during download process:", error.message);
       return repondre(`Download failed due to an error: ${error.message || error}`);
