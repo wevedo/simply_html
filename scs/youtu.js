@@ -66,7 +66,7 @@ adams(
       const apis = [
         `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
         `https://api.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(videoUrl)}`,
-        `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
+        `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&apikey=_0x5aff35,_0x1876stqr`,
       ];
 
       // Fetch results from all APIs concurrently
@@ -212,7 +212,7 @@ adams(
       const apis = [
         `https://api.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}`,
         `https://api.davidcyriltech.my.id/youtube/mp3?url=${encodeURIComponent(videoUrl)}`,
-        `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
+        `https://api.giftedtech.web.id/api/download/dlmp3?url=${encodeURIComponent(videoUrl)}&apikey=_0x5aff35,_0x1876stqr`,
       ];
 
       // Fetch results from all APIs concurrently
@@ -358,7 +358,7 @@ adams(
       const apis = [
         `https://api.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
         `https://api.davidcyriltech.my.id/youtube/mp4?url=${encodeURIComponent(videoUrl)}`,
-        `https://api.giftedtech.web.id/api/download/dlmp4?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
+        `https://api.giftedtech.web.id/api/download/dlmp4?url=${encodeURIComponent(videoUrl)}&apikey=_0x5aff35,_0x1876stqr`,
       ];
 
       // Fetch results from all APIs concurrently
