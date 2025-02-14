@@ -1,8 +1,22 @@
 const { adams } = require("../Ibrahim/adams");
 const yts = require("yt-search");
-const ytdl = require("ytdl-core");
-const fs = require("fs");
-const path = require("path");
+const axios = require("axios");
+
+async function fetchMp3DownloadUrl(videoUrl) {
+  try {
+    const apiUrl = `https://saveteube.com/api/json?url=${encodeURIComponent(videoUrl)}`;
+    const response = await axios.get(apiUrl);
+
+    if (response.data && response.data.links && response.data.links.mp3) {
+      return response.data.links.mp3[0].url; // Get the highest quality MP3 link
+    } else {
+      throw new Error("Failed to fetch MP3 link.");
+    }
+  } catch (error) {
+    console.error("MP3 Fetch Error:", error);
+    return null;
+  }
+}
 
 adams({
   nomCom: "play",
@@ -13,50 +27,25 @@ adams({
   if (!arg[0]) return repondre("*Please provide a song name!*");
 
   try {
-    // Search for the video
     const search = await yts(arg.join(" "));
-    if (!search || search.videos.length === 0) return repondre("*No video found for your search.*");
+    if (!search || search.all.length === 0) return repondre("*The song you are looking for was not found.*");
 
-    const video = search.videos[0];
-    const stream = ytdl(video.url, { filter: "audioonly", quality: "highestaudio" });
+    const video = search.all[0]; // Get first search result
+    const downloadUrl = await fetchMp3DownloadUrl(video.url); // Get MP3 link
 
-    // Set file path
-    const fileName = `${video.title.replace(/[^a-zA-Z0-9]/g, "_")}.mp3`;
-    const filePath = path.join(__dirname, fileName);
+    if (!downloadUrl) return repondre("*Failed to fetch the download link.*");
 
-    // Create a write stream
-    const writer = fs.createWriteStream(filePath);
-    stream.pipe(writer);
-
-    writer.on("finish", async () => {
-      // Send the audio file
-      await zk.sendMessage(dest, {
-        audio: { url: filePath },
-        mimetype: "audio/mpeg",
-        fileName: fileName,
-        contextInfo: {
-          externalAdReply: {
-            title: video.title,
-            body: `🎶 ${video.title} | Download complete`,
-            mediaType: 1,
-            sourceUrl: video.url,
-            thumbnailUrl: video.thumbnail,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-          },
-        },
-      }, { quoted: ms });
-
-      // Clean up file
-      fs.unlinkSync(filePath);
-    });
+    await zk.sendMessage(dest, {
+      audio: { url: downloadUrl },
+      mimetype: "audio/mpeg",
+      fileName: `${video.title}.mp3`
+    }, { quoted: ms });
 
   } catch (error) {
     console.error("Play command error:", error);
     repondre(`*Error:* ${error.message}`);
   }
 });
-
 
 
 
