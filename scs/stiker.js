@@ -36,95 +36,71 @@ async function uploadToTelegraph(Path) {
 
 
 
-adams({nomCom:"sticker",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
+adams({ nomCom: "sticker", categorie: "Conversion", reaction: "👨🏿‍💻" }, async (origineMessage, zk, commandeOptions) => {
+    try {
+        let { ms, mtype, arg, repondre, nomAuteurMessage } = commandeOptions;
+        var txt = JSON.stringify(ms.message);
 
-let {ms,mtype,arg,repondre,nomAuteurMessage}=commandeOptions
-  var txt=JSON.stringify(ms.message)
+        var tagImage = mtype === "extendedTextMessage" && txt.includes("imageMessage");
+        var tagVideo = mtype === "extendedTextMessage" && txt.includes("videoMessage");
 
-  var mime=mtype === "imageMessage" || mtype === "videoMessage";
-  var tagImage = mtype==="extendedTextMessage" && txt.includes("imageMessage")
-  var tagVideo = mtype==="extendedTextMessage" && txt.includes("videoMessage")
+        const alea = (ext) => `${Math.floor(Math.random() * 10000)}${ext}`;
+        const stickerFileName = alea(".webp");
 
-const alea = (ext) => {
-  return `${Math.floor(Math.random() * 10000)}${ext}`;};
+        let buffer;
+        let sticker;
 
+        if (mtype === "imageMessage" || tagImage) {
+            let downloadFilePath = ms.message.imageMessage 
+                || ms.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
 
-  const stickerFileName = alea(".webp");
+            if (!downloadFilePath) throw new Error("Image not found!");
 
+            const media = await downloadContentFromMessage(downloadFilePath, "image");
+            buffer = Buffer.from([]);
+            for await (const elm of media) {
+                buffer = Buffer.concat([buffer, elm]);
+            }
 
-            // image
-  if (mtype === "imageMessage" ||tagImage) {
-    let downloadFilePath;
-    if (ms.message.imageMessage) {
-      downloadFilePath = ms.message.imageMessage;
-    } else {
-      // picture mentioned
-      downloadFilePath =
-        ms.message.extendedTextMessage.contextInfo.quotedMessage.imageMessage;
+            sticker = new Sticker(buffer, {
+                pack: "bwm-xmd",
+                author: nomAuteurMessage,
+                type: arg.includes("crop") || arg.includes("c") ? StickerTypes.CROPPED : StickerTypes.FULL,
+                quality: 100,
+            });
+
+        } else if (mtype === "videoMessage" || tagVideo) {
+            let downloadFilePath = ms.message.videoMessage 
+                || ms.message.extendedTextMessage?.contextInfo?.quotedMessage?.videoMessage;
+
+            if (!downloadFilePath) throw new Error("Video not found!");
+
+            const stream = await downloadContentFromMessage(downloadFilePath, "video");
+            buffer = Buffer.from([]);
+            for await (const elm of stream) {
+                buffer = Buffer.concat([buffer, elm]);
+            }
+
+            sticker = new Sticker(buffer, {
+                pack: "Bwm xmd",
+                author: nomAuteurMessage,
+                type: arg.includes("-r") || arg.includes("-c") ? StickerTypes.CROPPED : StickerTypes.FULL,
+                quality: 40,
+            });
+
+        } else {
+            throw new Error("Please mention an image or video!");
+        }
+
+        await sticker.toFile(stickerFileName);
+        await zk.sendMessage(origineMessage, { sticker: fs.readFileSync(stickerFileName) }, { quoted: ms });
+
+        try { fs.unlinkSync(stickerFileName); } catch (e) { console.log(e); }
+
+    } catch (error) {
+        console.error(error);
+        repondre(`❌ Error: ${error.message}`);
     }
-    // picture
-    const media = await downloadContentFromMessage(downloadFilePath, "image");
-    let buffer = Buffer.from([]);
-    for await (const elm of media) {
-      buffer = Buffer.concat([buffer, elm]);
-    }
-
-    sticker = new Sticker(buffer, {
-      pack:"bwm-xmd" ,
-      author: nomAuteurMessage,
-      type:
-        arg.includes("crop") || arg.includes("c")
-          ? StickerTypes.CROPPED
-          : StickerTypes.FULL,
-      quality: 100,
-    });
-  } else if (mtype === "videoMessage" || tagVideo) {
-    // videos
-    let downloadFilePath;
-    if (ms.message.videoMessage) {
-      downloadFilePath = ms.message.videoMessage;
-    } else {
-      downloadFilePath =
-        ms.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage;
-    }
-    const stream = await downloadContentFromMessage(downloadFilePath, "video");
-    let buffer = Buffer.from([]);
-    for await (const elm of stream) {
-      buffer = Buffer.concat([buffer, elm]);
-    }
-
-    sticker = new Sticker(buffer, {
-      pack:"Beltah-Md", // pack stick
-      author:  nomAuteurMessage, // name of the author of the stick
-      type:
-        arg.includes("-r") || arg.includes("-c")
-          ? StickerTypes.CROPPED
-          : StickerTypes.FULL,
-      quality: 40,
-    });
-  } else {
-    repondre("Please mention an image or video!");
-    return;
-  }
-
-  await sticker.toFile(stickerFileName);
-  await zk.sendMessage(
-    origineMessage,
-    {
-      sticker: fs.readFileSync(stickerFileName),
-    },
-    { quoted: ms }
-  );
-
-try{
-  fs.unlinkSync(stickerFileName)
-}catch(e){console.log(e)}
-
-
-
-
-
-  
 });
 
 adams({nomCom:"scrop",categorie: "Conversion", reaction: "👨🏿‍💻"},async(origineMessage,zk,commandeOptions)=>{
