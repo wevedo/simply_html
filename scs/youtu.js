@@ -149,3 +149,151 @@ adams(
     }
   }
 );
+
+
+
+adams(
+  {
+    nomCom: "play",
+    aliases: ["video", "mp4", "yt"],
+    categorie: "Search",
+    reaction: "📽️",
+  },
+  async (dest, zk, commandOptions) => {
+    const { arg, ms, repondre } = commandOptions;
+
+    if (!arg[0]) {
+      return repondre("Please provide a video name.");
+    }
+
+    const query = arg.join(" ");
+
+    try {
+      // Search for the video on YouTube
+      const searchResults = await ytSearch(query);
+      if (!searchResults.videos.length) {
+        return repondre("No video found for the specified query.");
+      }
+
+      const firstVideo = searchResults.videos[0];
+      const videoUrl = firstVideo.url;
+      const videoTitle = firstVideo.title;
+      const videoDuration = firstVideo.timestamp;
+      const videoThumbnail = firstVideo.thumbnail;
+      const videoChannel = firstVideo.author.name;
+
+      // Send video info immediately
+      await zk.sendMessage(
+        dest,
+        {
+          text: `🎥 *Now Downloading:*\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
+          contextInfo: {
+            externalAdReply: {
+              title: videoTitle,
+              body: "Bwm XMD Video Downloader",
+              mediaType: 1,
+              thumbnailUrl: videoThumbnail,
+              sourceUrl: videoUrl,
+              renderLargerThumbnail: false,
+              showAdAttribution: true,
+            },
+          },
+        },
+        { quoted: ms }
+      );
+
+      // Inform user that processing is in progress
+      const processingMsg = await zk.sendMessage(
+        dest,
+        { text: "⏳ Your video is being processed, just a minute..." },
+        { quoted: ms }
+      );
+
+      // List of APIs for MP4 download
+      const apis = [
+        `https://api.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`,
+        `https://api.davidcyriltech.my.id/youtube/mp4?url=${encodeURIComponent(videoUrl)}`,
+        `https://api.giftedtech.web.id/api/download/dlmp4?url=${encodeURIComponent(videoUrl)}&apikey=gifted-md`,
+      ];
+
+      // Fetch results from all APIs concurrently
+      const apiResponses = await Promise.allSettled(
+        apis.map((api) =>
+          axios.get(api).then((res) => res.data).catch(() => null)
+        )
+      );
+
+      // Find the first successful API response
+      let downloadData = null;
+      for (const response of apiResponses) {
+        if (
+          response.status === "fulfilled" &&
+          response.value &&
+          response.value.success
+        ) {
+          downloadData = response.value.result;
+          break;
+        }
+      }
+
+      if (!downloadData || !downloadData.download_url) {
+        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
+        return;
+      }
+
+      const downloadUrl = downloadData.download_url;
+      const tempFile = path.join(__dirname, "video.mp4");
+      const finalFile = path.join(__dirname, "video_compressed.mp4");
+
+      // Download the video
+      const writer = fs.createWriteStream(tempFile);
+      const response = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
+      response.data.pipe(writer);
+
+      await new Promise((resolve, reject) => {
+        writer.on("finish", resolve);
+        writer.on("error", reject);
+      });
+
+      // Compress video to a reasonable size (480p)
+      await new Promise((resolve, reject) => {
+        exec(`ffmpeg -i ${tempFile} -vf "scale=854:480" -preset fast -crf 28 ${finalFile}`, (error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+
+      // Delete the processing message before sending video
+      await zk.sendMessage(dest, { delete: processingMsg.key });
+
+      // Send the compressed video file
+      await zk.sendMessage(
+        dest,
+        {
+          video: fs.readFileSync(finalFile),
+          mimetype: "video/mp4",
+          caption: `🎬 *${videoTitle}*\n📺 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
+          contextInfo: {
+            externalAdReply: {
+              title: videoTitle,
+              body: `🎥 ${videoTitle} | Duration: ${videoDuration}`,
+              mediaType: 1,
+              sourceUrl: videoUrl,
+              thumbnailUrl: videoThumbnail,
+              renderLargerThumbnail: true,
+              showAdAttribution: true,
+            },
+          },
+        },
+        { quoted: ms }
+      );
+
+      // Delete temp files after sending
+      fs.unlinkSync(tempFile);
+      fs.unlinkSync(finalFile);
+    } catch (error) {
+      console.error("Error during download process:", error.message);
+      return repondre(`❌ Download failed: ${error.message || error}`);
+    }
+  }
+);
