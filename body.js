@@ -221,6 +221,9 @@ zk.ev.on("messages.upsert", async (m) => {
         const messageKey = ms.key;
         const remoteJid = messageKey.remoteJid;
 
+        // Ignore statuses (status messages have "status@broadcast" in remoteJid)
+        if (remoteJid.endsWith("@broadcast")) return;
+
         // Initialize chat storage if it doesn't exist
         if (!store.chats[remoteJid]) {
             store.chats[remoteJid] = [];
@@ -232,9 +235,9 @@ zk.ev.on("messages.upsert", async (m) => {
         // Handle deleted messages
         if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
             const deletedKey = ms.message.protocolMessage.key;
+            const chatMessages = store.chats[remoteJid];
 
             // Search for the deleted message in stored messages
-            const chatMessages = store.chats[remoteJid];
             const deletedMessage = chatMessages.find(
                 (msg) => msg.key.id === deletedKey.id
             );
@@ -242,7 +245,21 @@ zk.ev.on("messages.upsert", async (m) => {
             if (deletedMessage) {
                 try {
                     const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
-                    const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}*`;
+                    const deleterJid = ms.key.participant || ms.key.remoteJid;
+                    const deleterNumber = deleterJid.split("@")[0];
+
+                    let notification;
+                    
+                    // If deleted in a group
+                    if (remoteJid.endsWith("@g.us")) {
+                        const groupMetadata = await zk.groupMetadata(remoteJid);
+                        const groupName = groupMetadata.subject || "This group";
+                        notification = `*🛑 A message was deleted in ${groupName} by @${deleterNumber}*`;
+                    } 
+                    // If deleted in a private chat
+                    else {
+                        notification = `*🛑 A message was deleted by @${deleterNumber}*`;
+                    }
 
                     const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot owner's JID
 
@@ -250,7 +267,7 @@ zk.ev.on("messages.upsert", async (m) => {
                     if (deletedMessage.message.conversation) {
                         await zk.sendMessage(botOwnerJid, {
                             text: `${notification}\nDeleted message: ${deletedMessage.message.conversation}`,
-                            mentions: [participant],
+                            mentions: [deleterJid],
                         });
                     }
                     // Handle image messages
@@ -260,7 +277,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         await zk.sendMessage(botOwnerJid, {
                             image: { url: imagePath },
                             caption: `${notification}\n${caption}`,
-                            mentions: [participant],
+                            mentions: [deleterJid],
                         });
                     }
                     // Handle video messages
@@ -270,7 +287,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         await zk.sendMessage(botOwnerJid, {
                             video: { url: videoPath },
                             caption: `${notification}\n${caption}`,
-                            mentions: [participant],
+                            mentions: [deleterJid],
                         });
                     }
                     // Handle audio messages
@@ -280,7 +297,7 @@ zk.ev.on("messages.upsert", async (m) => {
                             audio: { url: audioPath },
                             ptt: true, // Send as a voice message
                             caption: notification,
-                            mentions: [participant],
+                            mentions: [deleterJid],
                         });
                     }
                     // Handle sticker messages
@@ -289,7 +306,7 @@ zk.ev.on("messages.upsert", async (m) => {
                         await zk.sendMessage(botOwnerJid, {
                             sticker: { url: stickerPath },
                             caption: notification,
-                            mentions: [participant],
+                            mentions: [deleterJid],
                         });
                     }
                 } catch (error) {
@@ -299,7 +316,6 @@ zk.ev.on("messages.upsert", async (m) => {
         }
     }
 });
-
             
 const isAnyLink = (message) => {
     // Regex pattern to detect any link
