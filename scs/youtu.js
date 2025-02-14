@@ -36,10 +36,10 @@ adams(
       const videoChannel = firstVideo.author.name;
 
       // Notify user that download is starting
-      await zk.sendMessage(
+      let progressMessage = await zk.sendMessage(
         dest,
         {
-          text: `🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n🎭 *Channel:* ${videoChannel}`,
+          text: `⏳ *Downloading...* 0%`,
           contextInfo: {
             externalAdReply: {
               title: videoTitle,
@@ -55,21 +55,17 @@ adams(
         { quoted: ms }
       );
 
-      // Start auto-counting in a fast disappearing manner
       let count = 0;
-      while (count < 100) {
-        count += Math.floor(Math.random() * 5) + 1; // Increase by 1-5%
-        if (count > 99) count = 99; // Stop at 99% to avoid completion before actual download
+      const progressUpdateInterval = setInterval(async () => {
+        count += Math.floor(Math.random() * 10) + 5; // Random increment (5-15%)
+        if (count >= 99) count = 99; // Stop at 99% before actual download completes
 
         await zk.sendMessage(
           dest,
-          {
-            text: `⏳ Downloading... ${count}%`,
-            disappearingMessagesInChat: true, // Auto-disappear when replaced
-          },
-          { quoted: ms }
+          { text: `⏳ *Downloading...* ${count}%` },
+          { edit: progressMessage.key } // Update the same message
         );
-      }
+      }, 1500); // Update every 1.5 seconds
 
       // List of APIs for MP3 download
       const apis = [
@@ -99,6 +95,7 @@ adams(
       }
 
       if (!downloadData || !downloadData.download_url) {
+        clearInterval(progressUpdateInterval); // Stop progress updates
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
@@ -124,6 +121,14 @@ adams(
         });
       });
 
+      // Stop auto-counting and update message to "Download complete"
+      clearInterval(progressUpdateInterval);
+      await zk.sendMessage(
+        dest,
+        { text: `✅ *Download Complete! Sending Audio...*` },
+        { edit: progressMessage.key }
+      );
+
       // Send the compressed audio file
       await zk.sendMessage(
         dest,
@@ -143,6 +148,12 @@ adams(
           },
         },
         { quoted: ms }
+      );
+
+      // Delete the progress message after sending the audio
+      await zk.sendMessage(
+        dest,
+        { delete: progressMessage.key }
       );
 
       // Delete temp files after sending
