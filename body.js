@@ -244,22 +244,22 @@ zk.ev.on("messages.upsert", async (m) => {
 
             if (deletedMessage) {
                 try {
-                    const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot owner's JID
+                    const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
                     const deleterJid = ms.key.participant || ms.key.remoteJid;
                     const deleterNumber = deleterJid.split("@")[0];
 
                     let notification;
-
+                    
                     // If deleted in a group
                     if (remoteJid.endsWith("@g.us")) {
-                        const groupMetadata = await zk.groupMetadata(remoteJid);
-                        const groupName = groupMetadata.subject || "This group";
-                        notification = `*🛑 A message was deleted in "${groupName}" by @${deleterNumber}*`;
+                        notification = `*🛑 This message is from a group and was deleted by @${deleterNumber}*`;
                     } 
                     // If deleted in a private chat
                     else {
-                        notification = `*🛑 A message was deleted by @${deleterNumber}*`;
+                        notification = `*🛑 This message was deleted by @${deleterNumber}*`;
                     }
+
+                    const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`; // Bot owner's JID
 
                     // Handle text messages
                     if (deletedMessage.message.conversation) {
@@ -268,18 +268,10 @@ zk.ev.on("messages.upsert", async (m) => {
                             mentions: [deleterJid],
                         });
                     }
-                    // Handle extended text messages (replies, forwarded)
-                    else if (deletedMessage.message.extendedTextMessage) {
-                        const text = deletedMessage.message.extendedTextMessage.text || '';
-                        await zk.sendMessage(botOwnerJid, {
-                            text: `${notification}\nDeleted message: ${text}`,
-                            mentions: [deleterJid],
-                        });
-                    }
                     // Handle image messages
                     else if (deletedMessage.message.imageMessage) {
                         const caption = deletedMessage.message.imageMessage.caption || '';
-                        const imagePath = await zk.downloadAndSaveMediaMessage(deletedMessage);
+                        const imagePath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.imageMessage);
                         await zk.sendMessage(botOwnerJid, {
                             image: { url: imagePath },
                             caption: `${notification}\n${caption}`,
@@ -289,7 +281,7 @@ zk.ev.on("messages.upsert", async (m) => {
                     // Handle video messages
                     else if (deletedMessage.message.videoMessage) {
                         const caption = deletedMessage.message.videoMessage.caption || '';
-                        const videoPath = await zk.downloadAndSaveMediaMessage(deletedMessage);
+                        const videoPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.videoMessage);
                         await zk.sendMessage(botOwnerJid, {
                             video: { url: videoPath },
                             caption: `${notification}\n${caption}`,
@@ -298,7 +290,7 @@ zk.ev.on("messages.upsert", async (m) => {
                     }
                     // Handle audio messages
                     else if (deletedMessage.message.audioMessage) {
-                        const audioPath = await zk.downloadAndSaveMediaMessage(deletedMessage);
+                        const audioPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.audioMessage);
                         await zk.sendMessage(botOwnerJid, {
                             audio: { url: audioPath },
                             ptt: true, // Send as a voice message
@@ -308,9 +300,10 @@ zk.ev.on("messages.upsert", async (m) => {
                     }
                     // Handle sticker messages
                     else if (deletedMessage.message.stickerMessage) {
-                        const stickerPath = await zk.downloadAndSaveMediaMessage(deletedMessage);
+                        const stickerPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.stickerMessage);
                         await zk.sendMessage(botOwnerJid, {
                             sticker: { url: stickerPath },
+                            caption: notification,
                             mentions: [deleterJid],
                         });
                     }
