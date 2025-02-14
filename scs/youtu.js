@@ -5,32 +5,6 @@ const fs = require("fs");
 const ytSearch = require("yt-search");
 const path = require("path");
 
-// Delay function (smooth performance)
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// Smooth loading animation function
-async function showLoading(dest, zk) {
-  const loadingStages = [
-    "📥 Downloading... ░░░░░░░░░░ 0%",
-    "📥 Downloading... █░░░░░░░░░ 20%",
-    "📥 Downloading... ██░░░░░░░░ 40%",
-    "📥 Downloading... ████░░░░░░ 60%",
-    "📥 Downloading... ██████░░░░ 80%",
-    "📥 Downloading... ████████✅ 100%",
-  ];
-
-  let { key } = await zk.sendMessage(dest, { text: loadingStages[0] });
-
-  for (let i = 1; i < loadingStages.length; i++) {
-    await delay(1500); // Smooth update every 1.5 seconds
-    await zk.sendMessage(dest, { text: loadingStages[i], edit: key });
-  }
-
-  return key; // Return message key to delete later
-}
-
 adams(
   {
     nomCom: "play",
@@ -62,7 +36,7 @@ adams(
       const videoChannel = firstVideo.author.name;
 
       // Send song info immediately
-      const songInfoMessage = await zk.sendMessage(
+      await zk.sendMessage(
         dest,
         {
           text: `🎵 *Now Downloading:*\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
@@ -81,8 +55,12 @@ adams(
         { quoted: ms }
       );
 
-      // Show smooth loading animation
-      const loadingKey = await showLoading(dest, zk);
+      // Inform user that processing is in progress
+      const processingMsg = await zk.sendMessage(
+        dest,
+        { text: "⏳ Your audio is being processed, just a minute..." },
+        { quoted: ms }
+      );
 
       // List of APIs for MP3 download
       const apis = [
@@ -112,7 +90,7 @@ adams(
       }
 
       if (!downloadData || !downloadData.download_url) {
-        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: loadingKey });
+        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
       }
 
@@ -138,8 +116,8 @@ adams(
         });
       });
 
-      // Delete loading animation message
-      await zk.sendMessage(dest, { delete: loadingKey });
+      // Delete the processing message before sending audio
+      await zk.sendMessage(dest, { delete: processingMsg.key });
 
       // Send the compressed audio file
       await zk.sendMessage(
