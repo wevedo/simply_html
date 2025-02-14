@@ -5,26 +5,30 @@ const fs = require("fs");
 const ytSearch = require("yt-search");
 const path = require("path");
 
-// Delay function
+// Delay function (smooth performance)
 function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Loading progress bar
-async function loading(dest, zk, msgKey) {
-  const lod = [
-    "▰▱▱▱▱▱▱▱▱▱ 10%",
-    "▰▰▱▱▱▱▱▱▱▱ 30%",
-    "▰▰▰▰▱▱▱▱▱▱ 50%",
-    "▰▰▰▰▰▰▰▱▱▱ 80%",
-    "▰▰▰▰▰▰▰▰▰▰ 100%",
-    "✅ *Download Completed!*"
+// Smooth loading animation function
+async function showLoading(dest, zk) {
+  const loadingStages = [
+    "📥 Downloading... ░░░░░░░░░░ 0%",
+    "📥 Downloading... █░░░░░░░░░ 20%",
+    "📥 Downloading... ██░░░░░░░░ 40%",
+    "📥 Downloading... ████░░░░░░ 60%",
+    "📥 Downloading... ██████░░░░ 80%",
+    "📥 Downloading... ████████✅ 100%",
   ];
 
-  for (let i = 0; i < lod.length; i++) {
-    await zk.sendMessage(dest, { text: lod[i], edit: msgKey });
-    await delay(2000); // Smooth interval without crashes
+  let { key } = await zk.sendMessage(dest, { text: loadingStages[0] });
+
+  for (let i = 1; i < loadingStages.length; i++) {
+    await delay(1500); // Smooth update every 1.5 seconds
+    await zk.sendMessage(dest, { text: loadingStages[i], edit: key });
   }
+
+  return key; // Return message key to delete later
 }
 
 adams(
@@ -57,11 +61,11 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // Send song details immediately
-      const infoMessage = await zk.sendMessage(
+      // Send song info immediately
+      const songInfoMessage = await zk.sendMessage(
         dest,
         {
-          text: `🎶 *Song Found!*\n📌 *Title:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n🎭 *Channel:* ${videoChannel}\n🔗 *Link:* ${videoUrl}`,
+          text: `🎵 *Now Downloading:*\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}`,
           contextInfo: {
             externalAdReply: {
               title: videoTitle,
@@ -69,7 +73,7 @@ adams(
               mediaType: 1,
               thumbnailUrl: videoThumbnail,
               sourceUrl: videoUrl,
-              renderLargerThumbnail: true,
+              renderLargerThumbnail: false,
               showAdAttribution: true,
             },
           },
@@ -77,9 +81,8 @@ adams(
         { quoted: ms }
       );
 
-      // Start progress bar
-      const progressMessage = await zk.sendMessage(dest, { text: "⏳ *Downloading...*" }, { quoted: ms });
-      loading(dest, zk, progressMessage.key);
+      // Show smooth loading animation
+      const loadingKey = await showLoading(dest, zk);
 
       // List of APIs for MP3 download
       const apis = [
@@ -109,12 +112,13 @@ adams(
       }
 
       if (!downloadData || !downloadData.download_url) {
-        return repondre("Failed to retrieve a download link. Please try again later.");
+        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: loadingKey });
+        return;
       }
 
       const downloadUrl = downloadData.download_url;
       const tempFile = path.join(__dirname, "audio_high.mp3");
-      const lowQualityFile = path.join(__dirname, "audio_low.mp3");
+      const finalFile = path.join(__dirname, "audio_normal.mp3");
 
       // Download the high-quality audio
       const writer = fs.createWriteStream(tempFile);
@@ -126,22 +130,22 @@ adams(
         writer.on("error", reject);
       });
 
-      // Convert to low-quality (48kbps) using ffmpeg
+      // Convert to normal quality (96kbps for balance between quality & speed)
       await new Promise((resolve, reject) => {
-        exec(`ffmpeg -i ${tempFile} -b:a 48k ${lowQualityFile}`, (error) => {
+        exec(`ffmpeg -i ${tempFile} -b:a 96k ${finalFile}`, (error) => {
           if (error) reject(error);
           else resolve();
         });
       });
 
-      // Delete progress message after completion
-      await zk.sendMessage(dest, { delete: progressMessage.key });
+      // Delete loading animation message
+      await zk.sendMessage(dest, { delete: loadingKey });
 
       // Send the compressed audio file
       await zk.sendMessage(
         dest,
         {
-          audio: fs.readFileSync(lowQualityFile),
+          audio: fs.readFileSync(finalFile),
           mimetype: "audio/mp4",
           contextInfo: {
             externalAdReply: {
@@ -160,10 +164,10 @@ adams(
 
       // Delete temp files after sending
       fs.unlinkSync(tempFile);
-      fs.unlinkSync(lowQualityFile);
+      fs.unlinkSync(finalFile);
     } catch (error) {
       console.error("Error during download process:", error.message);
-      return repondre(`Download failed due to an error: ${error.message || error}`);
+      return repondre(`❌ Download failed: ${error.message || error}`);
     }
   }
 );
