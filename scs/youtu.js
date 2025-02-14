@@ -5,6 +5,28 @@ const fs = require("fs");
 const ytSearch = require("yt-search");
 const path = require("path");
 
+// Delay function
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Loading progress bar
+async function loading(dest, zk, msgKey) {
+  const lod = [
+    "▰▱▱▱▱▱▱▱▱▱ 10%",
+    "▰▰▱▱▱▱▱▱▱▱ 30%",
+    "▰▰▰▰▱▱▱▱▱▱ 50%",
+    "▰▰▰▰▰▰▰▱▱▱ 80%",
+    "▰▰▰▰▰▰▰▰▰▰ 100%",
+    "✅ *Download Completed!*"
+  ];
+
+  for (let i = 0; i < lod.length; i++) {
+    await zk.sendMessage(dest, { text: lod[i], edit: msgKey });
+    await delay(2000); // Smooth interval without crashes
+  }
+}
+
 adams(
   {
     nomCom: "play",
@@ -35,11 +57,11 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // Notify user that download is starting
-      let progressMessage = await zk.sendMessage(
+      // Send song details immediately
+      const infoMessage = await zk.sendMessage(
         dest,
         {
-          text: `⏳ *Downloading...* 0%`,
+          text: `🎶 *Song Found!*\n📌 *Title:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n🎭 *Channel:* ${videoChannel}\n🔗 *Link:* ${videoUrl}`,
           contextInfo: {
             externalAdReply: {
               title: videoTitle,
@@ -47,7 +69,7 @@ adams(
               mediaType: 1,
               thumbnailUrl: videoThumbnail,
               sourceUrl: videoUrl,
-              renderLargerThumbnail: false,
+              renderLargerThumbnail: true,
               showAdAttribution: true,
             },
           },
@@ -55,17 +77,9 @@ adams(
         { quoted: ms }
       );
 
-      let count = 0;
-      const progressUpdateInterval = setInterval(async () => {
-        count += Math.floor(Math.random() * 10) + 5; // Random increment (5-15%)
-        if (count >= 99) count = 99; // Stop at 99% before actual download completes
-
-        await zk.sendMessage(
-          dest,
-          { text: `⏳ *Downloading...* ${count}%` },
-          { edit: progressMessage.key } // Update the same message
-        );
-      }, 1500); // Update every 1.5 seconds
+      // Start progress bar
+      const progressMessage = await zk.sendMessage(dest, { text: "⏳ *Downloading...*" }, { quoted: ms });
+      loading(dest, zk, progressMessage.key);
 
       // List of APIs for MP3 download
       const apis = [
@@ -95,7 +109,6 @@ adams(
       }
 
       if (!downloadData || !downloadData.download_url) {
-        clearInterval(progressUpdateInterval); // Stop progress updates
         return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
@@ -121,13 +134,8 @@ adams(
         });
       });
 
-      // Stop auto-counting and update message to "Download complete"
-      clearInterval(progressUpdateInterval);
-      await zk.sendMessage(
-        dest,
-        { text: `✅ *Download Complete! Sending Audio...*` },
-        { edit: progressMessage.key }
-      );
+      // Delete progress message after completion
+      await zk.sendMessage(dest, { delete: progressMessage.key });
 
       // Send the compressed audio file
       await zk.sendMessage(
@@ -148,12 +156,6 @@ adams(
           },
         },
         { quoted: ms }
-      );
-
-      // Delete the progress message after sending the audio
-      await zk.sendMessage(
-        dest,
-        { delete: progressMessage.key }
       );
 
       // Delete temp files after sending
