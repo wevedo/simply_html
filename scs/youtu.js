@@ -1,53 +1,140 @@
 const { adams } = require("../Ibrahim/adams");
-const yts = require("yt-search");
-const axios = require("axios");
+const axios = require('axios');
+const ytSearch = require('yt-search');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
+const path = require('path');
 
-async function fetchMp3DownloadUrl(videoUrl) {
-  try {
-    const apiUrl = `https://saveteube.com/api/json?url=${encodeURIComponent(videoUrl)}`;
-    const response = await axios.get(apiUrl);
-
-    if (response.data && response.data.links && response.data.links.mp3) {
-      return response.data.links.mp3[0].url; // Get the highest quality MP3 link
-    } else {
-      throw new Error("Failed to fetch MP3 link.");
-    }
-  } catch (error) {
-    console.error("MP3 Fetch Error:", error);
-    return null;
-  }
-}
-
+// Command for downloading audio (MP3)
 adams({
   nomCom: "play",
   aliases: ["song", "audio", "mp3"],
   categorie: "Search",
   reaction: "🎵"
-}, async (dest, zk, { arg, ms, repondre }) => {
-  if (!arg[0]) return repondre("*Please provide a song name!*");
+}, async (dest, zk, commandOptions) => {
+  const { arg, ms, repondre } = commandOptions;
+
+  if (!arg[0]) {
+    return repondre("Please provide a video name.");
+  }
+
+  const query = arg.join(" ");
 
   try {
-    const search = await yts(arg.join(" "));
-    if (!search || search.all.length === 0) return repondre("*The song you are looking for was not found.*");
+    // Perform a YouTube search
+    const searchResults = await ytSearch(query);
+    if (!searchResults || searchResults.videos.length === 0) {
+      return repondre('No video found for the specified query.');
+    }
 
-    const video = search.all[0]; // Get first search result
-    const downloadUrl = await fetchMp3DownloadUrl(video.url); // Get MP3 link
+    const firstVideo = searchResults.videos[0];
+    const videoUrl = firstVideo.url;
+    const title = firstVideo.title;
+    const duration = firstVideo.timestamp;
+    const views = firstVideo.views.toLocaleString();
+    const uploaded = firstVideo.ago;
+    const channel = firstVideo.author.name;
+    const thumbnail = firstVideo.thumbnail;
 
-    if (!downloadUrl) return repondre("*Failed to fetch the download link.*");
-
+    // Notify the user
     await zk.sendMessage(dest, {
-      audio: { url: downloadUrl },
-      mimetype: "audio/mpeg",
-      fileName: `${video.title}.mp3`
+      text: `🎶 *Downloading:* ${title}\n🕒 *Duration:* ${duration}\n👁 *Views:* ${views}\n📅 *Uploaded:* ${uploaded}\n🎭 *Channel:* ${channel}`,
+      contextInfo: {
+        externalAdReply: {
+          title: "©Sir Ibrahim Adams",
+          body: "Bwm XMD Downloader",
+          mediaType: 1,
+          thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_ijgrjr.webp",
+          sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+          renderLargerThumbnail: false,
+          showAdAttribution: true,
+        },
+      },
     }, { quoted: ms });
 
+    let downloadUrl = null;
+
+    // **Primary API: GiftedTech**
+    try {
+      const apiUrl = `https://api.giftedtech.web.id/api/download/dlmp4?url=${encodeURIComponent(videoUrl)}&apikey=gifted`;
+      let response = await axios.get(apiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+
+      if (response.data && response.data.status && response.data.data) {
+        downloadUrl = response.data.data.audio;
+      } else {
+        throw new Error("GiftedTech API failed.");
+      }
+    } catch (error) {
+      console.error("GiftedTech API Error:", error.message);
+
+      // **Fallback API: DavidCyrilTech**
+      try {
+        const fallbackApiUrl = `https://api.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`;
+        let fallbackResponse = await axios.get(fallbackApiUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+
+        if (fallbackResponse.data && fallbackResponse.data.data && fallbackResponse.data.data.audio) {
+          downloadUrl = fallbackResponse.data.data.audio;
+        } else {
+          throw new Error("DavidCyrilTech API failed.");
+        }
+      } catch (fallbackError) {
+        console.error("Fallback API Error:", fallbackError.message);
+        return repondre('Failed to retrieve download URL from both APIs.');
+      }
+    }
+
+    if (!downloadUrl) {
+      return repondre('Failed to get a valid audio download URL.');
+    }
+
+    // **Download and Compress Audio**
+    const inputPath = path.join(__dirname, 'temp_audio.mp3');
+    const outputPath = path.join(__dirname, 'compressed_audio.mp3');
+
+    const writer = fs.createWriteStream(inputPath);
+    const audioStream = await axios.get(downloadUrl, { responseType: 'stream' });
+    audioStream.data.pipe(writer);
+
+    writer.on('finish', () => {
+      // Convert to lower bitrate (e.g., 64kbps)
+      ffmpeg(inputPath)
+        .audioBitrate(64)
+        .save(outputPath)
+        .on('end', async () => {
+          console.log("Audio compression completed.");
+
+          // Send the compressed audio
+          await zk.sendMessage(dest, {
+            audio: { url: outputPath },
+            mimetype: 'audio/mp4',
+            contextInfo: {
+              externalAdReply: {
+                title: title,
+                body: `🎶 ${title} | Download complete`,
+                mediaType: 1,
+                sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                thumbnailUrl: thumbnail,
+                renderLargerThumbnail: true,
+                showAdAttribution: true,
+              },
+            },
+          }, { quoted: ms });
+
+          // Clean up files
+          fs.unlinkSync(inputPath);
+          fs.unlinkSync(outputPath);
+        })
+        .on('error', (err) => {
+          console.error("FFmpeg Error:", err);
+          return repondre("Failed to compress the audio file.");
+        });
+    });
+
   } catch (error) {
-    console.error("Play command error:", error);
-    repondre(`*Error:* ${error.message}`);
+    console.error('Error:', error.message);
+    return repondre(`Download failed due to an error: ${error.message || error}`);
   }
 });
-
-
 
 
 
