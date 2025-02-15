@@ -368,6 +368,7 @@ zk.ev.on('messages.upsert', async (msg) => {
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
 
+
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
@@ -379,7 +380,6 @@ zk.ev.on("messages.upsert", async (m) => {
   const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
-
   if (conf.CHATBOT1 !== "yes") return;
 
   if (messageType === "conversation" || messageType === "extendedTextMessage") {
@@ -402,19 +402,21 @@ zk.ev.on("messages.upsert", async (m) => {
 
     const model = 'gpt-4-turbo-2024-04-09';
     const userMessage = { role: 'user', content: alpha };
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. when you write swahili words sent them in manner that Google text to speech api will be able to pronounce them fluently, when sending swahili words sent in good order or even you can spit it words or letters. Only mention developer name if someone asks.' };
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
     conversationData.push(userMessage);
     conversationData.push(systemMessage);
 
     try {
       const aiResponse = await ai.generate(model, conversationData);
-
       conversationData.push({ role: 'assistant', content: aiResponse });
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
+      // Determine language & use female voice
       const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw' : 'en';
+      const voice = language === 'sw' ? 'sw-TZ-Wavenet-B' : 'en-US-Wavenet-F';
 
+      // Function to split text into chunks
       const chunkText = (text, limit = 200) => {
         const words = text.split(' ');
         let chunks = [], currentChunk = '';
@@ -439,20 +441,31 @@ zk.ev.on("messages.upsert", async (m) => {
           lang: language,
           slow: false,
           host: 'https://translate.google.com',
+          voice: voice // Female voice for both Swahili & English
         });
 
         const outputFile = `audio_${i}.mp3`;
-        audioFiles.push(outputFile);
-
-        // Download the TTS-generated audio
         await downloadAudio(url, outputFile);
+        audioFiles.push(outputFile);
+      }
+
+      // Ensure all audio files are downloaded before enhancing
+      if (audioFiles.length === 0) {
+        console.error("No audio files generated.");
+        return;
       }
 
       // Combine and enhance all audio files using FFmpeg
       const finalAudio = "enhanced_audio.mp3";
       await enhanceAudio(audioFiles, finalAudio);
 
-      // Send the enhanced audio
+      // Ensure the enhanced file exists before sending
+      if (!fs.existsSync(finalAudio)) {
+        console.error("Enhanced audio file not found.");
+        return;
+      }
+
+      // Send the enhanced female voice
       await zk.sendMessage(remoteJid, {
         audio: { url: finalAudio },
         mimetype: 'audio/mp4',
@@ -483,7 +496,7 @@ const downloadAudio = (url, outputFile) => {
 const enhanceAudio = (inputFiles, outputFile) => {
   return new Promise((resolve, reject) => {
     const inputList = inputFiles.map(file => `-i ${file}`).join(' ');
-    const filter = `"volume=1.2, bass=g=3, treble=g=3, equalizer=f=1000:t=q:w=1:g=2"`;
+    const filter = `"volume=1.4, bass=g=6, treble=g=5, equalizer=f=1000:t=q:w=1:g=3, afftdn"`;
 
     exec(`ffmpeg ${inputList} -filter_complex ${filter} -b:a 192k -y ${outputFile}`, (error) => {
       if (error) reject(error);
