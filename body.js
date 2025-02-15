@@ -363,74 +363,103 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
-const fs = require('fs');
+const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
+const fs = require('fs');
 
-zk.ev.on("messages.upsert", async (m) => {  
-    const { messages } = m;  
-    const ms = messages[0];  
-    
-    if (!ms.message) return;  
-    const messageType = Object.keys(ms.message)[0];  
-    const remoteJid = ms.key.remoteJid;  
-    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;  
-    
-    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;  
-    if (conf.CHATBOT1 !== "yes") return;  
+zk.ev.on("messages.upsert", async (m) => {
+  const { messages } = m;
+  const ms = messages[0];
 
-    if (messageType === "conversation" || messageType === "extendedTextMessage") {  
-        const alpha = messageContent.trim();  
-        if (!alpha) return;    
+  if (!ms.message) return; // Skip messages without content
 
-        let conversationData = [];    
+  const messageType = Object.keys(ms.message)[0];
+  const remoteJid = ms.key.remoteJid;
+  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-        try {    
-            const rawData = fs.readFileSync('store.json', 'utf8');    
-            if (rawData) {    
-                conversationData = JSON.parse(rawData);    
-                if (!Array.isArray(conversationData)) conversationData = [];    
-            }    
-        } catch (err) {    
-            console.log('No previous conversation found, starting new one.');    
-        }    
+  // Skip bot's own messages and bot-owner messages
+  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-        const model = 'gpt-4';  // Changed model to avoid error
+  // Check if chatbot feature is enabled
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
 
-        const userMessage = { role: 'user', content: alpha };      
-        const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };    
+  if (messageType === "conversation" || messageType === "extendedTextMessage") {
+    const alpha = messageContent.trim();
+    if (!alpha) return;
 
-        conversationData.push(userMessage);    
-        conversationData.push(systemMessage);    
+    let conversationData = [];
 
-        try {    
-            const aiResponse = await ai.generate(model, conversationData);    
-            conversationData.push({ role: 'assistant', content: aiResponse });    
+    // Read previous conversation data
+    try {
+      const rawData = fs.readFileSync('store.json', 'utf8');
+      if (rawData) {
+        conversationData = JSON.parse(rawData);
+        if (!Array.isArray(conversationData)) {
+          conversationData = [];
+        }
+      }
+    } catch (err) {
+      console.log('No previous conversation found, starting new one.');
+    }
 
-            fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));    
+    const model = 'gpt-4-turbo-2024-04-09';
+    const userMessage = { role: 'user', content: alpha };
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
-            // Determine language (Swahili or English)
-            const language = aiResponse.match(/[a-zA-Z]/) ? 'en' : 'sw';
+    // Add user message and system message to the conversation
+    conversationData.push(userMessage);
+    conversationData.push(systemMessage);
 
-            // Generate Speech using unlimited-ai (OpenAI TTS)
-            const audioBuffer = await ai.tts({
-                model: "tts-1",
-                voice: language === 'sw' ? "alloy" : "nova",
-                input: aiResponse
-            });
+    try {
+      // Generate AI response
+      const aiResponse = await ai.generate(model, conversationData);
 
-            const audioPath = 'output.mp3';
-            fs.writeFileSync(audioPath, audioBuffer);
+      // Add AI response to the conversation
+      conversationData.push({ role: 'assistant', content: aiResponse });
 
-            await zk.sendMessage(remoteJid, {     
-                audio: { url: audioPath },     
-                mimetype: 'audio/mp4',     
-                ptt: true     
-            });    
+      // Save the updated conversation
+      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-        } catch (error) {    
-            console.error("Error with AI generation:", error);    
-        }  
-    }  
+      // Determine the language (English or Swahili)
+      const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw' : 'en';
+
+      // Function to split text into smaller chunks for Google TTS
+      const chunkText = (text, limit = 200) => {
+        const words = text.split(' ');
+        let chunks = [], currentChunk = '';
+
+        words.forEach(word => {
+          if ((currentChunk + word).length > limit) {
+            chunks.push(currentChunk.trim());
+            currentChunk = '';
+          }
+          currentChunk += ' ' + word;
+        });
+
+        if (currentChunk) chunks.push(currentChunk.trim());
+        return chunks;
+      };
+
+      const textChunks = chunkText(aiResponse);
+
+      // Generate audio URLs for all chunks
+      const audioUrls = textChunks.map(chunk => googleTTS.getAudioUrl(chunk, {
+        lang: language,
+        slow: false, // Keep it natural
+        host: 'https://translate.google.com',
+      }));
+
+      for (const url of audioUrls) {
+        await zk.sendMessage(remoteJid, {
+          audio: { url },
+          mimetype: 'audio/mp4',
+          ptt: true
+        });
+      }
+    } catch (error) {
+      console.error("Error with AI generation:", error);
+    }
+  }
 });
        
 
