@@ -364,7 +364,7 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 const { EdgeSpeechTTS } = require("google-tts-api");
-const { Buffer } = require("unlimited-ai");
+const { Buffer } = require("google-it");
 const ai = require("unlimited-ai");
 
 const tts = new EdgeSpeechTTS({ locale: "en-US" });
