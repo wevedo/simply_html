@@ -364,90 +364,65 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 
-const textToSpeech = require('@google-cloud/text-to-speech');
-const util = require('util');
-const ai = require('unlimited-ai');
 
-const client = new textToSpeech.TextToSpeechClient({
-  keyFilename: 'google-cloud-key.json', // Path to your service account key
-});
-
-async function generateTTS(text, language) {
-  const request = {
-    input: { text },
-    voice: {
-      languageCode: language,
-      ssmlGender: 'NEUTRAL',
-      name: language === 'sw-KE' ? 'sw-KE-Wavenet-A' : 'en-US-Wavenet-D' // Natural voices
-    },
-    audioConfig: {
-      audioEncoding: 'MP3',
-      speakingRate: 1.0, // Adjust for natural flow
-      pitch: 0.0,
-    },
-  };
-
-  const [response] = await client.synthesizeSpeech(request);
-  const filePath = `tts_audio.mp3`;
-  await fs.promises.writeFile(filePath, response.audioContent);
-  return filePath;
-}
+const ai = require("unlimited-ai");
 
 zk.ev.on("messages.upsert", async (m) => {
-  const { messages } = m;
-  const ms = messages[0];
+    const { messages } = m;
+    const ms = messages[0];
 
-  if (!ms.message) return;
-  const remoteJid = ms.key.remoteJid;
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+    if (!ms.message) return; // Skip messages without content
 
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
-  if (conf.CHATBOT1 !== "yes") return;
+    const messageType = Object.keys(ms.message)[0];
+    const remoteJid = ms.key.remoteJid;
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  if (messageContent) {
-    const alpha = messageContent.trim();
-    let conversationData = [];
+    // Skip bot's own messages and bot-owner messages
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    try {
-      const rawData = fs.readFileSync('store.json', 'utf8');
-      if (rawData) {
-        conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) {
-          conversationData = [];
+    // Check if chatbot feature is enabled
+    if (conf.CHATBOT1 !== "yes") return;
+
+    if (messageType === "conversation" || messageType === "extendedTextMessage") {
+        const userMessage = messageContent.trim();
+        if (!userMessage) return;
+
+        try {
+            // AI generates response
+            const model = "gpt-4-turbo-2024-04-09";
+            const conversation = [
+                { role: "system", content: "You are Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks." },
+                { role: "user", content: userMessage }
+            ];
+            const aiResponse = await ai.generate(model, conversation);
+
+            // Detect language (Swahili or English)
+            const language = userMessage.match(/[a-zA-Z]/) ? "en" : "sw";
+
+            // Generate TTS audio for AI response
+            exec(`python tts.py "${aiResponse}" ${language}`, async (error) => {
+                if (error) {
+                    console.error("TTS Generation Error:", error);
+                    return;
+                }
+
+                // Send the generated audio file
+                const audioPath = "./output.wav";
+                await zk.sendMessage(remoteJid, {
+                    audio: { url: audioPath },
+                    mimetype: "audio/mp4",
+                    ptt: true
+                });
+
+                // Delete file after sending
+                fs.unlinkSync(audioPath);
+            });
+
+        } catch (error) {
+            console.error("AI Error:", error);
         }
-      }
-    } catch (err) {
-      console.log('No previous conversation found, starting new one.');
     }
-
-    const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
-
-    conversationData.push(userMessage);
-    conversationData.push(systemMessage);
-
-    try {
-      const aiResponse = await ai.generate(model, conversationData);
-      conversationData.push({ role: 'assistant', content: aiResponse });
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
-
-      const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw-KE' : 'en-US';
-      const audioPath = await generateTTS(aiResponse, language);
-
-      await zk.sendMessage(remoteJid, {
-        audio: fs.readFileSync(audioPath),
-        mimetype: 'audio/mp3',
-        ptt: true
-      });
-
-      fs.unlinkSync(audioPath);
-    } catch (error) {
-      console.error("Error with AI generation:", error);
-    }
-  }
 });
-       
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
