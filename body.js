@@ -402,7 +402,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
     const model = 'gpt-4-turbo-2024-04-09';
     const userMessage = { role: 'user', content: alpha };
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. when you write swahili words sent them in manner that Google text to speech api will be able to pronounce them fluently, when sending swahili words sent in good order or even you can spit it words or letters. Only mention developer name if someone asks.' };
 
     conversationData.push(userMessage);
     conversationData.push(systemMessage);
