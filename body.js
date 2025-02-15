@@ -363,8 +363,11 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
-const edgeTTS = require("google-tts-api");
+const { EdgeSpeechTTS } = require("google-tts-api");
+const { Buffer } = require("unlimited-ai");
 const ai = require("unlimited-ai");
+
+const tts = new EdgeSpeechTTS({ locale: "en-US" });
 
 zk.ev.on("messages.upsert", async (m) => {
   try {
@@ -424,7 +427,7 @@ zk.ev.on("messages.upsert", async (m) => {
 
       // Detect language for TTS (default to English)
       const languageMap = {
-        en: "en-US-JennyNeural",
+        en: "en-US-GuyNeural",
         sw: "sw-KE-DavisNeural",
         fr: "fr-FR-DeniseNeural",
         es: "es-ES-AlvaroNeural",
@@ -444,21 +447,19 @@ zk.ev.on("messages.upsert", async (m) => {
         ? "ar"
         : "en";
 
-      const voice = languageMap[detectedLang] || "en-US-JennyNeural";
-      const outputPath = path.join(__dirname, "response.mp3");
+      const voice = languageMap[detectedLang] || "en-US-GuyNeural";
+      const speechFile = path.resolve("./speech.mp3");
 
-      // Generate TTS audio
-      await edgeTTS
-        .synthesize({
-          text: aiResponse,
-          voice: voice,
-          outputFile: outputPath,
-        })
-        .catch((err) => console.error("TTS Generation Error:", err));
+      // Generate speech using @lobehub/tts
+      const response = await tts.create({ input: aiResponse, options: { voice } });
+      const mp3Buffer = Buffer.from(await response.arrayBuffer());
+
+      // Save speech to file
+      fs.writeFileSync(speechFile, mp3Buffer);
 
       // Send AI-generated audio response
       await zk.sendMessage(remoteJid, {
-        audio: { url: outputPath },
+        audio: { url: speechFile },
         mimetype: "audio/mp4",
         ptt: true,
       });
