@@ -363,90 +363,112 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
-const googleTTS = require('google-tts-api');
-const ai = require('unlimited-ai');
+const edgeTTS = require("google-tts-api");
+const ai = require("unlimited-ai");
 
 zk.ev.on("messages.upsert", async (m) => {
-  const { messages } = m;
-  const ms = messages[0];
+  try {
+    const { messages } = m;
+    const ms = messages[0];
 
-  if (!ms.message) return; // Skip messages without content
+    if (!ms.message) return; // Skip empty messages
 
-  const messageType = Object.keys(ms.message)[0];
-  const remoteJid = ms.key.remoteJid;
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+    const messageType = Object.keys(ms.message)[0];
+    const remoteJid = ms.key.remoteJid;
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  // Skip bot's own messages and bot-owner messages
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+    // Ignore bot's own messages and owner's messages
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-  // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
+    // Check if chatbot feature is enabled
+    if (conf.CHATBOT1 !== "yes") return;
 
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {
-    const alpha = messageContent.trim();
+    if (messageType === "conversation" || messageType === "extendedTextMessage") {
+      const userInput = messageContent?.trim();
+      if (!userInput) return;
 
-    if (!alpha) return;
+      let conversationData = [];
 
-    let conversationData = [];
-
-    // Read previous conversation data
-    try {
-      const rawData = fs.readFileSync('store.json', 'utf8');
-      if (rawData) {
+      // Load previous conversation history (limit to last 10 exchanges)
+      try {
+        const rawData = fs.readFileSync("store.json", "utf8");
         conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) {
-          conversationData = [];
-        }
+        if (!Array.isArray(conversationData)) conversationData = [];
+      } catch (err) {
+        console.log("No previous conversation found, starting new one.");
       }
-    } catch (err) {
-      console.log('No previous conversation found, starting new one.');
-    }
 
-    const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
+      // Limit conversation history to the last 10 messages
+      if (conversationData.length > 20) {
+        conversationData = conversationData.slice(-20);
+      }
 
-    // Add user message and system message to the conversation
-    conversationData.push(userMessage);
-    conversationData.push(systemMessage);
+      const model = "gpt-4-turbo-2024-04-09";
+      const systemMessage = {
+        role: "system",
+        content: "You are Bwm xmd, an AI chatbot developed by Ibrahim Adams. Respond to user queries and only mention the developer’s name if explicitly asked.",
+      };
 
-    try {
+      conversationData.push({ role: "user", content: userInput });
+      conversationData.unshift(systemMessage); // Ensure system message is always first
+
       // Generate AI response
       const aiResponse = await ai.generate(model, conversationData);
+      if (!aiResponse || typeof aiResponse !== "string") {
+        throw new Error("Invalid AI response received.");
+      }
 
-      // Add AI response to the conversation
-      conversationData.push({ role: 'assistant', content: aiResponse });
+      // Save the latest conversation
+      conversationData.push({ role: "assistant", content: aiResponse });
+      fs.writeFileSync("store.json", JSON.stringify(conversationData, null, 2));
 
-      // Save the updated conversation
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+      // Detect language for TTS (default to English)
+      const languageMap = {
+        en: "en-US-JennyNeural",
+        sw: "sw-KE-DavisNeural",
+        fr: "fr-FR-DeniseNeural",
+        es: "es-ES-AlvaroNeural",
+        de: "de-DE-KatjaNeural",
+        ar: "ar-SA-HamedNeural",
+      };
 
-      // Determine the language (English or Swahili)
-      const language = alpha.includes("swahili") || aiResponse.includes("swahili") ? 'sw' : 'en';
+      const detectedLang = userInput.match(/\bswahili\b/i)
+        ? "sw"
+        : userInput.match(/\bfrench\b/i)
+        ? "fr"
+        : userInput.match(/\bspanish\b/i)
+        ? "es"
+        : userInput.match(/\bgerman\b/i)
+        ? "de"
+        : userInput.match(/\barabic\b/i)
+        ? "ar"
+        : "en";
 
-      // Adjusting to better quality voice for both languages
-      const audioUrl = googleTTS.getAudioUrl(aiResponse, {
-        lang: language,
-        slow: false,
-        host: 'https://translate.google.com',
-        // You can adjust the voice rate, pitch, and volume for better quality
-        voice: language === 'sw' ? 'google_swahili_female' : 'google_en_us_female',
-        pitch: 10.6,  // Adjust pitch for better clarity
-        speed: 10.5   // Adjust speed for clearer pronunciation
+      const voice = languageMap[detectedLang] || "en-US-JennyNeural";
+      const outputPath = path.join(__dirname, "response.mp3");
+
+      // Generate TTS audio
+      await edgeTTS
+        .synthesize({
+          text: aiResponse,
+          voice: voice,
+          outputFile: outputPath,
+        })
+        .catch((err) => console.error("TTS Generation Error:", err));
+
+      // Send AI-generated audio response
+      await zk.sendMessage(remoteJid, {
+        audio: { url: outputPath },
+        mimetype: "audio/mp4",
+        ptt: true,
       });
 
-      // Send the audio response using zk.sendMessage
-      await zk.sendMessage(remoteJid, { 
-        audio: { url: audioUrl }, 
-        mimetype: 'audio/mp4', 
-        ptt: true 
-      });
-    } catch (error) {
-      // Silent error handling, no response to the user
-      console.error("Error with AI generation:", error);
+      console.log("Audio response sent successfully.");
     }
+  } catch (error) {
+    console.error("Error in chatbot processing:", error);
   }
 });
-
        
 
 zk.ev.on("messages.upsert", async (m) => {
