@@ -384,7 +384,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
         let conversationData = [];    
 
-        // Read previous conversation data    
         try {    
             const rawData = fs.readFileSync('store.json', 'utf8');    
             if (rawData) {    
@@ -395,7 +394,8 @@ zk.ev.on("messages.upsert", async (m) => {
             console.log('No previous conversation found, starting new one.');    
         }    
 
-        const model = 'gpt-4-turbo';    
+        const model = 'gpt-4';  // Changed model to avoid error
+
         const userMessage = { role: 'user', content: alpha };      
         const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };    
 
@@ -414,14 +414,13 @@ zk.ev.on("messages.upsert", async (m) => {
             // Generate Speech using unlimited-ai (OpenAI TTS)
             const audioBuffer = await ai.tts({
                 model: "tts-1",
-                voice: language === 'sw' ? "alloy" : "nova",  // Choose a natural voice
+                voice: language === 'sw' ? "alloy" : "nova",
                 input: aiResponse
             });
 
             const audioPath = 'output.mp3';
             fs.writeFileSync(audioPath, audioBuffer);
 
-            // Send the audio response
             await zk.sendMessage(remoteJid, {     
                 audio: { url: audioPath },     
                 mimetype: 'audio/mp4',     
