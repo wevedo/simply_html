@@ -24,7 +24,7 @@ module.exports = {
     WARN_COUNT: process.env.WARN_COUNT || '3',
     ETAT: process.env.PRESENCE || '',
     CHATBOT: process.env.CHATBOT || 'yes',
-    AUDIO_CHATBOT: process.env.AUDIO_CHATBOT || 'no',
+    CHATBOT1: process.env.AUDIO_CHATBOT || 'no',
     SELF_CHATBOT: process.env.SELF_CHATBOT || 'yes',
     DP: process.env.STARTING_BOT_MESSAGE || "yes",
     ANTIDELETE1: process.env.ANTIDELETE1 || 'yes',
