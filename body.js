@@ -363,11 +363,8 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
+const fs = require('fs');
 const ai = require('unlimited-ai');
-const textToSpeech = require('google-tts-api');
-const util = require('google-it');
-
-const client = new textToSpeech.TextToSpeechClient();
 
 zk.ev.on("messages.upsert", async (m) => {  
     const { messages } = m;  
@@ -398,7 +395,7 @@ zk.ev.on("messages.upsert", async (m) => {
             console.log('No previous conversation found, starting new one.');    
         }    
 
-        const model = 'gpt-4-turbo-2024-04-09';    
+        const model = 'gpt-4-turbo';    
         const userMessage = { role: 'user', content: alpha };      
         const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };    
 
@@ -412,27 +409,17 @@ zk.ev.on("messages.upsert", async (m) => {
             fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));    
 
             // Determine language (Swahili or English)
-            const language = /[äöüßÄÖÜẞ]/.test(aiResponse) ? 'sw-KE' : 'en-US';    
+            const language = aiResponse.match(/[a-zA-Z]/) ? 'en' : 'sw';
 
-            // Configure speech settings for better quality
-            const request = {
-                input: { text: aiResponse },
-                voice: { 
-                    languageCode: language, 
-                    name: language === 'sw-KE' ? 'sw-KE-Wavenet-A' : 'en-US-Wavenet-D' // More natural voices
-                },
-                audioConfig: { 
-                    audioEncoding: 'MP3',
-                    pitch: 0, // Neutral pitch
-                    speakingRate: 1.0 // Normal speed
-                },
-            };
+            // Generate Speech using unlimited-ai (OpenAI TTS)
+            const audioBuffer = await ai.tts({
+                model: "tts-1",
+                voice: language === 'sw' ? "alloy" : "nova",  // Choose a natural voice
+                input: aiResponse
+            });
 
-            // Generate speech audio
-            const [response] = await client.synthesizeSpeech(request);
-            const writeFile = util.promisify(fs.writeFile);
             const audioPath = 'output.mp3';
-            await writeFile(audioPath, response.audioContent, 'binary');
+            fs.writeFileSync(audioPath, audioBuffer);
 
             // Send the audio response
             await zk.sendMessage(remoteJid, {     
