@@ -363,112 +363,88 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
-const { EdgeSpeechTTS } = require("google-tts-api");
-const { Buffer } = require("google-it");
-const ai = require("unlimited-ai");
+const ai = require('unlimited-ai');
+const textToSpeech = require('google-tts-api');
+const util = require('google-it');
 
-const tts = new EdgeSpeechTTS({ locale: "en-US" });
+const client = new textToSpeech.TextToSpeechClient();
 
-zk.ev.on("messages.upsert", async (m) => {
-  try {
-    const { messages } = m;
-    const ms = messages[0];
+zk.ev.on("messages.upsert", async (m) => {  
+    const { messages } = m;  
+    const ms = messages[0];  
+    
+    if (!ms.message) return;  
+    const messageType = Object.keys(ms.message)[0];  
+    const remoteJid = ms.key.remoteJid;  
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;  
+    
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;  
+    if (conf.CHATBOT1 !== "yes") return;  
 
-    if (!ms.message) return; // Skip empty messages
+    if (messageType === "conversation" || messageType === "extendedTextMessage") {  
+        const alpha = messageContent.trim();  
+        if (!alpha) return;    
 
-    const messageType = Object.keys(ms.message)[0];
-    const remoteJid = ms.key.remoteJid;
-    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+        let conversationData = [];    
 
-    // Ignore bot's own messages and owner's messages
-    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+        // Read previous conversation data    
+        try {    
+            const rawData = fs.readFileSync('store.json', 'utf8');    
+            if (rawData) {    
+                conversationData = JSON.parse(rawData);    
+                if (!Array.isArray(conversationData)) conversationData = [];    
+            }    
+        } catch (err) {    
+            console.log('No previous conversation found, starting new one.');    
+        }    
 
-    // Check if chatbot feature is enabled
-    if (conf.CHATBOT1 !== "yes") return;
+        const model = 'gpt-4-turbo-2024-04-09';    
+        const userMessage = { role: 'user', content: alpha };      
+        const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };    
 
-    if (messageType === "conversation" || messageType === "extendedTextMessage") {
-      const userInput = messageContent?.trim();
-      if (!userInput) return;
+        conversationData.push(userMessage);    
+        conversationData.push(systemMessage);    
 
-      let conversationData = [];
+        try {    
+            const aiResponse = await ai.generate(model, conversationData);    
+            conversationData.push({ role: 'assistant', content: aiResponse });    
 
-      // Load previous conversation history (limit to last 10 exchanges)
-      try {
-        const rawData = fs.readFileSync("store.json", "utf8");
-        conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) conversationData = [];
-      } catch (err) {
-        console.log("No previous conversation found, starting new one.");
-      }
+            fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));    
 
-      // Limit conversation history to the last 10 messages
-      if (conversationData.length > 20) {
-        conversationData = conversationData.slice(-20);
-      }
+            // Determine language (Swahili or English)
+            const language = /[äöüßÄÖÜẞ]/.test(aiResponse) ? 'sw-KE' : 'en-US';    
 
-      const model = "gpt-4-turbo-2024-04-09";
-      const systemMessage = {
-        role: "system",
-        content: "You are Bwm xmd, an AI chatbot developed by Ibrahim Adams. Respond to user queries and only mention the developer’s name if explicitly asked.",
-      };
+            // Configure speech settings for better quality
+            const request = {
+                input: { text: aiResponse },
+                voice: { 
+                    languageCode: language, 
+                    name: language === 'sw-KE' ? 'sw-KE-Wavenet-A' : 'en-US-Wavenet-D' // More natural voices
+                },
+                audioConfig: { 
+                    audioEncoding: 'MP3',
+                    pitch: 0, // Neutral pitch
+                    speakingRate: 1.0 // Normal speed
+                },
+            };
 
-      conversationData.push({ role: "user", content: userInput });
-      conversationData.unshift(systemMessage); // Ensure system message is always first
+            // Generate speech audio
+            const [response] = await client.synthesizeSpeech(request);
+            const writeFile = util.promisify(fs.writeFile);
+            const audioPath = 'output.mp3';
+            await writeFile(audioPath, response.audioContent, 'binary');
 
-      // Generate AI response
-      const aiResponse = await ai.generate(model, conversationData);
-      if (!aiResponse || typeof aiResponse !== "string") {
-        throw new Error("Invalid AI response received.");
-      }
+            // Send the audio response
+            await zk.sendMessage(remoteJid, {     
+                audio: { url: audioPath },     
+                mimetype: 'audio/mp4',     
+                ptt: true     
+            });    
 
-      // Save the latest conversation
-      conversationData.push({ role: "assistant", content: aiResponse });
-      fs.writeFileSync("store.json", JSON.stringify(conversationData, null, 2));
-
-      // Detect language for TTS (default to English)
-      const languageMap = {
-        en: "en-US-GuyNeural",
-        sw: "sw-KE-DavisNeural",
-        fr: "fr-FR-DeniseNeural",
-        es: "es-ES-AlvaroNeural",
-        de: "de-DE-KatjaNeural",
-        ar: "ar-SA-HamedNeural",
-      };
-
-      const detectedLang = userInput.match(/\bswahili\b/i)
-        ? "sw"
-        : userInput.match(/\bfrench\b/i)
-        ? "fr"
-        : userInput.match(/\bspanish\b/i)
-        ? "es"
-        : userInput.match(/\bgerman\b/i)
-        ? "de"
-        : userInput.match(/\barabic\b/i)
-        ? "ar"
-        : "en";
-
-      const voice = languageMap[detectedLang] || "en-US-GuyNeural";
-      const speechFile = path.resolve("./speech.mp3");
-
-      // Generate speech using @lobehub/tts
-      const response = await tts.create({ input: aiResponse, options: { voice } });
-      const mp3Buffer = Buffer.from(await response.arrayBuffer());
-
-      // Save speech to file
-      fs.writeFileSync(speechFile, mp3Buffer);
-
-      // Send AI-generated audio response
-      await zk.sendMessage(remoteJid, {
-        audio: { url: speechFile },
-        mimetype: "audio/mp4",
-        ptt: true,
-      });
-
-      console.log("Audio response sent successfully.");
-    }
-  } catch (error) {
-    console.error("Error in chatbot processing:", error);
-  }
+        } catch (error) {    
+            console.error("Error with AI generation:", error);    
+        }  
+    }  
 });
        
 
