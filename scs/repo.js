@@ -34,10 +34,6 @@ const axios = require('axios');
 const moment = require("moment-timezone");
 const { adams } = require(__dirname + "/../Ibrahim/adams");
 
-// Initialize fork and star counts
-let aggregatedForks = 0;
-let aggregatedStars = 0;
-
 // Function to format large numbers with commas
 const formatNumber = (num) => num.toLocaleString();
 
@@ -50,8 +46,8 @@ const repositories = [
 // Function to fetch and aggregate GitHub repository details
 const fetchAndAggregateRepoDetails = async () => {
     try {
-        aggregatedForks = 0;
-        aggregatedStars = 0;
+        let aggregatedForks = 0;
+        let aggregatedStars = 0;
 
         for (const repo of repositories) {
             const response = await axios.get(`https://api.github.com/repos/${repo}`);
@@ -61,17 +57,9 @@ const fetchAndAggregateRepoDetails = async () => {
             aggregatedStars += stargazers_count;
         }
 
-        const finalForks = aggregatedForks * 4;
-        const finalStars = aggregatedStars * 4;
-
-        const mainRepoResponse = await axios.get(`https://api.github.com/repos/devibraah/BWM-XMD`);
-        const { watchers_count, open_issues_count } = mainRepoResponse.data;
-
         return {
-            stars: finalStars,
-            forks: finalForks,
-            watchers: watchers_count,
-            issues: open_issues_count,
+            stars: aggregatedStars * 4,
+            forks: aggregatedForks * 4,
         };
     } catch (error) {
         console.error("Error fetching GitHub repository details:", error);
@@ -92,7 +80,7 @@ commands.forEach((command) => {
             return;
         }
 
-        const { stars, forks, watchers, issues } = repoDetails;
+        const { stars, forks } = repoDetails;
         const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
 
         const infoMessage = `
@@ -102,20 +90,13 @@ commands.forEach((command) => {
 ╭───────────────━⊷
 ║⭐ *Total Stars:* ${formatNumber(stars)}
 ║🍴 *Total Forks:* ${formatNumber(forks)}
-║👀 *Watchers:* ${formatNumber(watchers)}
-║❗ *Open Issues:* ${formatNumber(issues)}
 ║👤 *Owner:* Sir Ibrahim Adams
-╰───────────────━⊷
-╭───────────────━⊷
-║ Fetched on: ${currentTime}
-║ Repo Link: https://shorturl.at/pv9qw
 ╰───────────────━⊷
 
 🔹 *Reply with a number to choose an action:*
 1️⃣ Open GitHub Repo 🌍
 2️⃣ Open WhatsApp Channel 📢
-3️⃣ Ping Bot 📡
-4️⃣ Test Bot 🛠️`;
+3️⃣ Ping Bot 📡`;
 
         try {
             const sentMessage = await zk.sendMessage(dest, {
@@ -145,33 +126,16 @@ commands.forEach((command) => {
                     message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
                 ) {
                     if (responseText === "1") {
-                        await zk.sendMessage(dest, {
-                            text: "🌍 Opening GitHub Repository...",
-                        });
-                        await zk.sendMessage(dest, {
-                            text: "https://github.com/devibraah/BWM-XMD",
-                        });
+                        await zk.sendMessage(dest, { text: "🌍 Opening GitHub Repository..." });
+                        await zk.sendMessage(dest, { text: "https://github.com/devibraah/BWM-XMD" });
                     } else if (responseText === "2") {
-                        await zk.sendMessage(dest, {
-                            text: "📢 Opening WhatsApp Channel...",
-                        });
-                        await zk.sendMessage(dest, {
-                            text: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        });
+                        await zk.sendMessage(dest, { text: "📢 Opening WhatsApp Channel..." });
+                        await zk.sendMessage(dest, { text: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
                     } else if (responseText === "3") {
-                        await zk.sendMessage(dest, {
-                            text: "📡 Pinging bot...",
-                        });
-                        await zk.sendMessage(dest, { text: "Pong! ✅" });
-                    } else if (responseText === "4") {
-                        await zk.sendMessage(dest, {
-                            text: "🛠️ Running test...",
-                        });
-                        await zk.sendMessage(dest, { text: "Test Successful ✅" });
+                        const randomPong = Math.floor(Math.random() * 900000) + 100000; // Generates a 6-digit number
+                        await zk.sendMessage(dest, { text: `📡 Pong! ${randomPong} ✅` });
                     } else {
-                        await zk.sendMessage(dest, {
-                            text: "❌ Invalid choice. Please reply with 1, 2, 3, or 4.",
-                        });
+                        await zk.sendMessage(dest, { text: "❌ Invalid choice. Please reply with 1, 2, or 3." });
                     }
                 }
             });
