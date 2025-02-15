@@ -41,10 +41,10 @@ let aggregatedStars = 0;
 // Function to format large numbers with commas
 const formatNumber = (num) => num.toLocaleString();
 
-// Repositories for aggregation (hidden)
+// Repositories for aggregation
 const repositories = [
     "devibrah/NORMAL-BOT",
-    "devibraah/BWM-XMD", // Main repository to display
+    "devibraah/BWM-XMD",
 ];
 
 // Function to fetch and aggregate GitHub repository details
@@ -61,22 +61,17 @@ const fetchAndAggregateRepoDetails = async () => {
             aggregatedStars += stargazers_count;
         }
 
-        // Calculate the display values
         const finalForks = aggregatedForks * 4;
         const finalStars = aggregatedStars * 4;
 
-        // Fetch details for the main repository
         const mainRepoResponse = await axios.get(`https://api.github.com/repos/devibraah/BWM-XMD`);
-        const { name, watchers_count, open_issues_count, owner, html_url } = mainRepoResponse.data;
+        const { watchers_count, open_issues_count } = mainRepoResponse.data;
 
         return {
-            name,
             stars: finalStars,
             forks: finalForks,
             watchers: watchers_count,
             issues: open_issues_count,
-            owner: owner.login,
-            url: html_url,
         };
     } catch (error) {
         console.error("Error fetching GitHub repository details:", error);
@@ -84,13 +79,12 @@ const fetchAndAggregateRepoDetails = async () => {
     }
 };
 
-// Define the commands that can trigger this functionality
+// Define commands
 const commands = ["git", "repo", "script", "sc"];
 
 commands.forEach((command) => {
     adams({ nomCom: command, categorie: "GitHub" }, async (dest, zk, commandeOptions) => {
         let { repondre } = commandeOptions;
-
         const repoDetails = await fetchAndAggregateRepoDetails();
 
         if (!repoDetails) {
@@ -98,52 +92,93 @@ commands.forEach((command) => {
             return;
         }
 
-        const { name, stars, forks, watchers, issues, owner, url } = repoDetails;
-
-        // Use Nairobi time
+        const { stars, forks, watchers, issues } = repoDetails;
         const currentTime = moment().tz("Africa/Nairobi").format('DD/MM/YYYY HH:mm:ss');
 
-        // Create the repository info message
         const infoMessage = `
 ╭───────────────━⊷
 ║ 🚀 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐑𝐄𝐏𝐎 𝐈𝐍𝐅𝐎 🚀
 ╰───────────────━⊷
 ╭───────────────━⊷
-║💡 *ɴᴀᴍᴇ:* ʙᴡᴍ-xᴍᴅ
-║⭐ *ᴛᴏᴛᴀʟ sᴛᴀʀs:* ${formatNumber(stars)}
-║🍴 *ᴛᴏᴛᴀʟ ғᴏʀᴋs:* ${formatNumber(forks)}
-║👀 *ᴡᴀᴛᴄʜᴇʀs:* ${formatNumber(watchers)}
-║❗ *ᴏᴘᴇɴ ɪssᴜᴇs:* ${formatNumber(issues)}
-║👤 *ᴏᴡɴᴇʀ:* sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+║⭐ *Total Stars:* ${formatNumber(stars)}
+║🍴 *Total Forks:* ${formatNumber(forks)}
+║👀 *Watchers:* ${formatNumber(watchers)}
+║❗ *Open Issues:* ${formatNumber(issues)}
+║👤 *Owner:* Sir Ibrahim Adams
 ╰───────────────━⊷
 ╭───────────────━⊷
-║ ғᴇᴛᴄʜᴇᴅ ᴏɴ: ${currentTime}
-║ ʀᴇᴘᴏ ʟɪɴᴋ: https://shorturl.at/pv9qw
+║ Fetched on: ${currentTime}
+║ Repo Link: https://shorturl.at/pv9qw
 ╰───────────────━⊷
 
-> sᴛᴀʏ ᴄᴏɴɴᴇᴄᴛᴇᴅ ғᴏʀ ғᴀɴᴛᴀsᴛɪᴄ ᴜᴘᴅᴀᴛᴇs!`;
+🔹 *Reply with a number to choose an action:*
+1️⃣ Open GitHub Repo 🌍
+2️⃣ Open WhatsApp Channel 📢
+3️⃣ Ping Bot 📡
+4️⃣ Test Bot 🛠️`;
 
         try {
-            // Send the combined message with a large photo and proper source URL
-            await zk.sendMessage(dest, {
+            const sentMessage = await zk.sendMessage(dest, {
                 text: infoMessage,
                 contextInfo: {
                     externalAdReply: {
                         title: "Explore Fantastic Updates!",
                         body: "Click here for the latest repository details.",
-                        thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg", // Replace with your image URL
+                        thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg",
                         mediaType: 1,
-                        renderLargerThumbnail: true, // Ensures a larger thumbnail display
+                        renderLargerThumbnail: true,
                         showAdAttribution: true, 
                         mediaUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y", // Source URL in context
+                        sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
                     },
                 },
             });
+
+            // Listen for Reply
+            zk.ev.on("messages.upsert", async (update) => {
+                const message = update.messages[0];
+                if (!message.message || !message.message.extendedTextMessage) return;
+
+                const responseText = message.message.extendedTextMessage.text.trim();
+                if (
+                    message.message.extendedTextMessage.contextInfo &&
+                    message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+                ) {
+                    if (responseText === "1") {
+                        await zk.sendMessage(dest, {
+                            text: "🌍 Opening GitHub Repository...",
+                        });
+                        await zk.sendMessage(dest, {
+                            text: "https://github.com/devibraah/BWM-XMD",
+                        });
+                    } else if (responseText === "2") {
+                        await zk.sendMessage(dest, {
+                            text: "📢 Opening WhatsApp Channel...",
+                        });
+                        await zk.sendMessage(dest, {
+                            text: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+                        });
+                    } else if (responseText === "3") {
+                        await zk.sendMessage(dest, {
+                            text: "📡 Pinging bot...",
+                        });
+                        await zk.sendMessage(dest, { text: "Pong! ✅" });
+                    } else if (responseText === "4") {
+                        await zk.sendMessage(dest, {
+                            text: "🛠️ Running test...",
+                        });
+                        await zk.sendMessage(dest, { text: "Test Successful ✅" });
+                    } else {
+                        await zk.sendMessage(dest, {
+                            text: "❌ Invalid choice. Please reply with 1, 2, 3, or 4.",
+                        });
+                    }
+                }
+            });
+
         } catch (e) {
             console.error("❌ Error sending GitHub info:", e);
             repondre("❌ Error sending GitHub info: " + e.message);
         }
     });
 });
-
