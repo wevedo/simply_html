@@ -372,17 +372,15 @@ zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
 
-  if (!ms.message) return; // Skip messages without content
+  if (!ms.message) return;
 
   const messageType = Object.keys(ms.message)[0];
   const remoteJid = ms.key.remoteJid;
   const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  // Skip bot's own messages and bot-owner messages
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-  // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
+  if (conf.CHATBOT1 !== "yes") return;
 
   if (messageType === "conversation" || messageType === "extendedTextMessage") {
     const alpha = messageContent.trim();
@@ -390,7 +388,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
     let conversationData = [];
 
-    // Read previous conversation data
     try {
       const rawData = fs.readFileSync('store.json', 'utf8');
       if (rawData) {
@@ -407,24 +404,17 @@ zk.ev.on("messages.upsert", async (m) => {
     const userMessage = { role: 'user', content: alpha };
     const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
-    // Add user message and system message to the conversation
     conversationData.push(userMessage);
     conversationData.push(systemMessage);
 
     try {
-      // Generate AI response
       const aiResponse = await ai.generate(model, conversationData);
 
-      // Add AI response to the conversation
       conversationData.push({ role: 'assistant', content: aiResponse });
-
-      // Save the updated conversation
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      // Determine the language (English or Swahili)
       const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw' : 'en';
 
-      // Function to split text into smaller chunks for Google TTS
       const chunkText = (text, limit = 200) => {
         const words = text.split(' ');
         let chunks = [], currentChunk = '';
@@ -442,26 +432,65 @@ zk.ev.on("messages.upsert", async (m) => {
       };
 
       const textChunks = chunkText(aiResponse);
+      let audioFiles = [];
 
-      // Generate audio URLs for all chunks
-      const audioUrls = textChunks.map(chunk => googleTTS.getAudioUrl(chunk, {
-        lang: language,
-        slow: false, // Keep it natural
-        host: 'https://translate.google.com',
-      }));
-
-      for (const url of audioUrls) {
-        await zk.sendMessage(remoteJid, {
-          audio: { url },
-          mimetype: 'audio/mp4',
-          ptt: true
+      for (let i = 0; i < textChunks.length; i++) {
+        const url = googleTTS.getAudioUrl(textChunks[i], {
+          lang: language,
+          slow: false,
+          host: 'https://translate.google.com',
         });
+
+        const outputFile = `audio_${i}.mp3`;
+        audioFiles.push(outputFile);
+
+        // Download the TTS-generated audio
+        await downloadAudio(url, outputFile);
       }
+
+      // Combine and enhance all audio files using FFmpeg
+      const finalAudio = "enhanced_audio.mp3";
+      await enhanceAudio(audioFiles, finalAudio);
+
+      // Send the enhanced audio
+      await zk.sendMessage(remoteJid, {
+        audio: { url: finalAudio },
+        mimetype: 'audio/mp4',
+        ptt: true
+      });
+
+      // Clean up temporary audio files
+      audioFiles.forEach(file => fs.unlinkSync(file));
+      fs.unlinkSync(finalAudio);
+
     } catch (error) {
       console.error("Error with AI generation:", error);
     }
   }
 });
+
+// Function to download audio from TTS
+const downloadAudio = (url, outputFile) => {
+  return new Promise((resolve, reject) => {
+    exec(`curl -s "${url}" -o ${outputFile}`, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+};
+
+// Function to enhance audio using FFmpeg
+const enhanceAudio = (inputFiles, outputFile) => {
+  return new Promise((resolve, reject) => {
+    const inputList = inputFiles.map(file => `-i ${file}`).join(' ');
+    const filter = `"volume=1.2, bass=g=3, treble=g=3, equalizer=f=1000:t=q:w=1:g=2"`;
+
+    exec(`ffmpeg ${inputList} -filter_complex ${filter} -b:a 192k -y ${outputFile}`, (error) => {
+      if (error) reject(error);
+      else resolve();
+    });
+  });
+};
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
