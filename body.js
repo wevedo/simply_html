@@ -363,33 +363,51 @@ zk.ev.on('messages.upsert', async (msg) => {
     }
 });
         
-const googleTTS = require('google-tts-api');
+
+const textToSpeech = require('@google-cloud/text-to-speech');
+const util = require('util');
 const ai = require('unlimited-ai');
-const fs = require('fs');
+
+const client = new textToSpeech.TextToSpeechClient({
+  keyFilename: 'google-cloud-key.json', // Path to your service account key
+});
+
+async function generateTTS(text, language) {
+  const request = {
+    input: { text },
+    voice: {
+      languageCode: language,
+      ssmlGender: 'NEUTRAL',
+      name: language === 'sw-KE' ? 'sw-KE-Wavenet-A' : 'en-US-Wavenet-D' // Natural voices
+    },
+    audioConfig: {
+      audioEncoding: 'MP3',
+      speakingRate: 1.0, // Adjust for natural flow
+      pitch: 0.0,
+    },
+  };
+
+  const [response] = await client.synthesizeSpeech(request);
+  const filePath = `tts_audio.mp3`;
+  await fs.promises.writeFile(filePath, response.audioContent);
+  return filePath;
+}
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
 
-  if (!ms.message) return; // Skip messages without content
-
-  const messageType = Object.keys(ms.message)[0];
+  if (!ms.message) return;
   const remoteJid = ms.key.remoteJid;
   const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  // Skip bot's own messages and bot-owner messages
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+  if (conf.CHATBOT1 !== "yes") return;
 
-  // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
-
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {
+  if (messageContent) {
     const alpha = messageContent.trim();
-    if (!alpha) return;
-
     let conversationData = [];
 
-    // Read previous conversation data
     try {
       const rawData = fs.readFileSync('store.json', 'utf8');
       if (rawData) {
@@ -406,56 +424,24 @@ zk.ev.on("messages.upsert", async (m) => {
     const userMessage = { role: 'user', content: alpha };
     const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
-    // Add user message and system message to the conversation
     conversationData.push(userMessage);
     conversationData.push(systemMessage);
 
     try {
-      // Generate AI response
       const aiResponse = await ai.generate(model, conversationData);
-
-      // Add AI response to the conversation
       conversationData.push({ role: 'assistant', content: aiResponse });
-
-      // Save the updated conversation
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      // Determine the language (English or Swahili)
-      const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw' : 'en';
+      const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw-KE' : 'en-US';
+      const audioPath = await generateTTS(aiResponse, language);
 
-      // Function to split text into smaller chunks for Google TTS
-      const chunkText = (text, limit = 200) => {
-        const words = text.split(' ');
-        let chunks = [], currentChunk = '';
+      await zk.sendMessage(remoteJid, {
+        audio: fs.readFileSync(audioPath),
+        mimetype: 'audio/mp3',
+        ptt: true
+      });
 
-        words.forEach(word => {
-          if ((currentChunk + word).length > limit) {
-            chunks.push(currentChunk.trim());
-            currentChunk = '';
-          }
-          currentChunk += ' ' + word;
-        });
-
-        if (currentChunk) chunks.push(currentChunk.trim());
-        return chunks;
-      };
-
-      const textChunks = chunkText(aiResponse);
-
-      // Generate audio URLs for all chunks
-      const audioUrls = textChunks.map(chunk => googleTTS.getAudioUrl(chunk, {
-        lang: language,
-        slow: false, // Keep it natural
-        host: 'https://translate.google.com',
-      }));
-
-      for (const url of audioUrls) {
-        await zk.sendMessage(remoteJid, {
-          audio: { url },
-          mimetype: 'audio/mp4',
-          ptt: true
-        });
-      }
+      fs.unlinkSync(audioPath);
     } catch (error) {
       console.error("Error with AI generation:", error);
     }
