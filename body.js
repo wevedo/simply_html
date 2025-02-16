@@ -205,12 +205,6 @@ zk.ev.on("messages.upsert", async (m) => {
 
     // Process message normally
 });
-// Auto-restart bot on unexpected crash
-process.on("uncaughtException", (err) => {
-    console.error("Uncaught Exception:", err);
-    console.log("Restarting bot...");
-    process.exit(1);
-});       
 
 zk.ev.on("messages.upsert", async (m) => {  
     if (conf.ANTIDELETE1 === "yes") { // Ensure antidelete is enabled  
@@ -2120,89 +2114,32 @@ var commandeOptions = {
 
 /******** evenement groupe update ****************/
 const { recupevents } = require('./lib/welcome');
-
 zk.ev.on('group-participants.update', async (group) => {
-    console.log('Group participants update triggered:', group);
-
-    let ppgroup;
     try {
-        ppgroup = await zk.profilePictureUrl(group.id, 'image');
-    } catch (error) {
-        // Fallback if profile picture URL is not available
-        ppgroup = 'https://files.catbox.moe/aqjm03.jpg';
+        console.log('Group participants update triggered:', JSON.stringify(group, null, 2));
+
+        // Prevent excessive actions by adding a delay
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        // Fetch group metadata safely
+        const metadata = await zk.groupMetadata(group.id).catch(() => null);
+        if (!metadata) return;
+
+        // Handle new members (Welcome Message)
+        if (group.action === 'add') {
+            let msg = `👋 Welcome @${group.participants[0].split("@")[0]} to ${metadata.subject}! 🎉`;
+            await zk.sendMessage(group.id, { text: msg, mentions: group.participants });
+
+        // Handle members leaving (Goodbye Message)
+        } else if (group.action === 'remove') {
+            let msg = `😢 Goodbye @${group.participants[0].split("@")[0]}, we will miss you!`;
+            await zk.sendMessage(group.id, { text: msg, mentions: group.participants });
+        }
+
+    } catch (err) {
+        console.error("Error handling group participants update:", err);
     }
-
-    try {
-        const metadata = await zk.groupMetadata(group.id);
-
-        // Handle welcome message when a member joins the group
-        if (group.action === 'add' && (await recupevents(group.id, "welcome")) === 'on') {
-            let msg = `
-╭────────────━⊷
-║ʙᴡᴍ xᴍᴅ ᴡᴇʟᴄᴏᴍᴇ ᴍᴇssᴀɢᴇ
-╰────────────━⊷\n`;
-            let membres = group.participants;
-
-            // Add each member who joined to the welcome message, including their member number
-            for (let i = 0; i < membres.length; i++) {
-                let memberIndex = metadata.participants.findIndex((p) => p.id === membres[i]) + 1;
-                msg += `\n
-> 👋 *Hello* @${membres[i].split("@")[0]}\n\n *You are member number*: ${memberIndex} in this group! 🎉\n`;
-            }
-
-            msg += `\n*Feel free to introduce yourself and engage in meaningful discussions. Enjoy your time here!*\n\n
-╭──────────━⊷
-║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
-║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
-║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
-║ https://shorturl.at/E0jGI
-╰──────────━⊷`;
-
-            // Send welcome message with the group profile picture
-            await zk.sendMessage(group.id, {
-                image: { url: ppgroup },
-                caption: msg,
-                mentions: membres
-            });
-
-            console.log('Welcome message sent successfully.');
-        }
-
-        // Handle goodbye message when a member leaves the group
-        else if (group.action === 'remove' && (await recupevents(group.id, "goodbye")) === 'on') {
-let msg = `
-╭────────────━⊷
-║ʙᴡᴍ xᴍᴅ ɢᴏᴏᴅʙʏᴇ ᴍᴇssᴀɢᴇ
-╰────────────━⊷          
-            
-> 💔 One of our members left the group:\n`;
-            let membres = group.participants;
-
-            // Add each member who left the group to the goodbye message
-            for (let membre of membres) {
-                msg += `
-> ~@${membre.split("@")[0]}~ \n`;
-            }
-
-            msg += `\n
-            
-> We hope to see you again someday!\n\n
-╭──────────━⊷
-║  *ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ*
-║  *ғᴏʀ ʙᴏᴛ ᴜᴘᴅᴀᴛᴇs*
-║ ~ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ~
-║ https://shorturl.at/E0jGI
-╰──────────━⊷`;
-
-            // Send goodbye message with mentions
-            await zk.sendMessage(group.id, {
-                text: msg,
-                mentions: membres
-            });
-
-            console.log('Goodbye message sent successfully.');
-        }
-
+});
         // Handle promotion rule (anti-promotion) when someone is promoted
         else if (group.action === 'promote' && (await recupevents(group.id, "antipromote")) === 'on') {
             if (group.author === metadata.owner || 
