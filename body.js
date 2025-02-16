@@ -184,7 +184,7 @@ function isRateLimited(jid) {
         return false;
     }
     const lastRequestTime = rateLimit.get(jid);
-    if (now - lastRequestTime < 2000) { // 2-second cooldown
+    if (now - lastRequestTime < 6000) { // 10-minutes cooldown
         return true;
     }
     rateLimit.set(jid, now);
