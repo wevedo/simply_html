@@ -309,6 +309,16 @@ const isAnyLink = (message) => {
     return linkPattern.test(message);
 };
 
+async function safeGroupUpdate(zk, groupId, participant, action) {
+    try {
+        console.log(`Waiting before ${action} ${participant} in group ${groupId}...`);
+        await new Promise(resolve => setTimeout(resolve, 5000)); // 5 seconds delay
+        await zk.groupParticipantsUpdate(groupId, [participant], action);
+    } catch (err) {
+        console.error(`Error during ${action} ${participant}:`, err);
+    }
+}
+
 zk.ev.on('messages.upsert', async (msg) => {
     try {
         const { messages } = msg;
@@ -345,14 +355,14 @@ zk.ev.on('messages.upsert', async (msg) => {
                 // Delete the message
                 await zk.sendMessage(from, { delete: message.key });
 
-                // Remove the sender from the group
-                await zk.groupParticipantsUpdate(from, [sender], 'remove');
+                // Remove the sender from the group with delay
+                await safeGroupUpdate(zk, from, sender, 'remove');
 
                 // Send a notification to the group
                 await zk.sendMessage(
                     from,
                     {
-                        text: `⚠️Bwm xmd anti-link online!\n User @${sender.split('@')[0]} has been removed for sharing a link.`,
+                        text: `⚠️ Bwm XMD Anti-Link Online!\nUser @${sender.split('@')[0]} has been removed for sharing a link.`,
                         mentions: [sender],
                     }
                 );
