@@ -2139,7 +2139,7 @@ zk.ev.on('group-participants.update', async (group) => {
     } catch (err) {
         console.error("Error handling group participants update:", err);
     }
-});
+
         // Handle promotion rule (anti-promotion) when someone is promoted
         else if (group.action === 'promote' && (await recupevents(group.id, "antipromote")) === 'on') {
             if (group.author === metadata.owner || 
