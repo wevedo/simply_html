@@ -2114,6 +2114,7 @@ var commandeOptions = {
 
 /******** evenement groupe update ****************/
 const { recupevents } = require('./lib/welcome');
+
 zk.ev.on('group-participants.update', async (group) => {
     try {
         console.log('Group participants update triggered:', JSON.stringify(group, null, 2));
@@ -2134,14 +2135,9 @@ zk.ev.on('group-participants.update', async (group) => {
         } else if (group.action === 'remove') {
             let msg = `😢 Goodbye @${group.participants[0].split("@")[0]}, we will miss you!`;
             await zk.sendMessage(group.id, { text: msg, mentions: group.participants });
-        }
-
-    } catch (err) {
-        console.error("Error handling group participants update:", err);
-    }
 
         // Handle promotion rule (anti-promotion) when someone is promoted
-        else if (group.action === 'promote' && (await recupevents(group.id, "antipromote")) === 'on') {
+        } else if (group.action === 'promote' && (await recupevents(group.id, "antipromote")) === 'on') {
             if (group.author === metadata.owner || 
                 group.author === conf.NUMERO_OWNER + '@s.whatsapp.net' || 
                 group.author === decodeJid(zk.user.id) || 
@@ -2159,10 +2155,9 @@ zk.ev.on('group-participants.update', async (group) => {
             });
 
             console.log('Anti-promotion action executed successfully.');
-        }
 
         // Handle demotion rule (anti-demotion) when someone is demoted
-        else if (group.action === 'demote' && (await recupevents(group.id, "antidemote")) === 'on') {
+        } else if (group.action === 'demote' && (await recupevents(group.id, "antidemote")) === 'on') {
             if (group.author === metadata.owner || 
                 group.author === conf.NUMERO_OWNER + '@s.whatsapp.net' || 
                 group.author === decodeJid(zk.user.id) || 
@@ -2172,7 +2167,7 @@ zk.ev.on('group-participants.update', async (group) => {
             }
 
             await zk.groupParticipantsUpdate(group.id, [group.author], "demote");
-            await zk.groupParticipantsUpdate(group.id, [group.participants[0]], "promote");
+            await zk.groupParhticipantsUpdate(group.id, [group.participants[0]], "promote");
 
             // Send message about the anti-demotion rule violation
             await zk.sendMessage(group.id, {
@@ -2183,78 +2178,15 @@ zk.ev.on('group-participants.update', async (group) => {
             console.log('Anti-demotion action executed successfully.');
         }
 
-    } catch (e) {
-        console.error('Error handling group participants update:', e);
+    } catch (err) {
+        console.error('Error handling group participants update:', err);
     }
 });
 /******** fin d'evenement groupe update *************************/
 
 
-    
-
-    /*****************************Cron setup */
-
-        
-    async function activateCrons() {
-    const cron = require('node-cron');
-    const { getCron } = require('./lib/cron');
-
-    let crons = await getCron();
-    console.log(crons);
-
-    if (crons.length > 0) {
-        for (let i = 0; i < crons.length; i++) {
-            const cronItem = crons[i];
-
-            if (cronItem.mute_at) {
-                let set = cronItem.mute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
-
-                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
-                    console.log(`Setting up auto-mute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
-
-                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                        await zk.groupSettingUpdate(cronItem.group_id, 'announcement');
-                        zk.sendMessage(cronItem.group_id, {
-                            image: { url: './files/chrono.webp' },
-                            caption: "Hello, it's time to close the group; sayonara."
-                        });
-                    }, {
-                        timezone: "Africa/Nairobi"
-                    });
-                } else {
-                    console.error(`Invalid mute_at format: ${cronItem.mute_at}`);
-                }
-            }
-
-            if (cronItem.unmute_at) {
-                let set = cronItem.unmute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
-
-                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
-                    console.log(`Setting up auto-unmute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
-
-                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                        await zk.groupSettingUpdate(cronItem.group_id, 'not_announcement');
-                        zk.sendMessage(cronItem.group_id, {
-                            image: { url: './files/chrono.webp' },
-                            caption: "Good morning; it's time to open the group."
-                        });
-                    }, {
-                        timezone: "Africa/Nairobi"
-                    });
-                } else {
-                    console.error(`Invalid unmute_at format: ${cronItem.unmute_at}`);
-                }
-            }
-        }
-    } else {
-        console.log("No cron jobs to activate.");
-    }
-
-    return;
-}
-
-        
-        //événement contact
+  
+       
         zk.ev.on("connection.update", async (con) => {
             const { lastDisconnect, connection } = con;
             if (connection === "connecting") {
