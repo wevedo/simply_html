@@ -362,8 +362,9 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 
- const fetch = require('node-fetch');
+ 
 const ai = require('unlimited-ai');
+
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
@@ -409,8 +410,8 @@ zk.ev.on("messages.upsert", async (m) => {
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
       // Call Maskser API for TTS conversion
-      const ttsResponse = await fetch(`https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`);
-      const ttsData = await ttsResponse.json();
+      const ttsResponse = await axios.get(`https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`);
+      const ttsData = ttsResponse.data;
 
       if (!ttsData.status || !ttsData.result) {
         console.error("TTS API Error: No audio URL received or status is false.");
