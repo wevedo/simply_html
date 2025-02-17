@@ -365,72 +365,69 @@ zk.ev.on('messages.upsert', async (msg) => {
  
 const ai = require('unlimited-ai');
 
+zk.ev.on("messages.upsert", async (m) => {  
+  const { messages } = m;  
+  const ms = messages[0];  
 
-zk.ev.on("messages.upsert", async (m) => {
-  const { messages } = m;
-  const ms = messages[0];
+  if (!ms.message) return;  
 
-  if (!ms.message) return;
+  const messageType = Object.keys(ms.message)[0];  
+  const remoteJid = ms.key.remoteJid;  
+  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;  
 
-  const messageType = Object.keys(ms.message)[0];
-  const remoteJid = ms.key.remoteJid;
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;  
+  if (conf.CHATBOT1 !== "yes") return;  
 
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
-  if (conf.CHATBOT1 !== "yes") return;
+  if (messageType === "conversation" || messageType === "extendedTextMessage") {  
+    const alpha = messageContent.trim();  
+    if (!alpha) return;  
 
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {
-    const alpha = messageContent.trim();
-    if (!alpha) return;
+    let conversationData = [];  
 
-    let conversationData = [];
+    try {      
+      const rawData = fs.readFileSync('store.json', 'utf8');      
+      if (rawData) {      
+        conversationData = JSON.parse(rawData);      
+        if (!Array.isArray(conversationData)) {      
+          conversationData = [];      
+        }      
+      }      
+    } catch (err) {      
+      console.log('No previous conversation found, starting new one.');      
+    }      
 
-    try {
-      const rawData = fs.readFileSync('store.json', 'utf8');
-      if (rawData) {
-        conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) {
-          conversationData = [];
-        }
-      }
-    } catch (err) {
-      console.log('No previous conversation found, starting new one.');
-    }
+    const model = 'gpt-4-turbo-2024-04-09';      
+    const userMessage = { role: 'user', content: alpha };      
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };      
 
-    const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
+    conversationData.push(userMessage);      
+    conversationData.push(systemMessage);      
 
-    conversationData.push(userMessage);
-    conversationData.push(systemMessage);
+    try {      
+      const aiResponse = await ai.generate(model, conversationData);      
+      conversationData.push({ role: 'assistant', content: aiResponse });      
+      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));      
 
-    try {
-      const aiResponse = await ai.generate(model, conversationData);
-      conversationData.push({ role: 'assistant', content: aiResponse });
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+      // **Using Maskser API for TTS**
+      const ttsUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`;
 
-      // Call Maskser API for TTS conversion
-      const ttsResponse = await axios.get(`https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`);
-      const ttsData = ttsResponse.data;
-
-      if (!ttsData.status || !ttsData.result) {
-        console.error("TTS API Error: No audio URL received or status is false.");
+      const { data } = await axios.get(ttsUrl);
+      if (!data.result) {
+        console.error("TTS API failed to return audio.");
         return;
       }
 
-      const audioUrl = ttsData.result;
+      // **Send the generated audio**
+      await zk.sendMessage(remoteJid, {  
+        audio: { url: data.result },  
+        mimetype: 'audio/mpeg',  
+        ptt: true  
+      });      
 
-      // Send the audio message to WhatsApp
-      await zk.sendMessage(remoteJid, {
-        audio: { url: audioUrl },
-        mimetype: 'audio/mpeg',
-        ptt: true
-      });
-
-    } catch (error) {
-      console.error("Error with AI generation or TTS API:", error);
-    }
-  }
+    } catch (error) {      
+      console.error("Error with AI generation or TTS:", error);      
+    }  
+  }  
 });
 
         
