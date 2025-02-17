@@ -365,91 +365,89 @@ zk.ev.on('messages.upsert', async (msg) => {
         
 
 const ai = require('unlimited-ai');
+const fs = require('fs');
+const fetch = require('node-fetch');
 
-zk.ev.on("messages.upsert", async (m) => {
-  const { messages } = m;
-  const ms = messages[0];
+zk.ev.on("messages.upsert", async (m) => {    
+  const { messages } = m;    
+  const ms = messages[0];    
 
-  if (!ms.message) return; // Skip messages without content
+  if (!ms.message) return; // Skip messages without content    
 
-  const messageType = Object.keys(ms.message)[0];
-  const remoteJid = ms.key.remoteJid;
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+  const messageType = Object.keys(ms.message)[0];    
+  const remoteJid = ms.key.remoteJid;    
+  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;    
 
-  // Skip bot's own messages and bot-owner messages
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+  // Skip bot's own messages and bot-owner messages    
+  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;    
 
-  // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
+  // Check if chatbot feature is enabled    
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled    
 
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {
-    const alpha = messageContent.trim();
+  if (messageType === "conversation" || messageType === "extendedTextMessage") {    
+    const alpha = messageContent.trim();    
+    if (!alpha) return;    
 
-    if (!alpha) return;
+    let conversationData = [];    
 
-    let conversationData = [];
+    // Read previous conversation data    
+    try {    
+      const rawData = fs.readFileSync('store.json', 'utf8');    
+      if (rawData) {    
+        conversationData = JSON.parse(rawData);    
+        if (!Array.isArray(conversationData)) {    
+          conversationData = [];    
+        }    
+      }    
+    } catch (err) {    
+      console.log('No previous conversation found, starting new one.');    
+    }    
 
-    // Read previous conversation data
-    try {
-      const rawData = fs.readFileSync('store.json', 'utf8');
-      if (rawData) {
-        conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) {
-          conversationData = [];
-        }
-      }
-    } catch (err) {
-      console.log('No previous conversation found, starting new one.');
-    }
+    const model = 'gpt-4-turbo-2024-04-09';    
+    const userMessage = { role: 'user', content: alpha };      
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };    
 
-    const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
+    // Add user message and system message to the conversation    
+    conversationData.push(userMessage);    
+    conversationData.push(systemMessage);    
 
-    // Add user message and system message to the conversation
-    conversationData.push(userMessage);
-    conversationData.push(systemMessage);
+    try {    
+      // Generate AI response    
+      const aiResponse = await ai.generate(model, conversationData);    
 
-    try {
-      // Generate AI response
-      const aiResponse = await ai.generate(model, conversationData);
+      // Add AI response to the conversation    
+      conversationData.push({ role: 'assistant', content: aiResponse });    
 
-      // Add AI response to the conversation
-      conversationData.push({ role: 'assistant', content: aiResponse });
+      // Save the updated conversation    
+      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));    
 
-      // Save the updated conversation
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
+      // Request TTS audio from the new API  
+      const ttsApiUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`;  
 
-      // Determine the language (English or Swahili)
-      const language = alpha.includes("swahili") || aiResponse.includes("swahili") ? 'sw-KE' : 'en-US';
+      const response = await fetch(ttsApiUrl);  
+      const data = await response.json();  
 
-      // Convert text to speech using Maskser API
-      const ttsApiUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=${language}`;
+      if (!data || !data.url) {  
+        console.error("Error: No audio URL returned from API");  
+        return;  
+      }  
 
-      try {
-        const ttsResponse = await axios.get(ttsApiUrl);
-        if (ttsResponse.data && ttsResponse.data.audio) {
-          const audioUrl = ttsResponse.data.audio;
+      const audioUrl = data.url;  // Extract the MP3 audio link  
 
-          // Send the audio response using zk.sendMessage
-          await zk.sendMessage(remoteJid, { 
-            audio: { url: audioUrl }, 
-            mimetype: 'audio/mp4', 
-            ptt: true 
-          });
-        } else {
-          console.error("TTS API response did not contain an audio URL.");
-        }
-      } catch (ttsError) {
-        console.error("Error fetching TTS audio:", ttsError);
-      }
-    } catch (error) {
-      // Silent error handling, no response to the user
-      console.error("Error with AI generation:", error);
-    }
-  }
+      // Send the audio response using zk.sendMessage    
+      await zk.sendMessage(remoteJid, {     
+        audio: { url: audioUrl },     
+        mimetype: 'audio/mp4',     
+        ptt: true  // Send as a voice note    
+      });    
+
+    } catch (error) {    
+      console.error("Error processing AI response or TTS API:", error);    
+    }    
+  }    
 });
 
+        
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
