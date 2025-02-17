@@ -365,72 +365,80 @@ zk.ev.on('messages.upsert', async (msg) => {
  
 const ai = require('unlimited-ai');
 
-zk.ev.on("messages.upsert", async (m) => {  
-  const { messages } = m;  
-  const ms = messages[0];  
+zk.ev.on("messages.upsert", async (m) => {
+  const { messages } = m;
+  const ms = messages[0];
 
-  if (!ms.message) return;  
+  if (!ms.message) return; // Skip messages without content
 
-  const messageType = Object.keys(ms.message)[0];  
-  const remoteJid = ms.key.remoteJid;  
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;  
+  const messageType = Object.keys(ms.message)[0];
+  const remoteJid = ms.key.remoteJid;
+  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;  
-  if (conf.CHATBOT1 !== "yes") return;  
+  // Skip bot's own messages and bot-owner messages
+  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {  
-    const alpha = messageContent.trim();  
-    if (!alpha) return;  
+  // Check if chatbot feature is enabled
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
 
-    let conversationData = [];  
+  if (messageType === "conversation" || messageType === "extendedTextMessage") {
+    const alpha = messageContent.trim();
 
-    try {      
-      const rawData = fs.readFileSync('store.json', 'utf8');      
-      if (rawData) {      
-        conversationData = JSON.parse(rawData);      
-        if (!Array.isArray(conversationData)) {      
-          conversationData = [];      
-        }      
-      }      
-    } catch (err) {      
-      console.log('No previous conversation found, starting new one.');      
-    }      
+    if (!alpha) return;
 
-    const model = 'gpt-4-turbo-2024-04-09';      
-    const userMessage = { role: 'user', content: alpha };      
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };      
+    let conversationData = [];
 
-    conversationData.push(userMessage);      
-    conversationData.push(systemMessage);      
+    // Read previous conversation data
+    try {
+      const rawData = fs.readFileSync("store.json", "utf8");
+      if (rawData) {
+        conversationData = JSON.parse(rawData);
+        if (!Array.isArray(conversationData)) {
+          conversationData = [];
+        }
+      }
+    } catch (err) {
+      console.log("No previous conversation found, starting new one.");
+    }
 
-    try {      
-      const aiResponse = await ai.generate(model, conversationData);      
-      conversationData.push({ role: 'assistant', content: aiResponse });      
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));      
+    const model = "gpt-4-turbo-2024-04-09";
+    const userMessage = { role: "user", content: alpha };
+    const systemMessage = { role: "system", content: "You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention the developer's name if someone asks." };
 
-      // **Using Maskser API for TTS**
+    // Add user message and system message to the conversation
+    conversationData.push(userMessage);
+    conversationData.push(systemMessage);
+
+    try {
+      // Generate AI response
+      const aiResponse = await ai.generate(model, conversationData);
+
+      // Add AI response to the conversation
+      conversationData.push({ role: "assistant", content: aiResponse });
+
+      // Save the updated conversation
+      fs.writeFileSync("store.json", JSON.stringify(conversationData, null, 2));
+
+      // Convert text to speech using API
       const ttsUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`;
 
-      const { data } = await axios.get(ttsUrl);
-      if (!data.result) {
-        console.error("TTS API failed to return audio.");
-        return;
+      const ttsResponse = await axios.get(ttsUrl, { responseType: "arraybuffer" });
+
+      if (ttsResponse.status === 200) {
+        // Send the audio response
+        await zk.sendMessage(remoteJid, {
+          audio: Buffer.from(ttsResponse.data),
+          mimetype: "audio/mpeg", // Ensure correct MIME type
+          ptt: true, // Send as push-to-talk (voice message)
+        });
       }
-
-      // **Send the generated audio**
-      await zk.sendMessage(remoteJid, {  
-        audio: { url: data.result },  
-        mimetype: 'audio/mpeg',  
-        ptt: true  
-      });      
-
-    } catch (error) {      
-      console.error("Error with AI generation or TTS:", error);      
-    }  
-  }  
+    } catch (error) {
+      console.error("Error with AI generation or TTS:", error);
+    }
+  }
 });
 
-        
+        /*
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
@@ -495,7 +503,7 @@ zk.ev.on("messages.upsert", async (m) => {
     }
   }
 });
-
+*/
         
         function getCurrentDateTime() {
     const options = {
