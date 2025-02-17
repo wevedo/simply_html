@@ -362,82 +362,75 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 
-const ai = require('unlimited-ai');
 const fetch = require('node-fetch');
+const ai = require('unlimited-ai');
 
-zk.ev.on("messages.upsert", async (m) => {      
-  const { messages } = m;      
-  const ms = messages[0];      
 
-  if (!ms.message) return; // Skip messages without content      
+zk.ev.on("messages.upsert", async (m) => {
+  const { messages } = m;
+  const ms = messages[0];
 
-  const messageType = Object.keys(ms.message)[0];      
-  const remoteJid = ms.key.remoteJid;      
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;      
+  if (!ms.message) return;
 
-  // Skip bot's own messages and bot-owner messages      
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;      
+  const messageType = Object.keys(ms.message)[0];
+  const remoteJid = ms.key.remoteJid;
+  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  // Check if chatbot feature is enabled      
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled      
+  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+  if (conf.CHATBOT1 !== "yes") return;
 
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {      
-    const alpha = messageContent.trim();      
+  if (messageType === "conversation" || messageType === "extendedTextMessage") {
+    const alpha = messageContent.trim();
+    if (!alpha) return;
 
-    if (!alpha) return;      
+    let conversationData = [];
 
-    let conversationData = [];      
+    try {
+      const rawData = fs.readFileSync('store.json', 'utf8');
+      if (rawData) {
+        conversationData = JSON.parse(rawData);
+        if (!Array.isArray(conversationData)) {
+          conversationData = [];
+        }
+      }
+    } catch (err) {
+      console.log('No previous conversation found, starting new one.');
+    }
 
-    // Read previous conversation data      
-    try {      
-      const rawData = fs.readFileSync('store.json', 'utf8');      
-      if (rawData) {      
-        conversationData = JSON.parse(rawData);      
-        if (!Array.isArray(conversationData)) {      
-          conversationData = [];      
-        }      
-      }      
-    } catch (err) {      
-      console.log('No previous conversation found, starting new one.');      
-    }      
+    const model = 'gpt-4-turbo-2024-04-09';
+    const userMessage = { role: 'user', content: alpha };
+    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
-    const model = 'gpt-4-turbo-2024-04-09';      
-    const userMessage = { role: 'user', content: alpha };        
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };      
+    conversationData.push(userMessage);
+    conversationData.push(systemMessage);
 
-    // Add user message and system message to the conversation      
-    conversationData.push(userMessage);      
-    conversationData.push(systemMessage);      
+    try {
+      const aiResponse = await ai.generate(model, conversationData);
+      conversationData.push({ role: 'assistant', content: aiResponse });
+      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-    try {      
-      // Generate AI response      
-      const aiResponse = await ai.generate(model, conversationData);      
+      // Convert AI response to speech using Maskser API
+      const ttsResponse = await fetch(`https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`);
+      const ttsData = await ttsResponse.json();
 
-      // Add AI response to the conversation      
-      conversationData.push({ role: 'assistant', content: aiResponse });      
-
-      // Save the updated conversation      
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));      
-
-      // Fetch the TTS audio URL from the API
-      const response = await fetch(`https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`);
-      const data = await response.json();
-
-      if (data.result) {
-        // Send the audio response using zk.sendMessage      
-        await zk.sendMessage(remoteJid, {       
-          audio: { url: data.result },       
-          mimetype: 'audio/mpeg',       
-          ptt: true       
-        });
-      } else {
-        console.error("Error: No audio URL returned from API.");
+      if (!ttsData.result) {
+        console.error("TTS API Error: No audio URL received.");
+        return;
       }
 
-    } catch (error) {      
-      console.error("Error with AI generation or TTS API:", error);      
-    }      
-  }      
+      const audioUrl = ttsData.result;
+
+      // Send the audio message to WhatsApp
+      await zk.sendMessage(remoteJid, {
+        audio: { url: audioUrl },
+        mimetype: 'audio/mpeg',
+        ptt: true
+      });
+
+    } catch (error) {
+      console.error("Error with AI generation or TTS API:", error);
+    }
+  }
 });
 
         
