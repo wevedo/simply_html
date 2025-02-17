@@ -364,30 +364,32 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 
-
-const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
-
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
   const ms = messages[0];
 
-  if (!ms.message) return;
+  if (!ms.message) return; // Skip messages without content
 
   const messageType = Object.keys(ms.message)[0];
   const remoteJid = ms.key.remoteJid;
   const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
+  // Skip bot's own messages and bot-owner messages
   if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
-  if (conf.CHATBOT1 !== "yes") return;
+
+  // Check if chatbot feature is enabled
+  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
 
   if (messageType === "conversation" || messageType === "extendedTextMessage") {
     const alpha = messageContent.trim();
+
     if (!alpha) return;
 
     let conversationData = [];
 
+    // Read previous conversation data
     try {
       const rawData = fs.readFileSync('store.json', 'utf8');
       if (rawData) {
@@ -401,109 +403,52 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 
     const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };
+    const userMessage = { role: 'user', content: alpha };  
     const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
 
+    // Add user message and system message to the conversation
     conversationData.push(userMessage);
     conversationData.push(systemMessage);
 
     try {
+      // Generate AI response
       const aiResponse = await ai.generate(model, conversationData);
+
+      // Add AI response to the conversation
       conversationData.push({ role: 'assistant', content: aiResponse });
+
+      // Save the updated conversation
       fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
 
-      // Determine language & use female voice
-      const language = /[^\x00-\x7F]/.test(aiResponse) ? 'sw' : 'en';
-      const voice = language === 'sw' ? 'sw-TZ-Wavenet-B' : 'en-US-Wavenet-F';
+      // Determine the language (English or Swahili)
+      const language = alpha.includes("swahili") || aiResponse.includes("swahili") ? 'sw-KE' : 'en-US';
 
-      // Function to split text into chunks
-      const chunkText = (text, limit = 200) => {
-        const words = text.split(' ');
-        let chunks = [], currentChunk = '';
+      // Convert text to speech using Maskser API
+      const ttsApiUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=${language}`;
 
-        words.forEach(word => {
-          if ((currentChunk + word).length > limit) {
-            chunks.push(currentChunk.trim());
-            currentChunk = '';
-          }
-          currentChunk += ' ' + word;
-        });
+      try {
+        const ttsResponse = await axios.get(ttsApiUrl);
+        if (ttsResponse.data && ttsResponse.data.audio) {
+          const audioUrl = ttsResponse.data.audio;
 
-        if (currentChunk) chunks.push(currentChunk.trim());
-        return chunks;
-      };
-
-      const textChunks = chunkText(aiResponse);
-      let audioFiles = [];
-
-      for (let i = 0; i < textChunks.length; i++) {
-        const url = googleTTS.getAudioUrl(textChunks[i], {
-          lang: language,
-          slow: false,
-          host: 'https://translate.google.com',
-          voice: voice // Female voice for both Swahili & English
-        });
-
-        const outputFile = `audio_${i}.mp3`;
-        await downloadAudio(url, outputFile);
-        audioFiles.push(outputFile);
+          // Send the audio response using zk.sendMessage
+          await zk.sendMessage(remoteJid, { 
+            audio: { url: audioUrl }, 
+            mimetype: 'audio/mp4', 
+            ptt: true 
+          });
+        } else {
+          console.error("TTS API response did not contain an audio URL.");
+        }
+      } catch (ttsError) {
+        console.error("Error fetching TTS audio:", ttsError);
       }
-
-      // Ensure all audio files are downloaded before enhancing
-      if (audioFiles.length === 0) {
-        console.error("No audio files generated.");
-        return;
-      }
-
-      // Combine and enhance all audio files using FFmpeg
-      const finalAudio = "enhanced_audio.mp3";
-      await enhanceAudio(audioFiles, finalAudio);
-
-      // Ensure the enhanced file exists before sending
-      if (!fs.existsSync(finalAudio)) {
-        console.error("Enhanced audio file not found.");
-        return;
-      }
-
-      // Send the enhanced female voice
-      await zk.sendMessage(remoteJid, {
-        audio: { url: finalAudio },
-        mimetype: 'audio/mp4',
-        ptt: true
-      });
-
-      // Clean up temporary audio files
-      audioFiles.forEach(file => fs.unlinkSync(file));
-      fs.unlinkSync(finalAudio);
-
     } catch (error) {
+      // Silent error handling, no response to the user
       console.error("Error with AI generation:", error);
     }
   }
 });
-
-// Function to download audio from TTS
-const downloadAudio = (url, outputFile) => {
-  return new Promise((resolve, reject) => {
-    exec(`curl -s "${url}" -o ${outputFile}`, (error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
-};
-
-// Function to enhance audio using FFmpeg
-const enhanceAudio = (inputFiles, outputFile) => {
-  return new Promise((resolve, reject) => {
-    const inputList = inputFiles.map(file => `-i ${file}`).join(' ');
-    const filter = `"volume=1.4, bass=g=6, treble=g=5, equalizer=f=1000:t=q:w=1:g=3, afftdn"`;
-
-    exec(`ffmpeg ${inputList} -filter_complex ${filter} -b:a 192k -y ${outputFile}`, (error) => {
-      if (error) reject(error);
-      else resolve();
-    });
-  });
-};
 
 zk.ev.on("messages.upsert", async (m) => {
   const { messages } = m;
