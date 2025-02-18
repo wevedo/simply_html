@@ -378,7 +378,7 @@ zk.ev.on("messages.upsert", async (m) => {
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
     // Handle CHATBOT (Sends Voice Note)
-    if (conf.CHATBOT === "yes") {
+    if (conf.CHATBOT1 === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Fetch chatbot response
@@ -413,7 +413,7 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 
     // Handle CHATBOT2 (Sends Text)
-    if (conf.CHATBOT2 === "yes") {
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Fetch chatbot response
