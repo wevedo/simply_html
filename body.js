@@ -362,6 +362,8 @@ zk.ev.on('messages.upsert', async (msg) => {
 });
         
 
+const googleTTS = require("google-tts-api");
+
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -375,112 +377,65 @@ zk.ev.on("messages.upsert", async (m) => {
     // Skip bot's own messages and bot-owner messages
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    // Handle CHATBOT for non-bot-owner messages
+    // Handle CHATBOT (Sends Audio)
     if (conf.CHATBOT1 === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
-                // Fetch response from the fallback chatbot API
-                const fallbackApiUrl = `https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(messageContent)}`;
-                let fallbackResponse = await axios.get(fallbackApiUrl);
-                let fallbackData = fallbackResponse.data;
+                // Fetch chatbot response
+                const chatbotApiUrl = `https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(messageContent)}`;
+                let chatbotResponse = await fetch(chatbotApiUrl);
+                let chatbotData = await chatbotResponse.json();
 
-                if (fallbackData && fallbackData.result) {
-                    const botReply = fallbackData.result;
-                    console.log("Chatbot Response:", botReply);
+                if (chatbotData && chatbotData.result) {
+                    const botReply = chatbotData.result;
+                    console.log("Chatbot Response (Audio):", botReply);
 
-                    // Convert chatbot response to audio using TTS API
-                    const ttsApiUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(botReply)}&lang=en-US`;
-                    let ttsResponse = await axios.get(ttsApiUrl);
-                    let ttsData = ttsResponse.data;
+                    // Convert chatbot response to speech using Google TTS
+                    const audioUrl = googleTTS.getAudioUrl(botReply, {
+                        lang: "en",
+                        slow: false,
+                        host: "https://translate.google.com",
+                    });
 
-                    if (ttsData && ttsData.result) {
-                        const audioUrl = ttsData.result;
-
-                        // Send audio response
-                        await zk.sendMessage(
-                            remoteJid,
-                            { audio: { url: audioUrl }, mimetype: "audio/mpeg" },
-                            { quoted: ms }
-                        );
-                    } else {
-                        console.warn("TTS API returned no result.");
-                    }
+                    // Send audio response
+                    await zk.sendMessage(
+                        remoteJid,
+                        { audio: { url: audioUrl }, mimetype: "audio/mp4" },
+                        { quoted: ms }
+                    );
                 } else {
-                    console.warn("Fallback API returned no result.");
+                    console.warn("Chatbot API returned no result.");
                 }
             } catch (error) {
-                console.error("Chatbot or TTS API Error:", error.message);
+                console.error("Chatbot or TTS Error:", error.message);
+            }
+        }
+    }
+
+    // Handle CHATBOT2 (Sends Text)
+    if (conf.CHATBOT === "yes") {
+        if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            try {
+                // Fetch chatbot response
+                const chatbotApiUrl = `https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(messageContent)}`;
+                let chatbotResponse = await fetch(chatbotApiUrl);
+                let chatbotData = await chatbotResponse.json();
+
+                if (chatbotData && chatbotData.result) {
+                    const botReply = chatbotData.result;
+                    console.log("Chatbot Response (Text):", botReply);
+
+                    // Send text response
+                    await zk.sendMessage(remoteJid, { text: botReply }, { quoted: ms });
+                } else {
+                    console.warn("Chatbot API returned no result.");
+                }
+            } catch (error) {
+                console.error("Chatbot API Error:", error.message);
             }
         }
     }
 });
-
-        /*
-zk.ev.on("messages.upsert", async (m) => {
-  const { messages } = m;
-  const ms = messages[0];
-
-  if (!ms.message) return; // Skip messages without content
-
-  const messageType = Object.keys(ms.message)[0];
-  const remoteJid = ms.key.remoteJid;
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
-
-  // Skip bot's own messages and bot-owner messages
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
-
-  // Check if chatbot feature is enabled
-  if (conf.CHATBOT !== "yes") return; // Exit if CHATBOT is not enabled
-
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {
-    const alpha = messageContent.trim();
-
-    if (!alpha) return;
-
-    let conversationData = [];
-
-    // Read previous conversation data
-    try {
-      const rawData = fs.readFileSync('store.json', 'utf8');
-      if (rawData) {
-        conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) {
-          conversationData = [];
-        }
-      }
-    } catch (err) {
-      console.log('No previous conversation found, starting new one.');
-    }
-
-    const model = 'gpt-4-turbo-2024-04-09';
-    const userMessage = { role: 'user', content: alpha };  
-    const systemMessage = { role: 'system', content: 'You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention developer name if someone asks.' };
-
-    // Add user message and system message to the conversation
-    conversationData.push(userMessage);
-    conversationData.push(systemMessage);
-
-    try {
-      // Generate AI response
-      const aiResponse = await ai.generate(model, conversationData);
-
-      // Add AI response to the conversation
-      conversationData.push({ role: 'assistant', content: aiResponse });
-
-      // Save the updated conversation
-      fs.writeFileSync('store.json', JSON.stringify(conversationData, null, 2));
-
-      // Send the text response using zk.sendMessage
-      await zk.sendMessage(remoteJid, { 
-        text: aiResponse 
-      });
-    } catch (error) {
-      // Silent error handling, no response to the user
-      console.error("Error with AI generation:", error);
-    }
-  }
-});
-*/
         
         function getCurrentDateTime() {
     const options = {
