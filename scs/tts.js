@@ -1,74 +1,58 @@
-const googleTTS = require('google-tts-api');
-const {adams} = require("../Ibrahim/adams");
+const { adams } = require("../Ibrahim/adams");
+const axios = require("axios"); // Using axios for API requests
 
+// Function to get TTS audio URL
+async function getTTS(text, lang) {
+  try {
+    const response = await axios.get(`https://api.maskser.me/api/soundoftext`, {
+      params: { text, lang },
+    });
 
-adams( {
-  nomCom : "dit",
- categorie : "tts",
-  reaction : "👄" },
-      async(dest,zk, commandeOptions)=> {
- 
-const {ms,arg,repondre} = commandeOptions;
-      if (!arg[0]) {repondre("Insert a word");return} ;
- const mots = arg.join(" ")
-
-const url = googleTTS.getAudioUrl( mots, {
-  lang: 'fr',
-  slow: false,
-  host: 'https://translate.google.com',
-});
-console.log(url); 
-             zk.sendMessage(dest, { audio: { url:url},mimetype:'audio/mp4' }, { quoted: ms,ptt: true });
-
-
-        
-
+    if (response.data && response.data.result) {
+      return response.data.result; // API returns the direct audio URL
+    }
+    return null;
+  } catch (error) {
+    console.error("TTS API Error:", error);
+    return null;
+  }
 }
-) ;
 
-adams( {
-  nomCom : "itta",
- categorie : "tts",
-  reaction : "👄" },
-      async(dest,zk, commandeOptions)=> {
- 
-const {ms,arg,repondre} = commandeOptions;
-      if (!arg[0]) {repondre("nana");return} ;
- const mots = arg.join(" ")
+// Define TTS commands
+const ttsCommands = [
+  { name: "dit", lang: "fr", response: "👄" },
+  { name: "itta", lang: "ja", response: "👄" },
+  { name: "say", lang: "en-US", response: "👄" }, // Using en-US for better accuracy
+];
 
-const url = googleTTS.getAudioUrl( mots, {
-  lang: 'ja',
-  slow: false,
-  host: 'https://translate.google.com',
+// Generate commands dynamically
+ttsCommands.forEach(({ name, lang, response }) => {
+  adams(
+    {
+      nomCom: name,
+      categorie: "tts",
+      reaction: response,
+    },
+    async (dest, zk, commandeOptions) => {
+      const { ms, arg, repondre } = commandeOptions;
+      if (!arg[0]) {
+        repondre("Insert a word");
+        return;
+      }
+      const mots = arg.join(" ");
+
+      const audioUrl = await getTTS(mots, lang);
+      if (!audioUrl) {
+        repondre("TTS conversion failed. Try again later.");
+        return;
+      }
+
+      console.log(audioUrl);
+      zk.sendMessage(
+        dest,
+        { audio: { url: audioUrl }, mimetype: "audio/mpeg" }, // API provides MP3
+        { quoted: ms, ptt: true }
+      );
+    }
+  );
 });
-console.log(url); 
-             zk.sendMessage(dest, { audio: { url:url},mimetype:'audio/mp4' }, { quoted: ms,ptt: true });
-
-
-        
-}
-) ;
-
-adams( {
-  nomCom : "say",
- categorie : "tts",
-  reaction : "👄" },
-      async(dest,zk, commandeOptions)=> {
- 
-const {ms,arg,repondre} = commandeOptions;
-      if (!arg[0]) {repondre("Insert a word");return} ;
- const mots = arg.join(" ")
-
-const url = googleTTS.getAudioUrl( mots, {
-  lang: 'en',
-  slow: false,
-  host: 'https://translate.google.com',
-});
-console.log(url); 
-             zk.sendMessage(dest, { audio: { url:url},mimetype:'audio/mp4' }, { quoted: ms,ptt: true });
-
-
-        
-}
-) ;
-
