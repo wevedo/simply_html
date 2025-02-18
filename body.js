@@ -363,79 +363,59 @@ zk.ev.on('messages.upsert', async (msg) => {
         
 
  
-const ai = require('unlimited-ai');
+const axios = require("axios");
 
 zk.ev.on("messages.upsert", async (m) => {
-  const { messages } = m;
-  const ms = messages[0];
+    const { messages } = m;
+    const ms = messages[0];
 
-  if (!ms.message) return; // Skip messages without content
+    if (!ms.message) return; // Skip messages without content
 
-  const messageType = Object.keys(ms.message)[0];
-  const remoteJid = ms.key.remoteJid;
-  const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
+    const messageType = Object.keys(ms.message)[0];
+    const remoteJid = ms.key.remoteJid;
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text;
 
-  // Skip bot's own messages and bot-owner messages
-  if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
+    // Skip bot's own messages and bot-owner messages
+    if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-  // Check if chatbot feature is enabled
-  if (conf.CHATBOT1 !== "yes") return; // Exit if CHATBOT is not enabled
+    // Handle CHATBOT for non-bot-owner messages
+    if (conf.CHATBOT === "yes") {
+        if (messageType === "conversation" || messageType === "extendedTextMessage") {
+            try {
+                // Fetch response from the fallback chatbot API
+                const fallbackApiUrl = `https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(messageContent)}`;
+                let fallbackResponse = await axios.get(fallbackApiUrl);
+                let fallbackData = fallbackResponse.data;
 
-  if (messageType === "conversation" || messageType === "extendedTextMessage") {
-    const alpha = messageContent.trim();
+                if (fallbackData && fallbackData.result) {
+                    const botReply = fallbackData.result;
+                    console.log("Chatbot Response:", botReply);
 
-    if (!alpha) return;
+                    // Convert chatbot response to audio using TTS API
+                    const ttsApiUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(botReply)}&lang=en-US`;
+                    let ttsResponse = await axios.get(ttsApiUrl);
+                    let ttsData = ttsResponse.data;
 
-    let conversationData = [];
+                    if (ttsData && ttsData.result) {
+                        const audioUrl = ttsData.result;
 
-    // Read previous conversation data
-    try {
-      const rawData = fs.readFileSync("store.json", "utf8");
-      if (rawData) {
-        conversationData = JSON.parse(rawData);
-        if (!Array.isArray(conversationData)) {
-          conversationData = [];
+                        // Send audio response
+                        await zk.sendMessage(
+                            remoteJid,
+                            { audio: { url: audioUrl }, mimetype: "audio/mpeg" },
+                            { quoted: ms }
+                        );
+                    } else {
+                        console.warn("TTS API returned no result.");
+                    }
+                } else {
+                    console.warn("Fallback API returned no result.");
+                }
+            } catch (error) {
+                console.error("Chatbot or TTS API Error:", error.message);
+            }
         }
-      }
-    } catch (err) {
-      console.log("No previous conversation found, starting new one.");
     }
-
-    const model = "gpt-4-turbo-2024-04-09";
-    const userMessage = { role: "user", content: alpha };
-    const systemMessage = { role: "system", content: "You are called Bwm xmd. Developed by Ibrahim Adams. You respond to user commands. Only mention the developer's name if someone asks." };
-
-    // Add user message and system message to the conversation
-    conversationData.push(userMessage);
-    conversationData.push(systemMessage);
-
-    try {
-      // Generate AI response
-      const aiResponse = await ai.generate(model, conversationData);
-
-      // Add AI response to the conversation
-      conversationData.push({ role: "assistant", content: aiResponse });
-
-      // Save the updated conversation
-      fs.writeFileSync("store.json", JSON.stringify(conversationData, null, 2));
-
-      // Convert text to speech using API
-      const ttsUrl = `https://api.maskser.me/api/soundoftext?text=${encodeURIComponent(aiResponse)}&lang=en-US`;
-
-      const ttsResponse = await axios.get(ttsUrl, { responseType: "arraybuffer" });
-
-      if (ttsResponse.status === 200) {
-        // Send the audio response
-        await zk.sendMessage(remoteJid, {
-          audio: Buffer.from(ttsResponse.data),
-          mimetype: "audio/mpeg", // Ensure correct MIME type
-          ptt: true, // Send as push-to-talk (voice message)
-        });
-      }
-    } catch (error) {
-      console.error("Error with AI generation or TTS:", error);
-    }
-  }
 });
 
         /*
