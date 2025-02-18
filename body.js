@@ -376,7 +376,7 @@ zk.ev.on("messages.upsert", async (m) => {
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
     // Handle CHATBOT for non-bot-owner messages
-    if (conf.CHATBOT === "yes") {
+    if (conf.CHATBOT1 === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Fetch response from the fallback chatbot API
