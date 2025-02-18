@@ -377,8 +377,8 @@ zk.ev.on("messages.upsert", async (m) => {
     // Skip bot's own messages and bot-owner messages
     if (ms.key.fromMe || remoteJid === conf.NUMERO_OWNER + "@s.whatsapp.net") return;
 
-    // Handle CHATBOT (Sends Audio)
-    if (conf.CHATBOT1 === "yes") {
+    // Handle CHATBOT (Sends Voice Note)
+    if (conf.CHATBOT === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Fetch chatbot response
@@ -397,10 +397,10 @@ zk.ev.on("messages.upsert", async (m) => {
                         host: "https://translate.google.com",
                     });
 
-                    // Send audio response
+                    // Send audio response as a voice note (PTT)
                     await zk.sendMessage(
                         remoteJid,
-                        { audio: { url: audioUrl }, mimetype: "audio/mp4" },
+                        { audio: { url: audioUrl }, mimetype: "audio/mp4", ptt: true }, // 'ptt: true' ensures it's sent as a voice note
                         { quoted: ms }
                     );
                 } else {
@@ -413,7 +413,7 @@ zk.ev.on("messages.upsert", async (m) => {
     }
 
     // Handle CHATBOT2 (Sends Text)
-    if (conf.CHATBOT === "yes") {
+    if (conf.CHATBOT2 === "yes") {
         if (messageType === "conversation" || messageType === "extendedTextMessage") {
             try {
                 // Fetch chatbot response
