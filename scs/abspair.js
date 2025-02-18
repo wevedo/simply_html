@@ -41,7 +41,7 @@ nomComList.forEach((nomCom) => {
         // Second message with additional information
         const captionMessage = generateWAMessageFromContent(dest, {
           extendedTextMessage: {
-            text: '*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n*ʙᴡᴍ xᴍᴅ*\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
+            text: '*ᴄᴏᴘʏ ᴛʜᴇ ᴀʙᴏᴠᴇ ᴄᴏᴅᴇ ᴀɴᴅ ʟɪɴᴋ ɪᴛ ᴛᴏ ʏᴏᴜʀ ᴡʜᴀᴛsᴀᴘᴘ*\n\n🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\nhttps://ibrahimadamscenter.us.kg\n\n*ᴍᴀᴅᴇ ʙʏ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs*'
           }
         }, {});
 
@@ -88,11 +88,16 @@ adams({ nomCom: "scan", reaction: "🔍", categorie: "pair" }, async (dest, zk, 
 
 6️⃣ **Copy and Share the Session**  
 
-   👉 Copy the long session and send it to your deployer.  
+   👉 Copy the long session and send it to me.  
 
-*💻 Powered by bwm xmd*  
+*💻 Powered by bwm xmd* 
 
-
+╭────────────━⊷
+🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ
+> https://shorturl.at/z3b8v
+🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ
+> https://ibrahimadamscenter.us.kg
+╰────────────━⊷
 > Made by Ibrahim Adams
     `;
 
