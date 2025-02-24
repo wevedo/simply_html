@@ -1,6 +1,5 @@
 const { adams } = require("../Ibrahim/adams");  
 const axios = require("axios");  
-const { exec } = require("child_process");  
 const fs = require("fs");  
 const ytSearch = require("yt-search");  
 const path = require("path");  
@@ -58,7 +57,7 @@ adams(
       // Inform user that processing is in progress  
       const processingMsg = await zk.sendMessage(  
         dest,  
-        { text: "⏳ Your audio is being processed, just a minute..." },  
+        { text: "⏳ Your audio is being processed, just a moment..." },  
         { quoted: ms }  
       );  
   
@@ -72,10 +71,9 @@ adams(
       }  
   
       const downloadUrl = response.result.download_url;  
-      const tempFile = path.join(__dirname, "audio_high.mp3");  
-      const finalFile = path.join(__dirname, "audio_normal.mp3");  
+      const tempFile = path.join(__dirname, "audio.mp3");  
   
-      // Download the high-quality audio  
+      // Download the audio  
       const writer = fs.createWriteStream(tempFile);  
       const audioStream = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });  
       audioStream.data.pipe(writer);  
@@ -85,22 +83,14 @@ adams(
         writer.on("error", reject);  
       });  
   
-      // Convert to normal quality (96kbps for balance between quality & speed)  
-      await new Promise((resolve, reject) => {  
-        exec(`ffmpeg -i ${tempFile} -b:a 96k ${finalFile}`, (error) => {  
-          if (error) reject(error);  
-          else resolve();  
-        });  
-      });  
-  
       // Delete the processing message before sending audio  
       await zk.sendMessage(dest, { delete: processingMsg.key });  
   
-      // Send the compressed audio file  
+      // Send the audio file immediately  
       await zk.sendMessage(  
         dest,  
         {  
-          audio: fs.readFileSync(finalFile),  
+          audio: fs.readFileSync(tempFile),  
           mimetype: "audio/mp4",  
           contextInfo: {  
             externalAdReply: {  
@@ -117,9 +107,8 @@ adams(
         { quoted: ms }  
       );  
   
-      // Delete temp files after sending  
+      // Delete temp file after sending  
       fs.unlinkSync(tempFile);  
-      fs.unlinkSync(finalFile);  
     } catch (error) {  
       console.error("Error during download process:", error.message);  
       return repondre(`❌ Download failed: ${error.message || error}`);  
