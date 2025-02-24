@@ -1,6 +1,5 @@
-const { adams } = require("../Ibrahim/adams");
+const { adams } = require("../Ibrahim/adams"); // Kept as per your request
 const axios = require("axios");
-const { exec } = require("child_process");
 const fs = require("fs");
 const ytSearch = require("yt-search");
 const path = require("path");
@@ -16,7 +15,7 @@ adams(
     const { arg, ms, repondre } = commandOptions;
 
     if (!arg[0]) {
-      return repondre("Please provide a video name.");
+      return repondre("❌ Please provide a video name.");
     }
 
     const query = arg.join(" ");
@@ -25,7 +24,7 @@ adams(
       // Search for the video on YouTube
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
-        return repondre("No video found for the specified query.");
+        return repondre("❌ No video found for the specified query.");
       }
 
       const firstVideo = searchResults.videos[0];
@@ -35,18 +34,18 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // Send video info immediately
+      // Send video info message
       await zk.sendMessage(
         dest,
         {
-          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
+          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\nhttps://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
           contextInfo: {
             externalAdReply: {
               title: "©Sir Ibrahim Adams",
               body: "Faster bot",
               mediaType: 1,
               thumbnailUrl: "https://files.catbox.moe/3ejs31.jpg",
-              sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
+              sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
               renderLargerThumbnail: false,
               showAdAttribution: true,
             },
@@ -55,28 +54,36 @@ adams(
         { quoted: ms }
       );
 
-      // Inform user that processing is in progress
+      // Inform user about processing
       const processingMsg = await zk.sendMessage(
         dest,
-        { text: "⏳ Your video is being processed, just a minute..." },
+        { text: "⏳ Your video is being processed, please wait..." },
         { quoted: ms }
       );
 
-      // Fetch MP4 download link from the new API
+      // Fetch video download links from the API
       const apiUrl = `https://bk9.fun/download/youtube?url=${encodeURIComponent(videoUrl)}`;
       const apiResponse = await axios.get(apiUrl);
 
-      if (!apiResponse.data || !apiResponse.data.video) {
+      if (!apiResponse.data || !apiResponse.data.qualities) {
         await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
       }
 
-      const downloadUrl = apiResponse.data.video;
-      const tempFile = path.join(__dirname, "video.mp4");
+      // Extract only the 144p download link
+      const quality144p = apiResponse.data.qualities.find((q) => q.quality === "144p");
+      if (!quality144p) {
+        await zk.sendMessage(dest, { text: "❌ 144p quality not available. Try another video.", edit: processingMsg.key });
+        return;
+      }
 
-      // Download the video
+      const downloadUrl = quality144p.url;
+      const tempFile = path.join(process.cwd(), "video.mp4");
+
+      // Download the 144p video
       const writer = fs.createWriteStream(tempFile);
       const response = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
+
       response.data.pipe(writer);
 
       await new Promise((resolve, reject) => {
@@ -84,10 +91,10 @@ adams(
         writer.on("error", reject);
       });
 
-      // Delete the processing message before sending video
+      // Delete processing message
       await zk.sendMessage(dest, { delete: processingMsg.key });
 
-      // Send the downloaded video file
+      // Send the downloaded 144p video file
       await zk.sendMessage(
         dest,
         {
@@ -98,7 +105,7 @@ adams(
               title: videoTitle,
               body: `📹 ${videoTitle} | Duration: ${videoDuration}`,
               mediaType: 1,
-              sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
+              sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
               thumbnailUrl: videoThumbnail,
               renderLargerThumbnail: true,
               showAdAttribution: true,
@@ -109,7 +116,7 @@ adams(
       );
 
       // Delete temp file after sending
-      fs.unlinkSync(tempFile);
+      await fs.promises.unlink(tempFile);
     } catch (error) {
       console.error("Error during download process:", error.message);
       return repondre(`❌ Download failed: ${error.message || error}`);
