@@ -8,21 +8,21 @@ const path = require("path");
 adams(
   {
     nomCom: "play",
-    aliases: ["song", "audio", "mp3"],
+    aliases: ["video", "mp4", "vid"],
     categorie: "Search",
-    reaction: "🎵",
+    reaction: "📹",
   },
   async (dest, zk, commandOptions) => {
     const { arg, ms, repondre } = commandOptions;
 
     if (!arg[0]) {
-      return repondre("Please provide a song name.");
+      return repondre("Please provide a video name.");
     }
 
     const query = arg.join(" ");
 
     try {
-      // Search for the song on YouTube
+      // Search for the video on YouTube
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
         return repondre("No video found for the specified query.");
@@ -35,7 +35,7 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // Send song info immediately
+      // Send video info immediately
       await zk.sendMessage(
         dest,
         {
@@ -58,24 +58,23 @@ adams(
       // Inform user that processing is in progress
       const processingMsg = await zk.sendMessage(
         dest,
-        { text: "⏳ Your audio is being processed, just a minute..." },
+        { text: "⏳ Your video is being processed, just a minute..." },
         { quoted: ms }
       );
 
-      // Fetch MP3 download link from the new API
+      // Fetch MP4 download link from the new API
       const apiUrl = `https://bk9.fun/download/youtube?url=${encodeURIComponent(videoUrl)}`;
       const apiResponse = await axios.get(apiUrl);
 
-      if (!apiResponse.data || !apiResponse.data.audio) {
+      if (!apiResponse.data || !apiResponse.data.video) {
         await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
       }
 
-      const downloadUrl = apiResponse.data.audio;
-      const tempFile = path.join(__dirname, "audio_high.mp3");
-      const finalFile = path.join(__dirname, "audio_normal.mp3");
+      const downloadUrl = apiResponse.data.video;
+      const tempFile = path.join(__dirname, "video.mp4");
 
-      // Download the high-quality audio
+      // Download the video
       const writer = fs.createWriteStream(tempFile);
       const response = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
       response.data.pipe(writer);
@@ -85,27 +84,19 @@ adams(
         writer.on("error", reject);
       });
 
-      // Convert to normal quality (96kbps for balance between quality & speed)
-      await new Promise((resolve, reject) => {
-        exec(`ffmpeg -i ${tempFile} -b:a 96k ${finalFile}`, (error) => {
-          if (error) reject(error);
-          else resolve();
-        });
-      });
-
-      // Delete the processing message before sending audio
+      // Delete the processing message before sending video
       await zk.sendMessage(dest, { delete: processingMsg.key });
 
-      // Send the compressed audio file
+      // Send the downloaded video file
       await zk.sendMessage(
         dest,
         {
-          audio: fs.readFileSync(finalFile),
-          mimetype: "audio/mp4",
+          video: fs.readFileSync(tempFile),
+          mimetype: "video/mp4",
           contextInfo: {
             externalAdReply: {
               title: videoTitle,
-              body: `🎶 ${videoTitle} | Duration: ${videoDuration}`,
+              body: `📹 ${videoTitle} | Duration: ${videoDuration}`,
               mediaType: 1,
               sourceUrl: 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y',
               thumbnailUrl: videoThumbnail,
@@ -117,16 +108,14 @@ adams(
         { quoted: ms }
       );
 
-      // Delete temp files after sending
+      // Delete temp file after sending
       fs.unlinkSync(tempFile);
-      fs.unlinkSync(finalFile);
     } catch (error) {
       console.error("Error during download process:", error.message);
       return repondre(`❌ Download failed: ${error.message || error}`);
     }
   }
 );
-
 
 
 
