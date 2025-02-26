@@ -1572,28 +1572,25 @@ if (conf.AUDIO_REPLY === "yes") {
             const allAllowedNumbers = superUserNumbers.concat(sudo);
             const superUser = allAllowedNumbers.includes(auteurMessage);
             
-            var dev = [abu1, abu2,abu3,abu4].map((t) => t.replace(/[^0-9]/g) + "@s.whatsapp.net").includes(auteurMessage);
-            function repondre(mes) { zk.sendMessage(origineMessage, { text: mes }, { quoted: ms }); }
-            console.log("\tCONSOLE MESSAGES");
-            console.log("=========== NEW CONVERSATION ===========");
-            if (verifGroupe) {
-                console.log("MESSAGE FROM GROUP : " + nomGroupe);
-            }
-            console.log("MESSAGE SENT BY : " + "[" + nomAuteurMessage + " : " + auteurMessage.split("@s.whatsapp.net")[0] + " ]");
-            console.log("MESSAGE TYPE : " + mtype);
-            console.log("==================TEXT==================");
-            console.log(texte);
-            /**  */
-            function groupeAdmin(membreGroupe) {
-                let admin = [];
-                for (m of membreGroupe) {
-                    if (m.admin == null)
-                        continue;
-                    admin.push(m.id);
-                }
-                // else{admin= false;}
-                return admin;
-            }
+            var dev = [abu1, abu2, abu3, abu4]
+    .filter(Boolean) // Ensure values are not null/undefined
+    .map((t) => t.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
+    .includes(auteurMessage);
+
+function repondre(mes) { 
+    if (zk) {
+        zk.sendMessage(origineMessage, { text: mes }, { quoted: ms }).catch((err) => {
+            console.error("❌ Error sending message:", err.message);
+        });
+    }
+}
+
+// Safe function to get group admins without crashing
+function groupeAdmin(membreGroupe) {
+    return membreGroupe
+        .filter((m) => m.admin) // Only get admins
+        .map((m) => m.id);
+}
 
 
 
