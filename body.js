@@ -226,7 +226,7 @@ async function processMessageQueue() {
             }
         }
 
-        console.log("✅ Batch processed successfully, waiting before next batch...");
+        console.log("✅ BWM XMD IS ONLINE AND RUNNING SMOOTHLY 😂👍🌎✅ ");
         await new Promise(res => setTimeout(res, 2000)); // 2-second delay before next batch
     }
     isProcessingQueue = false;
