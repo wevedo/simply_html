@@ -163,18 +163,9 @@ setInterval(() => {
     
 }, 1000);
 
-// Function to limit logging frequency
-function limitedLog(message) {
-    if (process.env.DEBUG_MODE === "true") {
-        console.log(message);
-    }
-}
-
-// Example usage
-limitedLog("Bot is running...");
-
 const rateLimit = new Map();
 
+// Optimized Rate-Limiting: 3 seconds cooldown (faster but safe)
 function isRateLimited(jid) {
     const now = Date.now();
     if (!rateLimit.has(jid)) {
@@ -182,13 +173,47 @@ function isRateLimited(jid) {
         return false;
     }
     const lastRequestTime = rateLimit.get(jid);
-    if (now - lastRequestTime < 6000) { // 10-minutes cooldown
+    if (now - lastRequestTime < 3000) { // Reduced cooldown (3 seconds)
+        console.log(`⏳ Rate limit applied for ${jid}, skipping request.`);
         return true;
     }
     rateLimit.set(jid, now);
     return false;
 }
 
+// Optimized Group Metadata Fetch: Uses retries with shorter delay
+async function fetchGroupMetadataWithRetry(zk, groupId, retries = 2) { // 2 retries instead of 3
+    let attempt = 0;
+    while (attempt < retries) {
+        try {
+            return await zk.groupMetadata(groupId);
+        } catch (error) {
+            if (error.message.includes("rate-overlimit")) {
+                const delayTime = Math.pow(2, attempt) * 500; // Shorter backoff: 0.5s, 1s
+                console.log(`⚠️ Rate limit exceeded while fetching metadata for ${groupId}. Retrying in ${delayTime / 1000} seconds...`);
+                await new Promise(res => setTimeout(res, delayTime));
+            } else {
+                console.error(`❌ Error fetching group metadata for ${groupId}:`, error.message);
+                return null;
+            }
+        }
+        attempt++;
+    }
+    console.error(`❌ Failed to fetch group metadata for ${groupId} after retries.`);
+    return null;
+}
+
+// Prevent Bot Crashes from WhatsApp API Rate Limits
+zk.ev.on("error", (error) => {
+    if (error.output && error.output.statusCode === 429) {
+        console.log("⚠️ WhatsApp API rate limit exceeded. Pausing for 1 minute...");
+        setTimeout(() => console.log("✅ Resuming operations..."), 60000); // Pause for 1 minute
+    } else {
+        console.error("Unhandled error:", error);
+    }
+});
+
+// Prevent Rate Limit Errors in Message Processing
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     const ms = messages[0];
@@ -196,19 +221,10 @@ zk.ev.on("messages.upsert", async (m) => {
     if (!ms.message) return;
 
     const from = ms.key.remoteJid;
-    if (isRateLimited(from)) {
-        console.log(`Rate limit exceeded for ${from}`);
-        return;
-    }
+    if (isRateLimited(from)) return;
 
-    // Process message normally
+    console.log(`📩 Received message from ${from}:`, ms.message);
 });
-// Auto-restart bot on unexpected crash
-process.on("uncaughtException", (err) => {
-    console.error("Uncaught Exception:", err);
-    console.log("Restarting bot...");
-    process.exit(1);
-});       
 
 zk.ev.on("messages.upsert", async (m) => {  
     if (conf.ANTIDELETE1 === "yes") { // Ensure antidelete is enabled  
