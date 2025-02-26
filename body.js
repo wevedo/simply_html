@@ -154,18 +154,11 @@ authentification();
    store.bind(zk.ev);
 
 
-
-
-
-// Auto-clear console every second to prevent log overflow
-setInterval(() => {
-    console.clear();
-    
-}, 1000);
-
 const rateLimit = new Map();
+const processingQueue = [];
+let isProcessingQueue = false;
 
-// Optimized Rate-Limiting: 3 seconds cooldown (faster but safe)
+// Optimized Rate-Limiting: 3 seconds cooldown per user
 function isRateLimited(jid) {
     const now = Date.now();
     if (!rateLimit.has(jid)) {
@@ -173,7 +166,7 @@ function isRateLimited(jid) {
         return false;
     }
     const lastRequestTime = rateLimit.get(jid);
-    if (now - lastRequestTime < 3000) { // Reduced cooldown (3 seconds)
+    if (now - lastRequestTime < 3000) { // 3-second cooldown
         console.log(`⏳ Rate limit applied for ${jid}, skipping request.`);
         return true;
     }
@@ -181,49 +174,96 @@ function isRateLimited(jid) {
     return false;
 }
 
-// Optimized Group Metadata Fetch: Uses retries with shorter delay
-async function fetchGroupMetadataWithRetry(zk, groupId, retries = 2) { // 2 retries instead of 3
-    let attempt = 0;
-    while (attempt < retries) {
-        try {
-            return await zk.groupMetadata(groupId);
-        } catch (error) {
-            if (error.message.includes("rate-overlimit")) {
-                const delayTime = Math.pow(2, attempt) * 500; // Shorter backoff: 0.5s, 1s
-                console.log(`⚠️ Rate limit exceeded while fetching metadata for ${groupId}. Retrying in ${delayTime / 1000} seconds...`);
-                await new Promise(res => setTimeout(res, delayTime));
-            } else {
-                console.error(`❌ Error fetching group metadata for ${groupId}:`, error.message);
-                return null;
-            }
-        }
-        attempt++;
+// Controlled Group Metadata Fetch: Prevents excess API calls
+const groupMetadataCache = new Map();
+async function getGroupMetadata(zk, groupId) {
+    if (groupMetadataCache.has(groupId)) {
+        return groupMetadataCache.get(groupId);
     }
-    console.error(`❌ Failed to fetch group metadata for ${groupId} after retries.`);
-    return null;
+
+    try {
+        const metadata = await zk.groupMetadata(groupId);
+        groupMetadataCache.set(groupId, metadata);
+        
+        // Cache for 1 minute to prevent frequent requests
+        setTimeout(() => groupMetadataCache.delete(groupId), 60000);
+        return metadata;
+    } catch (error) {
+        if (error.message.includes("rate-overlimit")) {
+            console.log(`⚠️ Rate limit exceeded for group ${groupId}, pausing requests.`);
+            await new Promise(res => setTimeout(res, 5000)); // Wait 5 seconds before retrying
+        } else {
+            console.error(`❌ Error fetching group metadata for ${groupId}:`, error.message);
+        }
+        return null;
+    }
 }
 
-// Prevent Bot Crashes from WhatsApp API Rate Limits
+// Prevent Bot Crashes on Rate Limits
 zk.ev.on("error", (error) => {
     if (error.output && error.output.statusCode === 429) {
         console.log("⚠️ WhatsApp API rate limit exceeded. Pausing for 1 minute...");
-        setTimeout(() => console.log("✅ Resuming operations..."), 60000); // Pause for 1 minute
+        setTimeout(() => console.log("✅ Resuming operations..."), 60000); // 1-minute cooldown
     } else {
         console.error("Unhandled error:", error);
     }
 });
 
-// Prevent Rate Limit Errors in Message Processing
+// Message Queue Processing (Handles 20 messages at once)
+async function processMessageQueue() {
+    if (isProcessingQueue || processingQueue.length === 0) return;
+    
+    isProcessingQueue = true;
+    while (processingQueue.length > 0) {
+        const batch = processingQueue.splice(0, 20); // Process 20 messages at a time
+
+        for (const { from, message } of batch) {
+            try {
+                console.log(`📩 Processing message from ${from}:`, message);
+                await new Promise(res => setTimeout(res, 1000)); // 1-second delay between each message
+            } catch (error) {
+                console.error(`❌ Error processing message from ${from}:`, error.message);
+            }
+        }
+
+        console.log("✅ Batch processed successfully, waiting before next batch...");
+        await new Promise(res => setTimeout(res, 2000)); // 2-second delay before next batch
+    }
+    isProcessingQueue = false;
+}
+
+// Message Handler (Queues messages instead of processing immediately)
 zk.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
-    const ms = messages[0];
+    if (!messages || messages.length === 0) return;
 
-    if (!ms.message) return;
+    for (const ms of messages) {
+        if (!ms.message) continue;
 
-    const from = ms.key.remoteJid;
-    if (isRateLimited(from)) return;
+        const from = ms.key.remoteJid;
+        if (isRateLimited(from)) continue;
 
-    console.log(`📩 Received message from ${from}:`, ms.message);
+        processingQueue.push({ from, message: ms.message });
+
+        // Start processing if not already running
+        if (!isProcessingQueue) processMessageQueue();
+    }
+});
+
+// Group Message Handler (Handles messages from multiple groups)
+zk.ev.on("groups.update", async (updates) => {
+    for (const update of updates) {
+        const { id } = update;
+        if (!id.endsWith("@g.us")) continue;
+
+        console.log(`🔄 Group update detected: ${id}`);
+
+        // Fetch metadata in a controlled way
+        const metadata = await getGroupMetadata(zk, id);
+        if (metadata) {
+            console.log(`📜 Updated group info:`, metadata.subject);
+        }
+    }
 });
 
 zk.ev.on("messages.upsert", async (m) => {  
