@@ -152,13 +152,9 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-
-
 const rateLimit = new Map();
-const processingQueue = [];
-let isProcessingQueue = false;
 
-// Optimized Rate-Limiting: 3 seconds cooldown per user
+// Silent Rate Limiting (No Logs)
 function isRateLimited(jid) {
     const now = Date.now();
     if (!rateLimit.has(jid)) {
@@ -166,15 +162,14 @@ function isRateLimited(jid) {
         return false;
     }
     const lastRequestTime = rateLimit.get(jid);
-    if (now - lastRequestTime < 3000) { // 3-second cooldown
-        console.log(`⏳ Rate limit applied for ${jid}, skipping request.`);
-        return true;
+    if (now - lastRequestTime < 3000) {
+        return true; // Silently skip request
     }
     rateLimit.set(jid, now);
     return false;
 }
 
-// Controlled Group Metadata Fetch: Prevents excess API calls
+// Silent Group Metadata Fetch (Handles Errors Without Logging)
 const groupMetadataCache = new Map();
 async function getGroupMetadata(zk, groupId) {
     if (groupMetadataCache.has(groupId)) {
@@ -184,53 +179,40 @@ async function getGroupMetadata(zk, groupId) {
     try {
         const metadata = await zk.groupMetadata(groupId);
         groupMetadataCache.set(groupId, metadata);
-        
-        // Cache for 1 minute to prevent frequent requests
         setTimeout(() => groupMetadataCache.delete(groupId), 60000);
         return metadata;
     } catch (error) {
         if (error.message.includes("rate-overlimit")) {
-            console.log(`⚠️ Rate limit exceeded for group ${groupId}, pausing requests.`);
-            await new Promise(res => setTimeout(res, 5000)); // Wait 5 seconds before retrying
-        } else {
-            console.error(`❌ Error fetching group metadata for ${groupId}:`, error.message);
+            await new Promise(res => setTimeout(res, 5000)); // Wait before retrying
         }
         return null;
     }
 }
 
-// Prevent Bot Crashes on Rate Limits
-zk.ev.on("error", (error) => {
-    if (error.output && error.output.statusCode === 429) {
-        console.log("⚠️ WhatsApp API rate limit exceeded. Pausing for 1 minute...");
-        setTimeout(() => console.log("✅ Resuming operations..."), 60000); // 1-minute cooldown
-    } else {
-        console.error("Unhandled error:", error);
+// Silent Error Handling (Prevents Crashes)
+process.on("uncaughtException", (err) => {});
+process.on("unhandledRejection", (err) => {});
+
+// Silent Message Handling
+zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    if (!messages || messages.length === 0) return;
+
+    for (const ms of messages) {
+        if (!ms.message) continue;
+        const from = ms.key.remoteJid;
+        if (isRateLimited(from)) continue;
     }
 });
 
-// Message Queue Processing (Handles 20 messages at once)
-async function processMessageQueue() {
-    if (isProcessingQueue || processingQueue.length === 0) return;
-    
-    isProcessingQueue = true;
-    while (processingQueue.length > 0) {
-        const batch = processingQueue.splice(0, 20); // Process 20 messages at a time
-
-        for (const { from, message } of batch) {
-            try {
-                console.log(`📩 Processing message from ${from}:`, message);
-                await new Promise(res => setTimeout(res, 1000)); // 1-second delay between each message
-            } catch (error) {
-                console.error(`❌ Error processing message from ${from}:`, error.message);
-            }
-        }
-
-        console.log("✅ BWM XMD IS ONLINE AND RUNNING SMOOTHLY 😂👍🌎✅ ");
-        await new Promise(res => setTimeout(res, 2000)); // 2-second delay before next batch
+// Silent Group Updates
+zk.ev.on("groups.update", async (updates) => {
+    for (const update of updates) {
+        const { id } = update;
+        if (!id.endsWith("@g.us")) continue;
+        await getGroupMetadata(zk, id);
     }
-    isProcessingQueue = false;
-}
+});
 
 // Message Handler (Queues messages instead of processing immediately)
 zk.ev.on("messages.upsert", async (m) => {
