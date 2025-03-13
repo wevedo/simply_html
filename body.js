@@ -36,23 +36,6 @@ authentification();
 // Setup Store & Socket
 const store = makeInMemoryStore({ logger: pino().child({ level: "silent" }) });
 
-// Load Commands from scs/ and Store Them
-const commands = new Map();
-console.log("Loading Bwm XMD Commands ...\n");
-fs.readdirSync(__dirname + "/scs").forEach((file) => {
-    if (path.extname(file).toLowerCase() === ".js") {
-        try {
-            const command = require(__dirname + "/scs/" + file);
-            if (command.name) {
-                commands.set(command.name, command);
-                console.log(`${file} ✅ Installed Successfully`);
-            }
-        } catch (e) {
-            console.log(`${file} ❌ Could not be installed due to: ${e}`);
-        }
-    }
-});
-
 async function main() {
     const { version } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
@@ -67,6 +50,44 @@ async function main() {
 
     store.bind(zk.ev);
 
+    // Load Commands
+    console.log("Loading Bwm xmd Commands ...\n");
+    let commands = [];
+    fs.readdirSync(__dirname + "/scs").forEach((file) => {
+        if (path.extname(file).toLowerCase() === ".js") {
+            try {
+                let cmd = require(__dirname + "/scs/" + file);
+                commands.push(cmd);
+                console.log(file + " Installed Successfully✔️");
+            } catch (e) {
+                console.log(`${file} could not be installed due to: ${e}`);
+            }
+        }
+    });
+
+    // Command Execution Function
+    async function executeCommand(ms, from, sender, messageText) {
+        const prefix = conf.PREFIXE || "!";  // Default to "!" if PREFIXE is not set
+        if (!messageText.startsWith(prefix)) return;
+
+        const args = messageText.slice(prefix.length).trim().split(/ +/);
+        const commandName = args.shift().toLowerCase();
+
+        const command = commands.find(cmd => cmd.nomCom === commandName);
+        if (command) {
+            try {
+                if (conf.MODE.toLowerCase() !== 'yes' && sender !== conf.NUMERO_OWNER) {
+                    return;
+                }
+
+                await command.execute(zk, ms, args, sender);
+            } catch (error) {
+                console.log(`Error executing ${commandName}: ${error}`);
+                await zk.sendMessage(from, { text: "⚠️ Command execution failed!" });
+            }
+        }
+    }
+
     // Rate Limiting
     const rateLimit = new Map();
     function isRateLimited(jid) {
@@ -76,30 +97,45 @@ async function main() {
         return false;
     }
 
-    // Message Listener for Commands
+    // Message Listener
     zk.ev.on("messages.upsert", async (m) => {
         for (const ms of m.messages) {
             if (!ms.message) return;
             const from = ms.key.remoteJid;
+            const sender = ms.key.participant || ms.key.remoteJid;
             if (isRateLimited(from)) return;
 
-            const msgBody = ms.message.conversation || ms.message.extendedTextMessage?.text || "";
-            if (!msgBody.startsWith(conf.PREFIX)) return; // Check for Prefix
+            const messageType = Object.keys(ms.message)[0];
+            const messageText = ms.message.conversation || ms.message.extendedTextMessage?.text || "";
 
-            const args = msgBody.slice(conf.PREFIX.length).trim().split(/ +/);
-            const commandName = args.shift().toLowerCase();
+            // Execute Commands
+            await executeCommand(ms, from, sender, messageText);
 
-            if (commands.has(commandName)) {
-                try {
-                    await commands.get(commandName).execute(zk, ms, args);
-                } catch (error) {
-                    await zk.sendMessage(from, { text: `⚠️ Error: ${error.message}` }, { quoted: ms });
+            // Anti-Link Feature
+            if (conf.ANTILINK_GROUP === "yes" && from.endsWith("@g.us") && /\bhttps?:\/\/\S+/i.test(messageText)) {
+                await zk.sendMessage(from, { delete: ms.key });
+                await zk.groupParticipantsUpdate(from, [sender], "remove");
+            }
+
+            // Auto-Reply to Messages
+            if (conf.CHATBOT === "yes") {
+                const botReply = await getChatbotResponse(messageText);
+                if (botReply) {
+                    await zk.sendMessage(from, { text: botReply }, { quoted: ms });
                 }
-            } else {
-                await zk.sendMessage(from, { text: `❌ Unknown Command: *${commandName}*` }, { quoted: ms });
             }
         }
     });
+
+    // Function to Fetch Chatbot Response
+    async function getChatbotResponse(query) {
+        try {
+            const res = await axios.get(`https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(query)}`);
+            return res.data.result || null;
+        } catch {
+            return null;
+        }
+    }
 
     // Group Update Listener
     zk.ev.on("groups.update", async (updates) => {
@@ -116,6 +152,18 @@ async function main() {
             setTimeout(async () => {
                 await zk.sendMessage(callerId, { text: "🚫 Calls are not allowed. Please send a message instead." });
             }, 1000);
+        }
+    });
+
+    // Auto-Reactions
+    const emojiMap = { hello: ["👋", "😊"], bye: ["👋", "😢"] };
+    function getReaction(text) {
+        return emojiMap[text.toLowerCase()]?.[Math.floor(Math.random() * emojiMap[text.toLowerCase()].length)] || "🙂";
+    }
+    zk.ev.on("messages.upsert", async (m) => {
+        for (const ms of m.messages) {
+            if (!ms.message?.conversation) return;
+            await zk.sendMessage(ms.key.remoteJid, { react: { text: getReaction(ms.message.conversation), key: ms.key } });
         }
     });
 
