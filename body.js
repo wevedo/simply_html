@@ -53,22 +53,25 @@ async function main() {
 
     store.bind(zk.ev);
 
+
+
+    function shouldRespond(user) {
+        return !userMemory[user] || (Date.now() - userMemory[user].lastInteraction) >= 5 * 60 * 60 * 1000;
+    }
+
     zk.ev.on("messages.upsert", async (update) => {
-        for (const message of update.messages) {
-            if (!message.message || message.key.remoteJid.includes("@g.us")) return; // Ignore groups and status
-            const from = message.key.remoteJid;
-            const sender = message.pushName || "User";
-            const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
+        const message = update.messages[0];
+        if (!message.message || message.key.remoteJid.includes("@g.us")) return;
 
-            // Check if user has already received a response in the last 5 hours
-            if (userMemory.has(from) && Date.now() - userMemory.get(from) < 5 * 60 * 60 * 1000) {
-                return;
-            }
+        const sender = message.key.remoteJid;
+        const text = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-            userMemory.set(from, Date.now()); // Save user timestamp
+        if (!userMemory[sender] || userMemory[sender].waitingForReply) {
+            if (!shouldRespond(sender)) return;
 
-            // Greet and provide selection
-            const menu = `👋 Hello *${sender}*, welcome!\n\nPlease select an option:\n\n` +
+            userMemory[sender] = { lastInteraction: Date.now(), waitingForReply: true };
+
+            const replyMessage = `Hello *${sender.split("@")[0]}* 👋, please select an option:\n\n` +
                 `1️⃣ Bot Deployment\n` +
                 `2️⃣ Bot Development\n` +
                 `3️⃣ Website Development\n` +
@@ -76,74 +79,49 @@ async function main() {
                 `5️⃣ Heroku Team\n` +
                 `6️⃣ Teaching in Deployments\n` +
                 `7️⃣ Teaching in Bot Deployment\n\n` +
-                `📌 Reply with the number of your choice.`;
+                `*Reply with a number (1-7) to continue.*`;
 
-            await zk.sendMessage(from, { text: menu });
+            await zk.sendMessage(sender, { text: replyMessage }, { quoted: message });
+        } else {
+            const selectedIndex = parseInt(text);
+            const options = [
+                "Bot Deployment", "Bot Development", "Website Development",
+                "Heroku Account", "Heroku Team", "Teaching in Deployments", "Teaching in Bot Deployment"
+            ];
 
-            zk.ev.on("messages.upsert", async (newUpdate) => {
-                const newMessage = newUpdate.messages[0];
-                if (!newMessage.message || newMessage.key.remoteJid !== from) return;
+            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > options.length) {
+                return zk.sendMessage(sender, { text: "❌ Invalid number. Please select a valid option." }, { quoted: message });
+            }
 
-                const responseText = newMessage.message.conversation || newMessage.message.extendedTextMessage?.text || "";
-                const selectedIndex = parseInt(responseText);
+            if (selectedIndex === 1) {
+                userMemory[sender].waitingForCountry = true;
+                return zk.sendMessage(sender, { text: "Select your country:\n1️⃣ Kenya\n2️⃣ Tanzania\n3️⃣ Uganda\n\n*Reply with a number (1-3).*" }, { quoted: message });
+            }
 
-                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
-                    return zk.sendMessage(from, { text: "❌ Invalid number. Please select a valid option." });
-                }
+            userMemory[sender] = { lastInteraction: Date.now(), waitingForReply: false };
+            return zk.sendMessage(sender, { text: "Please wait a moment, connecting you to customer care..." }, { quoted: message });
+        }
 
-                if (selectedIndex === 1) { // Bot Deployment
-                    const countryMenu = `🌍 Please select your country:\n\n` +
-                        `1️⃣ Kenya 🇰🇪\n` +
-                        `2️⃣ Tanzania 🇹🇿\n` +
-                        `3️⃣ Uganda 🇺🇬\n\n` +
-                        `📌 Reply with the number of your country.`;
+        if (userMemory[sender].waitingForCountry) {
+            const countrySelection = parseInt(text);
+            if (countrySelection === 1) {
+                return zk.sendMessage(sender, { text: "Bot deployment in Kenya costs *100 KES*. Reply 'OK' to proceed or 'I'll contact you later'." }, { quoted: message });
+            } else if (countrySelection === 2) {
+                return zk.sendMessage(sender, { text: "Bot deployment in Tanzania costs *3000 TZS*. Reply 'OK' to proceed or 'I'll contact you later'." }, { quoted: message });
+            } else if (countrySelection === 3) {
+                return zk.sendMessage(sender, { text: "Bot deployment in Uganda costs *4000 UGX*. Reply 'OK' to proceed or 'I'll contact you later'." }, { quoted: message });
+            } else {
+                return zk.sendMessage(sender, { text: "❌ Invalid number. Please select a valid country." }, { quoted: message });
+            }
+        }
 
-                    await zk.sendMessage(from, { text: countryMenu });
-
-                    zk.ev.on("messages.upsert", async (countryUpdate) => {
-                        const countryMessage = countryUpdate.messages[0];
-                        if (!countryMessage.message || countryMessage.key.remoteJid !== from) return;
-
-                        const countryResponse = countryMessage.message.conversation || countryMessage.message.extendedTextMessage?.text || "";
-                        const countryIndex = parseInt(countryResponse);
-
-                        let priceMessage;
-                        if (countryIndex === 1) {
-                            priceMessage = "✅ Bot deployment in *Kenya* costs *100 KES*.";
-                        } else if (countryIndex === 2) {
-                            priceMessage = "✅ Bot deployment in *Tanzania* costs *3000 TZS*.";
-                        } else if (countryIndex === 3) {
-                            priceMessage = "✅ Bot deployment in *Uganda* costs *4000 UGX*.";
-                        } else {
-                            return zk.sendMessage(from, { text: "❌ Sorry, bot deployment is only available in East Africa." });
-                        }
-
-                        const confirmationMessage = `${priceMessage}\n\nWould you like to proceed?\n\n✅ *OK* - Connect to customer care\n❌ *I'll contact you later*`;
-
-                        await zk.sendMessage(from, { text: confirmationMessage });
-
-                        zk.ev.on("messages.upsert", async (finalUpdate) => {
-                            const finalMessage = finalUpdate.messages[0];
-                            if (!finalMessage.message || finalMessage.key.remoteJid !== from) return;
-
-                            const finalResponse = finalMessage.message.conversation || finalMessage.message.extendedTextMessage?.text || "";
-
-                            if (finalResponse.toLowerCase() === "ok") {
-                                await zk.sendMessage(from, { text: "⏳ Please wait a moment. Connecting you to customer care..." });
-                            } else {
-                                await zk.sendMessage(from, { text: "✅ No worries! Feel free to reach out whenever you're ready." });
-                            }
-                        });
-                    });
-
-                } else {
-                    await zk.sendMessage(from, { text: "⏳ Please wait a moment. Connecting you to customer care..." });
-                }
-            });
+        if (text.toLowerCase() === "ok") {
+            userMemory[sender] = { lastInteraction: Date.now(), waitingForReply: false };
+            return zk.sendMessage(sender, { text: "Please wait a moment, connecting you to customer care..." }, { quoted: message });
         }
     });
 
-    console.log("✅ SKY-MD is now active!");
+    console.log("✅ Bot is running!");
 }
 
 main();
