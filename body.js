@@ -97,13 +97,16 @@ async function main() {
         };
     });
 
-    // Function to handle user reply
-    async function handleUserReply(zk, message, sender) {
-        const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-        if (userMemory[sender].waitingForReply) {
-            const selectedIndex = parseInt(responseText);
+// Function to handle user reply  
+async function handleUserReply(zk, message, sender) {  
+    const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";  
 
+    if (  
+        message.message.extendedTextMessage &&  
+        message.message.extendedTextMessage.contextInfo &&  
+        message.message.extendedTextMessage.contextInfo.stanzaId === userMemory[sender].lastMessageId  
+    ) {  
             const categories = [
                 "Bot Deployment",
                 "Bot Development",
