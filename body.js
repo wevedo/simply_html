@@ -1,3 +1,4 @@
+
 "use strict";
 
 // Import Required Modules
@@ -8,10 +9,12 @@ const path = require("path");
 const conf = require("./config");
 const axios = require("axios");
 const zlib = require("zlib");
+
 require("dotenv").config({ path: "./config.env" });
 
 // Logger
 const logger = pino({ level: "silent" });
+const userMemory = new Map();
 
 // Initialize WhatsApp Session
 async function authentification() {
@@ -36,9 +39,6 @@ authentification();
 // Setup Store & Socket
 const store = makeInMemoryStore({ logger: pino().child({ level: "silent" }) });
 
-// User Interaction Memory
-const userMemory = new Map();
-
 async function main() {
     const { version } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
@@ -52,100 +52,140 @@ async function main() {
     });
 
     store.bind(zk.ev);
+    console.log("✅ SKY-MD is now connected to WhatsApp!");
 
-    console.log("✅ Bwm XMD is now connected to WhatsApp!");
-
-    // Message Listener
-    zk.ev.on("messages.upsert", async (m) => {
-        for (const ms of m.messages) {
-            if (!ms.message || ms.key.remoteJid.endsWith("@g.us") || ms.key.remoteJid === "status@broadcast") return;
-
-            const from = ms.key.remoteJid;
-            const sender = ms.key.participant || ms.key.remoteJid;
-            const messageText = ms.message.conversation || ms.message.extendedTextMessage?.text || "";
-
-            // Greet the user and list options
-            if (!userMemory.has(sender)) {
-                await zk.sendMessage(from, { text: `Hello @${sender.split("@")[0]}! Please select an option:\n\n1. Bot deployment\n2. Bot development\n3. Website development\n4. Heroku account\n5. Heroku team\n6. Teaching in deployments\n7. Teaching in bot deployment` });
-                userMemory.set(sender, { step: "awaiting_option" });
-            } else if (userMemory.get(sender).step === "awaiting_option") {
-                const selectedOption = parseInt(messageText);
-                if (isNaN(selectedOption) || selectedOption < 1 || selectedOption > 7) {
-                    await zk.sendMessage(from, { text: "❌ Invalid option. Please select a valid option." });
-                    return;
-                }
-
-                if (selectedOption === 1) {
-                    await zk.sendMessage(from, { text: "Please select a country:\n\n1. Kenya\n2. Tanzania\n3. Uganda\n4. Other" });
-                    userMemory.set(sender, { step: "awaiting_country" });
-                } else {
-                    await zk.sendMessage(from, { text: "Waiting a minute, I connect you to available customer care." });
-                    userMemory.set(sender, { step: "connected_to_care" });
-                }
-            } else if (userMemory.get(sender).step === "awaiting_country") {
-                const selectedCountry = parseInt(messageText);
-                if (isNaN(selectedCountry) || selectedCountry < 1 || selectedCountry > 4) {
-                    await zk.sendMessage(from, { text: "❌ Invalid country. Please select a valid option." });
-                    return;
-                }
-
-                let price;
-                switch (selectedCountry) {
-                    case 1:
-                        price = "100bob";
-                        break;
-                    case 2:
-                        price = "3000k";
-                        break;
-                    case 3:
-                        price = "4000k";
-                        break;
-                    default:
-                        await zk.sendMessage(from, { text: "Not available for other countries." });
-                        return;
-                }
-
-                await zk.sendMessage(from, { text: `The bot deployment cost for your selected country is ${price}. Please reply with:\n\n1. OK\n2. I'll contact you later` });
-                userMemory.set(sender, { step: "awaiting_confirmation" });
-            } else if (userMemory.get(sender).step === "awaiting_confirmation") {
-                if (messageText.toLowerCase() === "ok") {
-                    await zk.sendMessage(from, { text: "Waiting a minute, I connect you to available customer care. While waiting, scan the session here and forward it to us with your number along with the settings you need." });
-                    await zk.sendMessage(from, { text: `📖 HOW TO GET BWM XMD SESSION:\n\n1️⃣ Open the link below\n\n> https://www.ibrahimadams.site/scanner\n\n2️⃣ Enter Your WhatsApp Number\n\n👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap Submit.\n\n3️⃣ Receive a Code\n\n👉 Ibrahim Tech will send a short code, Copy it to your keyboard.\n\n4️⃣ Check WhatsApp Notification\n\n👉 WhatsApp will notify you. Tap on the notification and enter the code sent by Ibrahim Tech.\n\n5️⃣ Wait for the Session\n\n👉 After loading, it will link then Ibrahim Tech will send a session to your WhatsApp number.\n\n6️⃣ Copy and Share the Session\n\n👉 Copy the long session and send it to me.\n\n💻 Powered by bwm xmd\n\n╭────────────━⊷\n🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n\n> https://shorturl.at/z3b8v\n🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\nhttps://ibrahimadamscenter.us.kg\n╰────────────━⊷\nMade by Ibrahim Adams` });
-                    userMemory.set(sender, { step: "awaiting_session" });
-                } else {
-                    await zk.sendMessage(from, { text: "Alright, feel free to contact us later." });
-                    userMemory.delete(sender);
-                }
-            } else if (userMemory.get(sender).step === "awaiting_session") {
-                // Handle session submission
-                await zk.sendMessage(from, { text: "Thank you for submitting the session. Our customer care will contact you shortly." });
-                userMemory.delete(sender);
-            }
-        }
-    });
-
-    // Listen for Reply
+    // Handle incoming messages
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
-        if (!message.message || !message.message.extendedTextMessage) return;
+        if (!message.message || message.key.remoteJid.endsWith("@g.us")) return; // Ignore groups and status
 
-        const responseText = message.message.extendedTextMessage.text.trim();
-        if (
-            message.message.extendedTextMessage.contextInfo &&
-            message.message.extendedTextMessage.contextInfo.stanzaId ===
-            sentMessage.key.id
-        ) {
-            const selectedIndex = parseInt(responseText);
-            if (
-                isNaN(selectedIndex) ||
-                (selectedIndex < 1 && selectedIndex > chunkSize * 2 + 2)
-            ) {
-                return repondre(
-                    "❌ *Invalid number. Please select a valid option.*"
-                );
-            }
+        const sender = message.key.remoteJid;
+        const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
+        const senderName = message.pushName || "User";
+
+        // Check if user is waiting for a reply
+        if (userMemory[sender] && userMemory[sender].waitingForReply) {
+            handleUserReply(zk, message, sender);
+            return;
         }
+
+        // Prevent repeated responses within 5 hours
+        if (userMemory[sender] && Date.now() - userMemory[sender].lastReply < 5 * 60 * 60 * 1000) {
+            return;
+        }
+
+        // Greet the user and present options
+        const categories = [
+            "🤖 1. Bot Deployment",
+            "👨‍💻 2. Bot Development",
+            "🌐 3. Website Development",
+            "💳 4. Heroku Account",
+            "👥 5. Heroku Team",
+            "📚 6. Teaching in Deployments",
+            "🎓 7. Teaching in Bot Deployment"
+        ];
+
+        const optionsText = categories.join("\n");
+        const botReply = `👋 *Hello ${senderName}*,\n\n📌 Please select an option:\n\n${optionsText}`;
+
+        const sentMessage = await zk.sendMessage(sender, { text: botReply });
+
+        // Save user state
+        userMemory[sender] = {
+            waitingForReply: true,
+            lastReply: Date.now(),
+            lastMessageId: sentMessage.key.id
+        };
     });
+
+    // Function to handle user reply
+    async function handleUserReply(zk, message, sender) {
+        const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
+
+        if (userMemory[sender].waitingForReply) {
+            const selectedIndex = parseInt(responseText);
+
+            const categories = [
+                "Bot Deployment",
+                "Bot Development",
+                "Website Development",
+                "Heroku Account",
+                "Heroku Team",
+                "Teaching in Deployments",
+                "Teaching in Bot Deployment"
+            ];
+
+            if (selectedIndex === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back to the main menu..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
+            }
+
+            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {
+                return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a number from the list above or type *0* to go back." });
+            }
+
+            const selectedCategory = categories[selectedIndex - 1];
+
+            if (selectedCategory === "Bot Deployment") {
+                await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
+
+                userMemory[sender] = {
+                    waitingForCountry: true,
+                    lastReply: Date.now(),
+                    lastMessageId: message.key.id
+                };
+            } else {
+                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
+                delete userMemory[sender];
+            }
+        } else if (userMemory[sender].waitingForCountry) {
+            const countryResponse = parseInt(responseText);
+
+            if (countryResponse === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
+            }
+
+            let priceMessage = "";
+            if (countryResponse === 1) priceMessage = "🇰🇪 *Kenya*: The bot costs *100 KES*.";
+            if (countryResponse === 2) priceMessage = "🇹🇿 *Tanzania*: The bot costs *3000 TZS*.";
+            if (countryResponse === 3) priceMessage = "🇺🇬 *Uganda*: The bot costs *4000 UGX*.";
+
+            if (!priceMessage) {
+                return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a valid number from the list above or type *0* to go back." });
+            }
+
+            await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
+
+            userMemory[sender] = {
+                waitingForConfirmation: true,
+                lastReply: Date.now(),
+                lastMessageId: message.key.id
+            };
+        } else if (userMemory[sender].waitingForConfirmation) {
+            const confirmationResponse = parseInt(responseText);
+
+            if (confirmationResponse === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
+            }
+
+            if (confirmationResponse === 1) {
+                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
+            } else {
+                await zk.sendMessage(sender, { text: "✅ No problem! You can contact us anytime." });
+            }
+
+            delete userMemory[sender];
+        }
+    }
 }
 
+// Start bot
 main();
