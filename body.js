@@ -6,7 +6,9 @@ const fs = require("fs-extra");
 const path = require("path");
 const conf = require("./config");
 const zlib = require("zlib");
+const { adams } = require(__dirname + "/../Ibrahim/adams");
 require("dotenv").config({ path: "./config.env" });
+adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, 
 commandeOptions) => {
     let { ms, repondre ,prefixe,nomAuteurMessage,mybotpic} = commandeOptions;
 
