@@ -179,4 +179,4 @@ async function main() {
 }
 
 // Start bot
-initializeSession();
+main();
