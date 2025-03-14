@@ -49,18 +49,16 @@ async function main() {
 
     console.log("✅ Bwm XMD is now connected to WhatsApp!");
 
-    // Get the bot's own JID
-    const botJid = zk.user.id;
-
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
+
+        // Skip if the message is from the bot itself
+        if (message.key.fromMe) return;
+
         if (!message.message || message.key.remoteJid.includes("@g.us")) return;
 
-        // Skip messages sent by the bot itself
-        if (message.key.remoteJid === botJid) return;
-
         const from = message.key.remoteJid;
-        const sender = message.pushName || "";
+        const sender = message.pushName;
         const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
         if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 5 * 60 * 60 * 1000) return;
@@ -80,10 +78,11 @@ async function main() {
 
         zk.ev.on("messages.upsert", async (responseUpdate) => {
             const response = responseUpdate.messages[0];
-            if (!response.message || !response.message.extendedTextMessage) return;
 
-            // Skip messages sent by the bot itself
-            if (response.key.remoteJid === botJid) return;
+            // Skip if the response is from the bot itself
+            if (response.key.fromMe) return;
+
+            if (!response.message || !response.message.extendedTextMessage) return;
 
             const responseText = response.message.extendedTextMessage.text.trim();
             if (response.message.extendedTextMessage.contextInfo &&
@@ -105,10 +104,11 @@ async function main() {
 
                     zk.ev.on("messages.upsert", async (countryUpdate) => {
                         const countryResponse = countryUpdate.messages[0];
-                        if (!countryResponse.message || !countryResponse.message.extendedTextMessage) return;
 
-                        // Skip messages sent by the bot itself
-                        if (countryResponse.key.remoteJid === botJid) return;
+                        // Skip if the response is from the bot itself
+                        if (countryResponse.key.fromMe) return;
+
+                        if (!countryResponse.message || !countryResponse.message.extendedTextMessage) return;
 
                         const countryText = countryResponse.message.extendedTextMessage.text.trim();
                         if (countryResponse.message.extendedTextMessage.contextInfo &&
@@ -129,10 +129,11 @@ async function main() {
 
                                 zk.ev.on("messages.upsert", async (confirmUpdate) => {
                                     const confirmResponse = confirmUpdate.messages[0];
-                                    if (!confirmResponse.message || !confirmResponse.message.extendedTextMessage) return;
 
-                                    // Skip messages sent by the bot itself
-                                    if (confirmResponse.key.remoteJid === botJid) return;
+                                    // Skip if the response is from the bot itself
+                                    if (confirmResponse.key.fromMe) return;
+
+                                    if (!confirmResponse.message || !confirmResponse.message.extendedTextMessage) return;
 
                                     const confirmText = confirmResponse.message.extendedTextMessage.text.trim();
                                     if (confirmResponse.message.extendedTextMessage.contextInfo &&
@@ -183,10 +184,11 @@ If you're unsure how to get the session ID, refer to the explanation below.
 
                     zk.ev.on("messages.upsert", async (serviceUpdate) => {
                         const serviceResponse = serviceUpdate.messages[0];
-                        if (!serviceResponse.message || !serviceResponse.message.extendedTextMessage) return;
 
-                        // Skip messages sent by the bot itself
-                        if (serviceResponse.key.remoteJid === botJid) return;
+                        // Skip if the response is from the bot itself
+                        if (serviceResponse.key.fromMe) return;
+
+                        if (!serviceResponse.message || !serviceResponse.message.extendedTextMessage) return;
 
                         const serviceText = serviceResponse.message.extendedTextMessage.text.trim();
                         if (serviceResponse.message.extendedTextMessage.contextInfo &&
