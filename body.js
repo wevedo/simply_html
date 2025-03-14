@@ -62,12 +62,6 @@ async function main() {
         const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
         const senderName = message.pushName || "User";
 
-        // Check if user is waiting for a reply
-        if (userMemory[sender] && userMemory[sender].waitingForReply) {
-            handleUserReply(zk, message, sender);
-            return;
-        }
-
         // Prevent repeated responses within 5 hours
         if (userMemory[sender] && Date.now() - userMemory[sender].lastReply < 5 * 60 * 60 * 1000) {
             return;
@@ -97,83 +91,67 @@ async function main() {
         };
     });
 
-    // Function to handle user reply
-    async function handleUserReply(zk, message, sender) {
+    // Handle user responses
+    zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || message.key.remoteJid.endsWith("@g.us")) return;
+
+        const sender = message.key.remoteJid;
         const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-        // Ensure response matches the last sent message
-        if (
-            message.message.extendedTextMessage &&
-            message.message.extendedTextMessage.contextInfo &&
-            message.message.extendedTextMessage.contextInfo.stanzaId !== userMemory[sender].lastMessageId
-        ) {
-            return;
-        }
+        // If user is selecting a category
+        if (userMemory[sender]?.waitingForReply) {
+            const selectedIndex = parseInt(responseText);
 
-        const selectedIndex = parseInt(responseText);
-
-        const selectedCategory = [
-                "Bot Deployment",
-                "Bot Development",
-                "Website Development",
-                "Heroku Account",
-                "Heroku Team",
-                "Teaching in Deployments",
-                "Teaching in Bot Deployment"
-            ][selectedIndex - 1];
-
-            if (selectedCategory === "Bot Deployment") {
-                await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
+            if (selectedIndex === 1) {
+                const sentMsg = await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
 
                 userMemory[sender] = {
                     waitingForCountry: true,
                     lastReply: Date.now(),
-                    lastMessageId: message.key.id
+                    lastMessageId: sentMsg.key.id
                 };
             } else {
-                await zk.sendMessage(sender, { text: "⏳ Please wait while we connect you to customer care..." });  
-            delete userMemory[sender]; // Reset memory for future interactions  
-        }  
-    } else if (userMemory[sender].waitingForCountry) {  
-        const countryResponse = parseInt(responseText);  
+                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
+                delete userMemory[sender];
+            }
+            return;
+        }
 
-        if (isNaN(countryResponse) || countryResponse < 1 || countryResponse > 3) {  
-            return zk.sendMessage(sender, { text: "*❌ Invalid number. Please select a valid country.*" }, { quoted: message });  
-        }  
-
+        // If user is selecting a country
+        if (userMemory[sender]?.waitingForCountry) {
+            const countryResponse = parseInt(responseText);
             let priceMessage = "";
+
             if (countryResponse === 1) priceMessage = "🇰🇪 *Kenya*: The bot costs *100 KES*.";
             if (countryResponse === 2) priceMessage = "🇹🇿 *Tanzania*: The bot costs *3000 TZS*.";
             if (countryResponse === 3) priceMessage = "🇺🇬 *Uganda*: The bot costs *4000 UGX*.";
 
-            if (priceMessage) {
-                await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
-
-                userMemory[sender] = {
-                    waitingForConfirmation: true,
-                    lastReply: Date.now(),
-                    lastMessageId: message.key.id
-                };
-            }
-        } else if (userMemory[sender].waitingForConfirmation) {
-            const confirmationResponse = parseInt(responseText);
-
-            if (confirmationResponse === 0) {
-                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
-                    delete userMemory[sender];
-                    return main();
-                });
+            if (!priceMessage) {
+                return;
             }
 
-            if (confirmationResponse === 1) {
-                await zk.sendMessage(sender, { text: "🎉 *Thank you for choosing us! You will be connected to customer care shortly. 🤝*" });
-            } else {
-                await zk.sendMessage(sender, { text: "✅ *No problem! You can contact us anytime.*" });
-            }
+            const sentMsg = await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later` });
 
-            delete userMemory[sender];
+            userMemory[sender] = {
+                waitingForConfirmation: true,
+                lastReply: Date.now(),
+                lastMessageId: sentMsg.key.id
+            };
+            return;
         }
-    }
+
+        // If user is confirming their decision
+        if (userMemory[sender]?.waitingForConfirmation) {
+            if (responseText === "1") {
+                await zk.sendMessage(sender, { text: "🎉 Great! You will be connected to customer care shortly. Please wait..." });
+            } else {
+                await zk.sendMessage(sender, { text: "👍 No problem! Feel free to reach out whenever you're ready." });
+            }
+            delete userMemory[sender];
+            return;
+        }
+    });
 }
 
 // Start bot
