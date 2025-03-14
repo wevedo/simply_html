@@ -50,141 +50,89 @@ async function main() {
 
     store.bind(zk.ev);
 
-    console.log("✅ Bwm XMD is now connected to WhatsApp!");
-
-    // Memory store for user interactions
+    // Store user responses to avoid repeated replies
     const userMemory = new Map();
 
     // Message Listener
-    zk.ev.on("messages.upsert", async (m) => {
-        for (const ms of m.messages) {
-            if (!ms.message || ms.key.remoteJid.endsWith("@g.us") || ms.key.remoteJid.includes("status")) return;
+    zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || message.key.remoteJid.includes("@g.us")) return; // Ignore groups and status messages
 
-            const from = ms.key.remoteJid;
-            const sender = ms.key.participant || ms.key.remoteJid;
-            const messageText = ms.message.conversation || ms.message.extendedTextMessage?.text || "";
+        const from = message.key.remoteJid;
+        const sender = message.key.participant || from;
+        const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-            if (userMemory.has(sender) && Date.now() - userMemory.get(sender) < 5 * 60 * 60 * 1000) {
-                return; // Ignore messages from users who already interacted within 5 hours
+        // Prevent spamming by checking last interaction
+        const lastInteraction = userMemory.get(sender);
+        const now = Date.now();
+        if (lastInteraction && now - lastInteraction < 5 * 60 * 60 * 1000) return;
+
+        userMemory.set(sender, now); // Store user's interaction time
+
+        // If user hasn't started a session, greet and list options
+        if (!userMemory.get(`${sender}_step`)) {
+            await zk.sendMessage(from, { text: `Hello *${sender.split("@")[0]}*! 👋\n\nPlease select a service:\n\n1️⃣ Bot Deployment\n2️⃣ Bot Development\n3️⃣ Website Development\n4️⃣ Heroku Account\n5️⃣ Heroku Team\n6️⃣ Teaching in Deployments\n7️⃣ Teaching in Bot Deployment\n\nReply with the corresponding number to proceed.` });
+            userMemory.set(`${sender}_step`, "main_menu");
+            return;
+        }
+
+        // Process user responses
+        const step = userMemory.get(`${sender}_step`);
+
+        if (step === "main_menu") {
+            if (messageText === "1") {
+                await zk.sendMessage(from, { text: `Please select your country:\n\n1️⃣ Kenya\n2️⃣ Tanzania\n3️⃣ Uganda\n\nReply with the corresponding number.` });
+                userMemory.set(`${sender}_step`, "select_country");
+            } else if (["2", "3", "4", "5", "6", "7"].includes(messageText)) {
+                await zk.sendMessage(from, { text: "Please reply with your budget in money amount." });
+                userMemory.set(`${sender}_step`, "get_budget");
+            } else {
+                await zk.sendMessage(from, { text: "Invalid option. Please select from the menu." });
+            }
+            return;
+        }
+
+        if (step === "select_country") {
+            let priceMessage = "";
+            if (messageText === "1") {
+                priceMessage = "The bot deployment cost for Kenya is *100 KES*.";
+            } else if (messageText === "2") {
+                priceMessage = "The bot deployment cost for Tanzania is *3000 TZS*.";
+            } else if (messageText === "3") {
+                priceMessage = "The bot deployment cost for Uganda is *4000 UGX*.";
+            } else {
+                await zk.sendMessage(from, { text: "Invalid selection. Please reply with a valid option." });
+                return;
             }
 
-            userMemory.set(sender, Date.now());
+            await zk.sendMessage(from, { text: `${priceMessage}\n\nReply with:\n✔️ *OK* to proceed\n✖️ *I'll contact later*` });
+            userMemory.set(`${sender}_step`, "confirm_purchase");
+            return;
+        }
 
-            // First interaction message
-            const menuMessage = `Hello *${sender.split('@')[0]}* 👋, Welcome to BWM XMD Bot Services.  
-            
-Please select a service by replying with the corresponding number:
+        if (step === "confirm_purchase") {
+            if (messageText.toLowerCase() === "ok") {
+                await zk.sendMessage(from, {
+                    text: `*📖 HOW TO GET BWM XMD SESSION:*\n\n1️⃣ **Open the link below**\n> https://www.ibrahimadams.site/scanner\n\n2️⃣ **Enter Your WhatsApp Number**  \n👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap **Submit**.  \n\n3️⃣ **Receive a Code**  \n👉 Ibrahim Tech will send a short code, Copy it to your keyboard.  \n\n4️⃣ **Check WhatsApp Notification**  \n👉 WhatsApp will notify you. Tap on the notification and enter the code sent by Ibrahim Tech.  \n\n5️⃣ **Wait for the Session**  \n👉 After loading, it will link then Ibrahim Tech will send a session to your WhatsApp number.  \n\n6️⃣ **Copy and Share the Session**  \n👉 Copy the long session and send it to me.\n\n💻 Powered by *BWM XMD*`
+                });
+                userMemory.set(`${sender}_step`, "session_instructions");
+            } else if (messageText.toLowerCase() === "i'll contact later") {
+                await zk.sendMessage(from, { text: "OK, thanks for contacting us." });
+                userMemory.delete(`${sender}_step`);
+            } else {
+                await zk.sendMessage(from, { text: "Invalid response. Reply with 'OK' to proceed or 'I'll contact later' to exit." });
+            }
+            return;
+        }
 
-1️⃣ Bot Deployment  
-2️⃣ Bot Development  
-3️⃣ Website Development  
-4️⃣ Heroku Account  
-5️⃣ Heroku Team  
-6️⃣ Teaching in Deployments  
-7️⃣ Teaching in Bot Deployment  
-
-Please reply with a number to proceed.`;
-
-            await zk.sendMessage(from, { text: menuMessage });
-
-            // Listen for user replies
-            zk.ev.on("messages.upsert", async (update) => {
-                const replyMessage = update.messages[0];
-                if (!replyMessage.message || !replyMessage.message.extendedTextMessage) return;
-
-                const responseText = replyMessage.message.extendedTextMessage.text.trim();
-                const selectedIndex = parseInt(responseText);
-
-                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
-                    return zk.sendMessage(from, { text: "❌ *Invalid number. Please select a valid option.*" });
-                }
-
-                if (selectedIndex === 1) {
-                    // Bot Deployment selected
-                    const countryMessage = `🌍 Please select your country:  
-                    
-1️⃣ Kenya 🇰🇪  
-2️⃣ Tanzania 🇹🇿  
-3️⃣ Uganda 🇺🇬  
-
-Reply with the number corresponding to your country.`;
-                    await zk.sendMessage(from, { text: countryMessage });
-
-                    zk.ev.on("messages.upsert", async (update) => {
-                        const countryReply = update.messages[0];
-                        if (!countryReply.message || !countryReply.message.extendedTextMessage) return;
-
-                        const countryResponse = countryReply.message.extendedTextMessage.text.trim();
-                        const countryIndex = parseInt(countryResponse);
-
-                        let priceMessage = "";
-                        if (countryIndex === 1) priceMessage = "💰 The bot deployment cost in *Kenya* is *100 KES*.";
-                        else if (countryIndex === 2) priceMessage = "💰 The bot deployment cost in *Tanzania* is *3000 TZS*.";
-                        else if (countryIndex === 3) priceMessage = "💰 The bot deployment cost in *Uganda* is *4000 UGX*.";
-                        else return zk.sendMessage(from, { text: "❌ *Invalid selection. Please select a valid country.*" });
-
-                        await zk.sendMessage(from, { text: `${priceMessage}\n\nReply with *OK* to proceed or *I'll contact you later*.` });
-
-                        zk.ev.on("messages.upsert", async (finalUpdate) => {
-                            const finalReply = finalUpdate.messages[0];
-                            if (!finalReply.message || !finalReply.message.extendedTextMessage) return;
-
-                            const finalResponse = finalReply.message.extendedTextMessage.text.trim().toLowerCase();
-
-                            if (finalResponse === "i'll contact you later") {
-                                return zk.sendMessage(from, { text: "OK, thanks for contacting us." });
-                            }
-
-                            if (finalResponse === "ok") {
-                                const scanSessionMessage = `📖 *HOW TO GET BWM XMD SESSION:*
-
-1️⃣ **Open the link below**  
-> https://www.ibrahimadams.site/scanner  
-
-2️⃣ **Enter Your WhatsApp Number**  
-👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap **Submit**.  
-
-3️⃣ **Receive a Code**  
-👉 Ibrahim Tech will send a short code, Copy it to your keyboard.  
-
-4️⃣ **Check WhatsApp Notification**  
-👉 WhatsApp will notify you. Tap on the notification and enter the code sent by Ibrahim Tech.  
-
-5️⃣ **Wait for the Session**  
-👉 After loading, it will link then Ibrahim Tech will send a session to your WhatsApp number.  
-
-6️⃣ **Copy and Share the Session**  
-👉 Copy the long session and send it to me.  
-
-*💻 Powered by bwm xmd* 
-
-╭────────────━⊷  
-🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ  
-> https://shorturl.at/z3b8v  
-🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ  
-> https://ibrahimadamscenter.us.kg  
-╰────────────━⊷  
-> Made by Ibrahim Adams`;
-
-                                await zk.sendMessage(from, { text: scanSessionMessage });
-
-                                await zk.sendMessage(from, { text: "If you don't know how to scan, reply *1*. If you know, ignore and scan." });
-                            }
-                        });
-                    });
-                } else {
-                    // If another category is selected
-                    await zk.sendMessage(from, { text: "Please provide your budget." });
-
-                    zk.ev.on("messages.upsert", async (budgetUpdate) => {
-                        const budgetReply = budgetUpdate.messages[0];
-                        if (!budgetReply.message || !budgetReply.message.extendedTextMessage) return;
-
-                        await zk.sendMessage(from, { text: "🔄 Connecting you to customer care... Please wait a moment." });
-                    });
-                }
-            });
+        if (step === "get_budget") {
+            await zk.sendMessage(from, { text: "Please wait a minute while we connect you to an available customer care representative." });
+            userMemory.delete(`${sender}_step`);
+            return;
         }
     });
+
+    console.log("✅ Bwm XMD is now connected to WhatsApp!");
 }
+
 main();
