@@ -112,52 +112,31 @@ async function main() {
 
         const selectedIndex = parseInt(responseText);
 
-        const categories = [
-            "Bot Deployment",
-            "Bot Development",
-            "Website Development",
-            "Heroku Account",
-            "Heroku Team",
-            "Teaching in Deployments",
-            "Teaching in Bot Deployment"
-        ];
+        const selectedCategory = [
+                "Bot Deployment",
+                "Bot Development",
+                "Website Development",
+                "Heroku Account",
+                "Heroku Team",
+                "Teaching in Deployments",
+                "Teaching in Bot Deployment"
+            ][selectedIndex - 1];
 
-        if (selectedIndex === 0) {
-            return await zk.sendMessage(sender, { text: "🔙 Going back to the main menu..." }).then(() => {
+            if (selectedCategory === "Bot Deployment") {
+                await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
+
+                userMemory[sender] = {
+                    waitingForCountry: true,
+                    lastReply: Date.now(),
+                    lastMessageId: message.key.id
+                };
+            } else {
+                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
                 delete userMemory[sender];
-                return main();
-            });
-        }
-
-        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {
-            return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a valid number from the list above or type *0* to go back." });
-        }
-
-        const selectedCategory = categories[selectedIndex - 1];
-
-        if (selectedCategory === "Bot Deployment") {
-            const sentMsg = await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
-
-            userMemory[sender] = {
-                waitingForCountry: true,
-                lastReply: Date.now(),
-                lastMessageId: sentMsg.key.id
-            };
-        } else {
-            await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
-            delete userMemory[sender];
-        }
-    }
-
-    zk.ev.on("messages.upsert", async (update) => {
-        const message = update.messages[0];
-        if (!message.message || message.key.remoteJid.endsWith("@g.us")) return;
-
-        const sender = message.key.remoteJid;
-        const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
-        
-        if (userMemory[sender]?.waitingForCountry) {
+            }
+        } else if (userMemory[sender].waitingForCountry) {
             const countryResponse = parseInt(responseText);
+
             if (countryResponse === 0) {
                 return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
                     delete userMemory[sender];
@@ -170,19 +149,34 @@ async function main() {
             if (countryResponse === 2) priceMessage = "🇹🇿 *Tanzania*: The bot costs *3000 TZS*.";
             if (countryResponse === 3) priceMessage = "🇺🇬 *Uganda*: The bot costs *4000 UGX*.";
 
-            if (!priceMessage) {
-                return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a valid number from the list above or type *0* to go back." });
+            if (priceMessage) {
+                await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
+
+                userMemory[sender] = {
+                    waitingForConfirmation: true,
+                    lastReply: Date.now(),
+                    lastMessageId: message.key.id
+                };
+            }
+        } else if (userMemory[sender].waitingForConfirmation) {
+            const confirmationResponse = parseInt(responseText);
+
+            if (confirmationResponse === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
             }
 
-            const sentMsg = await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
+            if (confirmationResponse === 1) {
+                await zk.sendMessage(sender, { text: "🎉 *Thank you for choosing us! You will be connected to customer care shortly. 🤝*" });
+            } else {
+                await zk.sendMessage(sender, { text: "✅ *No problem! You can contact us anytime.*" });
+            }
 
-            userMemory[sender] = {
-                waitingForConfirmation: true,
-                lastReply: Date.now(),
-                lastMessageId: sentMsg.key.id
-            };
+            delete userMemory[sender];
         }
-    });
+    }
 }
 
 // Start bot
