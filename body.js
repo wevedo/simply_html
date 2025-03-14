@@ -107,7 +107,8 @@ async function handleUserReply(zk, message, sender) {
         message.message.extendedTextMessage.contextInfo &&  
         message.message.extendedTextMessage.contextInfo.stanzaId === userMemory[sender].lastMessageId  
     ) {  
-            const categories = [
+        const selectedIndex = parseInt(responseText);  
+        const categories = [  
                 "Bot Deployment",
                 "Bot Development",
                 "Website Development",
