@@ -8,10 +8,13 @@ const path = require("path");
 const conf = require("./config");
 const axios = require("axios");
 const zlib = require("zlib");
+
 require("dotenv").config({ path: "./config.env" });
 
 // Logger
 const logger = pino({ level: "silent" });
+const userMemory = new Map();
+
 
 // Initialize WhatsApp Session
 async function authentification() {
