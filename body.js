@@ -50,123 +50,97 @@ async function main() {
 
     store.bind(zk.ev);
 
-    // Load Commands
-    console.log("Loading Bwm xmd Commands ...\n");
-    let commands = [];
-    fs.readdirSync(__dirname + "/scs").forEach((file) => {
-        if (path.extname(file).toLowerCase() === ".js") {
-            try {
-                let cmd = require(__dirname + "/scs/" + file);
-                commands.push(cmd);
-                console.log(file + " Installed Successfully✔️");
-            } catch (e) {
-                console.log(`${file} could not be installed due to: ${e}`);
+    zk.ev.on("messages.upsert", async (update) => {
+        for (const message of update.messages) {
+            if (!message.message || message.key.remoteJid.includes("@g.us")) return; // Ignore groups and status
+            const from = message.key.remoteJid;
+            const sender = message.pushName || "User";
+            const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
+
+            // Check if user has already received a response in the last 5 hours
+            if (userMemory.has(from) && Date.now() - userMemory.get(from) < 5 * 60 * 60 * 1000) {
+                return;
             }
-        }
-    });
 
-    // Command Execution Function
-    async function executeCommand(ms, from, sender, messageText) {
-        const prefix = conf.PREFIXE || "!";  // Default to "!" if PREFIXE is not set
-        if (!messageText.startsWith(prefix)) return;
+            userMemory.set(from, Date.now()); // Save user timestamp
 
-        const args = messageText.slice(prefix.length).trim().split(/ +/);
-        const commandName = args.shift().toLowerCase();
+            // Greet and provide selection
+            const menu = `👋 Hello *${sender}*, welcome!\n\nPlease select an option:\n\n` +
+                `1️⃣ Bot Deployment\n` +
+                `2️⃣ Bot Development\n` +
+                `3️⃣ Website Development\n` +
+                `4️⃣ Heroku Account\n` +
+                `5️⃣ Heroku Team\n` +
+                `6️⃣ Teaching in Deployments\n` +
+                `7️⃣ Teaching in Bot Deployment\n\n` +
+                `📌 Reply with the number of your choice.`;
 
-        const command = commands.find(cmd => cmd.nomCom === commandName);
-        if (command) {
-            try {
-                if (conf.MODE.toLowerCase() !== 'yes' && sender !== conf.NUMERO_OWNER) {
-                    return;
+            await zk.sendMessage(from, { text: menu });
+
+            zk.ev.on("messages.upsert", async (newUpdate) => {
+                const newMessage = newUpdate.messages[0];
+                if (!newMessage.message || newMessage.key.remoteJid !== from) return;
+
+                const responseText = newMessage.message.conversation || newMessage.message.extendedTextMessage?.text || "";
+                const selectedIndex = parseInt(responseText);
+
+                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
+                    return zk.sendMessage(from, { text: "❌ Invalid number. Please select a valid option." });
                 }
 
-                await command.execute(zk, ms, args, sender);
-            } catch (error) {
-                console.log(`Error executing ${commandName}: ${error}`);
-                await zk.sendMessage(from, { text: "⚠️ Command execution failed!" });
-            }
-        }
-    }
+                if (selectedIndex === 1) { // Bot Deployment
+                    const countryMenu = `🌍 Please select your country:\n\n` +
+                        `1️⃣ Kenya 🇰🇪\n` +
+                        `2️⃣ Tanzania 🇹🇿\n` +
+                        `3️⃣ Uganda 🇺🇬\n\n` +
+                        `📌 Reply with the number of your country.`;
 
-    // Rate Limiting
-    const rateLimit = new Map();
-    function isRateLimited(jid) {
-        const now = Date.now();
-        if (rateLimit.has(jid) && now - rateLimit.get(jid) < 3000) return true;
-        rateLimit.set(jid, now);
-        return false;
-    }
+                    await zk.sendMessage(from, { text: countryMenu });
 
-    // Message Listener
-    zk.ev.on("messages.upsert", async (m) => {
-        for (const ms of m.messages) {
-            if (!ms.message) return;
-            const from = ms.key.remoteJid;
-            const sender = ms.key.participant || ms.key.remoteJid;
-            if (isRateLimited(from)) return;
+                    zk.ev.on("messages.upsert", async (countryUpdate) => {
+                        const countryMessage = countryUpdate.messages[0];
+                        if (!countryMessage.message || countryMessage.key.remoteJid !== from) return;
 
-            const messageType = Object.keys(ms.message)[0];
-            const messageText = ms.message.conversation || ms.message.extendedTextMessage?.text || "";
+                        const countryResponse = countryMessage.message.conversation || countryMessage.message.extendedTextMessage?.text || "";
+                        const countryIndex = parseInt(countryResponse);
 
-            // Execute Commands
-            await executeCommand(ms, from, sender, messageText);
+                        let priceMessage;
+                        if (countryIndex === 1) {
+                            priceMessage = "✅ Bot deployment in *Kenya* costs *100 KES*.";
+                        } else if (countryIndex === 2) {
+                            priceMessage = "✅ Bot deployment in *Tanzania* costs *3000 TZS*.";
+                        } else if (countryIndex === 3) {
+                            priceMessage = "✅ Bot deployment in *Uganda* costs *4000 UGX*.";
+                        } else {
+                            return zk.sendMessage(from, { text: "❌ Sorry, bot deployment is only available in East Africa." });
+                        }
 
-            // Anti-Link Feature
-            if (conf.ANTILINK_GROUP === "yes" && from.endsWith("@g.us") && /\bhttps?:\/\/\S+/i.test(messageText)) {
-                await zk.sendMessage(from, { delete: ms.key });
-                await zk.groupParticipantsUpdate(from, [sender], "remove");
-            }
+                        const confirmationMessage = `${priceMessage}\n\nWould you like to proceed?\n\n✅ *OK* - Connect to customer care\n❌ *I'll contact you later*`;
 
-            // Auto-Reply to Messages
-            if (conf.CHATBOT === "yes") {
-                const botReply = await getChatbotResponse(messageText);
-                if (botReply) {
-                    await zk.sendMessage(from, { text: botReply }, { quoted: ms });
+                        await zk.sendMessage(from, { text: confirmationMessage });
+
+                        zk.ev.on("messages.upsert", async (finalUpdate) => {
+                            const finalMessage = finalUpdate.messages[0];
+                            if (!finalMessage.message || finalMessage.key.remoteJid !== from) return;
+
+                            const finalResponse = finalMessage.message.conversation || finalMessage.message.extendedTextMessage?.text || "";
+
+                            if (finalResponse.toLowerCase() === "ok") {
+                                await zk.sendMessage(from, { text: "⏳ Please wait a moment. Connecting you to customer care..." });
+                            } else {
+                                await zk.sendMessage(from, { text: "✅ No worries! Feel free to reach out whenever you're ready." });
+                            }
+                        });
+                    });
+
+                } else {
+                    await zk.sendMessage(from, { text: "⏳ Please wait a moment. Connecting you to customer care..." });
                 }
-            }
+            });
         }
     });
 
-    // Function to Fetch Chatbot Response
-    async function getChatbotResponse(query) {
-        try {
-            const res = await axios.get(`https://api.davidcyriltech.my.id/ai/chatbot?query=${encodeURIComponent(query)}`);
-            return res.data.result || null;
-        } catch {
-            return null;
-        }
-    }
-
-    // Group Update Listener
-    zk.ev.on("groups.update", async (updates) => {
-        for (const update of updates) {
-            console.log(`Updated group: ${update.id}`);
-        }
-    });
-
-    // Call Blocking Feature
-    zk.ev.on("call", async (callData) => {
-        if (conf.ANTICALL === "yes") {
-            const callerId = callData[0].from;
-            await zk.rejectCall(callData[0].id, callerId);
-            setTimeout(async () => {
-                await zk.sendMessage(callerId, { text: "🚫 Calls are not allowed. Please send a message instead." });
-            }, 1000);
-        }
-    });
-
-    // Auto-Reactions
-    const emojiMap = { hello: ["👋", "😊"], bye: ["👋", "😢"] };
-    function getReaction(text) {
-        return emojiMap[text.toLowerCase()]?.[Math.floor(Math.random() * emojiMap[text.toLowerCase()].length)] || "🙂";
-    }
-    zk.ev.on("messages.upsert", async (m) => {
-        for (const ms of m.messages) {
-            if (!ms.message?.conversation) return;
-            await zk.sendMessage(ms.key.remoteJid, { react: { text: getReaction(ms.message.conversation), key: ms.key } });
-        }
-    });
-
-    console.log("✅ Bwm XMD is now connected to WhatsApp!");
+    console.log("✅ SKY-MD is now active!");
 }
+
 main();
