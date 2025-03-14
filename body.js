@@ -54,7 +54,7 @@ async function main() {
         if (!message.message || message.key.remoteJid.includes("@g.us")) return;
 
         const from = message.key.remoteJid;
-            const sender = message.pushName || "User";
+            const sender = message.pushName || "";
             const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
         if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 5 * 60 * 60 * 1000) return;
