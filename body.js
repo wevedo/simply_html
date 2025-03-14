@@ -7,6 +7,8 @@ const path = require("path");
 const conf = require("./config");
 const zlib = require("zlib");
 require("dotenv").config({ path: "./config.env" });
+commandeOptions) => {
+    let { ms, repondre ,prefixe,nomAuteurMessage,mybotpic} = commandeOptions;
 
 const logger = pino({ level: "silent" });
 
@@ -61,7 +63,7 @@ async function main() {
 
         sessionStore.set(sender, Date.now());
 
-        let greeting = `Hello *${sender.split("@")[0]}*!\nPlease select an option with it's number\n\n`;
+        let greeting = `Hello *${nomAuteurMessage}*!\nPlease reply an option with it's number\n\n`;
         greeting += "1️⃣ Bot Deployment\n";
         greeting += "2️⃣ Bot Development\n";
         greeting += "3️⃣ Website Development\n";
