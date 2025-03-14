@@ -61,7 +61,7 @@ async function main() {
 
         sessionStore.set(sender, Date.now());
 
-        let greeting = `Hello *${sender.split("@")[0]}*!\nPlease select an option:\n\n`;
+        let greeting = `Hello *${sender.split("@")[0]}*!\nPlease select an option with it's number\n\n`;
         greeting += "1️⃣ Bot Deployment\n";
         greeting += "2️⃣ Bot Development\n";
         greeting += "3️⃣ Website Development\n";
@@ -125,7 +125,11 @@ async function main() {
 
                                         const confirmIndex = parseInt(confirmText);
                                         if (confirmIndex === 1) {
-                                            const sessionInstructions = `*📖 HOW TO GET BWM XMD SESSION:*\n\n` +
+                                            const sessionInstructions = `Please scan the session from the link below and send it to us along with your phone number and the settings you need:
+Scan Here
+
+If you're unsure how to get the session ID, refer to the explanation below.\n\n
+*📖 HOW TO GET BWM XMD SESSION:*\n\n` +
                                                 `1️⃣ **Open the link below**\n\n> https://www.ibrahimadams.site/scanner\n\n` +
                                                 `2️⃣ **Enter Your WhatsApp Number**\n\n` +
                                                 `👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap **Submit**.\n\n` +
