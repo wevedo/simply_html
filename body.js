@@ -65,16 +65,22 @@ async function main() {
 
         sessionStore.set(sender, Date.now());
 
-        let greeting = `Hello *${sender}*!\nPlease reply an option with it's number\n\n`;
+        let greeting = `Hello *${sender}*\n*PRIVATE BUSINESS BOT\n\n`;
         greeting += "1️⃣ Bot Deployment\n";
         greeting += "2️⃣ Bot Development\n";
         greeting += "3️⃣ Website Development\n";
         greeting += "4️⃣ Heroku Account\n";
         greeting += "5️⃣ Heroku Team\n";
         greeting += "6️⃣ Teaching in Deployments\n";
-        greeting += "7️⃣ Teaching in Bot Deployment\n";
+        greeting += "7️⃣ Teaching in Bot Deployment\n\nPlease reply an option with it's number\n\n*Made by Sir Ibrahim Adams ";
 
-        const sentMessage = await zk.sendMessage(from, { text: greeting });
+        // Send the image with the greeting as the caption
+        const imageUrl = "https://bwm-xmd-files.vercel.app/bwmxmd_wyh1bc.jpg";
+        const sentMessage = await zk.sendMessage(from, {
+            image: { url: imageUrl },
+            caption: greeting,
+            mimetype: "image/jpeg",
+        });
 
         zk.ev.on("messages.upsert", async (responseUpdate) => {
             const response = responseUpdate.messages[0];
