@@ -1,138 +1,163 @@
 
 "use strict";
 
-// Import Required Modules
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  makeCacheableSignalKeyStore,
-  fetchLatestBaileysVersion,
-  makeInMemoryStore,
-} = require("@whiskeysockets/baileys");
+const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, makeInMemoryStore } = require("@whiskeysockets/baileys");
 const pino = require("pino");
 const fs = require("fs-extra");
 const path = require("path");
 const conf = require("./config");
-const axios = require("axios");
 const zlib = require("zlib");
 require("dotenv").config({ path: "./config.env" });
 
-// Logger
 const logger = pino({ level: "silent" });
 
-// Initialize WhatsApp Session
+const sessionStore = new Map();
+
 async function authentification() {
-  try {
-    const sessionPath = __dirname + "/Session/creds.json";
-    if (!fs.existsSync(sessionPath) && conf.session !== "zokk") {
-      console.log("Initializing session...");
-      const [header, b64data] = conf.session.split(";;;");
-      if (header === "BWM-XMD" && b64data) {
-        let decompressedData = zlib.gunzipSync(
-          Buffer.from(b64data.replace("...", ""), "base64")
-        );
-        fs.writeFileSync(sessionPath, decompressedData, "utf8");
-      } else {
-        throw new Error("Invalid session format");
-      }
+    try {
+        const sessionPath = __dirname + "/Session/creds.json";
+        if (!fs.existsSync(sessionPath) && conf.session !== "zokk") {
+            console.log("Initializing session...");
+            const [header, b64data] = conf.session.split(';;;');
+            if (header === "BWM-XMD" && b64data) {
+                let decompressedData = zlib.gunzipSync(Buffer.from(b64data.replace('...', ''), "base64"));
+                fs.writeFileSync(sessionPath, decompressedData, "utf8");
+            } else {
+                throw new Error("Invalid session format");
+            }
+        }
+    } catch (e) {
+        console.log("Session Invalid: " + e.message);
     }
-  } catch (e) {
-    console.log("Session Invalid: " + e.message);
-  }
 }
 authentification();
 
-// Setup Store & Socket
 const store = makeInMemoryStore({ logger: pino().child({ level: "silent" }) });
-const userMemory = new Map(); // Memory storage to prevent spam
 
 async function main() {
-  const { version } = await fetchLatestBaileysVersion();
-  const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
+    const { version } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
 
-  const zk = makeWASocket({
-    version,
-    logger,
-    browser: ["BWM-XMD", "Safari", "1.0.0"],
-    printQRInTerminal: true,
-    auth: {
-      creds: state.creds,
-      keys: makeCacheableSignalKeyStore(state.keys, logger),
-    },
-  });
+    const zk = makeWASocket({
+        version,
+        logger,
+        browser: ["BWM-XMD", "Safari", "1.0.0"],
+        printQRInTerminal: true,
+        auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, logger) },
+    });
 
-  store.bind(zk.ev);
+    store.bind(zk.ev);
 
-  console.log("✅ Bwm XMD is now connected to WhatsApp!");
+    console.log("✅ Bwm XMD is now connected to WhatsApp!");
 
-  // Listen for messages (Only in private chats)
-  zk.ev.on("messages.upsert", async (m) => {
-    for (const ms of m.messages) {
-      if (!ms.message || ms.key.remoteJid.includes("@g.us")) return; // Ignore group messages
+    zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || message.key.remoteJid.includes("@g.us")) return;
 
-      const from = ms.key.remoteJid;
-      const sender = ms.pushName || "User";
-      const messageText = ms.message.conversation || ms.message.extendedTextMessage?.text || "";
+        const from = message.key.remoteJid;
+        const sender = message.key.participant || from;
+        const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-      // Prevent duplicate replies for 5 hours
-      if (userMemory.has(from) && Date.now() - userMemory.get(from).timestamp < 5 * 60 * 60 * 1000) {
-        return;
-      }
+        if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 5 * 60 * 60 * 1000) return;
 
-      // Store user interaction timestamp
-      userMemory.set(from, { timestamp: Date.now(), stage: "greet" });
+        sessionStore.set(sender, Date.now());
 
-      // Initial Greeting and Service List
-      const sentMessage = await zk.sendMessage(from, {
-        text: `👋 Hello *${sender}*!\nHow can I assist you today? Please select an option:\n\n` +
-              `1️⃣ Bot Deployment\n2️⃣ Bot Development\n3️⃣ Website Development\n4️⃣ Heroku Account Setup\n5️⃣ Heroku Team Setup\n6️⃣ Teaching in Deployments\n7️⃣ Teaching in Bot Development\n\n` +
-              `_Reply with the number of your choice._`
-      });
+        let greeting = `Hello *${sender.split("@")[0]}*!\nPlease select an option:\n\n`;
+        greeting += "1️⃣ Bot Deployment\n";
+        greeting += "2️⃣ Bot Development\n";
+        greeting += "3️⃣ Website Development\n";
+        greeting += "4️⃣ Heroku Account\n";
+        greeting += "5️⃣ Heroku Team\n";
+        greeting += "6️⃣ Teaching in Deployments\n";
+        greeting += "7️⃣ Teaching in Bot Deployment\n";
 
-      // Store message ID for tracking responses
-      userMemory.set(from, { timestamp: Date.now(), stage: "greet", lastMessageId: sentMessage.key.id });
-    }
-  });
+        const sentMessage = await zk.sendMessage(from, { text: greeting });
 
-  // Listen for Reply (Using Your Custom Listener)
-  zk.ev.on("messages.upsert", async (update) => {
-    const message = update.messages[0];
-    if (!message.message || !message.message.extendedTextMessage) return;
+        zk.ev.on("messages.upsert", async (responseUpdate) => {
+            const response = responseUpdate.messages[0];
+            if (!response.message || !response.message.extendedTextMessage) return;
 
-    const from = message.key.remoteJid;
-    const responseText = message.message.extendedTextMessage.text.trim();
+            const responseText = response.message.extendedTextMessage.text.trim();
+            if (response.message.extendedTextMessage.contextInfo &&
+                response.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
 
-    // Prevent duplicate responses
-    if (!userMemory.has(from)) return;
-    const userState = userMemory.get(from);
+                const selectedIndex = parseInt(responseText);
+                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
+                    return zk.sendMessage(from, { text: "❌ Invalid option. Please select a valid number." });
+                }
 
-    // Ensure reply is to the bot's last message
-    if (
-      message.message.extendedTextMessage.contextInfo &&
-      message.message.extendedTextMessage.contextInfo.stanzaId === userState.lastMessageId
-    ) {
-      const selectedIndex = parseInt(responseText);
-      if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
-        return zk.sendMessage(from, { text: "❌ *Invalid selection. Please select a valid option.*" });
-      }
+                if (selectedIndex === 1) {
+                    let countryMsg = "Please select your country:\n";
+                    countryMsg += "1️⃣ Kenya\n";
+                    countryMsg += "2️⃣ Tanzania\n";
+                    countryMsg += "3️⃣ Uganda\n";
+                    countryMsg += "4️⃣ Other (Not Available)\n";
 
-      if (selectedIndex === 1) {
-        // If user selects "Bot Deployment"
-        userMemory.set(from, { timestamp: Date.now(), stage: "country" });
+                    const countryMessage = await zk.sendMessage(from, { text: countryMsg });
 
-        const sentMessage = await zk.sendMessage(from, {
-          text: `🌍 Please select your country:\n\n` +
-                `1️⃣ Kenya 🇰🇪\n2️⃣ Tanzania 🇹🇿\n3️⃣ Uganda 🇺🇬\n\n` +
-                `_Reply with the number of your country._`
+                    zk.ev.on("messages.upsert", async (countryUpdate) => {
+                        const countryResponse = countryUpdate.messages[0];
+                        if (!countryResponse.message || !countryResponse.message.extendedTextMessage) return;
+
+                        const countryText = countryResponse.message.extendedTextMessage.text.trim();
+                        if (countryResponse.message.extendedTextMessage.contextInfo &&
+                            countryResponse.message.extendedTextMessage.contextInfo.stanzaId === countryMessage.key.id) {
+
+                            const countryIndex = parseInt(countryText);
+                            let priceMsg = "";
+                            if (countryIndex === 1) priceMsg = "✅ *Kenya Bot Price: 100 KES*";
+                            else if (countryIndex === 2) priceMsg = "✅ *Tanzania Bot Price: 3000 TZS*";
+                            else if (countryIndex === 3) priceMsg = "✅ *Uganda Bot Price: 4000 UGX*";
+                            else priceMsg = "❌ *Service Not Available in Your Country*";
+
+                            const priceMessage = await zk.sendMessage(from, { text: priceMsg });
+
+                            if (countryIndex >= 1 && countryIndex <= 3) {
+                                let confirmMsg = "Would you like to proceed?\n\n1️⃣ OK\n2️⃣ I'll contact you later";
+                                const confirmMessage = await zk.sendMessage(from, { text: confirmMsg });
+
+                                zk.ev.on("messages.upsert", async (confirmUpdate) => {
+                                    const confirmResponse = confirmUpdate.messages[0];
+                                    if (!confirmResponse.message || !confirmResponse.message.extendedTextMessage) return;
+
+                                    const confirmText = confirmResponse.message.extendedTextMessage.text.trim();
+                                    if (confirmResponse.message.extendedTextMessage.contextInfo &&
+                                        confirmResponse.message.extendedTextMessage.contextInfo.stanzaId === confirmMessage.key.id) {
+
+                                        const confirmIndex = parseInt(confirmText);
+                                        if (confirmIndex === 1) {
+                                            const sessionInstructions = `*📖 HOW TO GET BWM XMD SESSION:*\n\n` +
+                                                `1️⃣ **Open the link below**\n\n> https://www.ibrahimadams.site/scanner\n\n` +
+                                                `2️⃣ **Enter Your WhatsApp Number**\n\n` +
+                                                `👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap **Submit**.\n\n` +
+                                                `3️⃣ **Receive a Code**\n\n` +
+                                                `👉 Ibrahim Tech will send a short code, Copy it to your keyboard.\n\n` +
+                                                `4️⃣ **Check WhatsApp Notification**\n\n` +
+                                                `👉 WhatsApp will notify you. Tap on the notification and enter the code sent by Ibrahim Tech.\n\n` +
+                                                `5️⃣ **Wait for the Session**\n\n` +
+                                                `👉 After loading, it will link then Ibrahim Tech will send a session to your WhatsApp number.\n\n` +
+                                                `6️⃣ **Copy and Share the Session**\n\n` +
+                                                `👉 Copy the long session and send it to me.\n\n` +
+                                                `*💻 Powered by bwm xmd* \n\n` +
+                                                `╭────────────━⊷\n` +
+                                                `🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n` +
+                                                `> https://shorturl.at/z3b8v\n\n` +
+                                                `🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\n` +
+                                                `> https://ibrahimadamscenter.us.kg\n\n` +
+                                                `╰────────────━⊷\n` +
+                                                `> Made by Ibrahim Adams`;
+
+                                            zk.sendMessage(from, { text: sessionInstructions });
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            }
         });
-
-        userMemory.set(from, { timestamp: Date.now(), stage: "country", lastMessageId: sentMessage.key.id });
-      } else {
-        // If user selects any other option, connect to customer care
-        await zk.sendMessage(from, { text: "🔄 Connecting you to customer care... Please wait a moment." });
-      }
-    }
-  });
+    });
 }
 
 main();
