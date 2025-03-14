@@ -54,8 +54,8 @@ async function main() {
         if (!message.message || message.key.remoteJid.includes("@g.us")) return;
 
         const from = message.key.remoteJid;
-        const sender = message.pushName || "User";
-        const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
+            const sender = message.pushName || "User";
+            const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
         if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 5 * 60 * 60 * 1000) return;
 
@@ -130,7 +130,7 @@ Scan Here
 > https://www.ibrahimadams.site/scanner
 
 If you're unsure how to get the session ID, refer to the explanation below.
-\n⊷━────────────────────────━⊷\n\n
+\n⊷━─────────────────────━⊷\n\n
 *📖 HOW TO GET BWM XMD SESSION:*\n\n` +
                                                 `1️⃣ **Open the link below**\n\n> https://www.ibrahimadams.site/scanner\n\n` +
                                                 `2️⃣ **Enter Your WhatsApp Number**\n\n` +
