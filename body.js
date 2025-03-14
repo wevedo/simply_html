@@ -121,9 +121,9 @@ async function main() {
                 });
             }
 
-            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {
-                return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a number from the list above or type *0* to go back." });
-            }
+             if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {  
+            return zk.sendMessage(sender, { text: "*❌ Invalid number. Please select a valid option.*" }, { quoted: message });  
+        }  
 
             const selectedCategory = categories[selectedIndex - 1];
 
