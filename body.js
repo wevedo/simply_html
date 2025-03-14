@@ -131,18 +131,15 @@ async function main() {
                     lastMessageId: message.key.id
                 };
             } else {
-                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
-                delete userMemory[sender];
-            }
-        } else if (userMemory[sender].waitingForCountry) {
-            const countryResponse = parseInt(responseText);
+                await zk.sendMessage(sender, { text: "⏳ Please wait while we connect you to customer care..." });  
+            delete userMemory[sender]; // Reset memory for future interactions  
+        }  
+    } else if (userMemory[sender].waitingForCountry) {  
+        const countryResponse = parseInt(responseText);  
 
-            if (countryResponse === 0) {
-                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
-                    delete userMemory[sender];
-                    return main();
-                });
-            }
+        if (isNaN(countryResponse) || countryResponse < 1 || countryResponse > 3) {  
+            return zk.sendMessage(sender, { text: "*❌ Invalid number. Please select a valid country.*" }, { quoted: message });  
+        }  
 
             let priceMessage = "";
             if (countryResponse === 1) priceMessage = "🇰🇪 *Kenya*: The bot costs *100 KES*.";
