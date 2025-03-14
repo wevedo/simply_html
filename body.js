@@ -62,44 +62,48 @@ async function main() {
         const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
         const senderName = message.pushName || "User";
 
-        if (messageText === "0") {
-            return await sendMainMenu(zk, sender, senderName);
-        }
-
-        if (userMemory.has(sender)) {
-            await handleUserReply(zk, message, sender, messageText);
+        // Check if user is waiting for a reply
+        if (userMemory[sender] && userMemory[sender].waitingForReply) {
+            handleUserReply(zk, message, sender);
             return;
         }
 
-        await sendMainMenu(zk, sender, senderName);
-    });
+        // Prevent repeated responses within 5 hours
+        if (userMemory[sender] && Date.now() - userMemory[sender].lastReply < 5 * 60 * 60 * 1000) {
+            return;
+        }
 
-    // Send Main Menu
-    async function sendMainMenu(zk, sender, senderName) {
+        // Greet the user and present options
         const categories = [
-            "Bot Deployment",
-            "Bot Development",
-            "Website Development",
-            "Heroku Account",
-            "Heroku Team",
-            "Teaching in Deployments",
-            "Teaching in Bot Deployment"
+            "🤖 1. Bot Deployment",
+            "👨‍💻 2. Bot Development",
+            "🌐 3. Website Development",
+            "💳 4. Heroku Account",
+            "👥 5. Heroku Team",
+            "📚 6. Teaching in Deployments",
+            "🎓 7. Teaching in Bot Deployment"
         ];
 
-        const optionsText = categories.map((item, index) => `${index + 1}. ${item}`).join("\n");
-        const botReply = `👋 Hello *${senderName}*,\n\nPlease select an option:\n${optionsText}\n\n💡 Type *0* to restart the menu.`;
+        const optionsText = categories.join("\n");
+        const botReply = `👋 *Hello ${senderName}*,\n\n📌 Please select an option:\n\n${optionsText}`;
 
-        await zk.sendMessage(sender, { text: botReply });
+        const sentMessage = await zk.sendMessage(sender, { text: botReply });
 
-        userMemory.set(sender, { stage: "mainMenu" });
-    }
+        // Save user state
+        userMemory[sender] = {
+            waitingForReply: true,
+            lastReply: Date.now(),
+            lastMessageId: sentMessage.key.id
+        };
+    });
 
     // Function to handle user reply
-    async function handleUserReply(zk, message, sender, messageText) {
-        let userState = userMemory.get(sender);
+    async function handleUserReply(zk, message, sender) {
+        const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-        if (userState.stage === "mainMenu") {
-            const selectedIndex = parseInt(messageText);
+        if (userMemory[sender].waitingForReply) {
+            const selectedIndex = parseInt(responseText);
+
             const categories = [
                 "Bot Deployment",
                 "Bot Development",
@@ -110,49 +114,74 @@ async function main() {
                 "Teaching in Bot Deployment"
             ];
 
+            if (selectedIndex === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back to the main menu..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
+            }
+
             if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {
-                return zk.sendMessage(sender, { text: "❌ Invalid number. Please select a valid option." });
+                return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a number from the list above or type *0* to go back." });
             }
 
             const selectedCategory = categories[selectedIndex - 1];
 
             if (selectedCategory === "Bot Deployment") {
-                await zk.sendMessage(sender, { text: "🌍 Please select a country from East Africa:\n1. Kenya\n2. Tanzania\n3. Uganda\n\n💡 Type *0* to restart the menu." });
+                await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
 
-                userMemory.set(sender, { stage: "selectCountry" });
+                userMemory[sender] = {
+                    waitingForCountry: true,
+                    lastReply: Date.now(),
+                    lastMessageId: message.key.id
+                };
             } else {
                 await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
-                userMemory.delete(sender);
+                delete userMemory[sender];
             }
-        } else if (userState.stage === "selectCountry") {
-            const countryResponse = parseInt(messageText);
+        } else if (userMemory[sender].waitingForCountry) {
+            const countryResponse = parseInt(responseText);
 
-            if (isNaN(countryResponse) || countryResponse < 1 || countryResponse > 3) {
-                return zk.sendMessage(sender, { text: "❌ Invalid number. Please select a valid country." });
+            if (countryResponse === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
             }
 
             let priceMessage = "";
-            if (countryResponse === 1) priceMessage = "🇰🇪 Kenya: The bot costs 100 KES.";
-            if (countryResponse === 2) priceMessage = "🇹🇿 Tanzania: The bot costs 3000 TZS.";
-            if (countryResponse === 3) priceMessage = "🇺🇬 Uganda: The bot costs 4000 UGX.";
+            if (countryResponse === 1) priceMessage = "🇰🇪 *Kenya*: The bot costs *100 KES*.";
+            if (countryResponse === 2) priceMessage = "🇹🇿 *Tanzania*: The bot costs *3000 TZS*.";
+            if (countryResponse === 3) priceMessage = "🇺🇬 *Uganda*: The bot costs *4000 UGX*.";
 
-            await zk.sendMessage(sender, { text: `${priceMessage}\n\nWould you like to proceed?\n1. OK\n2. I'll contact you later\n\n💡 Type *0* to restart the menu.` });
+            if (!priceMessage) {
+                return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a valid number from the list above or type *0* to go back." });
+            }
 
-            userMemory.set(sender, { stage: "confirmPurchase" });
-        } else if (userState.stage === "confirmPurchase") {
-            const confirmationResponse = parseInt(messageText);
+            await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
 
-            if (isNaN(confirmationResponse) || confirmationResponse < 1 || confirmationResponse > 2) {
-                return zk.sendMessage(sender, { text: "❌ Invalid number. Please select a valid option." });
+            userMemory[sender] = {
+                waitingForConfirmation: true,
+                lastReply: Date.now(),
+                lastMessageId: message.key.id
+            };
+        } else if (userMemory[sender].waitingForConfirmation) {
+            const confirmationResponse = parseInt(responseText);
+
+            if (confirmationResponse === 0) {
+                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
+                    delete userMemory[sender];
+                    return main();
+                });
             }
 
             if (confirmationResponse === 1) {
-                await zk.sendMessage(sender, { text: "⏳ Please wait while we connect you to available customer care..." });
+                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
             } else {
                 await zk.sendMessage(sender, { text: "✅ No problem! You can contact us anytime." });
             }
 
-            userMemory.delete(sender);
+            delete userMemory[sender];
         }
     }
 }
