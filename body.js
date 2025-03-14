@@ -127,8 +127,10 @@ async function main() {
                                         if (confirmIndex === 1) {
                                             const sessionInstructions = `Please scan the session from the link below and send it to us along with your phone number and the settings you need:
 Scan Here
+> https://www.ibrahimadams.site/scanner
 
-If you're unsure how to get the session ID, refer to the explanation below.\n\n
+If you're unsure how to get the session ID, refer to the explanation below.
+\n⊷━────────────────────────━⊷\n\n
 *📖 HOW TO GET BWM XMD SESSION:*\n\n` +
                                                 `1️⃣ **Open the link below**\n\n> https://www.ibrahimadams.site/scanner\n\n` +
                                                 `2️⃣ **Enter Your WhatsApp Number**\n\n` +
@@ -152,7 +154,7 @@ If you're unsure how to get the session ID, refer to the explanation below.\n\n
 
                                             zk.sendMessage(from, { text: sessionInstructions });
                                         } else if (confirmIndex === 2) {
-                                            zk.sendMessage(from, { text: "OK, thanks for contacting us." });
+                                            zk.sendMessage(from, { text: "OK! 😊 Thanks for reaching out to us! 💬✨\n We truly appreciate your time and interest in our services. 🚀💡" });
                                         }
                                     }
                                 });
@@ -172,7 +174,7 @@ If you're unsure how to get the session ID, refer to the explanation below.\n\n
                         if (serviceResponse.message.extendedTextMessage.contextInfo &&
                             serviceResponse.message.extendedTextMessage.contextInfo.stanzaId === serviceMessage.key.id) {
 
-                            zk.sendMessage(from, { text: "Please wait a minute while we connect you to an available customer care representative." });
+                            zk.sendMessage(from, { text: "🌎 Please wait a minute while we connect you to an available customer care representative.✅" });
                         }
                     });
                 }
