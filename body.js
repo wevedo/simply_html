@@ -6,11 +6,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const conf = require("./config");
 const zlib = require("zlib");
-const { adams } = require(__dirname + "/../Ibrahim/adams");
 require("dotenv").config({ path: "./config.env" });
-adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, 
-commandeOptions) => {
-    let { ms, repondre ,prefixe,nomAuteurMessage,mybotpic} = commandeOptions;
 
 const logger = pino({ level: "silent" });
 
@@ -58,14 +54,14 @@ async function main() {
         if (!message.message || message.key.remoteJid.includes("@g.us")) return;
 
         const from = message.key.remoteJid;
-        const sender = message.key.participant || from;
+        const sender = message.pushName || "User";
         const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
         if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 5 * 60 * 60 * 1000) return;
 
         sessionStore.set(sender, Date.now());
 
-        let greeting = `Hello *${nomAuteurMessage}*!\nPlease reply an option with it's number\n\n`;
+        let greeting = `Hello *${sender}*!\nPlease reply an option with it's number\n\n`;
         greeting += "1️⃣ Bot Deployment\n";
         greeting += "2️⃣ Bot Development\n";
         greeting += "3️⃣ Website Development\n";
