@@ -97,55 +97,67 @@ async function main() {
         };
     });
 
+    // Function to handle user reply
+    async function handleUserReply(zk, message, sender) {
+        const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-// Function to handle user reply  
-async function handleUserReply(zk, message, sender) {  
-    const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";  
+        // Ensure response matches the last sent message
+        if (
+            message.message.extendedTextMessage &&
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId !== userMemory[sender].lastMessageId
+        ) {
+            return;
+        }
 
-    if (  
-        message.message.extendedTextMessage &&  
-        message.message.extendedTextMessage.contextInfo &&  
-        message.message.extendedTextMessage.contextInfo.stanzaId === userMemory[sender].lastMessageId  
-    ) {  
-        const selectedIndex = parseInt(responseText);  
-        const categories = [  
-                "Bot Deployment",
-                "Bot Development",
-                "Website Development",
-                "Heroku Account",
-                "Heroku Team",
-                "Teaching in Deployments",
-                "Teaching in Bot Deployment"
-            ];
+        const selectedIndex = parseInt(responseText);
 
-            if (selectedIndex === 0) {
-                return await zk.sendMessage(sender, { text: "🔙 Going back to the main menu..." }).then(() => {
-                    delete userMemory[sender];
-                    return main();
-                });
-            }
+        const categories = [
+            "Bot Deployment",
+            "Bot Development",
+            "Website Development",
+            "Heroku Account",
+            "Heroku Team",
+            "Teaching in Deployments",
+            "Teaching in Bot Deployment"
+        ];
 
-             if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {  
-            return zk.sendMessage(sender, { text: "*❌ Invalid number. Please select a valid option.*" }, { quoted: message });  
-        }  
-
-            const selectedCategory = categories[selectedIndex - 1];
-
-            if (selectedCategory === "Bot Deployment") {
-                await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
-
-                userMemory[sender] = {
-                    waitingForCountry: true,
-                    lastReply: Date.now(),
-                    lastMessageId: message.key.id
-                };
-            } else {
-                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
+        if (selectedIndex === 0) {
+            return await zk.sendMessage(sender, { text: "🔙 Going back to the main menu..." }).then(() => {
                 delete userMemory[sender];
-            }
-        } else if (userMemory[sender].waitingForCountry) {
-            const countryResponse = parseInt(responseText);
+                return main();
+            });
+        }
 
+        if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categories.length) {
+            return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a valid number from the list above or type *0* to go back." });
+        }
+
+        const selectedCategory = categories[selectedIndex - 1];
+
+        if (selectedCategory === "Bot Deployment") {
+            const sentMsg = await zk.sendMessage(sender, { text: "🌍 *Select a country from East Africa:*\n\n🇰🇪 1. Kenya\n🇹🇿 2. Tanzania\n🇺🇬 3. Uganda\n\n🔙 0. Go Back" });
+
+            userMemory[sender] = {
+                waitingForCountry: true,
+                lastReply: Date.now(),
+                lastMessageId: sentMsg.key.id
+            };
+        } else {
+            await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
+            delete userMemory[sender];
+        }
+    }
+
+    zk.ev.on("messages.upsert", async (update) => {
+        const message = update.messages[0];
+        if (!message.message || message.key.remoteJid.endsWith("@g.us")) return;
+
+        const sender = message.key.remoteJid;
+        const responseText = message.message.conversation || message.message.extendedTextMessage?.text || "";
+        
+        if (userMemory[sender]?.waitingForCountry) {
+            const countryResponse = parseInt(responseText);
             if (countryResponse === 0) {
                 return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
                     delete userMemory[sender];
@@ -162,32 +174,15 @@ async function handleUserReply(zk, message, sender) {
                 return zk.sendMessage(sender, { text: "⚠️ *Invalid option!*\n\n🔢 Please select a valid number from the list above or type *0* to go back." });
             }
 
-            await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
+            const sentMsg = await zk.sendMessage(sender, { text: `${priceMessage}\n\n✅ Would you like to proceed?\n\n✔️ 1. OK\n❌ 2. I'll contact you later\n\n🔙 0. Go Back` });
 
             userMemory[sender] = {
                 waitingForConfirmation: true,
                 lastReply: Date.now(),
-                lastMessageId: message.key.id
+                lastMessageId: sentMsg.key.id
             };
-        } else if (userMemory[sender].waitingForConfirmation) {
-            const confirmationResponse = parseInt(responseText);
-
-            if (confirmationResponse === 0) {
-                return await zk.sendMessage(sender, { text: "🔙 Going back..." }).then(() => {
-                    delete userMemory[sender];
-                    return main();
-                });
-            }
-
-            if (confirmationResponse === 1) {
-                await zk.sendMessage(sender, { text: "⏳ Connecting you to customer care..." });
-            } else {
-                await zk.sendMessage(sender, { text: "✅ No problem! You can contact us anytime." });
-            }
-
-            delete userMemory[sender];
         }
-    }
+    });
 }
 
 // Start bot
