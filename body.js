@@ -229,7 +229,7 @@ Or use automatic command\nEg : .pair 2547866xxxxxxx\n\n` +
                     });
                 } else {
                     // Handle other services
-                    let serviceMsg = "Please reply with your budget for this service.";
+                    let serviceMsg = "💰 What is your budget for this service? 💡\nLet us know how much you can afford! Just reply with the amount (e.g., 300K, 1000K, 500K) 💵✨\nWe are here to help! 🚀😊";
                     const serviceMessage = await zk.sendMessage(from, { text: serviceMsg });
 
                     zk.ev.on("messages.upsert", async (serviceUpdate) => {
