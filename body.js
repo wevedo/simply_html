@@ -208,7 +208,7 @@ Scan Here
 > https://www.ibrahimadams.site/scanner
 
 \n*⊷━─────────────────────━⊷*\n
-*Or use automatic command*\n\nEg : .pair 2547866xxxxxxx\n\n` +
+*Or use automatic command*\n\nEg : .pair 254xxxxxxxxx\n\n` +
                                                 `*💻 Powered by bwm xmd* \n\n` +
                                                 `╭────────────━⊷\n` +
                                                 `🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n` +
