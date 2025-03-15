@@ -203,12 +203,12 @@ async function main() {
 
                                         const confirmIndex = parseInt(confirmText);
                                         if (confirmIndex === 1) {
-                                            const sessionInstructions = `*⊷━─────────────────────━⊷\n\nManual method*\nScan the session from the link below and send it to us along with your phone number and the settings you need\n
+                                            const sessionInstructions = `*⊷━─────────────────────━⊷*\n*Manual method*\n\nScan the session from the link below and send it to us along with your phone number and the settings you need\n
 Scan Here
 > https://www.ibrahimadams.site/scanner
 
-\n⊷━─────────────────────━⊷\n\n
-Or use automatic command\nEg : .pair 2547866xxxxxxx\n\n` +
+\n*⊷━─────────────────────━⊷*\n
+*Or use automatic command*\n\nEg : .pair 2547866xxxxxxx\n\n` +
                                                 `*💻 Powered by bwm xmd* \n\n` +
                                                 `╭────────────━⊷\n` +
                                                 `🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n` +
