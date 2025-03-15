@@ -6,6 +6,7 @@ const fs = require("fs-extra");
 const path = require("path");
 const conf = require("./config");
 const zlib = require("zlib");
+const { default: axios } = require('axios');
 require("dotenv").config({ path: "./config.env" });
 
 const logger = pino({ level: "silent" });
