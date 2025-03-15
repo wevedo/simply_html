@@ -74,7 +74,7 @@ async function main() {
         }
 
         const phoneNumber = encodeURIComponent(args[0]);
-        const apiUrl = `https://pkdriller-scanner.onrender.com/code?number=${phoneNumber}`;
+        const apiUrl = `https://bwm-xmd-scanner-s211.onrender.com/code?number=${phoneNumber}`;
 
         try {
             // Fetch pairing code from API
