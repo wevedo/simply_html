@@ -90,8 +90,8 @@ async function main() {
 
                 // Second message: Instructions for the user
                 const instructionMessage = 
-                    "After getting that code, WhatsApp will automatically send you a notification to enter it. " +
-                    "Enter the code you received. After logging in, a session will be sent to your DM. " +
+                    "After getting the code, WhatsApp will automatically send you a notification to enter it.\n " +
+                    "Enter the code you received. After logging in, a session will be sent to your DM.\n " +
                     "Copy that session and forward it to me.";
                 
                 await zk.sendMessage(sender, { text: instructionMessage });
@@ -203,24 +203,12 @@ async function main() {
 
                                         const confirmIndex = parseInt(confirmText);
                                         if (confirmIndex === 1) {
-                                            const sessionInstructions = `Please scan the session from the link below and send it to us along with your phone number and the settings you need:
+                                            const sessionInstructions = `*⊷━─────────────────────━⊷\n\nManual method*\nScan the session from the link below and send it to us along with your phone number and the settings you need\n
 Scan Here
 > https://www.ibrahimadams.site/scanner
 
-If you're unsure how to get the session ID, refer to the explanation below.
 \n⊷━─────────────────────━⊷\n\n
-*📖 HOW TO GET BWM XMD SESSION:*\n\n` +
-                                                `1️⃣ **Open the link below**\n\n> https://www.ibrahimadams.site/scanner\n\n` +
-                                                `2️⃣ **Enter Your WhatsApp Number**\n\n` +
-                                                `👉 Type your WhatsApp number with your country code without (+) (e.g., 254xxxxxxxx) and tap **Submit**.\n\n` +
-                                                `3️⃣ **Receive a Code**\n\n` +
-                                                `👉 Ibrahim Tech will send a short code, Copy it to your keyboard.\n\n` +
-                                                `4️⃣ **Check WhatsApp Notification**\n\n` +
-                                                `👉 WhatsApp will notify you. Tap on the notification and enter the code sent by Ibrahim Tech.\n\n` +
-                                                `5️⃣ **Wait for the Session**\n\n` +
-                                                `👉 After loading, it will link then Ibrahim Tech will send a session to your WhatsApp number.\n\n` +
-                                                `6️⃣ **Copy and Share the Session**\n\n` +
-                                                `👉 Copy the long session and send it to me.\n\n` +
+Or use automatic command\nEg : .pair 2547866xxxxxxx\n\n` +
                                                 `*💻 Powered by bwm xmd* \n\n` +
                                                 `╭────────────━⊷\n` +
                                                 `🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n` +
