@@ -49,6 +49,61 @@ async function main() {
 
     console.log("✅ Bwm XMD is now connected to WhatsApp!");
 
+    zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+
+    if (!ms.message) return;
+
+    const messageContent = ms.message.conversation || ms.message.extendedTextMessage?.text || '';
+    const sender = ms.key.remoteJid;
+
+    // Ensure the command is used in DM (not in groups)
+    if (sender.endsWith("@g.us")) return;
+
+    // Extract the prefix and command
+    const prefixUsed = messageContent.charAt(0);
+    const args = messageContent.slice(1).split(" ");
+    const command = args.shift()?.toLowerCase();
+
+    if (command === "pair") {
+        // Ensure a phone number is provided
+        if (args.length === 0 || isNaN(args[0])) {
+            await zk.sendMessage(sender, { text: "Example Usage: .pair 254xxxxxxxx." });
+            return;
+        }
+
+        const phoneNumber = encodeURIComponent(args[0]);
+        const apiUrl = `https://pkdriller-scanner.onrender.com/code?number=${phoneNumber}`;
+
+        try {
+            // Fetch pairing code from API
+            const response = await axios.get(apiUrl);
+            const result = response.data;
+
+            if (result && result.code) {
+                const pairingCode = result.code;
+
+                // First message: Send the pairing code
+                await zk.sendMessage(sender, { text: pairingCode });
+
+                // Second message: Instructions for the user
+                const instructionMessage = 
+                    "After getting that code, WhatsApp will automatically send you a notification to enter it. " +
+                    "Enter the code you received. After logging in, a session will be sent to your DM. " +
+                    "Copy that session and forward it to me.";
+                
+                await zk.sendMessage(sender, { text: instructionMessage });
+            } else {
+                throw new Error("Invalid response from API.");
+            }
+        } catch (error) {
+            console.error("Error fetching API response:", error.message);
+            await zk.sendMessage(sender, { text: "Error retrieving pairing code. Please try again later." });
+        }
+    }
+});
+
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
 
