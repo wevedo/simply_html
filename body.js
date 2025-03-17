@@ -12,7 +12,6 @@ require("dotenv").config({ path: "./config.env" });
 const logger = pino({ level: "silent" });
 
 const sessionStore = new Map();
-const messageQueue = new Map();
 
 async function authentification() {
     try {
@@ -63,18 +62,18 @@ async function main() {
         const sender = message.pushName;
         const messageText = message.message.conversation || message.message.extendedTextMessage?.text || "";
 
-        if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 24 * 60 * 60 * 1000) return;
+        if (sessionStore.has(sender) && Date.now() - sessionStore.get(sender) < 5 * 60 * 60 * 1000) return;
 
         sessionStore.set(sender, Date.now());
 
-        let greeting = `Hello *${sender}*\n\n*PRIVATE BUSINESS BOT*\n\n`;
+        let greeting = `Hello *${sender}*\n\n*PRIVATE BUSINESS BOT*\n\nPlease reply this box with a number between 1 t0 7`;
         greeting += "1️⃣ Bot Deployment\n";
         greeting += "2️⃣ Bot Development\n";
         greeting += "3️⃣ Website Development\n";
         greeting += "4️⃣ Heroku Account\n";
         greeting += "5️⃣ Heroku Team\n";
         greeting += "6️⃣ Teaching in Deployments\n";
-        greeting += "7️⃣ Teaching in Bot Deployment\n\n*Please reply an option with it's number*\n\n*Made by Sir Ibrahim Adams*";
+        greeting += "7️⃣ Teaching in Bot Deployment\n\n*Made by Sir Ibrahim Adams*";
 
         // Send the image with the greeting as the caption
         const imageUrl = "https://files.catbox.moe/xfb4kl.jpg";
@@ -84,9 +83,7 @@ async function main() {
             mimetype: "image/jpeg",
         });
 
-        messageQueue.set(sentMessage.key.id, { from, sender, step: "initial" });
-
-        zk.ev.on("messages.upsert", async (responseUpdate) => {
+        const responseHandler = async (responseUpdate) => {
             const response = responseUpdate.messages[0];
 
             // Skip if the response is from the bot itself
@@ -95,71 +92,116 @@ async function main() {
             if (!response.message || !response.message.extendedTextMessage) return;
 
             const responseText = response.message.extendedTextMessage.text.trim();
-            const contextInfo = response.message.extendedTextMessage.contextInfo;
-            if (contextInfo && messageQueue.has(contextInfo.stanzaId)) {
-                const { from, sender, step } = messageQueue.get(contextInfo.stanzaId);
+            if (response.message.extendedTextMessage.contextInfo &&
+                response.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id) {
 
-                if (step === "initial") {
-                    const selectedIndex = parseInt(responseText);
-                    if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
-                        return zk.sendMessage(from, { text: "❌ Invalid option. Please select a valid number." });
-                    }
+                const selectedIndex = parseInt(responseText);
+                if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > 7) {
+                    return zk.sendMessage(from, { text: "❌ Invalid option. Please select a valid number." });
+                }
 
-                    if (selectedIndex === 1) {
-                        let countryMsg = "Please select your country:\n";
-                        countryMsg += "1️⃣ Kenya\n";
-                        countryMsg += "2️⃣ Tanzania\n";
-                        countryMsg += "3️⃣ Uganda\n";
-                        countryMsg += "4️⃣ Other (Not Available)\n";
+                if (selectedIndex === 1) {
+                    let countryMsg = "Please select your country:\n";
+                    countryMsg += "1️⃣ Kenya\n";
+                    countryMsg += "2️⃣ Tanzania\n";
+                    countryMsg += "3️⃣ Uganda\n";
+                    countryMsg += "4️⃣ Other (Not Available)\n";
 
-                        const countryMessage = await zk.sendMessage(from, { text: countryMsg });
-                        messageQueue.set(countryMessage.key.id, { from, sender, step: "country" });
-                    } else {
-                        let serviceMsg = "💰 What is your budget for this service? 💡\nLet us know how much you can afford! Just reply with the amount\nWe are here to help! 🚀😊";
-                        const serviceMessage = await zk.sendMessage(from, { text: serviceMsg });
-                        messageQueue.set(serviceMessage.key.id, { from, sender, step: "service" });
-                    }
-                } else if (step === "country") {
-                    const countryIndex = parseInt(responseText);
-                    let priceMsg = "";
-                    if (countryIndex === 1) priceMsg = "✅ *Kenya Bot Price: 100 KES*";
-                    else if (countryIndex === 2) priceMsg = "✅ *Tanzania Bot Price: 3000 TZS*";
-                    else if (countryIndex === 3) priceMsg = "✅ *Uganda Bot Price: 4000 UGX*";
-                    else priceMsg = "❌ *Service Not Available in Your Country*";
+                    const countryMessage = await zk.sendMessage(from, { text: countryMsg });
 
-                    const priceMessage = await zk.sendMessage(from, { text: priceMsg });
+                    const countryHandler = async (countryUpdate) => {
+                        const countryResponse = countryUpdate.messages[0];
 
-                    if (countryIndex >= 1 && countryIndex <= 3) {
-                        let confirmMsg = "Would you like to proceed?\n\n1️⃣ OK\n2️⃣ I'll contact you later";
-                        const confirmMessage = await zk.sendMessage(from, { text: confirmMsg });
-                        messageQueue.set(confirmMessage.key.id, { from, sender, step: "confirm" });
-                    }
-                } else if (step === "confirm") {
-                    const confirmIndex = parseInt(responseText);
-                    if (confirmIndex === 1) {
-                        const sessionInstructions = `*⊷━─────────────────────━⊷*\n*Manual method*\n\nScan the session from the link below and send it to us along with your phone number and the settings you need\n
+                        // Skip if the response is from the bot itself
+                        if (countryResponse.key.fromMe) return;
+
+                        if (!countryResponse.message || !countryResponse.message.extendedTextMessage) return;
+
+                        const countryText = countryResponse.message.extendedTextMessage.text.trim();
+                        if (countryResponse.message.extendedTextMessage.contextInfo &&
+                            countryResponse.message.extendedTextMessage.contextInfo.stanzaId === countryMessage.key.id) {
+
+                            const countryIndex = parseInt(countryText);
+                            let priceMsg = "";
+                            if (countryIndex === 1) priceMsg = "✅ *Kenya Bot Price: 100 KES*";
+                            else if (countryIndex === 2) priceMsg = "✅ *Tanzania Bot Price: 3000 TZS*";
+                            else if (countryIndex === 3) priceMsg = "✅ *Uganda Bot Price: 4000 UGX*";
+                            else priceMsg = "❌ *Service Not Available in Your Country*";
+
+                            const priceMessage = await zk.sendMessage(from, { text: priceMsg });
+
+                            if (countryIndex >= 1 && countryIndex <= 3) {
+                                let confirmMsg = "Would you like to proceed?\n\n1️⃣ OK\n2️⃣ I'll contact you later";
+                                const confirmMessage = await zk.sendMessage(from, { text: confirmMsg });
+
+                                const confirmHandler = async (confirmUpdate) => {
+                                    const confirmResponse = confirmUpdate.messages[0];
+
+                                    // Skip if the response is from the bot itself
+                                    if (confirmResponse.key.fromMe) return;
+
+                                    if (!confirmResponse.message || !confirmResponse.message.extendedTextMessage) return;
+
+                                    const confirmText = confirmResponse.message.extendedTextMessage.text.trim();
+                                    if (confirmResponse.message.extendedTextMessage.contextInfo &&
+                                        confirmResponse.message.extendedTextMessage.contextInfo.stanzaId === confirmMessage.key.id) {
+
+                                        const confirmIndex = parseInt(confirmText);
+                                        if (confirmIndex === 1) {
+                                            const sessionInstructions = `*⊷━─────────────────────━⊷*\n*Manual method*\n\nScan the session from the link below and send it to us along with your phone number and the settings you need\n
 Scan Here
 > https://www.ibrahimadams.site/scanner
 
 \n*⊷━─────────────────────━⊷*\n*Or use automatic command*\n\nEg : .pair 254xxxxxxxxx\n\n*⊷━─────────────────────━⊷*\n\n` +
-                            `*💻 Powered by bwm xmd* \n\n` +
-                            `╭────────────━⊷\n` +
-                            `🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n` +
-                            `> https://shorturl.at/z3b8v\n\n` +
-                            `🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\n` +
-                            `> https://ibrahimadamscenter.us.kg\n\n` +
-                            `╰────────────━⊷\n` +
-                            `> Made by Ibrahim Adams`;
+                                                `*💻 Powered by bwm xmd* \n\n` +
+                                                `╭────────────━⊷\n` +
+                                                `🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\n` +
+                                                `> https://shorturl.at/z3b8v\n\n` +
+                                                `🌐 ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ, ᴠɪsɪᴛ\n` +
+                                                `> https://ibrahimadamscenter.us.kg\n\n` +
+                                                `╰────────────━⊷\n` +
+                                                `> Made by Ibrahim Adams`;
 
-                        zk.sendMessage(from, { text: sessionInstructions });
-                    } else if (confirmIndex === 2) {
-                        zk.sendMessage(from, { text: "OK! 😊 Thanks for reaching out to us! 💬✨\n We truly appreciate your time and interest in our services. 🚀💡" });
-                    }
-                } else if (step === "service") {
-                    zk.sendMessage(from, { text: "🌎 Please wait a minute while we connect you to an available customer care representative.✅" });
+                                            zk.sendMessage(from, { text: sessionInstructions });
+                                        } else if (confirmIndex === 2) {
+                                            zk.sendMessage(from, { text: "OK! 😊 Thanks for reaching out to us! 💬✨\n We truly appreciate your time and interest in our services. 🚀💡" });
+                                        }
+                                    }
+                                };
+
+                                zk.ev.on("messages.upsert", confirmHandler);
+                            }
+                        }
+                    };
+
+                    zk.ev.on("messages.upsert", countryHandler);
+                } else {
+                    // Handle other services
+                    let serviceMsg = "💰 What is your budget for this service? 💡\nLet us know how much you can afford! Just reply with the amount in numbers 💵✨\nWe are here to help! 🚀😊";
+                    const serviceMessage = await zk.sendMessage(from, { text: serviceMsg });
+
+                    const serviceHandler = async (serviceUpdate) => {
+                        const serviceResponse = serviceUpdate.messages[0];
+
+                        // Skip if the response is from the bot itself
+                        if (serviceResponse.key.fromMe) return;
+
+                        if (!serviceResponse.message || !serviceResponse.message.extendedTextMessage) return;
+
+                        const serviceText = serviceResponse.message.extendedTextMessage.text.trim();
+                        if (serviceResponse.message.extendedTextMessage.contextInfo &&
+                            serviceResponse.message.extendedTextMessage.contextInfo.stanzaId === serviceMessage.key.id) {
+
+                            zk.sendMessage(from, { text: "🌎 Please wait a minute while we connect you to an available customer care representative.✅" });
+                        }
+                    };
+
+                    zk.ev.on("messages.upsert", serviceHandler);
                 }
             }
-        });
+        };
+
+        zk.ev.on("messages.upsert", responseHandler);
     });
 }
 
