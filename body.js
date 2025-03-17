@@ -66,7 +66,7 @@ async function main() {
 
         sessionStore.set(sender, Date.now());
 
-        let greeting = `Hello *${sender}*\n\n*PRIVATE BUSINESS BOT*\n\n*Please reply this box with a number between 1 t0 7*\n\n`;
+        let greeting = `Hello *${sender}*\n\n*PRIVATE BUSINESS BOT*\n\n*Please reply this box with a number between 1 to 7*\n\n`;
         greeting += "1️⃣ Bot Deployment\n";
         greeting += "2️⃣ Bot Development\n";
         greeting += "3️⃣ Website Development\n";
