@@ -115,7 +115,7 @@ async function main() {
                         const countryMessage = await zk.sendMessage(from, { text: countryMsg });
                         messageQueue.set(countryMessage.key.id, { from, sender, step: "country" });
                     } else {
-                        let serviceMsg = "💰 What is your budget for this service? 💡\nLet us know how much you can afford! Just reply with the amount (e.g., 300K, 1000K, 500K) 💵✨\nWe are here to help! 🚀😊";
+                        let serviceMsg = "💰 What is your budget for this service? 💡\nLet us know how much you can afford! Just reply with the amount\nWe are here to help! 🚀😊";
                         const serviceMessage = await zk.sendMessage(from, { text: serviceMsg });
                         messageQueue.set(serviceMessage.key.id, { from, sender, step: "service" });
                     }
