@@ -62,7 +62,7 @@ adams(
       );  
   
       // Fetch result from the new API  
-      const apiUrl = `https://apis.davidcyriltech.my.id/download/ytmp3?url=${encodeURIComponent(videoUrl)}`;  
+      const apiUrl = `https://apis.davidcyriltech.my.id/youtube/ytmp3?url=${encodeURIComponent(videoUrl)}`;  
       const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);  
   
       if (!response || !response.success || !response.result.download_url) {  
@@ -177,7 +177,7 @@ adams(
       );  
   
       // Fetch result from the API  
-      const apiUrl = `https://apis.davidcyriltech.my.id/download/ytmp4?url=${encodeURIComponent(videoUrl)}`;  
+      const apiUrl = `https://apis.davidcyriltech.my.id/youtube/ytmp4?url=${encodeURIComponent(videoUrl)}`;  
       const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);  
   
       if (!response || !response.success || !response.result.download_url) {  
