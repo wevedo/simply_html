@@ -1,4 +1,4 @@
-"use strict";
+/*"use strict";
 
 const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, makeInMemoryStore } = require("@whiskeysockets/baileys");
 const pino = require("pino");
@@ -206,3 +206,4 @@ Scan Here
 }
 
 main();
+*/
