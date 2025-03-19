@@ -1,5 +1,5 @@
 const { adams } = require("../Ibrahim/adams");
-const play = require("play-dl"); // Add play-dl
+const axios = require("axios");
 const fs = require("fs");
 const ytSearch = require("yt-search");
 const path = require("path");
@@ -61,12 +61,22 @@ adams(
         { quoted: ms }
       );
 
-      // Fetch audio stream using play-dl
-      const stream = await play.stream(videoUrl, { quality: 2 }); // Quality: 0 = lowest, 2 = highest
+      // Fetch result from the new API
+      const apiUrl = `https://api.dreaded.site/api/ytdl/audio?url=${encodeURIComponent(videoUrl)}`;
+      const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
+
+      if (!response || !response.url) {
+        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
+        return;
+      }
+
+      const downloadUrl = response.url;
       const tempFile = path.join(__dirname, "audio.mp3");
 
+      // Download the audio
       const writer = fs.createWriteStream(tempFile);
-      stream.stream.pipe(writer);
+      const audioStream = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
+      audioStream.data.pipe(writer);
 
       await new Promise((resolve, reject) => {
         writer.on("finish", resolve);
@@ -76,7 +86,7 @@ adams(
       // Delete the processing message before sending audio
       await zk.sendMessage(dest, { delete: processingMsg.key });
 
-      // Send the audio file
+      // Send the audio file immediately
       await zk.sendMessage(
         dest,
         {
