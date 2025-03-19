@@ -38,14 +38,13 @@ adams(
       await zk.sendMessage(
         dest,
         {
-          text: `╭──❍ *BWM XMD 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍* ❍──╮\n` +
+          text: `╭──❍ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍* ❍──╮\n` +
                 `📌 *Title:* ${videoTitle}\n` +
                 `🎭 *Channel:* ${videoChannel}\n` +
-                `⏳ *Duration:* ${videoDuration}\n` +
-                `\n⚡ _Processing your audio..._`,
+                `⏳ *Duration:* ${videoDuration}\n`,
           contextInfo: {
             externalAdReply: {
-              title: "BWM XMD 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍",
+              title: "𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍",
               body: "𝙁𝙖𝙨𝙩 𝙖𝙣𝙙 𝙎𝙢𝙤𝙤𝙩𝙝 🔥",
               mediaType: 1,
               thumbnailUrl: videoThumbnail,
@@ -61,7 +60,7 @@ adams(
       // ⏳ Sending a temporary processing message
       const processingMsg = await zk.sendMessage(
         dest,
-        { text: "🔄 *Converting your song...*" },
+        { text: "🔄 *_Processing your audio..._*" },
         { quoted: ms }
       );
 
