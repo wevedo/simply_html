@@ -15,16 +15,16 @@ adams(
     const { arg, ms, repondre } = commandOptions;
 
     if (!arg[0]) {
-      return repondre("🎤 *Please provide a song name!*\nExample: .play Alan Walker - Faded");
+      return repondre("❌ *Provide a song name!*");
     }
 
     const query = arg.join(" ");
 
     try {
-      // Step 1: Search for the song on YouTube
+      // 🎵 Searching for the song...
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
-        return repondre("🔍 *No video found for your query!*\nTry a different song name.");
+        return repondre("🚫 *No song found!*");
       }
 
       const firstVideo = searchResults.videos[0];
@@ -34,18 +34,22 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // Step 2: Send a fast, visually appealing response with YouTube search results
-      const searchResponse = await zk.sendMessage(
+      // ✅ Sending song details instantly!
+      await zk.sendMessage(
         dest,
         {
-          text: `🎧 *Now Playing:* ${videoTitle}\n🎤 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\n📥 *Downloading your audio... Please wait!*`,
+          text: `╭──❍ *BWM XMD 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍* ❍──╮\n` +
+                `📌 *Title:* ${videoTitle}\n` +
+                `🎭 *Channel:* ${videoChannel}\n` +
+                `⏳ *Duration:* ${videoDuration}\n` +
+                `\n⚡ _Processing your audio..._`,
           contextInfo: {
             externalAdReply: {
-              title: "🎶 BWM XMD Music Bot",
-              body: "Powered by GiftedTech API",
+              title: "BWM XMD 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍",
+              body: "𝙁𝙖𝙨𝙩 𝙖𝙣𝙙 𝙎𝙢𝙤𝙤𝙩𝙝 🔥",
               mediaType: 1,
               thumbnailUrl: videoThumbnail,
-              sourceUrl: videoUrl,
+              sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
               renderLargerThumbnail: true,
               showAdAttribution: true,
             },
@@ -54,28 +58,26 @@ adams(
         { quoted: ms }
       );
 
-      // Step 3: Inform user that processing is in progress with a creative message
+      // ⏳ Sending a temporary processing message
       const processingMsg = await zk.sendMessage(
         dest,
-        {
-          text: "⏳ *Processing your request...*\n\n✨ *Did you know?*\nMusic is the only art form that can instantly change your mood! 🎶\n\nHold tight while we prepare your audio...",
-        },
+        { text: "🔄 *Converting your song...*" },
         { quoted: ms }
       );
 
-      // Step 4: Fetch audio from the new API
+      // 🎧 Fetching audio using API
       const apiUrl = `https://apis.giftedtech.web.id/api/download/dlmp3?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
-      const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
+      const response = await axios.get(apiUrl).then(res => res.data).catch(() => null);
 
       if (!response || !response.success || !response.result || !response.result.download_url) {
-        await zk.sendMessage(dest, { text: "❌ *Failed to download!*\nPlease try again later or use a different song.", edit: processingMsg.key });
+        await zk.sendMessage(dest, { text: "❌ *Failed to fetch audio!*", edit: processingMsg.key });
         return;
       }
 
       const downloadUrl = response.result.download_url;
       const tempFile = path.join(__dirname, "audio.mp3");
 
-      // Step 5: Download the audio
+      // 🔽 Downloading the audio file
       const writer = fs.createWriteStream(tempFile);
       const audioStream = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
       audioStream.data.pipe(writer);
@@ -85,11 +87,10 @@ adams(
         writer.on("error", reject);
       });
 
-      // Step 6: Auto-delete the search and processing messages
-      await zk.sendMessage(dest, { delete: searchResponse.key });
+      // 🚀 Deleting processing message before sending audio
       await zk.sendMessage(dest, { delete: processingMsg.key });
 
-      // Step 7: Send the audio file with a creative message
+      // 🎶 Sending audio with a stylish format
       await zk.sendMessage(
         dest,
         {
@@ -97,10 +98,10 @@ adams(
           mimetype: "audio/mp4",
           contextInfo: {
             externalAdReply: {
-              title: "🎶 Your Audio is Ready!",
-              body: `📌 *Title:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n\nEnjoy your music! 🎧`,
+              title: "🎵 " + videoTitle,
+              body: `📀 *Duration:* ${videoDuration}`,
               mediaType: 1,
-              sourceUrl: videoUrl,
+              sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
               thumbnailUrl: videoThumbnail,
               renderLargerThumbnail: true,
               showAdAttribution: true,
@@ -110,20 +111,11 @@ adams(
         { quoted: ms }
       );
 
-      // Step 8: Send a creative follow-up message
-      await zk.sendMessage(
-        dest,
-        {
-          text: "🎉 *Your audio is ready!*\n\n🌟 *Here's a fun fact:*\nThe world's longest concert lasted over 639 hours! 🎹\n\nEnjoy your music and stay tuned for more updates! 🚀",
-        },
-        { quoted: ms }
-      );
-
-      // Step 9: Delete the temporary file
+      // 🗑️ Deleting temp file after sending
       fs.unlinkSync(tempFile);
     } catch (error) {
       console.error("Error during download process:", error.message);
-      return repondre(`❌ *Oops! Something went wrong.*\nError: ${error.message || "Please try again later."}`);
+      return repondre(`❌ *Error:* ${error.message || error}`);
     }
   }
 );
