@@ -38,7 +38,7 @@ adams(
       await zk.sendMessage(
         dest,
         {
-          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
+          text: `♻️ 𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑 ♻️\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\nᴛᴀᴘ �ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ �ᴏᴜʀ ᴄʜᴀɴɴᴇʟ https://shorturl.at/z3b8v\n\n®2025 ʙᴡᴍ xᴍᴅ 🔥`,
           contextInfo: {
             externalAdReply: {
               title: "©Sir Ibrahim Adams",
@@ -62,15 +62,15 @@ adams(
       );
 
       // Fetch result from the new API
-      const apiUrl = `https://api.dreaded.site/api/ytdl/audio?url=${encodeURIComponent(videoUrl)}`;
+      const apiUrl = `https://apis.giftedtech.web.id/api/download/dlmp3?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
       const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
 
-      if (!response || !response.url) {
+      if (!response || !response.success || !response.result) {
         await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
       }
 
-      const downloadUrl = response.url;
+      const downloadUrl = response.result.url; // Adjust based on the API response structure
       const tempFile = path.join(__dirname, "audio.mp3");
 
       // Download the audio
