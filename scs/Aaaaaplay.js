@@ -21,7 +21,7 @@ adams(
     const query = arg.join(" ");
 
     try {
-      // 🔎 Fast YouTube Search Response  
+      // 🔎 Fast YouTube Search Response
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
         return repondre("No video found for the specified query.");
@@ -62,35 +62,37 @@ adams(
 
       // 🎶 Fetch audio from new API
       const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
-      const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
+      const apiResponse = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
 
-      if (!response || !response.success || !response.result || !response.result.download_url) {
+      if (!apiResponse || !apiResponse.success || !apiResponse.result || !apiResponse.result.download_url) {
         await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
       }
 
-      const downloadUrl = response.result.download_url;
+      const downloadUrl = apiResponse.result.download_url;
+      const songTitle = apiResponse.result.title;
+      const songThumbnail = apiResponse.result.thumbnail;
       const tempFile = path.join(__dirname, "audio.mp3");
 
       // 🎧 Download the audio file
-      const writer = fs.createWriteStream(tempFile);
-      const audioStream = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
-      audioStream.data.pipe(writer);
-
-      await new Promise((resolve, reject) => {
-        writer.on("finish", resolve);
-        writer.on("error", reject);
+      const audioStream = await axios({
+        url: downloadUrl,
+        method: "GET",
+        responseType: "arraybuffer",
       });
+
+      fs.writeFileSync(tempFile, audioStream.data);
 
       // 🔥 Auto-delete processing message
       await zk.sendMessage(dest, { delete: processingMsg.key });
 
-      // 🎵 Send the audio file immediately with new contextInfo
+      // 🎵 Send the audio file with full thumbnail
       await zk.sendMessage(
         dest,
         {
           audio: fs.readFileSync(tempFile),
           mimetype: "audio/mp4",
+          ptt: false,
           contextInfo: {
             mentionedJid: [ms.sender],
             forwardingScore: 999,
@@ -99,6 +101,15 @@ adams(
               newsletterJid: "120363240433535944@newsletter",
               newsletterName: "BWM-XMD ",
               serverMessageId: 143,
+            },
+            externalAdReply: {
+              title: songTitle,
+              body: `🎶 ${songTitle} | Duration: ${videoDuration}`,
+              mediaType: 1,
+              thumbnailUrl: songThumbnail,
+              sourceUrl: videoUrl,
+              renderLargerThumbnail: true,
+              showAdAttribution: true,
             },
           },
         },
