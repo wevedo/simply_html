@@ -64,12 +64,14 @@ adams(
       const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
       const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
 
+      // Validate API response
       if (!response || !response.success || !response.result || !response.result.download_url) {
-        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
+        await zk.sendMessage(dest, { text: "❌ Failed to fetch download URL. Try again later.", edit: processingMsg.key });
         return;
       }
 
       const downloadUrl = response.result.download_url; // Extract the download URL
+      console.log("Download URL:", downloadUrl); // Debugging log
 
       // Create a unique filename for the audio
       const tempFile = path.join(__dirname, `audio_${Date.now()}.mp3`);
