@@ -64,6 +64,7 @@ adams(
       const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
       const apiResponse = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
 
+      // ✅ Validate API Response
       if (!apiResponse || !apiResponse.success || !apiResponse.result || !apiResponse.result.download_url) {
         await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
@@ -72,16 +73,27 @@ adams(
       const downloadUrl = apiResponse.result.download_url;
       const songTitle = apiResponse.result.title;
       const songThumbnail = apiResponse.result.thumbnail;
-      const tempFile = path.join(__dirname, "audio.mp3");
+
+      if (!downloadUrl) {
+        await zk.sendMessage(dest, { text: "❌ Download URL is missing.", edit: processingMsg.key });
+        return;
+      }
 
       // 🎧 Download the audio file
       const audioStream = await axios({
         url: downloadUrl,
         method: "GET",
         responseType: "arraybuffer",
-      });
+      }).then((res) => res.data).catch(() => null);
 
-      fs.writeFileSync(tempFile, audioStream.data);
+      if (!audioStream) {
+        await zk.sendMessage(dest, { text: "❌ Error fetching the audio file.", edit: processingMsg.key });
+        return;
+      }
+
+      // ✅ Write the audio file
+      const tempFile = path.join(__dirname, "audio.mp3");
+      fs.writeFileSync(tempFile, Buffer.from(audioStream));
 
       // 🔥 Auto-delete processing message
       await zk.sendMessage(dest, { delete: processingMsg.key });
