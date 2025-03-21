@@ -70,7 +70,9 @@ adams(
       }
 
       const downloadUrl = response.result.download_url; // Extract the download URL
-      const tempFile = path.join(__dirname, "audio.mp3");
+
+      // Create a unique filename for the audio
+      const tempFile = path.join(__dirname, `audio_${Date.now()}.mp3`);
 
       // Download the audio
       const writer = fs.createWriteStream(tempFile);
@@ -81,6 +83,11 @@ adams(
         writer.on("finish", resolve);
         writer.on("error", reject);
       });
+
+      // Check if the file exists and is valid
+      if (!fs.existsSync(tempFile)) {
+        throw new Error("Failed to create audio file.");
+      }
 
       // Delete the processing message before sending audio
       await zk.sendMessage(dest, { delete: processingMsg.key });
