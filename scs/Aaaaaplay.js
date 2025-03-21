@@ -15,16 +15,16 @@ adams(
     const { arg, ms, repondre } = commandOptions;
 
     if (!arg[0]) {
-      return repondre("❌ *Provide a song name!*");
+      return repondre("Please provide a song name.");
     }
 
     const query = arg.join(" ");
 
     try {
-      // 🎵 Searching for the song...
+      // 🔎 Fast YouTube Search Response  
       const searchResults = await ytSearch(query);
       if (!searchResults.videos.length) {
-        return repondre("🚫 *No song found!*");
+        return repondre("No video found for the specified query.");
       }
 
       const firstVideo = searchResults.videos[0];
@@ -34,49 +34,45 @@ adams(
       const videoThumbnail = firstVideo.thumbnail;
       const videoChannel = firstVideo.author.name;
 
-      // ✅ Sending song details instantly!
+      // 🏆 Stylish BWM XMD DOWNLOADER Response
       await zk.sendMessage(
         dest,
         {
-          text: `╭──❍ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍* ❍──╮\n` +
-                `📌 *Title:* ${videoTitle}\n` +
-                `🎭 *Channel:* ${videoChannel}\n` +
-                `⏳ *Duration:* ${videoDuration}\n`,
+          text: `♻️ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍* ♻️\n\n📌 *Title:* 𝗘𝗡𝗝𝗢𝗬 ${videoTitle.toUpperCase()}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\n🔥 *Fastest Bot by Sir Ibrahim Adams*`,
           contextInfo: {
-            externalAdReply: {
-              title: "𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍",
-              body: "𝙁𝙖𝙨𝙩 𝙖𝙣𝙙 𝙎𝙢𝙤𝙤𝙩𝙝 🔥",
-              mediaType: 1,
-              thumbnailUrl: videoThumbnail,
-              sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-              renderLargerThumbnail: true,
-              showAdAttribution: true,
+            mentionedJid: [ms.sender],
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: "120363240433535944@newsletter",
+              newsletterName: "BWM-XMD ",
+              serverMessageId: 143,
             },
           },
         },
         { quoted: ms }
       );
 
-      // ⏳ Sending a temporary processing message
+      // ⏳ Processing Message
       const processingMsg = await zk.sendMessage(
         dest,
-        { text: "🔄 *_Processing your audio..._*" },
+        { text: "⏳ *Processing your audio...*" },
         { quoted: ms }
       );
 
-      // 🎧 Fetching audio using API
-      const apiUrl = `https://apis.giftedtech.web.id/api/download/dlmp3?apikey=gifted&url=${encodeURIComponent(videoUrl)}`;
-      const response = await axios.get(apiUrl).then(res => res.data).catch(() => null);
+      // 🎶 Fetch audio from new API
+      const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
+      const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
 
       if (!response || !response.success || !response.result || !response.result.download_url) {
-        await zk.sendMessage(dest, { text: "❌ *Failed to fetch audio!*", edit: processingMsg.key });
+        await zk.sendMessage(dest, { text: "❌ Failed to download. Try again later.", edit: processingMsg.key });
         return;
       }
 
       const downloadUrl = response.result.download_url;
       const tempFile = path.join(__dirname, "audio.mp3");
 
-      // 🔽 Downloading the audio file
+      // 🎧 Download the audio file
       const writer = fs.createWriteStream(tempFile);
       const audioStream = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
       audioStream.data.pipe(writer);
@@ -86,35 +82,34 @@ adams(
         writer.on("error", reject);
       });
 
-      // 🚀 Deleting processing message before sending audio
+      // 🔥 Auto-delete processing message
       await zk.sendMessage(dest, { delete: processingMsg.key });
 
-      // 🎶 Sending audio with a stylish format
+      // 🎵 Send the audio file immediately with new contextInfo
       await zk.sendMessage(
         dest,
         {
           audio: fs.readFileSync(tempFile),
           mimetype: "audio/mp4",
           contextInfo: {
-            externalAdReply: {
-              title: "🎵 " + videoTitle,
-              body: `📀 *Duration:* ${videoDuration}`,
-              mediaType: 1,
-              sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-              thumbnailUrl: videoThumbnail,
-              renderLargerThumbnail: true,
-              showAdAttribution: true,
+            mentionedJid: [ms.sender],
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: "120363240433535944@newsletter",
+              newsletterName: "BWM-XMD ",
+              serverMessageId: 143,
             },
           },
         },
         { quoted: ms }
       );
 
-      // 🗑️ Deleting temp file after sending
+      // 🗑️ Delete temp file
       fs.unlinkSync(tempFile);
     } catch (error) {
       console.error("Error during download process:", error.message);
-      return repondre(`❌ *Error:* ${error.message || error}`);
+      return repondre(`❌ Download failed: ${error.message || error}`);
     }
   }
 );
