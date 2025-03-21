@@ -61,7 +61,7 @@ adams(
       );
 
       // 🎶 Fetch audio from new API
-      const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
+      const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
       const apiResponse = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
 
       // ✅ Validate API Response
