@@ -1,9 +1,8 @@
 const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
-const fs = require("fs");
 const ytSearch = require("yt-search");
-const path = require("path");
 
+// Command for downloading audio (MP3)
 adams(
   {
     nomCom: "play",
@@ -32,93 +31,59 @@ adams(
       const videoTitle = firstVideo.title;
       const videoDuration = firstVideo.timestamp;
       const videoThumbnail = firstVideo.thumbnail;
-      const videoChannel = firstVideo.author.name;
 
-      // Send song info immediately
-      await zk.sendMessage(
-        dest,
-        {
-          text: `🎵 *𝐁𝐖𝐌 𝐗𝐌𝐃 𝐃𝐎𝐖𝐍𝐋𝐎𝐀𝐃𝐄𝐑* 🎵\n\n📌 *Title:* ${videoTitle}\n🎭 *Channel:* ${videoChannel}\n⏳ *Duration:* ${videoDuration}\n\n🔍 Searching for audio...`,
-          contextInfo: {
-            mentionedJid: [ms.sender],
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-              newsletterJid: "120363240433535944@newsletter",
-              newsletterName: "BWM-XMD",
-              serverMessageId: 143,
-            },
+      // Notify user about the ongoing download
+      const downloadingMessage = {
+        text: `🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}`,
+        contextInfo: {
+          externalAdReply: {
+            title: videoTitle,
+            body: "Bwm xmd downloader",
+            mediaType: 1,
+            thumbnailUrl: videoThumbnail,
+            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
+            renderLargerThumbnail: false,
+            showAdAttribution: true,
           },
         },
-        { quoted: ms }
-      );
+      };
+      await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
-      // Inform user that processing is in progress
-      const processingMsg = await zk.sendMessage(
-        dest,
-        { text: "⏳ Your audio is being processed, just a moment..." },
-        { quoted: ms }
-      );
+      // New API endpoint
+      const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
 
-      // Fetch result from the new API
-      const apiUrl = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
-      const response = await axios.get(apiUrl).then((res) => res.data).catch(() => null);
+      // Fetch data from the new API
+      const response = await axios.get(api);
+      const downloadData = response.data;
 
-      // Validate API response
-      if (!response || !response.success || !response.result || !response.result.download_url) {
-        await zk.sendMessage(dest, { text: "❌ Failed to fetch download URL. Try again later.", edit: processingMsg.key });
-        return;
+      if (!downloadData || !downloadData.success || !downloadData.result.download_url) {
+        return repondre("Failed to retrieve a download link. Please try again later.");
       }
 
-      const downloadUrl = response.result.download_url; // Extract the download URL
-      console.log("Download URL:", downloadUrl); // Debugging log
+      const downloadUrl = downloadData.result.download_url;
+      const audioTitle = downloadData.result.title || videoTitle;
 
-      // Create a unique filename for the audio
-      const tempFile = path.join(__dirname, `audio_${Date.now()}.mp3`);
-
-      // Download the audio
-      const writer = fs.createWriteStream(tempFile);
-      const audioStream = await axios({ url: downloadUrl, method: "GET", responseType: "stream" });
-      audioStream.data.pipe(writer);
-
-      await new Promise((resolve, reject) => {
-        writer.on("finish", resolve);
-        writer.on("error", reject);
-      });
-
-      // Check if the file exists and is valid
-      if (!fs.existsSync(tempFile)) {
-        throw new Error("Failed to create audio file.");
-      }
-
-      // Delete the processing message before sending audio
-      await zk.sendMessage(dest, { delete: processingMsg.key });
-
-      // Send the audio file immediately
-      await zk.sendMessage(
-        dest,
-        {
-          audio: fs.readFileSync(tempFile),
-          mimetype: "audio/mp4",
-          contextInfo: {
-            mentionedJid: [ms.sender],
-            forwardingScore: 999,
-            isForwarded: true,
-            forwardedNewsletterMessageInfo: {
-              newsletterJid: "120363240433535944@newsletter",
-              newsletterName: "BWM-XMD",
-              serverMessageId: 143,
-            },
+      // Send the audio file
+      const audioPayload = {
+        audio: { url: downloadUrl },
+        mimetype: "audio/mp4",
+        contextInfo: {
+          externalAdReply: {
+            title: audioTitle,
+            body: `🎶 ${audioTitle} | Duration: ${videoDuration}`,
+            mediaType: 1,
+            sourceUrl: videoUrl,
+            thumbnailUrl: videoThumbnail,
+            renderLargerThumbnail: true,
+            showAdAttribution: true,
           },
         },
-        { quoted: ms }
-      );
+      };
 
-      // Delete temp file after sending
-      fs.unlinkSync(tempFile);
+      await zk.sendMessage(dest, audioPayload, { quoted: ms });
     } catch (error) {
       console.error("Error during download process:", error.message);
-      return repondre(`❌ Download failed: ${error.message || error}`);
+      return repondre(`Download failed due to an error: ${error.message || error}`);
     }
   }
 );
