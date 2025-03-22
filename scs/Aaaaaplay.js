@@ -37,7 +37,7 @@ adams(
       const downloadingMessage = {
         text: `
 =========================
-  *BWM XMD DOWNLOADER*
+ *BWM XMD DOWNLOADER*
 =========================
 =========================
  *Title :* ${videoTitle}
@@ -48,13 +48,21 @@ adams(
 > © Sir Ibrahim Adams
         `,
         contextInfo: {
+          mentionedJid: [ms.sender],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363285388090068@newsletter',
+            newsletterName: "BWM-XMD",
+            serverMessageId: 143,
+          },
           externalAdReply: {
             title: videoTitle,
-            body: "Bwm xmd downloader",
-            mediaType: 1,
-            thumbnailUrl: videoThumbnail,
-            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-            renderLargerThumbnail: false,
+            body: "BWM XMD Downloader",
+            mediaType: 1, // 1 for image
+            thumbnailUrl: "https://files.catbox.moe/sd49da.jpg", // Small image for downloadingMessage
+            sourceUrl: videoUrl,
+            renderLargerThumbnail: false, // Ensure the image is small
             showAdAttribution: true,
           },
         },
@@ -81,21 +89,21 @@ adams(
       // Delete the "Just a minute" message
       await zk.sendMessage(dest, { delete: waitMessage.key });
 
-      // Send the audio file
+      // Send the audio file with full-sized thumbnail
       const audioPayload = {
         audio: { url: downloadUrl },
         mimetype: "audio/mp4",
         contextInfo: {
-          externalAdReply: {
-            title: audioTitle,
-            body: `🎶 ${audioTitle} | Duration: ${videoDuration}`,
-            mediaType: 1,
-            sourceUrl: videoUrl,
-            thumbnailUrl: videoThumbnail,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
+          mentionedJid: [ms.sender],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: '120363285388090068@newsletter',
+            newsletterName: "BWM-XMD",
+            serverMessageId: 143,
           },
         },
+        thumbnail: videoThumbnail, // Full-sized thumbnail for the audio
       };
 
       await zk.sendMessage(dest, audioPayload, { quoted: ms });
