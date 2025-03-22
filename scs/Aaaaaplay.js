@@ -295,7 +295,7 @@ adams(
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
       // Send "Just a minute" message
-      const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your video is being downloaded..." }, { quoted: ms });
+      const waitMessage = await zk.sendMessage(dest, { text: "📥 𝙹𝚞𝚜𝚝 𝚊 𝚖𝚒𝚗𝚞𝚝𝚎, 𝚢𝚘𝚞𝚛 𝚟𝚒𝚍𝚎𝚘 𝚒𝚜 𝚋𝚎𝚒𝚗𝚐 𝚍𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚎𝚍..." }, { quoted: ms });
 
       // New API endpoint for video download
       const api = `https://api.bwmxmd.online/api/download/ytmp4?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
