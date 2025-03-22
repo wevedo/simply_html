@@ -70,7 +70,7 @@ adams(
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
       // Send "Just a minute" message
-      const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
+      const waitMessage = await zk.sendMessage(dest, { text: "🛜 𝙹𝚞𝚜𝚝 𝚊 𝚖𝚒𝚗𝚞𝚝𝚎, 𝚢𝚘𝚞𝚛 𝚊𝚞𝚍𝚒𝚘 𝚒𝚜 𝚋𝚎𝚒𝚗𝚐 𝚍𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚎𝚍..." }, { quoted: ms });
 
       // New API endpoint
       const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
@@ -182,7 +182,7 @@ adams(
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
       // Send "Just a minute" message
-      const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
+      const waitMessage = await zk.sendMessage(dest, { text: "📥 𝙹𝚞𝚜𝚝 𝚊 𝚖𝚒𝚗𝚞𝚝𝚎, 𝚢𝚘𝚞𝚛 𝚊𝚞𝚍𝚒𝚘 𝚒𝚜 𝚋𝚎𝚒𝚗𝚐 𝚍𝚘𝚠𝚗𝚕𝚘𝚊𝚍𝚎𝚍..." }, { quoted: ms });
 
       // New API endpoint
       const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
