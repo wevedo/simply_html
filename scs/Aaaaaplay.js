@@ -73,7 +73,7 @@ adams(
       const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
 
       // New API endpoint
-      const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
+      const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
 
       // Fetch data from the new API
       const response = await axios.get(api);
@@ -185,7 +185,7 @@ adams(
       const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
 
       // New API endpoint
-      const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
+      const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
 
       // Fetch data from the new API
       const response = await axios.get(api);
@@ -298,7 +298,7 @@ adams(
       const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your video is being downloaded..." }, { quoted: ms });
 
       // New API endpoint for video download
-      const api = `https://api.bwmxmd.online/api/download/ytmp4?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
+      const api = `https://api.bwmxmd.online/api/download/ytmp4?apikey=ibraah-tech&url=${encodeURIComponent(videoUrl)}`;
 
       // Fetch data from the new API
       const response = await axios.get(api);
