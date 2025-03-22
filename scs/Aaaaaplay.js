@@ -30,13 +30,24 @@ adams(
       const videoUrl = firstVideo.url;
       const videoTitle = firstVideo.title;
       const videoDuration = firstVideo.timestamp;
+      const videoViews = firstVideo.views;
       const videoThumbnail = firstVideo.thumbnail;
 
-      // Notify user about the ongoing download
+      // Format the downloading message
       const downloadingMessage = {
-        text:`╭───────────✧\n❘ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍*\n╰───────────✧\n
-      🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n\n© Sir Ibrahim Adams `,
-       contextInfo: {
+        text: `
+╭────────────✧
+ ❘ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍*
+╰────────────✧
+╭────────────✧
+ *Title :* ${videoTitle}
+ *Duration :* ${videoDuration}
+ *Views :* ${videoViews}
+╰────────────✧
+
+> © Sir Ibrahim Adams
+        `,
+        contextInfo: {
           externalAdReply: {
             title: videoTitle,
             body: "Bwm xmd downloader",
@@ -51,8 +62,7 @@ adams(
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
       // Send "Just a minute" message
-      const waitMessage = await zk.sendMessage(dest, { text:
-"> *Just a minute, your audio is being downloaded...*" }, { quoted: ms });
+      const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
 
       // New API endpoint
       const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
