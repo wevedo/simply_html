@@ -49,12 +49,8 @@ adams(
       };
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
-      // Send a temporary message
-      const tempMessage = await zk.sendMessage(
-        dest,
-        { text: "Just a minute, your audio is being downloaded..." },
-        { quoted: ms } // Quote the original message for context
-      );
+      // Send "Just a minute" message
+      const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
 
       // New API endpoint
       const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
@@ -69,6 +65,9 @@ adams(
 
       const downloadUrl = downloadData.result.download_url;
       const audioTitle = downloadData.result.title || videoTitle;
+
+      // Delete the "Just a minute" message
+      await zk.sendMessage(dest, { delete: waitMessage.key });
 
       // Send the audio file
       const audioPayload = {
@@ -87,9 +86,7 @@ adams(
         },
       };
 
-      // Send the audio and delete the temporary message
       await zk.sendMessage(dest, audioPayload, { quoted: ms });
-      await zk.deleteMessage(dest, tempMessage.key); // Delete the temporary message
     } catch (error) {
       console.error("Error during download process:", error.message);
       return repondre(`Download failed due to an error: ${error.message || error}`);
