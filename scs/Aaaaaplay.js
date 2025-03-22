@@ -1,4 +1,5 @@
 const { adams } = require("../Ibrahim/adams");
+const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
 const ytSearch = require("yt-search");
 
@@ -48,6 +49,16 @@ adams(
         },
       };
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
+
+      // Send a temporary message that disappears after 2 seconds
+      const tempMessage = await zk.sendMessage(
+        dest,
+        { text: "Just a minute, your audio is being downloaded..." },
+        {
+          disappearingMessagesInChat: true,
+          ephemeralExpiration: 2, // Message disappears after 2 seconds
+        }
+      );
 
       // New API endpoint
       const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
