@@ -1,5 +1,4 @@
 const { adams } = require("../Ibrahim/adams");
-const { adams } = require("../Ibrahim/adams");
 const axios = require("axios");
 const ytSearch = require("yt-search");
 
@@ -50,14 +49,11 @@ adams(
       };
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
-      // Send a temporary message that disappears after 2 seconds
+      // Send a temporary message
       const tempMessage = await zk.sendMessage(
         dest,
         { text: "Just a minute, your audio is being downloaded..." },
-        {
-          disappearingMessagesInChat: true,
-          ephemeralExpiration: 2, // Message disappears after 2 seconds
-        }
+        { quoted: ms } // Quote the original message for context
       );
 
       // New API endpoint
@@ -91,7 +87,9 @@ adams(
         },
       };
 
+      // Send the audio and delete the temporary message
       await zk.sendMessage(dest, audioPayload, { quoted: ms });
+      await zk.deleteMessage(dest, tempMessage.key); // Delete the temporary message
     } catch (error) {
       console.error("Error during download process:", error.message);
       return repondre(`Download failed due to an error: ${error.message || error}`);
