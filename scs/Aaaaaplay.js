@@ -33,17 +33,17 @@ adams(
       const videoViews = firstVideo.views;
       const videoThumbnail = firstVideo.thumbnail;
 
-      // Format the downloading message
+      // Format the downloading message with classic symbols
       const downloadingMessage = {
         text: `
-╭────────────✧
- ❘ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍*
-╰────────────✧
-╭────────────✧
+=========================
+  *BWM XMD DOWNLOADER*
+=========================
+=========================
  *Title :* ${videoTitle}
  *Duration :* ${videoDuration}
  *Views :* ${videoViews}
-╰────────────✧
+=========================
 
 > © Sir Ibrahim Adams
         `,
