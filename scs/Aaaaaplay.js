@@ -89,21 +89,21 @@ adams(
       // Delete the "Just a minute" message
       await zk.sendMessage(dest, { delete: waitMessage.key });
 
-      // Send the audio file with full-sized thumbnail
+      // Send the audio file
       const audioPayload = {
         audio: { url: downloadUrl },
         mimetype: "audio/mp4",
         contextInfo: {
-          mentionedJid: [ms.sender],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363285388090068@newsletter',
-            newsletterName: "BWM-XMD",
-            serverMessageId: 143,
+          externalAdReply: {
+            title: audioTitle,
+            body: `🎶 ${audioTitle} | Duration: ${videoDuration}`,
+            mediaType: 1,
+            sourceUrl: videoUrl,
+            thumbnailUrl: videoThumbnail,
+            renderLargerThumbnail: true,
+            showAdAttribution: true,
           },
         },
-        thumbnail: videoThumbnail, // Full-sized thumbnail for the audio
       };
 
       await zk.sendMessage(dest, audioPayload, { quoted: ms });
