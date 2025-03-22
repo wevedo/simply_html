@@ -34,11 +34,8 @@ adams(
 
       // Notify user about the ongoing download
       const downloadingMessage = {
-        text:`
-╭───────〔❨✧✧❩〕───────✧
-❘   *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍* 
-╰───────〔❨✧✧❩〕───────✧
- 🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n© Sir Ibrahim Adams `,
+        text:`╭───────────✧\n❘ *𝘽𝙒𝙈 𝙓𝙈𝘿 𝘿𝙊𝙒𝙉𝙇𝙊𝘼𝘿𝙀𝙍*\n╰───────────✧\n
+      🎶 *Downloading:* ${videoTitle}\n⏳ *Duration:* ${videoDuration}\n\n© Sir Ibrahim Adams `,
        contextInfo: {
           externalAdReply: {
             title: videoTitle,
