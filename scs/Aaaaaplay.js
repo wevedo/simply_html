@@ -50,7 +50,8 @@ adams(
       await zk.sendMessage(dest, downloadingMessage, { quoted: ms });
 
       // Send "Just a minute" message
-      const waitMessage = await zk.sendMessage(dest, { text: "Just a minute, your audio is being downloaded..." }, { quoted: ms });
+      const waitMessage = await zk.sendMessage(dest, { text:
+"> *Just a minute, your audio is being downloaded...*" }, { quoted: ms });
 
       // New API endpoint
       const api = `https://api.bwmxmd.online/api/download/ytmp3?apikey=ibraah-help&url=${encodeURIComponent(videoUrl)}`;
