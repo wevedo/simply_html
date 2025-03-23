@@ -15,7 +15,7 @@ const getUserProfilePic = async (zk, userJid) => {
   try {
     return await zk.profilePictureUrl(userJid, "image");
   } catch {
-    return "https://files.catbox.moe/jwwjd3.jpeg"; // Default profile pic
+    return "https://files.catbox.moe/sd49da.jpg"; // Default profile pic
   }
 };
 
