@@ -15,17 +15,18 @@ const getUserProfilePic = async (zk, userJid) => {
   try {
     return await zk.profilePictureUrl(userJid, "image");
   } catch {
-    return "https://files.catbox.moe/sd49da.jpg"; // Default profile pic
+    return "https://files.catbox.moe/jwwjd3.jpeg"; // Default profile pic
   }
 };
 
-// 🏓 PING COMMAND (Now Sends Voice Note Instantly)
+// 🏓 PING COMMAND (Displays Random Big Number in Body)
 adams(
   { nomCom: "ping", reaction: "🏓", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
     const userJid = commandeOptions?.ms?.sender || dest;
     const profilePic = await getUserProfilePic(zk, userJid);
 
+    const randomPingValue = Math.floor(100 + Math.random() * 900); // Generates a big number (100-999ms)
     const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
     const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
 
@@ -40,11 +41,11 @@ adams(
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363285388090068@newsletter",
           newsletterName: "BWM-XMD",
-          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number instantly
+          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Another random big number
         },
         externalAdReply: {
           title: "🏓 Ping Test",
-          body: "Latency check",
+          body: `📶 Response Time: ${randomPingValue}ms`,
           thumbnailUrl: profilePic,
           mediaType: 1,
           showAdAttribution: true,
@@ -55,7 +56,7 @@ adams(
   }
 );
 
-// ⏳ UPTIME COMMAND (Also Sends Voice Note Instantly)
+// ⏳ UPTIME COMMAND (Remains Unchanged)
 adams(
   { nomCom: "uptime", reaction: "⏳", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
@@ -84,7 +85,7 @@ adams(
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363285388090068@newsletter",
           newsletterName: "BWM-XMD",
-          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number instantly
+          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
         },
         externalAdReply: {
           title: "⏳ Uptime Check",
