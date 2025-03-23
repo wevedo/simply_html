@@ -4,43 +4,48 @@ const speed = require("performance-now");
 // Command: Ping
 adams(
   {
-    nomCom: "ping",
-    desc: "To check bot response time",
-    Categorie: "General",
-    reaction: "⚡",
-    fromMe: "true",
+    nomCom: 'ping',
+    desc: 'To check bot response time',
+    Categorie: 'General',
+    reaction: '⚡',
+    fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
     const name = getName(dest, commandeOptions);
-    const img = "https://files.catbox.moe/fxcksg.webp";
-    const murl = "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y";
+    const img = 'https://files.catbox.moe/fxcksg.webp';
+    const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
     // Generate 3 ping results with random numbers
     const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
-    const formattedResults = pingResults.map((ping) => `🟢 PONG: ${ping}  🟢`).join("\n");
+    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}  🟢`).join("\n");
 
     // Constructing the contact message
     const con = {
       key: {
         fromMe: false,
-        participant: `${dest.sender ? dest.sender.split("@")[0] : "unknown"}@s.whatsapp.net`,
+        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
         ...(dest.chat ? { remoteJid: dest.chat } : {}),
       },
       message: {
         contactMessage: {
           displayName: name,
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${
-            dest.sender ? dest.sender.split("@")[0] : "unknown"
-          }:${dest.sender ? dest.sender.split("@")[0] : "unknown"}\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
+          vcard: `BEGIN:VCARD
+VERSION:3.0
+FN:${name}
+item1.TEL;waid=${dest.sender ? dest.sender.split('@')[0] : "unknown"}:${dest.sender ? dest.sender.split('@')[0] : "unknown"}
+item1.X-ABLabel:Mobile
+END:VCARD`,
         },
       },
     };
 
-    // Reply with ping results
+    // Reply with ping results using newsletter context
     await zk.sendMessage(dest, {
-      text: "🚀 *BWM XMD PING* 🚀",
+      text: '🚀 *BWM XMD PING* 🚀',
       contextInfo: {
         mentionedJid: [dest.sender || ""],
+        forwardingScore: 999,
+        isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363285388090068@newsletter",
           newsletterName: "BWM-XMD",
@@ -49,57 +54,62 @@ adams(
         externalAdReply: {
           title: "BWM XMD - Ultra-Fast Response",
           body: `Ping Results: ${formattedResults}`,
-          thumbnailUrl: img, // Image inside newsletter context
+          thumbnailUrl: img,
           sourceUrl: murl,
           mediaType: 1,
-          renderLargerThumbnail: true, // Ensures bigger display
+          renderLargerThumbnail: false,
         },
       },
       quoted: con,
     });
 
-    console.log("Ping results sent successfully!");
+    console.log("Ping results sent successfully with verified tick!");
   }
 );
 
 // Command: Uptime
 adams(
   {
-    nomCom: "uptime",
-    desc: "To check runtime",
-    Categorie: "General",
-    reaction: "🚘",
-    fromMe: "true",
+    nomCom: 'uptime',
+    desc: 'To check runtime',
+    Categorie: 'General',
+    reaction: '🚘',
+    fromMe: 'true',
   },
   async (dest, zk, commandeOptions) => {
     const name = getName(dest, commandeOptions);
     const runtime = process.uptime();
     const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
-    const img = "https://files.catbox.moe/fxcksg.webp";
-    const murl = "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y";
+    const img = 'https://files.catbox.moe/fxcksg.webp';
+    const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
     // Constructing the contact message
     const con = {
       key: {
         fromMe: false,
-        participant: `${dest.sender ? dest.sender.split("@")[0] : "unknown"}@s.whatsapp.net`,
+        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
         ...(dest.chat ? { remoteJid: dest.chat } : {}),
       },
       message: {
         contactMessage: {
           displayName: name,
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nitem1.TEL;waid=${
-            dest.sender ? dest.sender.split("@")[0] : "unknown"
-          }:${dest.sender ? dest.sender.split("@")[0] : "unknown"}\nitem1.X-ABLabel:Mobile\nEND:VCARD`,
+          vcard: `BEGIN:VCARD
+VERSION:3.0
+FN:${name}
+item1.TEL;waid=${dest.sender ? dest.sender.split('@')[0] : "unknown"}:${dest.sender ? dest.sender.split('@')[0] : "unknown"}
+item1.X-ABLabel:Mobile
+END:VCARD`,
         },
       },
     };
 
-    // Reply with uptime
+    // Reply with uptime using newsletter context
     await zk.sendMessage(dest, {
       text: `*BWM XMD UPTIME* 🕒\n\nRuntime: ${formattedRuntime}`,
       contextInfo: {
         mentionedJid: [dest.sender || ""],
+        forwardingScore: 999,
+        isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363285388090068@newsletter",
           newsletterName: "BWM-XMD",
@@ -108,19 +118,17 @@ adams(
         externalAdReply: {
           title: "BWM XMD - System Uptime",
           body: `Bot has been running for: ${formattedRuntime}`,
-          thumbnailUrl: img, // Image inside newsletter context
+          thumbnailUrl: img,
           sourceUrl: murl,
           mediaType: 1,
-          renderLargerThumbnail: true, // Bigger image display
+          renderLargerThumbnail: true,
         },
       },
       quoted: con,
     });
 
-    console.log("Uptime sent successfully!");
+    console.log("Uptime sent successfully with verified tick!");
   }
 );
 
-module.exports = {
-  delay,
-};
+module.exports = {};
