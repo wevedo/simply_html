@@ -1,134 +1,98 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+
 const { adams } = require("../Ibrahim/adams");
-const speed = require("performance-now");
+const axios = require("axios");
+const os = require("os");
 
-// Command: Ping
+const githubRawBaseUrl =
+  "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
+
+const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
+
+const randomBigNumber = () => Math.floor(100000 + Math.random() * 900000); // Random 6-digit number
+
+const botStartTime = Date.now(); // Bot uptime tracking
+
+const getUserProfilePic = async (zk, userJid) => {
+  try {
+    const profilePic = await zk.profilePictureUrl(userJid, "image");
+    return profilePic || "https://files.catbox.moe/jwwjd3.jpeg"; // Default profile pic
+  } catch {
+    return "https://files.catbox.moe/jwwjd3.jpeg"; // Fallback profile pic
+  }
+};
+
+// 🏓 PING COMMAND
 adams(
-  {
-    nomCom: 'ping',
-    desc: 'To check bot response time',
-    Categorie: 'General',
-    reaction: '⚡',
-    fromMe: 'true',
-  },
+  { nomCom: "ping", reaction: "🏓", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
-    const name = getName(dest, commandeOptions);
-    const img = 'https://files.catbox.moe/fxcksg.webp';
-    const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
+    const startTime = Date.now();
+    const userJid = commandeOptions?.ms?.sender || dest;
+    const profilePic = await getUserProfilePic(zk, userJid);
 
-    // Generate 3 ping results with random numbers
-    const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
-    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}  🟢`).join("\n");
+    const sentMessage = await zk.sendMessage(dest, { text: "🏓 Pinging..." });
+    const pingTime = Date.now() - startTime;
 
-    // Constructing the contact message
-    const con = {
-      key: {
-        fromMe: false,
-        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
-        ...(dest.chat ? { remoteJid: dest.chat } : {}),
-      },
-      message: {
-        contactMessage: {
-          displayName: name,
-          vcard: `BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-item1.TEL;waid=${dest.sender ? dest.sender.split('@')[0] : "unknown"}:${dest.sender ? dest.sender.split('@')[0] : "unknown"}
-item1.X-ABLabel:Mobile
-END:VCARD`,
-        },
-      },
-    };
-
-    // Reply with ping results using newsletter context
     await zk.sendMessage(dest, {
-      text: '🚀 *BWM XMD PING* 🚀',
+      text: `🏓 *Pong!* \n📶 Latency: *${pingTime}ms*`,
       contextInfo: {
-        mentionedJid: [dest.sender || ""],
+        mentionedJid: [userJid],
         forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363285388090068@newsletter",
           newsletterName: "BWM-XMD",
-          serverMessageId: 143,
+          serverMessageId: randomBigNumber(),
         },
         externalAdReply: {
-          title: "BWM XMD - Ultra-Fast Response",
-          body: `Ping Results: ${formattedResults}`,
-          thumbnailUrl: img,
-          sourceUrl: murl,
+          title: "Latency Test",
+          body: `📶 Ping: ${pingTime}ms`,
+          thumbnailUrl: profilePic,
           mediaType: 1,
+          showAdAttribution: true,
           renderLargerThumbnail: false,
         },
       },
-      quoted: con,
     });
-
-    console.log("Ping results sent successfully with verified tick!");
   }
 );
 
-// Command: Uptime
+// ⏳ UPTIME COMMAND
 adams(
-  {
-    nomCom: 'uptime',
-    desc: 'To check runtime',
-    Categorie: 'General',
-    reaction: '🚘',
-    fromMe: 'true',
-  },
+  { nomCom: "uptime", reaction: "⏳", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
-    const name = getName(dest, commandeOptions);
-    const runtime = process.uptime();
-    const formattedRuntime = new Date(runtime * 1000).toISOString().substr(11, 8);
-    const img = 'https://files.catbox.moe/fxcksg.webp';
-    const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
+    const userJid = commandeOptions?.ms?.sender || dest;
+    const profilePic = await getUserProfilePic(zk, userJid);
+    
+    const uptimeMs = Date.now() - botStartTime;
+    const uptimeSeconds = Math.floor((uptimeMs / 1000) % 60);
+    const uptimeMinutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
+    const uptimeHours = Math.floor((uptimeMs / (1000 * 60 * 60)) % 24);
+    const uptimeDays = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
 
-    // Constructing the contact message
-    const con = {
-      key: {
-        fromMe: false,
-        participant: `${dest.sender ? dest.sender.split('@')[0] : "unknown"}@s.whatsapp.net`,
-        ...(dest.chat ? { remoteJid: dest.chat } : {}),
-      },
-      message: {
-        contactMessage: {
-          displayName: name,
-          vcard: `BEGIN:VCARD
-VERSION:3.0
-FN:${name}
-item1.TEL;waid=${dest.sender ? dest.sender.split('@')[0] : "unknown"}:${dest.sender ? dest.sender.split('@')[0] : "unknown"}
-item1.X-ABLabel:Mobile
-END:VCARD`,
-        },
-      },
-    };
+    const uptimeString = `⏳ *Bot Uptime:* ${uptimeDays}d ${uptimeHours}h ${uptimeMinutes}m ${uptimeSeconds}s`;
 
-    // Reply with uptime using newsletter context
     await zk.sendMessage(dest, {
-      text: `*BWM XMD UPTIME* 🕒\n\nRuntime: ${formattedRuntime}`,
+      text: uptimeString,
       contextInfo: {
-        mentionedJid: [dest.sender || ""],
+        mentionedJid: [userJid],
         forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
           newsletterJid: "120363285388090068@newsletter",
           newsletterName: "BWM-XMD",
-          serverMessageId: 143,
+          serverMessageId: randomBigNumber(),
         },
         externalAdReply: {
-          title: "BWM XMD - System Uptime",
-          body: `Bot has been running for: ${formattedRuntime}`,
-          thumbnailUrl: img,
-          sourceUrl: murl,
+          title: "Bot Uptime",
+          body: uptimeString,
+          thumbnailUrl: profilePic,
           mediaType: 1,
-          renderLargerThumbnail: true,
+          showAdAttribution: true,
+          renderLargerThumbnail: false,
         },
       },
-      quoted: con,
     });
-
-    console.log("Uptime sent successfully with verified tick!");
   }
 );
-
-module.exports = {};
