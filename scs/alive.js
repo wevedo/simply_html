@@ -88,3 +88,77 @@ adams(
 );
 
 console.log("WhatsApp bot is ready!");
+
+
+
+adams(
+  { nomCom: "test", reaction: "🪄", nomFichier: __filename },
+  async (dest, zk, commandeOptions) => {
+    console.log("Alive command triggered!");
+
+    const contactName = commandeOptions?.ms?.pushName || "Unknown Contact";
+    const hour = new Date().getHours();
+
+    // Dynamic greeting based on time
+    const greeting =
+      hour < 12 ? "Good Morning 🌅" :
+      hour < 18 ? "Good Afternoon ☀️" :
+      "Good Evening 🌠";
+
+    try {
+      // Randomly pick an audio file and image
+      const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
+      const randomImage = images[Math.floor(Math.random() * images.length)];
+      const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
+
+      // Verify if the audio file exists
+      const audioResponse = await axios.head(audioUrl);
+      if (audioResponse.status !== 200) {
+        throw new Error("Audio file not found!");
+      }
+
+      // Generate dynamic emojis based on contact name
+      const emojis = contactName
+        .split("")
+        .map((char) => String.fromCodePoint(0x1f600 + (char.charCodeAt(0) % 80)))
+        .join("");
+
+      // ExternalAdReply for newsletter context
+      const externalAdReply = {
+        title: `${greeting}, ${contactName} 🚀`,
+        body: "🚀 Always Active 🚀",
+        thumbnailUrl: randomImage, // Image is now inside the newsletter
+        mediaType: 1,
+        renderLargerThumbnail: true,
+      };
+
+      // Send the custom message
+      await zk.sendMessage(dest, {
+        audio: { url: audioUrl },
+        mimetype: "audio/mpeg",
+        ptt: true,
+        contextInfo: {
+          mentionedJid: [dest.sender || ""],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363285388090068@newsletter",
+            newsletterName: "BWM-XMD",
+            serverMessageId: 143,
+          },
+          externalAdReply, // Ensuring image is part of the newsletter
+        },
+      });
+
+      console.log("Alive message sent successfully with newsletter integration.");
+    } catch (error) {
+      console.error("Error sending Alive message:", error.message);
+    }
+  }
+);
+
+console.log("WhatsApp bot is ready!");
+
+
+
+
