@@ -115,8 +115,17 @@ ${greeting}
 
 ${Object.keys(categoryGroups).map((cat, index) => `${index + 1} ${cat}`).join("\n\n")}${footer}
 `,
-        contextInfo: { forwardingScore: 999, isForwarded: true }, // Ensures "message via aid"
-    }, { quoted: ms });
+        contextInfo: { 
+    forwardingScore: 999, 
+    isForwarded: true,
+    externalAdReply: {
+        title: "📢 Subscribe to Our Newsletter!",
+        body: "Stay updated with BWM XMD features, updates, and tricks.",
+        mediaType: 1,
+        thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg", // Change this to your preferred image
+        sourceUrl: "120363285388090068@newsletter" // Replace with your actual newsletter link
+    }
+},
 
     // **Category Selection Listener**
     zk.ev.on("messages.upsert", async (update) => {
