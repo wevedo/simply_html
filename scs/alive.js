@@ -27,13 +27,28 @@ adams(
     console.log("Alive command triggered!");
 
     const contactName = commandeOptions?.ms?.pushName || "Unknown Contact";
-    const hour = new Date().getHours();
 
-    // Dynamic greeting based on time
-    const greeting =
-      hour < 12 ? "Good Morning 🌅" :
-      hour < 18 ? "Good Afternoon ☀️" :
-      "Good Evening 🌠";
+    // Get accurate time in Kenya (EAT - UTC+3)
+    const timeZone = "Africa/Nairobi";
+    const localTime = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date());
+
+    const hour = parseInt(localTime, 10);
+
+    // Precise greeting based on time
+    let greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good Morning 🌅";
+    } else if (hour >= 12 && hour < 16) {
+      greeting = "Good Afternoon ☀️";
+    } else if (hour >= 16 && hour < 20) {
+      greeting = "Good Evening 🌠";
+    } else {
+      greeting = "Good Night 🌙";
+    }
 
     try {
       // Randomly pick an audio file and image
@@ -57,7 +72,7 @@ adams(
       const externalAdReply = {
         title: `${greeting}, ${contactName} 🚀`,
         body: "🚀 Always Active 🚀",
-        thumbnailUrl: randomImage, // Image is now inside the newsletter
+        thumbnailUrl: randomImage,
         mediaType: 1,
         renderLargerThumbnail: true,
       };
@@ -88,8 +103,6 @@ adams(
 );
 
 console.log("WhatsApp bot is ready!");
-
-
 
 adams(
   { nomCom: "test", reaction: "🪄", nomFichier: __filename },
@@ -97,13 +110,28 @@ adams(
     console.log("Alive command triggered!");
 
     const contactName = commandeOptions?.ms?.pushName || "Unknown Contact";
-    const hour = new Date().getHours();
 
-    // Dynamic greeting based on time
-    const greeting =
-      hour < 12 ? "Good Morning 🌅" :
-      hour < 18 ? "Good Afternoon ☀️" :
-      "Good Evening 🌠";
+    // Get accurate time in Kenya (EAT - UTC+3)
+    const timeZone = "Africa/Nairobi";
+    const localTime = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "2-digit",
+      hour12: false,
+    }).format(new Date());
+
+    const hour = parseInt(localTime, 10);
+
+    // Precise greeting based on time
+    let greeting;
+    if (hour >= 5 && hour < 12) {
+      greeting = "Good Morning 🌅";
+    } else if (hour >= 12 && hour < 16) {
+      greeting = "Good Afternoon ☀️";
+    } else if (hour >= 16 && hour < 20) {
+      greeting = "Good Evening 🌠";
+    } else {
+      greeting = "Good Night 🌙";
+    }
 
     try {
       // Randomly pick an audio file and image
@@ -127,7 +155,7 @@ adams(
       const externalAdReply = {
         title: `${greeting}, ${contactName} 🚀`,
         body: "🚀 Always Active 🚀",
-        thumbnailUrl: randomImage, // Image is now inside the newsletter
+        thumbnailUrl: randomImage,
         mediaType: 1,
         renderLargerThumbnail: true,
       };
@@ -158,7 +186,6 @@ adams(
 );
 
 console.log("WhatsApp bot is ready!");
-
 
 
 
