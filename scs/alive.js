@@ -7,6 +7,7 @@ const githubRawBaseUrl =
   "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
 
 const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
+
 const images = [
   "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
   "https://bwm-xmd-files.vercel.app/bwmxmd_9s9jr8.jpeg",
@@ -20,37 +21,24 @@ const images = [
   "https://files.catbox.moe/xx6ags.jpeg",
 ];
 
-// List of motivational quotes or facts
-const factsOrQuotes = [
-  "🚀 Did you know? The first computer programmer was Ada Lovelace in 1843!",
-  "💡 Success is not final; failure is not fatal: It is the courage to continue that counts.",
-  "🌟 Keep going, you're closer to your goals than you think!",
-  "🔥 Tip: Automate the boring stuff to focus on the creative!",
-  "🌐 Fun Fact: The first email was sent in 1971 by Ray Tomlinson.",
-];
-
 adams(
   { nomCom: "alive", reaction: "🪄", nomFichier: __filename },
   async (dest, zk, commandeOptions) => {
     console.log("Alive command triggered!");
 
-    const contactName = commandeOptions?.ms?.pushName || "Unknown Contact"; // Sender's name or "Unknown Contact"
+    const contactName = commandeOptions?.ms?.pushName || "Unknown Contact";
     const hour = new Date().getHours();
 
     // Dynamic greeting based on time
     const greeting =
-      hour < 12
-        ? "Good Morning 🌅"
-        : hour < 18
-        ? "Good Afternoon ☀️"
-        : "Good Evening 🌠";
+      hour < 12 ? "Good Morning 🌅" :
+      hour < 18 ? "Good Afternoon ☀️" :
+      "Good Evening 🌠";
 
     try {
       // Randomly pick an audio file and image
       const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
       const randomImage = images[Math.floor(Math.random() * images.length)];
-      const randomFactOrQuote = factsOrQuotes[Math.floor(Math.random() * factsOrQuotes.length)];
-
       const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
 
       // Verify if the audio file exists
@@ -65,29 +53,34 @@ adams(
         .map((char) => String.fromCodePoint(0x1f600 + (char.charCodeAt(0) % 80)))
         .join("");
 
-      // Newsletter-style contextInfo
-      const contextInfo = {
-        mentionedJid: [commandeOptions?.ms?.sender || ""],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: '120363285388090068@newsletter',
-          newsletterName: "BWM-XMD",
-          serverMessageId: 143,
-        },
+      // ExternalAdReply for newsletter context
+      const externalAdReply = {
+        title: `${greeting}, ${contactName} 🚀`,
+        body: "🚀 Always Active 🚀",
+        thumbnailUrl: randomImage, // Image is now inside the newsletter
+        mediaType: 1,
+        renderLargerThumbnail: true,
       };
 
       // Send the custom message
       await zk.sendMessage(dest, {
-        image: { url: randomImage },
-        caption: `${greeting}, ${contactName}!\n\n${randomFactOrQuote}\n\n🚀 Always Active 🚀\n🌟 Contact: ${contactName}\n🌐 [Visit Channel](https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y)\n\n${emojis}`,
         audio: { url: audioUrl },
         mimetype: "audio/mpeg",
         ptt: true,
-        contextInfo,
+        contextInfo: {
+          mentionedJid: [dest.sender || ""],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363285388090068@newsletter",
+            newsletterName: "BWM-XMD",
+            serverMessageId: 143,
+          },
+          externalAdReply, // Ensuring image is part of the newsletter
+        },
       });
 
-      console.log("Alive message sent successfully with dynamic features.");
+      console.log("Alive message sent successfully with newsletter integration.");
     } catch (error) {
       console.error("Error sending Alive message:", error.message);
     }
