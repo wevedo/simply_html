@@ -1,6 +1,13 @@
 const { adams } = require("../Ibrahim/adams");
 const speed = require("performance-now");
 
+// Helper function to calculate real ping
+const calculatePing = () => {
+  const start = speed(); // Start time
+  const end = speed(); // End time
+  return (end - start).toFixed(3); // Calculate ping in milliseconds
+};
+
 // Command: Ping
 adams(
   {
@@ -15,9 +22,22 @@ adams(
     const img = 'https://files.catbox.moe/fxcksg.webp';
     const murl = 'https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y';
 
-    // Generate 3 ping results with random numbers
-    const pingResults = Array.from({ length: 3 }, () => Math.floor(Math.random() * 10000 + 1000));
-    const formattedResults = pingResults.map(ping => `🟢 PONG: ${ping}  🟢`).join("\n");
+    // Calculate real-time ping 3 times
+    const pingResults = Array.from({ length: 3 }, () => calculatePing());
+    const averagePing = (pingResults.reduce((a, b) => a + parseFloat(b), 0) / pingResults.length).toFixed(3);
+
+    // Determine status based on average ping
+    let status;
+    if (averagePing < 100) {
+      status = '🟢 Excellent';
+    } else if (averagePing < 500) {
+      status = '🟡 Moderate';
+    } else {
+      status = '🔴 Poor';
+    }
+
+    // Format ping results
+    const formattedResults = pingResults.map((ping, index) => `⚡ Ping ${index + 1}: ${ping} ms`).join("\n");
 
     // Constructing the contact message
     const con = {
@@ -40,16 +60,15 @@ adams(
 
     // Reply with ping results
     await zk.sendMessage(dest, {
-      text: '🚀 *BWM XMD PING* 🚀',
+      text: `🚀 *BWM XMD PING* 🚀\n\n${formattedResults}\n\n📊 *Average Ping:* ${averagePing} ms\n📈 *Status:* ${status}`,
       contextInfo: {
         mentionedJid: [dest.sender || ""],
-        externalAdReply: {
-          title: "BWM XMD - Ultra-Fast Response",
-          body: `Ping Results: ${formattedResults}`,
-          thumbnailUrl: img,
-          sourceUrl: murl,
-          mediaType: 1,
-          renderLargerThumbnail: false,
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '120363285388090068@newsletter',
+          newsletterName: "BWM-XMD",
+          serverMessageId: 143,
         },
       },
       quoted: con,
@@ -99,13 +118,12 @@ adams(
       text: `*BWM XMD UPTIME* 🕒\n\nRuntime: ${formattedRuntime}`,
       contextInfo: {
         mentionedJid: [dest.sender || ""],
-        externalAdReply: {
-          title: "BWM XMD - System Uptime",
-          body: `Bot has been running for: ${formattedRuntime}`,
-          thumbnailUrl: img,
-          sourceUrl: murl,
-          mediaType: 1,
-          renderLargerThumbnail: true,
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: '120363285388090068@newsletter',
+          newsletterName: "BWM-XMD",
+          serverMessageId: 143,
         },
       },
       quoted: con,
