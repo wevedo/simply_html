@@ -44,6 +44,7 @@ const githubRawBaseUrl =
 const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
 
 const formatNumber = (num) => num.toLocaleString();
+const imageUrl = "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.jpeg"; // Change to a clear JPEG
 
 const fetchAndAggregateRepoDetails = async () => {
   try {
@@ -101,20 +102,26 @@ commands.forEach((command) => {
 
     try {
       const sentMessage = await zk.sendMessage(dest, {
-  document: { url: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp" },
-  mimetype: "image/webp",
-  fileName: "BWM-XMD-Repo.webp",
-  caption: infoMessage,
-  contextInfo: {
-    forwardingScore: 999,
-    isForwarded: true,
-    forwardedNewsletterMessageInfo: {
-      newsletterJid: "120363285388090068@newsletter",
-      newsletterName: "BWM-XMD",
-      serverMessageId: Math.floor(100000 + Math.random() * 900000),
-    },
-  },
-});
+        image: { url: imageUrl },
+        caption: infoMessage,
+        contextInfo: {
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363285388090068@newsletter",
+            newsletterName: "BWM-XMD",
+            serverMessageId: Math.floor(100000 + Math.random() * 900000),
+          },
+          externalAdReply: {
+            title: "BWM-XMD GitHub Repo 📌",
+            body: "Click to open repository",
+            mediaType: 1,
+            previewType: 0,
+            thumbnailUrl: imageUrl,
+            sourceUrl: "https://github.com/devibraah/BWM-XMD",
+          },
+        },
+      });
 
       // Listen for Reply
       zk.ev.on("messages.upsert", async (update) => {
@@ -148,7 +155,7 @@ commands.forEach((command) => {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                   newsletterJid: "120363285388090068@newsletter",
-                  newsletterName: "BWM-XMD\nMade by Ibrahim Adams\nFrom Adams Tech\n\n©BWM-XMD 2025 ",
+                  newsletterName: "BWM-XMD",
                   serverMessageId: Math.floor(100000 + Math.random() * 900000),
                 },
               },
