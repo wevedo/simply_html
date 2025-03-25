@@ -83,8 +83,7 @@ commands.forEach((command) => {
     const { stars, forks } = repoDetails;
     const currentTime = moment().tz("Africa/Nairobi").format("DD/MM/YYYY HH:mm:ss");
 
-    const infoMessage = `
-╭━===========================
+    const infoMessage = `╭━===========================
 ┃  *📌 BWM XMD REPO INFO 📌* 
 ┃ ⭐ *Total Stars:* ${formatNumber(stars)}
 ┃ 🍴 *Total Forks:* ${formatNumber(forks)}
