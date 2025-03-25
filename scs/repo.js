@@ -141,7 +141,7 @@ commands.forEach((command) => {
             await zk.sendMessage(dest, { text: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y" });
           } else if (responseText === "3") {
             const randomPong = Math.floor(Math.random() * 900000) + 100000; // Generates a 6-digit number
-            await zk.sendMessage(dest, { text: `📡 Pong! ${randomPong} ✅` });
+            await zk.sendMessage(dest, { text: `*Ping Testing*\n📡 Pong! ${randomPong} ✅` });
           } else if (responseText === "4") {
             const randomAudioFile = audioFiles[Math.floor(Math.random() * audioFiles.length)];
             const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
