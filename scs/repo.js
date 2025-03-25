@@ -114,7 +114,7 @@ commands.forEach((command) => {
           externalAdReply: {
             title: "🚀 Explore BWM-XMD Updates!",
             body: "Click here for the latest repository details.",
-            thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg",
+            thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
             mediaType: 1,
             renderLargerThumbnail: true,
             showAdAttribution: true,
