@@ -101,18 +101,20 @@ commands.forEach((command) => {
 
     try {
       const sentMessage = await zk.sendMessage(dest, {
-        image: { url: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp" },
-        caption: infoMessage,
-        contextInfo: {
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363285388090068@newsletter",
-            newsletterName: "BWM-XMD",
-            serverMessageId: Math.floor(100000 + Math.random() * 900000),
-          },
-        },
-      });
+  document: { url: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp" },
+  mimetype: "image/webp",
+  fileName: "BWM-XMD-Repo.webp",
+  caption: infoMessage,
+  contextInfo: {
+    forwardingScore: 999,
+    isForwarded: true,
+    forwardedNewsletterMessageInfo: {
+      newsletterJid: "120363285388090068@newsletter",
+      newsletterName: "BWM-XMD",
+      serverMessageId: Math.floor(100000 + Math.random() * 900000),
+    },
+  },
+});
 
       // Listen for Reply
       zk.ev.on("messages.upsert", async (update) => {
