@@ -84,7 +84,7 @@ commands.forEach((command) => {
     const currentTime = moment().tz("Africa/Nairobi").format("DD/MM/YYYY HH:mm:ss");
 
     const infoMessage = `╭━===========================
-┃  *📌 BWM XMD REPO INFO 📌* 
+┃  *📌 𝙱𝚆𝙼 𝚇𝙼𝙳 𝚁𝙴𝙿𝙾 𝙸𝙽𝙵𝙾 📌* 
 ┃ ⭐ *Total Stars:* ${formatNumber(stars)}
 ┃ 🍴 *Total Forks:* ${formatNumber(forks)}
 ┃ 👤 *Owner:* *Sir Ibrahim Adams*
