@@ -90,14 +90,14 @@ commands.forEach((command) => {
 ┃ 👤 *Owner:* *Sir Ibrahim Adams*
 ┃ 🕰 *Updated:* ${currentTime}
 ╰━===========================
+
 🔹 Reply with a number to choose an action:
 1️⃣ *Open GitHub Repo* 🌍
 2️⃣ *Open WhatsApp Channel* 📢
 3️⃣ *Ping Bot* 📡
 4️⃣ *📂 Repo Alive Audio* 🔊
 
-> Sir Ibrahim Adams 
-╰━===========================`;
+> Sir Ibrahim Adams`;
 
     try {
       const sentMessage = await zk.sendMessage(dest, {
@@ -109,16 +109,7 @@ commands.forEach((command) => {
             newsletterJid: "120363285388090068@newsletter",
             newsletterName: "BWM-XMD",
             serverMessageId: Math.floor(100000 + Math.random() * 900000),
-          },
-          externalAdReply: {
-            title: "🚀 Explore BWM-XMD Updates!",
-            body: "Click here for the latest repository details.",
             thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
-            mediaType: 1,
-            renderLargerThumbnail: true,
-            showAdAttribution: true,
-            mediaUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
-            sourceUrl: "https://whatsapp.com/channel/0029VaZuGSxEawdxZK9CzM0Y",
           },
         },
       });
@@ -157,14 +148,7 @@ commands.forEach((command) => {
                   newsletterJid: "120363285388090068@newsletter",
                   newsletterName: "BWM-XMD",
                   serverMessageId: Math.floor(100000 + Math.random() * 900000),
-                },
-                externalAdReply: {
-                  title: "🎵Bwm Repo Alive Audio",
-                  body: "Enjoy this random alive audio!",
                   thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
-                  mediaType: 1,
-                  showAdAttribution: true,
-                  renderLargerThumbnail: false,
                 },
               },
             });
