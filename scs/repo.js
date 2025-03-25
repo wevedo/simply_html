@@ -101,7 +101,8 @@ commands.forEach((command) => {
 
     try {
       const sentMessage = await zk.sendMessage(dest, {
-        text: infoMessage,
+        image: { url: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp" },
+        caption: infoMessage,
         contextInfo: {
           forwardingScore: 999,
           isForwarded: true,
@@ -109,7 +110,6 @@ commands.forEach((command) => {
             newsletterJid: "120363285388090068@newsletter",
             newsletterName: "BWM-XMD",
             serverMessageId: Math.floor(100000 + Math.random() * 900000),
-            thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
           },
         },
       });
@@ -148,7 +148,6 @@ commands.forEach((command) => {
                   newsletterJid: "120363285388090068@newsletter",
                   newsletterName: "BWM-XMD",
                   serverMessageId: Math.floor(100000 + Math.random() * 900000),
-                  thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
                 },
               },
             });
