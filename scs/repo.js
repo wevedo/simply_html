@@ -160,9 +160,9 @@ commands.forEach((command) => {
                   serverMessageId: Math.floor(100000 + Math.random() * 900000),
                 },
                 externalAdReply: {
-                  title: "🎵 Repo Alive Audio",
+                  title: "🎵Bwm Repo Alive Audio",
                   body: "Enjoy this random alive audio!",
-                  thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg",
+                  thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
                   mediaType: 1,
                   showAdAttribution: true,
                   renderLargerThumbnail: false,
