@@ -113,7 +113,7 @@ commands.forEach((command) => {
           externalAdReply: {
             title: "🚀 Explore BWM-XMD Updates!",
             body: "Reply this message with one to get repo link.",
-            thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg",
+            thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
             mediaType: 1,
             renderLargerThumbnail: true,
             showAdAttribution: true,
@@ -161,7 +161,7 @@ commands.forEach((command) => {
                 externalAdReply: {
                   title: "🎵 Bwm Repo Alive Audio",
                   body: "Enjoy this random alive audio!",
-                  thumbnailUrl: "https://files.catbox.moe/xnlp0v.jpg",
+                  thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",
                   mediaType: 1,
                   showAdAttribution: true,
                   renderLargerThumbnail: false,
