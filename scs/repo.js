@@ -90,11 +90,12 @@ commands.forEach((command) => {
 ┃ 👤 Owner: Sir Ibrahim Adams
 ┃ 🕰 Updated: ${currentTime}
 ╰━===========================
+
 🔹 Reply with a number to choose an action:
 1️⃣ Open GitHub Repo 🌍
 2️⃣ Open WhatsApp Channel 📢
 3️⃣ Ping Bot 📡
-4️⃣ 📂 Repo Alive Audio 🔊
+4️⃣ Repo Alive Audio 🔊
 
 > Sir Ibrahim Adams
 `;
