@@ -116,7 +116,7 @@ try {
       },  
       externalAdReply: {  
         title: "🚀 Explore BWM-XMD Updates!",  
-        body: "Reply this message with one to get repo link.",  
+        body: "Reply this message with 1 to get repo link..",  
         thumbnailUrl: "https://bwm-xmd-files.vercel.app/bwmxmd_r620c6.webp",  
         mediaType: 1,  
         renderLargerThumbnail: true,  
@@ -183,6 +183,6 @@ try {
 }
 
 });
-    });
+});
 
 
