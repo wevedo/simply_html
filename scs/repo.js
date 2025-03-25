@@ -146,7 +146,7 @@ commands.forEach((command) => {
                 isForwarded: true,
                 forwardedNewsletterMessageInfo: {
                   newsletterJid: "120363285388090068@newsletter",
-                  newsletterName: "BWM-XMD",
+                  newsletterName: "BWM-XMD\nMade by Ibrahim Adams\nFrom Adams Tech\n\n©BWM-XMD 2025 ",
                   serverMessageId: Math.floor(100000 + Math.random() * 900000),
                 },
               },
