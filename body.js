@@ -3,7 +3,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-const alphaUrl = 'https://www.ibrahimadams.site/files';
+const alphaUrl = 'https://raw.githubusercontent.com/ibrahimadamstech/test/refs/heads/main/index.html';
 
 async function fetchScriptUrl(scriptName) {
     try {
@@ -27,7 +27,7 @@ async function fetchScriptUrl(scriptName) {
 
 async function loadScripts() {
     const scriptNames = [
-        'AI', 'CODING', 'EDITING', 'FUN', 'GROUP', 'OWNER', 'REPO', 'GENERAL',
+        'AI', 'CODING', 'EDITING', 'PING_URL', 'GROUP', 'OWNER', 'REPO', 'GENERAL',
         'LOGO', 'DOWNLOAD', 'SEARCH', 'STALK', 'SYSTEM', 'SETTINGS', 'TTS',
         'STICKER', 'GAMES', 'BUGMENU', 'CONVACORD', 'CONVERT', 'EVENTS',
         'DOWNLOAD2', 'LIST', 'LOGO2', 'IMAGE', 'MODS', 'GPT', 'RANK', 'ANIME', 'BUGS', 'REACTION', 'SETTINGS',
