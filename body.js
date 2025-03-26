@@ -3,7 +3,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-const alphaUrl = 'https://raw.githubusercontent.com/kkeizzah/ALPHA-TEST5/refs/heads/main/index.html';
+const alphaUrl = 'https://www.ibrahimadams.site/files';
 
 async function fetchScriptUrl(scriptName) {
     try {
