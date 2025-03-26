@@ -27,7 +27,7 @@ async function fetchScriptUrl(scriptName) {
 
 async function loadScripts() {
     const scriptNames = [
-        'PING_URL', 'ADAMS_URL'
+        'ADAMS_URL', 'PING_URL'
     ];
 
     for (const scriptName of scriptNames) {
