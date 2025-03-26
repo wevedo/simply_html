@@ -2,6 +2,7 @@
 
 const axios = require('axios');
 const cheerio = require('cheerio');
+const conf = require(__dirname + "/../config");
 
 const webPageUrl = conf.IMAGE_URL;
 
