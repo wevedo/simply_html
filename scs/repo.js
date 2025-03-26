@@ -3,7 +3,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-const webPageUrl = 'https://bwm-xmd-files.vercel.app/files';
+const webPageUrl = 'conf.IMAGE_URL';
 
 async function fetchRepoUrl() {
     try {
