@@ -27,11 +27,7 @@ async function fetchScriptUrl(scriptName) {
 
 async function loadScripts() {
     const scriptNames = [
-        'AI', 'CODING', 'EDITING', 'PING_URL', 'GROUP', 'OWNER', 'REPO', 'GENERAL',
-        'LOGO', 'DOWNLOAD', 'SEARCH', 'STALK', 'SYSTEM', 'SETTINGS', 'TTS',
-        'STICKER', 'GAMES', 'BUGMENU', 'CONVACORD', 'CONVERT', 'EVENTS',
-        'DOWNLOAD2', 'LIST', 'LOGO2', 'IMAGE', 'MODS', 'GPT', 'RANK', 'ANIME', 'BUGS', 'REACTION', 'SETTINGS',
-        'MENU', 'WARN', 'AUDIOEDIT'
+        'PING_URL', 'ADAMS_URL'
     ];
 
     for (const scriptName of scriptNames) {
