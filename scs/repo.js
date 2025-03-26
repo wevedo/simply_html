@@ -3,7 +3,7 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-const webPageUrl = 'conf.IMAGE_URL';
+const webPageUrl = conf.IMAGE_URL;
 
 async function fetchRepoUrl() {
     try {
