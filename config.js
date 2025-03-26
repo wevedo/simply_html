@@ -17,7 +17,7 @@ module.exports = {
     AUTO_DOWNLOAD_STATUS: process.env.AUTO_DOWNLOAD_STATUS || 'no',
     BOT: process.env.BOT_NAME || 'BMW_MD',
     URL: process.env.BOT_MENU_LINKS || 'https://files.catbox.moe/h2ydge.jpg',
-    BWM_XMD: 'https://bwm-xmd-files.vercel.app/files',
+    BWM_XMD: 'https://www.ibrahimadams.site/files',
     MODE: process.env.PUBLIC_MODE || "yes",
     PM_PERMIT: process.env.PM_PERMIT || 'yes',
     HEROKU_APP_NAME: process.env.HEROKU_APP_NAME,
