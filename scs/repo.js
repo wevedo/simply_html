@@ -4,7 +4,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const conf = require(__dirname + "/../config");
 
-const webPageUrl = conf.IMAGE_URL;
+const webPageUrl = conf.ALIVE; // Use ALIVE since IMAGE_URL is stored there
 
 // Validate the URL format before making a request
 if (!webPageUrl || !/^https?:\/\/.+\..+/.test(webPageUrl)) {
