@@ -27,7 +27,7 @@ adams(
     const userJid = ms?.sender || dest;
 
     // Send "Pinging..." message
-    const pingingMessage = await zk.sendMessage(dest, { text: "Pinging... from 𝕏𝕄𝔻" }, { quoted: ms });
+   // const pingingMessage = await zk.sendMessage(dest, { text: "Pinging... from 𝕏𝕄𝔻" }, { quoted: ms });
 
     const profilePic = await getUserProfilePic(zk, userJid);
     const randomPingValue = Math.floor(100 + Math.random() * 900); // Generates a big number (100-999ms)
@@ -35,7 +35,7 @@ adams(
     const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
 
     // Delete the "Pinging..." message
-    await zk.sendMessage(dest, { delete: pingingMessage.key });
+  //  await zk.sendMessage(dest, { delete: pingingMessage.key });
 
     // Send the ping result
     await zk.sendMessage(dest, {
@@ -58,6 +58,32 @@ adams(
           mediaType: 1,
           showAdAttribution: true,
           renderLargerThumbnail: false,
+        },
+      },
+    });
+  }
+);
+
+
+
+adams(
+  { nomCom: "pairaudio", reaction: "🎵", nomFichier: __filename },
+  async (dest, zk, commandeOptions) => {
+    const { ms } = commandeOptions;
+    const userJid = ms?.sender || dest;
+
+    await zk.sendMessage(dest, {
+      audio: { url: "https://files.catbox.moe/89tvg4.mp3" },
+      mimetype: "audio/mpeg",
+      ptt: true,
+      contextInfo: {
+        mentionedJid: [userJid],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: "120363285388090068@newsletter",
+          newsletterName: "BWM-XMD",
+          serverMessageId: Math.floor(100000 + Math.random() * 900000),
         },
       },
     });
