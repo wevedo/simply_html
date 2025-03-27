@@ -2252,14 +2252,17 @@ let msg = `
 }
 
         
-        //événement contact
+    //événement contact
         zk.ev.on("connection.update", async (con) => {
             const { lastDisconnect, connection } = con;
             if (connection === "connecting") {
-                console.log("ℹ️ Bwm xmd is connecting...");
+                console.log("bwm xmd is connecting in your account...");
             }
             else if (connection === 'open') {
-                console.log("✅ Bwm xmd Connected to WhatsApp! ☺️");
+       
+                      await zk.newsletterFollow("120363285388090068@newsletter");
+                     
+                console.log("Bwm xmd connected successfully✔");
                 console.log("--");
                 await (0, baileys_1.delay)(200);
                 console.log("------");
