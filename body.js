@@ -155,7 +155,28 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-
+console.log("\nLoading Bwm xmd Listeners...");
+fs.readdirSync(__dirname + "/bwmxmd").forEach((file) => {
+    if (path.extname(file).toLowerCase() === ".js") {
+        try {
+            // Load the listener module and pass zk instance
+            const listenerModule = require(__dirname + "/bwmxmd/" + file);
+            
+            // If the module exports a function, execute it with zk
+            if (typeof listenerModule === "function") {
+                listenerModule(zk);
+                console.log(`${file} Listener initialized successfully ✅`);
+            } else {
+                console.log(`${file} is not a valid listener module ⚠️`);
+            }
+        } catch (e) {
+            console.error(`Failed to load listener ${file}: ${e.message}`);
+        }
+        (0, baileys_1.delay)(300);
+    }
+});
+console.log("Listener initialization completed\n");
+        
 const rateLimit = new Map();
 
 // Silent Rate Limiting (No Logs)
