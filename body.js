@@ -113,6 +113,10 @@ module.exports = { authentification };
 
 authentification();
 const { default: makeWASocket, makeCacheableSignalKeyStore, BufferJSON, fetchLatestBaileysVersion, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+const pino = require('pino');
+const fs = require('fs');
+const path = require('path');
+
 // Initialize store
 const store = makeCacheableSignalKeyStore({
     logger: pino().child({ level: "silent", stream: "store" }),
@@ -129,7 +133,7 @@ setTimeout(() => {
         const sockOptions = {
             version,
             logger: pino({ level: "silent" }),
-            browser: ['BWM XMD', "safari", "1.0.0"],
+            browser: ['Bmw-Md', "safari", "1.0.0"],
             printQRInTerminal: true,
             fireInitQueries: false,
             shouldSyncHistoryMessage: true,
@@ -155,10 +159,15 @@ setTimeout(() => {
 
         // Listen for credential updates
         zk.ev.on('creds.update', saveCreds);
+
+        return zk; // ✅ Correct placement inside main()
     }
 
-    main().catch(console.error);
-});
+    main().catch(console.error); // ✅ Handles errors properly
+
+}, 5000); // ✅ `setTimeout()` closes correctly
+
+
 
 
 const rateLimit = new Map();
@@ -2446,16 +2455,14 @@ if ((conf.DP).toLowerCase() === 'yes') {
 
 
 
-return zk;
-}
-
+// ✅ File Watcher Logic (Separately Placed at the End)
 let fichier = require.resolve(__filename);
 fs.watchFile(fichier, () => {
     fs.unwatchFile(fichier);
-    console.log(`Updating🌎 ${__filename}`);
+    console.log(`Mise à jour: ${__filename}`);
     delete require.cache[fichier];
     require(fichier);
 });
 
-main();
-}, 5000);
+// ✅ Ensuring main() is called
+main().catch(console.error);
