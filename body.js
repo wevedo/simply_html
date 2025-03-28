@@ -2452,7 +2452,7 @@ return zk;
 let fichier = require.resolve(__filename);
 fs.watchFile(fichier, () => {
     fs.unwatchFile(fichier);
-    console.log(`mise à jour ${__filename}`);
+    console.log(`Updating🌎 ${__filename}`);
     delete require.cache[fichier];
     require(fichier);
 });
