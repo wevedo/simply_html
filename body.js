@@ -2446,16 +2446,16 @@ if ((conf.DP).toLowerCase() === 'yes') {
 
 
 
-        // fin fonctions utiles
-        /** ************* */
-        return zk;
-    
-    let fichier = require.resolve(__filename);
-    fs.watchFile(fichier, () => {
-        fs.unwatchFile(fichier);
-        console.log(`mise à jour ${__filename}`);
-        delete require.cache[fichier];
-        require(fichier);
-    });
-    main();
+return zk;
+}
+
+let fichier = require.resolve(__filename);
+fs.watchFile(fichier, () => {
+    fs.unwatchFile(fichier);
+    console.log(`mise à jour ${__filename}`);
+    delete require.cache[fichier];
+    require(fichier);
+});
+
+main();
 }, 5000);
