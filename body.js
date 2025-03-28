@@ -150,41 +150,74 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-        
+// Function to load all listeners dynamically
 async function loadListeners(sock, conf) {
+    console.log("🔄 Loading listeners...");
+    
     const listenersDir = path.join(__dirname, "bwmxmd");
+    console.log("📂 Looking in directory:", listenersDir);
 
-    fs.readdirSync(listenersDir).forEach((file) => {
-        if (file.endsWith(".js")) {
-            try {
-                const listener = require(path.join(listenersDir, file));
-                if (typeof listener === "function") {
-                    listener(sock, conf); // Pass sock and conf to all listeners
-                    console.log(`✅ Loaded Listener: ${file}`);
+    try {
+        const files = fs.readdirSync(listenersDir);
+        console.log("📁 Files found:", files);
+
+        files.forEach((file) => {
+            if (file.endsWith(".js")) {
+                try {
+                    console.log(`⏳ Loading ${file}...`);
+                    const listener = require(path.join(listenersDir, file));
+                    if (typeof listener === "function") {
+                        listener(sock, conf); // Pass sock and conf
+                        console.log(`✅ Loaded Listener: ${file}`);
+                    } else {
+                        console.log(`⚠️ ${file} does not export a function.`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Failed to load ${file}:`, err.message);
                 }
-            } catch (err) {
-                console.error(`❌ Failed to load ${file}:`, err.message);
             }
-        }
-    });
+        });
+    } catch (err) {
+        console.error("❌ Failed to read listeners directory:", err.message);
+    }
 }
 
+// Function to establish bot connection
 async function connectBot() {
-    const { default: makeWASocket } = require("@whiskeysockets/baileys");
+    console.log("🚀 Initializing WhatsApp Bot...");
+    
+    const { state, saveCreds } = await useMultiFileAuthState("session");
+    console.log("🔐 Authentication State Loaded");
 
-    const conf = require("./config"); // Load config
-    const sock = makeWASocket({ /* connection options */ });
+    const sock = makeWASocket({
+        auth: state,
+        printQRInTerminal: true, // Show QR in terminal if not logged in
+    });
+
+    sock.ev.on("creds.update", saveCreds);
+    console.log("🔄 Credentials Update Listener Added");
 
     sock.ev.on("connection.update", async (update) => {
+        console.log("🔌 Connection Update:", update);
+
         if (update.connection === "open") {
-            console.log("🤖 Bot Connected Successfully!");
+            console.log("✅ Bot Connected Successfully!");
             await loadListeners(sock, conf); // Auto-load all listeners
+        } else if (update.connection === "close") {
+            console.error("⚠️ Connection lost!", update.lastDisconnect?.error);
+            console.log("🔄 Reconnecting in 5 seconds...");
+            setTimeout(connectBot, 5000); // Auto-reconnect
         }
+    });
+
+    sock.ev.on("messages.upsert", (m) => {
+        console.log("📩 New Message Received:", JSON.stringify(m, null, 2));
     });
 
     return sock;
 }
 
+// Start the bot
 connectBot();
 const rateLimit = new Map();
 
