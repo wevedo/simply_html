@@ -619,7 +619,5 @@ const timeout = options?.timeout || undefined;
 return zk;
 
 // File watcher for updates 
-let file = require.resolve(__filename}; } fs.watchFile(file, () => { fs.unwatchFile(file); console.log(Updating ${__filename}); delete require.cache[file]; require(file); });
-
-});
-
+let file = require.resolve(__filename}; } fs.watchFile(file, () => { fs.unwatchFile(file); console.log(Updating ${__filename}); delete require.cache[file]; require(file); 
+});                                                                    
