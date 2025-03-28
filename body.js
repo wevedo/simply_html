@@ -150,48 +150,8 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-const path = require("path");
 
-async function loadSpecificListeners(listenerNames, sock, conf) {
-    for (const listenerName of listenerNames) {
-        try {
-            const listenerPath = path.join(__dirname, "bwmxmd", `${listenerName}.js`);
-            const listener = require(listenerPath);
 
-            if (typeof listener === "function") {
-                listener(sock, conf);
-                console.log(`✅ Successfully loaded: ${listenerName}`);
-            } else {
-                console.log(`⚠️ ${listenerName} is not a valid listener function.`);
-            }
-        } catch (err) {
-            console.error(`❌ Failed to load ${listenerName}:`, err.message);
-        }
-    }
-}
-
-async function connectBot() {
-    const { default: makeWASocket } = require("@whiskeysockets/baileys");
-
-    const conf = require("./config"); // Load config
-    const sock = makeWASocket({ /* connection options */ });
-
-    sock.ev.on("connection.update", async (update) => {
-        if (update.connection === "open") {
-            console.log("🤖 Bot Connected Successfully!");
-
-            // List of listeners to load
-            const listenersToLoad = ["bio_anticall", "welcome_message", "autoreply", "antispam"];
-
-            // Load multiple listeners
-            await loadSpecificListeners(listenersToLoad, sock, conf);
-        }
-    });
-
-    return sock;
-}
-
-connectBot();
 const rateLimit = new Map();
 
 // Silent Rate Limiting (No Logs)
