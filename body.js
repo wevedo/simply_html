@@ -155,7 +155,31 @@ const { useMultiFileAuthState } = require("@whiskeysockets/baileys");
 
 async function startBot() {
     console.log("🚀 Starting BWM XMD Bot...");
+    // Load authentication state
+    const { state, saveCreds } = await useMultiFileAuthState("./session");
 
+    // Initialize WhatsApp connection (without QR in terminal)
+    const sock = makeWASocket({
+        auth: state, // Use saved session
+    });
+
+    // Auto-save credentials when updated
+    sock.ev.on("creds.update", saveCreds);
+
+    sock.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
+
+        if (connection === "open") {
+            console.log("✅ Bot Connected Successfully!");
+            loadListeners(sock);
+        } else if (connection === "close") {
+            console.log("❌ Connection closed, restarting...");
+            startBot(); // Auto-restart on disconnect
+        }
+    });
+
+    return sock;
+}
 
 
 // Load and execute all listener files automatically
