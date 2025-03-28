@@ -452,8 +452,7 @@ var commandeOptions = {
         {
             disappearingMessagesInChat: true,
             ephemeralExpiration: 600 
-        }
-    );
+      };
   }
 
 }
