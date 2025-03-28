@@ -2271,33 +2271,32 @@ let msg = `
                 console.log("Bwm xmd is Online 🕸\n\n");
                 //chargement des commandes 
                 console.log("Loading Bwm xmd Commands ...\n");
-                fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
-                    if (path.extname(fichier).toLowerCase() == (".js")) {
-                        try {
-                            require(__dirname + "/scs/" + fichier);
-                            console.log(fichier + " Installed Successfully✔️");
-                        }
-                        catch (e) {
-                            console.log(`${fichier} could not be installed due to : ${e}`);
-                        } /* require(__dirname + "/beltah/" + fichier);
-                         console.log(fichier + " Installed ✔️")*/
-                        (0, baileys_1.delay)(300);
-                    }
-                });
-                (0, baileys_1.delay)(700);
-                var md;
-                if ((conf.MODE).toLocaleLowerCase() === "yes") {
-                    md = "public";
-                }
-                else if ((conf.MODE).toLocaleLowerCase() === "no") {
-                    md = "private";
-                }
-                else {
-                    md = "undefined";
-                }
-                console.log("Commands Installation Completed ✅");
+                // In the command loading section of body.js
+fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
+  if (path.extname(fichier).toLowerCase() === ".js") {
+    try {
+      const cmd = require(__dirname + "/scs/" + fichier);
+      evt.cm.push(cmd); // Ensure commands are added to evt.cm
+      console.log(`✅ ${fichier} loaded: Command '${cmd.nomCom}' registered.`);
+    } catch (e) {
+      console.error(`❌ ${fichier} failed: ${e.message}`);
+    }
+  }
+});
+                if (cd) {
+  try {
+    if (conf.MODE.toLowerCase() !== 'yes' && !superUser) return;
 
-                await activateCrons();
+    // Add debug logs
+    console.log(`Executing command: ${cd.nomCom} by ${auteurMessage}`);
+    
+    reagir(origineMessage, zk, ms, cd.reaction);
+    await cd.fonction(origineMessage, zk, commandeOptions); // Ensure async/await
+  } catch (e) {
+    console.error(`Command Error (${cd.nomCom}):`, e.stack);
+    repondre(`❌ Command failed: ${e.message}`);
+  }
+}
                 
                
 if ((conf.DP).toLowerCase() === 'yes') {
