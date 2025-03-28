@@ -112,20 +112,24 @@ async function authentification() {
 module.exports = { authentification };
 
 authentification();
-const { makeCacheableSignalKeyStore, BufferJSON } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, makeCacheableSignalKeyStore, BufferJSON, fetchLatestBaileysVersion, useMultiFileAuthState } = require('@whiskeysockets/baileys');
+// Initialize store
 const store = makeCacheableSignalKeyStore({
     logger: pino().child({ level: "silent", stream: "store" }),
     KeyStore: BufferJSON,
 });
+
 setTimeout(() => {
-authentification();
+    authentification();
+
     async function main() {
-        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
-        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Session");
+        const { version } = await fetchLatestBaileysVersion();
+        const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, "Session"));
+
         const sockOptions = {
             version,
             logger: pino({ level: "silent" }),
-            browser: ['Bmw-Md', "safari", "1.0.0"],
+            browser: ['BWM XMD', "safari", "1.0.0"],
             printQRInTerminal: true,
             fireInitQueries: false,
             shouldSyncHistoryMessage: true,
@@ -134,26 +138,27 @@ authentification();
             generateHighQualityLinkPreview: true,
             markOnlineOnConnect: false,
             keepAliveIntervalMs: 30_000,
-            /* auth: state*/ auth: {
+            auth: {
                 creds: state.creds,
-                /** caching makes the store faster to send/recv messages */
-                keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
+                keys: makeCacheableSignalKeyStore(state.keys, pino().child({ level: "silent" })),
             },
-            //////////
             getMessage: async (key) => {
                 if (store) {
                     const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
-                    return msg.message || undefined;
+                    return msg?.message || undefined;
                 }
-                return {
-                    conversation: 'An Error Occurred, Repeat Command!'
-                };
+                return { conversation: 'An Error Occurred, Repeat Command!' };
             }
-                };
+        };
 
+        const zk = makeWASocket(sockOptions);
 
-   const zk = makeWASocket(sockOptions);
-   zk.ev.on('creds.update', store.save);
+        // Listen for credential updates
+        zk.ev.on('creds.update', saveCreds);
+    }
+
+    main().catch(console.error);
+});
 
 
 const rateLimit = new Map();
