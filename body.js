@@ -150,6 +150,13 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
+const makeWASocket = require("@whiskeysockets/baileys").default;
+const { useMultiFileAuthState } = require("@whiskeysockets/baileys");
+
+async function startBot() {
+    console.log("🚀 Starting BWM XMD Bot...");
+
+
 
 // Load and execute all listener files automatically
 function loadListeners(sock) {
