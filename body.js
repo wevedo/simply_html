@@ -2327,52 +2327,47 @@ if ((conf.DP).toLowerCase() === 'yes') {
 > ${herokuAppLink}
 ╰────────────━⊷`;
 
-    // Send the message with disappearing mode (disappears after 2 seconds)
-    await zk.sendMessage(zk.user.id, 
+    // Send the message with disappearing mode (disappears after 10 minutes)
+    await zk.sendMessage(
+        zk.user.id, 
         { text: cmsg }, 
         {
             disappearingMessagesInChat: true,
-            ephemeralExpiration: 600 // Message disappears after 10 minutes 
+            ephemeralExpiration: 600 
         }
     );
-}       
+} // 🔴 This was missing, properly closing the if block
+
+// 🔵 Now, the else if statement is valid and correctly placed
+else if (connection == "close") {
+    let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
+    
+    if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
+        console.log('Session id error, rescan again...');
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionClosed) {
+        console.log('!!! connexion fermée, reconnexion en cours ...');
+        main();
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionLost) {
+        console.log('connection error 😞 ,,, trying to reconnect... ');
+        main();
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason?.connectionReplaced) {
+        console.log('connexion réplacée ,,, une session est déjà ouverte veuillez la fermer svp !!!');
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason.loggedOut) {
+        console.log('vous êtes déconnecté,,, veuillez rescanner le code QR svp');
+    } else if (raisonDeconnexion === baileys_1.DisconnectReason.restartRequired) {
+        console.log('redémarrage en cours ▶️');
+        main();
+    } else {
+        console.log('redémarrage sur le coup de l\'erreur ', raisonDeconnexion);         
+        
+        // Restart the bot using pm2
+        const { exec } = require("child_process");
+        exec("pm2 restart all");            
     }
-            else if (connection == "close") {
-                let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
-                if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
-                    console.log('Session id error, rescan again...');
-                }
-                else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionClosed) {
-                    console.log('!!! connexion fermée, reconnexion en cours ...');
-                    main();
-                }
-                else if (raisonDeconnexion === baileys_1.DisconnectReason.connectionLost) {
-                    console.log('connection error 😞 ,,, trying to reconnect... ');
-                    main();
-                }
-                else if (raisonDeconnexion === baileys_1.DisconnectReason?.connectionReplaced) {
-                    console.log('connexion réplacée ,,, une sesssion est déjà ouverte veuillez la fermer svp !!!');
-                }
-                else if (raisonDeconnexion === baileys_1.DisconnectReason.loggedOut) {
-                    console.log('vous êtes déconnecté,,, veuillez rescanner le code qr svp');
-                }
-                else if (raisonDeconnexion === baileys_1.DisconnectReason.restartRequired) {
-                    console.log('redémarrage en cours ▶️');
-                    main();
-                }   else {
 
-                    console.log('redemarrage sur le coup de l\'erreur  ',raisonDeconnexion) ;         
-                    //repondre("* Redémarrage du bot en cour ...*");
-
-                                const {exec}=require("child_process") ;
-
-                                exec("pm2 restart all");            
-                }
-                // sleep(50000)
-                console.log("hum " + connection);
-                main(); //console.log(session)
-            }
-        });
+    console.log("hum " + connection);
+    main();
+}
         //fin événement connexion
         //événement authentification 
         zk.ev.on("creds.update", saveCreds);
