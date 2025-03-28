@@ -1,8 +1,7 @@
-module.exports = function (zk, conf) {
-    if (!conf) {
-        console.error("Configuration (conf) is missing!");
-        return;
-    }
+console.log("🔄 Loading Auto Bio & Anti-Call Listener...");
+
+async function autoBio() {
+    if (conf.AUTO_BIO !== "yes") return;
 
     function getCurrentDateTime() {
         return new Intl.DateTimeFormat("en-KE", {
@@ -30,41 +29,43 @@ module.exports = function (zk, conf) {
         return `👋 ʜᴇʏ, ${nomAuteurMessage} ʙᴡᴍ xᴍᴅ ɪs ᴏɴʟɪɴᴇ 🚀,\n📅 ${getCurrentDateTime()}\n💬 "${getRandomQuote()}"`;
     }
 
-    // Update bio automatically
     setInterval(async () => {
-        if (conf.AUTO_BIO === "yes") {
-            const bioText = generateBio("🚀");
-            try {
-                await zk.updateProfileStatus(bioText);
-                console.log(`✅ Updated Bio: ${bioText}`);
-            } catch (err) {
-                console.error(`❌ Failed to update bio: ${err.message}`);
-            }
+        const bioText = generateBio("🚀");
+        try {
+            await zk.updateProfileStatus(bioText);
+            console.log(`✅ Updated Bio: ${bioText}`);
+        } catch (err) {
+            console.error(`❌ Failed to update bio: ${err.message}`);
         }
     }, 60000);
+}
 
-    // Handle call rejection
+async function antiCall() {
+    if (conf.ANTICALL !== "yes") return;
+
     zk.ev.on("call", async (callData) => {
-        if (conf.ANTICALL === "yes") {
-            try {
-                const { id, from } = callData[0];
+        try {
+            const { id, from } = callData[0];
 
-                await zk.rejectCall(id, from);
-                console.log(`🚫 Call rejected from: ${from}`);
+            await zk.rejectCall(id, from);
+            console.log(`🚫 Call rejected from: ${from}`);
 
-                setTimeout(async () => {
-                    await zk.sendMessage(from, {
-                        text: `🚫 *Call Rejected!*  
+            setTimeout(async () => {
+                await zk.sendMessage(from, {
+                    text: `🚫 *Call Rejected!*  
 Hi there, I’m *BWM XMD* 🤖.  
 ⚠️ My owner is unavailable.  
 Please try again later or leave a message. 😊`
-                    });
-                }, 1000);
-            } catch (err) {
-                console.error(`❌ Error handling call: ${err.message}`);
-            }
+                });
+            }, 1000);
+        } catch (err) {
+            console.error(`❌ Error handling call: ${err.message}`);
         }
     });
+}
 
-    console.log("✅ Listener initialized successfully!");
-};
+// **Start the listeners**
+autoBio();
+antiCall();
+
+console.log("✅ Auto Bio & Anti-Call Listener Initialized Successfully!");
