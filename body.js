@@ -154,27 +154,34 @@ authentification();
 const fs = require("fs");
 const path = require("path");
 
-async function loadListeners(sock) {
+async function loadListeners(sock, conf) {
     const listenersDir = path.join(__dirname, "bwmxmd");
+
     fs.readdirSync(listenersDir).forEach((file) => {
         if (file.endsWith(".js")) {
-            const listener = require(path.join(listenersDir, file));
-            if (typeof listener === "function") {
-                listener(sock);
+            try {
+                const listener = require(path.join(listenersDir, file));
+                if (typeof listener === "function") {
+                    listener(sock, conf); // Pass sock and conf to all listeners
+                    console.log(`✅ Loaded Listener: ${file}`);
+                }
+            } catch (err) {
+                console.error(`❌ Failed to load ${file}:`, err.message);
             }
         }
     });
 }
 
-// Function to handle bot connection
 async function connectBot() {
     const { default: makeWASocket } = require("@whiskeysockets/baileys");
+
+    const conf = require("./config"); // Load config
     const sock = makeWASocket({ /* connection options */ });
 
     sock.ev.on("connection.update", async (update) => {
         if (update.connection === "open") {
-            console.log("Bot connected successfully!");
-            await loadListeners(sock);  // Load all listeners
+            console.log("🤖 Bot Connected Successfully!");
+            await loadListeners(sock, conf); // Auto-load all listeners
         }
     });
 
