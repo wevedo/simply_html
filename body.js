@@ -134,7 +134,7 @@ setTimeout(() => {
             version,
             logger: pino({ level: "silent" }),
             browser: ['Bmw-Md', "safari", "1.0.0"],
-            printQRInTerminal: true,
+            printQRInTerminal: false,
             fireInitQueries: false,
             shouldSyncHistoryMessage: true,
             downloadHistory: true,
