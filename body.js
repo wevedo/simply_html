@@ -2249,53 +2249,70 @@ let msg = `
     }
 
     return;
-}
-
-        
-    //événement contact
-        zk.ev.on("connection.update", async (con) => {
-            const { lastDisconnect, connection } = con;
-            if (connection === "connecting") {
-                console.log("bwm xmd is connecting in your account...");
-            }
-            else if (connection === 'open') {
-       
-                      await zk.newsletterFollow("120363285388090068@newsletter");
-                     
-                console.log("Bwm xmd connected successfully✔");
-                console.log("--");
-                await (0, baileys_1.delay)(200);
-                console.log("------");
-                await (0, baileys_1.delay)(300);
-                console.log("------------------/-----");
-                console.log("Bwm xmd is Online 🕸\n\n");
-                //chargement des commandes 
-                console.log("Loading Bwm xmd Commands ...\n");
-                // In the command loading section of body.js
-fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
-  if (path.extname(fichier).toLowerCase() === ".js") {
-    try {
-      const cmd = require(__dirname + "/scs/" + fichier);
-      evt.cm.push(cmd); // Ensure commands are added to evt.cm
-      console.log(`✅ ${fichier} loaded: Command '${cmd.nomCom}' registered.`);
-    } catch (e) {
-      console.error(`❌ ${fichier} failed: ${e.message}`);
     }
-  }
-});
-                if (cd) {
-  try {
-    if (conf.MODE.toLowerCase() !== 'yes' && !superUser) return;
 
-    // Add debug logs
-    console.log(`Executing command: ${cd.nomCom} by ${auteurMessage}`);
+// Event: Bot Connection Handling
+zk.ev.on("connection.update", async (con) => {
+    const { connection } = con;
     
-    reagir(origineMessage, zk, ms, cd.reaction);
-    await cd.fonction(origineMessage, zk, commandeOptions); // Ensure async/await
-  } catch (e) {
-    console.error(`Command Error (${cd.nomCom}):`, e.stack);
-    repondre(`❌ Command failed: ${e.message}`);
-  }
+    if (connection === "connecting") {
+        console.log("BWM XMD is connecting to your account...");
+    } 
+    else if (connection === "open") {
+        console.log("BWM XMD connected successfully ✔");
+
+        // Auto-follow newsletter (optional)
+        await zk.newsletterFollow("120363285388090068@newsletter");
+
+        console.log("BWM XMD is Online 🕸\n\n");
+        console.log("Loading BWM XMD Commands ...\n");
+
+        // Load commands dynamically from "scs" folder
+        fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
+            if (path.extname(fichier).toLowerCase() === ".js") {
+                try {
+                    require(__dirname + "/scs/" + fichier);
+                    console.log(fichier + " Installed Successfully ✔️");
+                } catch (e) {
+                    console.log(`${fichier} could not be installed due to: ${e}`);
+                }
+            }
+        });
+
+        console.log("Commands Installation Completed ✅");
+
+        // Start background tasks (cron jobs)
+        await activateCrons();
+    }
+});
+
+// Event: Message Handling (Debugging)
+zk.ev.on("messages.upsert", async (m) => {
+    console.log("Received a message:", JSON.stringify(m, null, 2)); // Debugging
+    
+    const message = m.messages[0];
+    if (!message.message) return; // Ignore empty messages
+
+    const from = message.key.remoteJid;
+    const text = message.message.conversation || message.message.extendedTextMessage?.text;
+    
+    console.log(`Message from ${from}: ${text}`);
+
+    // Example Command Handling
+    if (text && text.startsWith("!")) {
+        await handleCommand(text, from);
+    }
+});
+
+// Function to handle commands (Example)
+async function handleCommand(text, from) {
+    const command = text.slice(1).trim().split(" ")[0].toLowerCase();
+
+    if (command === "hello") {
+        await zk.sendMessage(from, { text: "Hello, I'm BWM XMD!" });
+    } else {
+        console.log(`Unknown command: ${command}`);
+    }
 }
                 
                
