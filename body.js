@@ -2449,7 +2449,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
         // fin fonctions utiles
         /** ************* */
         return zk;
-    }
+    
     let fichier = require.resolve(__filename);
     fs.watchFile(fichier, () => {
         fs.unwatchFile(fichier);
