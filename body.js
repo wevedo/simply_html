@@ -6,8 +6,18 @@ ______     __     __     __    __        __  __     __    __     _____
   \/_____/   \/_/   \/_/   \/_/  \/_/      \/_/\/_/   \/_/  \/_/   \/____/ 
                                                                            
 /▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰/*/
-const { default: Baileys, ...baileys } = require("@whiskeysockets/baileys"), logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({ level: "silent" }), pino = require("pino"), { Boom } = require("@hapi/boom"), conf = require("./config"), axios = require("axios"), moment = require("moment-timezone"), fs = require("fs-extra"), path = require("path"), FileType = require("file-type"), { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter"), { verifierEtatJid, recupererActionJid } = require("./lib/antilien"), { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./lib/banUser"), { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./lib/banGroup"), { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./lib/onlyAdmin"), { reagir } = require("./Ibrahim/app"), prefixe = conf.PREFIXE, more = String.fromCharCode(8206);
-require("dotenv").config({ path: "./config.env" }); const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name", herokuAppLink = process.env.HEROKU_APP_LINK || 'https://dashboard.heroku.com/apps/${herokuAppName}', botOwner = process.env.NUMERO_OWNER || "Unknown Owner", express = require("express"), { exec } = require("child_process"), PORT = process.env.PORT || 3000, http = require("http"), app = express();
+"use strict";
+
+ Required Modules const baileys = require("@whiskeysockets/baileys"); const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({}); const { isJidGroup } = require("@whiskeysockets/baileys"); const pino = require("pino"); const boom = require("@hapi/boom"); const conf = require("./config"); const axios = require("axios"); const moment = require("moment-timezone"); const fs = require("fs-extra"); const path = require("path"); const FileType = require("file-type"); const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter"); const express = require("express"); const { exec } = require("child_process"); const http = require("http"); require("dotenv").config({ path: "./config.env" });
+
+ Custom Modules const { verifierEtatJid, recupererActionJid } = require("./lib/antilien"); const { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./lib/banUser"); const { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./lib/banGroup"); const { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./lib/onlyAdmin"); const evt = require("./Ibrahim/adams"); const { reagir } = require("./Ibrahim/app");
+
+ Bot Configuration const PREFIXE = conf.PREFIXE; const more = String.fromCharCode(8206); const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name"; const herokuAppLink = process.env.HEROKU_APP_LINK || 'https://dashboard.heroku.com/apps/${herokuAppName}'; const PORT = process.env.PORT || 3000;
+
+ Logger Configuration logger.level = "silent";
+
+ Express App Setup const app = express();
+
 
 //====================
 // Session logger
