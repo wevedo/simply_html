@@ -6,11 +6,19 @@ ______     __     __     __    __        __  __     __    __     _____
   \/_____/   \/_/   \/_/   \/_/  \/_/      \/_/\/_/   \/_/  \/_/   \/____/ 
                                                                            
 /▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰/*/
-
 const { default: Baileys, ...baileys } = require("@whiskeysockets/baileys"), logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({ level: "silent" }), pino = require("pino"), { Boom } = require("@hapi/boom"), conf = require("./config"), axios = require("axios"), moment = require("moment-timezone"), fs = require("fs-extra"), path = require("path"), FileType = require("file-type"), { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter"), { verifierEtatJid, recupererActionJid } = require("./lib/antilien"), { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./lib/banUser"), { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./lib/banGroup"), { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./lib/onlyAdmin"), { reagir } = require("./Ibrahim/app"), prefixe = conf.PREFIXE, more = String.fromCharCode(8206);
 require("dotenv").config({ path: "./config.env" }); const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name", herokuAppLink = process.env.HEROKU_APP_LINK || https://dashboard.heroku.com/apps/${herokuAppName}, botOwner = process.env.NUMERO_OWNER || "Unknown Owner", express = require("express"), { exec } = require("child_process"), PORT = process.env.PORT || 3000, http = require("http"), app = express();
 
 
+
+//====================
+// Session logger
+//====================
+function atbverifierEtatJid(jid) { if (!jid.endsWith('@s.whatsapp.net')) { console.error('Your verified in bwm xmd:', jid); return false; } console.log('Approved by Ibrahim Adams:', jid); return true; }
+
+const zlib = require('zlib'); async function authentification() { try { if (!fs.existsSync(__dirname + "/Session/creds.json")) { console.log("Session connected..."); const [header, b64data] = conf.session.split(';;;'); if (header === "BWM-XMD" && b64data) { let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); let decompressedData = zlib.gunzipSync(compressedData); fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); } else { throw new Error("Invalid session format"); } } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") { console.log("Updating existing session..."); const [header, b64data] = conf.session.split(';;;'); if (header === "BWM-XMD" && b64data) { let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); let decompressedData = zlib.gunzipSync(compressedData); fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); } else { throw new Error("Invalid session format"); } } } catch (e) { console.log("Session Invalid: " + e.message); return; } }
+
+module.exports = { authentification }; authentification(); const store = (0, baileys_1.makeInMemoryStore)({ logger: pino().child({ level: "silent", stream: "store" }) }); setTimeout(() => { authentification(); async function main() { const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)(); const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Session"); const sockOptions = { version, logger: pino({ level: "silent" }), browser: ['Bmw-Md', "safari", "1.0.0"], printQRInTerminal: true, fireInitQueries: false, shouldSyncHistoryMessage: true, downloadHistory: true, syncFullHistory: true, generateHighQualityLinkPreview: true, markOnlineOnConnect: false, keepAliveIntervalMs: 30_000, auth: { creds: state.creds, keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger) }, getMessage: async (key) => { if (store) { const msg = await store.loadMessage(key.remoteJid, key.id, undefined); return msg.message || undefined; } return { conversation: 'An Error Occurred, Repeat Command!' }; } }; const zk = (0, baileys_1.default)(sockOptions); store.bind(zk.ev); } }, 3000);
 
 
 
