@@ -592,7 +592,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
     main();
 }
 
-// Event for authentication updates
+// Event for authentication
 zk.ev.on("creds.update", saveCreds);
 
 // Utility functions
@@ -602,20 +602,15 @@ zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension 
     let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
     const stream = await (0, baileys_1.downloadContentFromMessage)(quoted, messageType);
     let buffer = Buffer.from([]);
-    
     for await (const chunk of stream) {
         buffer = Buffer.concat([buffer, chunk]);
     }
-
     let type = await FileType.fromBuffer(buffer);
-    let trueFileName = `./${filename}.${type.ext}`;
-
-    // Save to file
+    let trueFileName = './' + filename + '.' + type.ext;
     await fs.writeFileSync(trueFileName, buffer);
     return trueFileName;
 };
 
-// Function to await a message from a specific sender
 zk.awaitForMessage = async (options = {}) => {
     return new Promise((resolve, reject) => {
         if (typeof options !== 'object') reject(new Error('Options must be an object'));
@@ -637,9 +632,7 @@ zk.awaitForMessage = async (options = {}) => {
                     const isGroup = chatId.endsWith('@g.us');
                     const isStatus = chatId == 'status@broadcast';
 
-                    const sender = fromMe ? zk.user.id.replace(/:.*@/g, '@') : 
-                        (isGroup || isStatus) ? message.key.participant.replace(/:.*@/g, '@') : chatId;
-
+                    const sender = fromMe ? zk.user.id.replace(/:.*@/g, '@') : (isGroup || isStatus) ? message.key.participant.replace(/:.*@/g, '@') : chatId;
                     if (sender == options.sender && chatId == options.chatJid && filter(message)) {
                         zk.ev.off('messages.upsert', listener);
                         clearTimeout(interval);
@@ -647,10 +640,8 @@ zk.awaitForMessage = async (options = {}) => {
                     }
                 }
             }
-        };
-
+        }
         zk.ev.on('messages.upsert', listener);
-        
         if (timeout) {
             interval = setTimeout(() => {
                 zk.ev.off('messages.upsert', listener);
@@ -660,14 +651,13 @@ zk.awaitForMessage = async (options = {}) => {
     });
 };
 
-// File watching for live updates
+// Watch for file updates
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
     fs.unwatchFile(file);
-    console.log(`Updating ${__filename}`);
+    console.log(`Updated: ${__filename}`);
     delete require.cache[file];
     require(file);
 });
 
-// Start main function
 main();
