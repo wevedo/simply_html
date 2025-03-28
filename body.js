@@ -151,23 +151,37 @@ authentification();
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
 
-console.log("\nLoading Bwm XMD Listeners...");
+const fs = require("fs");
+const path = require("path");
 
-// Read all files inside the 'bwmxmd' directory
-fs.readdirSync(__dirname + "/bwmxmd").forEach((file) => {
-    if (path.extname(file).toLowerCase() === ".js") {
-        try {
-            // Run the listener file directly (without expecting an export)
-            require(__dirname + "/bwmxmd/" + file);
-            console.log(`${file} Listener initialized successfully ✅`);
-        } catch (e) {
-            console.error(`Failed to load listener ${file}: ${e.message}`);
+async function loadListeners(sock) {
+    const listenersDir = path.join(__dirname, "bwmxmd");
+    fs.readdirSync(listenersDir).forEach((file) => {
+        if (file.endsWith(".js")) {
+            const listener = require(path.join(listenersDir, file));
+            if (typeof listener === "function") {
+                listener(sock);
+            }
         }
-    }
-});
+    });
+}
 
-console.log("Listener initialization completed\n");
-        
+// Function to handle bot connection
+async function connectBot() {
+    const { default: makeWASocket } = require("@whiskeysockets/baileys");
+    const sock = makeWASocket({ /* connection options */ });
+
+    sock.ev.on("connection.update", async (update) => {
+        if (update.connection === "open") {
+            console.log("Bot connected successfully!");
+            await loadListeners(sock);  // Load all listeners
+        }
+    });
+
+    return sock;
+}
+
+connectBot();
 const rateLimit = new Map();
 
 // Silent Rate Limiting (No Logs)
