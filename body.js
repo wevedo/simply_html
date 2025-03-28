@@ -560,10 +560,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
             ephemeralExpiration: 600 // Message disappears after 10 minutes 
         }
     );
-}
-            }
-            
-    
+}  
 async function main() { try { // Your existing connection logic console.log('Initializing BWM XMD...');
 
 // Authentication event
