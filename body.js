@@ -564,7 +564,7 @@ var commandeOptions = {
     // Send the message with disappearing mode (disappears after 10 minutes)
     await zk.sendMessage(
         zk.user.id, 
-        { text: cmsg }, 
+        { text: cmsg }), 
         {
             disappearingMessagesInChat: true,
             ephemeralExpiration: 600 
