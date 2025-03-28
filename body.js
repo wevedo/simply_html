@@ -565,34 +565,32 @@ if ((conf.DP).toLowerCase() === 'yes') {
             // Function to handle disconnection events
     else if (connection == "close") {
     let disconnectReason = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
-    
     if (disconnectReason === baileys_1.DisconnectReason.badSession) {
-        console.log('Session ID error, please rescan the QR code...');
+        console.log('Session ID error, please rescan...');
     } else if (disconnectReason === baileys_1.DisconnectReason.connectionClosed) {
-        console.log('Connection closed! Reconnecting...');
+        console.log('!!! Connection closed, reconnecting...');
         main();
     } else if (disconnectReason === baileys_1.DisconnectReason.connectionLost) {
-        console.log('Connection lost 😞, trying to reconnect...');
+        console.log('Connection error 😞, trying to reconnect...');
         main();
     } else if (disconnectReason === baileys_1.DisconnectReason.connectionReplaced) {
-        console.log('Connection replaced! Another session is already open. Please close the existing session first.');
+        console.log('Connection replaced, another session is already open. Please close it!');
     } else if (disconnectReason === baileys_1.DisconnectReason.loggedOut) {
-        console.log('You have been logged out. Please rescan the QR code.');
+        console.log('Logged out, please rescan the QR code.');
     } else if (disconnectReason === baileys_1.DisconnectReason.restartRequired) {
         console.log('Restarting ▶️');
         main();
     } else {
         console.log('Restarting due to error:', disconnectReason);
-
         const { exec } = require("child_process");
         exec("pm2 restart all");
     }
 
     console.log("Connection status: " + connection);
     main();
-}
+});
 
-// Event for authentication
+// Authentication event
 zk.ev.on("creds.update", saveCreds);
 
 // Utility functions
@@ -602,11 +600,15 @@ zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension 
     let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
     const stream = await (0, baileys_1.downloadContentFromMessage)(quoted, messageType);
     let buffer = Buffer.from([]);
+    
     for await (const chunk of stream) {
         buffer = Buffer.concat([buffer, chunk]);
     }
+
     let type = await FileType.fromBuffer(buffer);
     let trueFileName = './' + filename + '.' + type.ext;
+
+    // Save to file
     await fs.writeFileSync(trueFileName, buffer);
     return trueFileName;
 };
@@ -640,7 +642,8 @@ zk.awaitForMessage = async (options = {}) => {
                     }
                 }
             }
-        }
+        };
+
         zk.ev.on('messages.upsert', listener);
         if (timeout) {
             interval = setTimeout(() => {
@@ -655,7 +658,7 @@ zk.awaitForMessage = async (options = {}) => {
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
     fs.unwatchFile(file);
-    console.log(`Updated: ${__filename}`);
+    console.log(`Updated ${__filename}`);
     delete require.cache[file];
     require(file);
 });
