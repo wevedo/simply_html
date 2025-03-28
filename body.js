@@ -113,9 +113,9 @@ module.exports = { authentification };
 
 authentification();
 const { default: makeWASocket, makeCacheableSignalKeyStore, BufferJSON, fetchLatestBaileysVersion, useMultiFileAuthState } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const fs = require('fs');
-const path = require('path');
+//const pino = require('pino');
+//const fs = require('fs');
+//const path = require('path');
 
 // Initialize store
 const store = makeCacheableSignalKeyStore({
