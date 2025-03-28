@@ -1,13 +1,18 @@
-module.exports = (zk, conf) => {
+module.exports = function (zk, conf) {
+    if (!conf) {
+        console.error("Configuration (conf) is missing!");
+        return;
+    }
+
     function getCurrentDateTime() {
-        return new Intl.DateTimeFormat('en-KE', {
-            timeZone: 'Africa/Nairobi',
-            year: 'numeric',
-            month: 'long',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
+        return new Intl.DateTimeFormat("en-KE", {
+            timeZone: "Africa/Nairobi",
+            year: "numeric",
+            month: "long",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
             hour12: false,
         }).format(new Date());
     }
@@ -25,28 +30,41 @@ module.exports = (zk, conf) => {
         return `👋 ʜᴇʏ, ${nomAuteurMessage} ʙᴡᴍ xᴍᴅ ɪs ᴏɴʟɪɴᴇ 🚀,\n📅 ${getCurrentDateTime()}\n💬 "${getRandomQuote()}"`;
     }
 
+    // Update bio automatically
     setInterval(async () => {
         if (conf.AUTO_BIO === "yes") {
             const bioText = generateBio("🚀");
-            await zk.updateProfileStatus(bioText);
-            console.log(`Updated Bio: ${bioText}`);
+            try {
+                await zk.updateProfileStatus(bioText);
+                console.log(`✅ Updated Bio: ${bioText}`);
+            } catch (err) {
+                console.error(`❌ Failed to update bio: ${err.message}`);
+            }
         }
     }, 60000);
 
+    // Handle call rejection
     zk.ev.on("call", async (callData) => {
         if (conf.ANTICALL === "yes") {
-            const callId = callData[0].id;
-            const callerId = callData[0].from;
+            try {
+                const { id, from } = callData[0];
 
-            await zk.rejectCall(callId, callerId);
-            setTimeout(async () => {
-                await zk.sendMessage(callerId, {
-                    text: `🚫 *Call Rejected!*  
+                await zk.rejectCall(id, from);
+                console.log(`🚫 Call rejected from: ${from}`);
+
+                setTimeout(async () => {
+                    await zk.sendMessage(from, {
+                        text: `🚫 *Call Rejected!*  
 Hi there, I’m *BWM XMD* 🤖.  
 ⚠️ My owner is unavailable.  
 Please try again later or leave a message. 😊`
-                });
-            }, 1000);
+                    });
+                }, 1000);
+            } catch (err) {
+                console.error(`❌ Error handling call: ${err.message}`);
+            }
         }
     });
+
+    console.log("✅ Listener initialized successfully!");
 };
