@@ -580,44 +580,34 @@ var commandeOptions = {
  zk.ev.on("creds.update", saveCreds);
 
 // Utility functions 
-zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => { let quoted = message.msg ? message.msg : message; let mime = (message.msg || message).mimetype || ''; let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]; const stream = await (0, baileys_1.downloadContentFromMessage)(quoted, messageType); let buffer = Buffer.from([]); for await (const chunk of stream) { buffer = Buffer.concat([buffer, chunk]); } let type = await FileType.fromBuffer(buffer); let trueFileName = './' + filename + '.' + type.ext; await fs.writeFileSync(trueFileName, buffer); return trueFileName; };
-
-zk.awaitForMessage = async (options = {}) => { return new Promise((resolve, reject) => { if (typeof options !== 'object') reject(new Error('Options must be an object')); if (typeof options.sender !== 'string') reject(new Error('Sender must be a string')); if (typeof options.chatJid !== 'string') reject(new Error('ChatJid must be a string')); if (options.timeout && typeof options.timeout !== 'number') reject(new Error('Timeout must be a number')); if (options.filter && typeof options.filter !== 'function') reject(new Error('Filter must be a function'));
-
-const timeout = options?.timeout || undefined;
-    const filter = options?.filter || (() => true);
-    let interval = undefined;
-
-    let listener = (data) => {
-        let { type, messages } = data;
-        if (type == "notify") {
-            for (let message of messages) {
-                const fromMe = message.key.fromMe;
-                const chatId = message.key.remoteJid;
-                const isGroup = chatId.endsWith('@g.us');
-                const isStatus = chatId == 'status@broadcast';
-                const sender = fromMe ? zk.user.id.replace(/:.*@/g, '@') : (isGroup || isStatus) ? message.key.participant.replace(/:.*@/g, '@') : chatId;
-                if (sender == options.sender && chatId == options.chatJid && filter(message)) {
-                    zk.ev.off('messages.upsert', listener);
-                    clearTimeout(interval);
-                    resolve(message);
-                }
-            }
-        }
-    };
-    zk.ev.on('messages.upsert', listener);
-    if (timeout) {
-        interval = setTimeout(() => {
-            zk.ev.off('messages.upsert', listener);
-            reject(new Error('Timeout'));
-        }, timeout);
+zk.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
+    const quoted = message.msg || message;
+    const mime = (message.msg || message).mimetype || "";
+    const messageType = message.mtype ? message.mtype.replace(/Message/gi, "") : mime.split("/")[0];
+    const stream = await downloadContentFromMessage(quoted, messageType);
+    let buffer = Buffer.from([]);
+    for await (const chunk of stream) {
+      buffer = Buffer.concat([buffer, chunk]);
     }
+    const type = await FileType.fromBuffer(buffer);
+    const trueFileName = attachExtension ? `${filename}.${type.ext}` : filename;
+    await fs.writeFileSync(trueFileName, buffer);
+    return trueFileName;
+  };
+}
+
+app.use(express.static("public"));
+app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
+app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
+
+start();
+
+module.exports = start;
+
+let file = require.resolve(__filename);
+fs.watchFile(file, () => {
+  fs.unwatchFile(file);
+  console.log(chalk.redBright(`Update ${__filename}`));
+  delete require.cache[file];
+  require(file);
 });
-
-};
-
-return zk;
-
-// File watcher for updates 
-let file = require.resolve(__filename}; } fs.watchFile(file, () => { fs.unwatchFile(file); console.log(Updating ${__filename}); delete require.cache[file]; require(file); 
-});                                                                    
