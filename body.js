@@ -75,7 +75,6 @@ function atbverifierEtatJid(jid) {
     return true;
 }
 
-const fs = require('fs');
 const zlib = require('zlib');
 
 async function authentification() {
