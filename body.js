@@ -613,7 +613,7 @@ let trueFileName = `./${filename}.${type.ext}`;
 await fs.writeFileSync(trueFileName, buffer);
 return trueFileName;
 
-};
+});
 
 zk.awaitForMessage = (options = {}) => { return new Promise((resolve, reject) => { if (typeof options !== 'object') return reject(new Error('Options must be an object')); if (typeof options.sender !== 'string') return reject(new Error('Sender must be a string')); if (typeof options.chatJid !== 'string') return reject(new Error('ChatJid must be a string')); if (options.timeout && typeof options.timeout !== 'number') return reject(new Error('Timeout must be a number')); if (options.filter && typeof options.filter !== 'function') return reject(new Error('Filter must be a function'));
 
