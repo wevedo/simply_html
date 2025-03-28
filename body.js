@@ -96,7 +96,7 @@ authentification();
         const sockOptions = {
             version,
             logger: pino({ level: "silent" }),
-            browser: ['Bmw-Md', "safari", "1.0.0"],
+            browser: ['BWM XMD', "safari", "1.0.0"],
             printQRInTerminal: true,
             fireInitQueries: false,
             shouldSyncHistoryMessage: true,
@@ -105,9 +105,8 @@ authentification();
             generateHighQualityLinkPreview: true,
             markOnlineOnConnect: false,
             keepAliveIntervalMs: 30_000,
-            /* auth: state*/ auth: {
+                auth: {
                 creds: state.creds,
-                /** caching makes the store faster to send/recv messages */
                 keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
             },
             //////////
@@ -280,14 +279,8 @@ const verifCom = texte ? texte.startsWith(prefixe) : false;
 const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
 
 const lien = conf.URL.split(',');
-
-            
-            // Utiliser une boucle for...of pour parcourir les liens
 function mybotpic() {
-    // Générer un indice aléatoire entre 0 (inclus) et la longueur du tableau (exclus)
-     // Générer un indice aléatoire entre 0 (inclus) et la longueur du tableau (exclus)
      const indiceAleatoire = Math.floor(Math.random() * lien.length);
-     // Récupérer le lien correspondant à l'indice aléatoire
      const lienAleatoire = lien[indiceAleatoire];
      return lienAleatoire;
   }
@@ -335,7 +328,7 @@ var commandeOptions = {
       }
             
 
-            /** ****** gestion auto-status  */
+            /** ****** Status stetion */
             if (ms.key && ms.key.remoteJid === "status@broadcast" && conf.AUTO_READ_STATUS === "yes") {
                 await zk.readMessages([ms.key]);
             }
@@ -364,19 +357,9 @@ var commandeOptions = {
                 return;
             }
             
- //---------------------------------------rang-count--------------------------------
-             if (texte && auteurMessage.endsWith("s.whatsapp.net")) {
-  const { ajouterOuMettreAJourUserData } = require("./lib/level"); 
-  try {
-    await ajouterOuMettreAJourUserData(auteurMessage);
-  } catch (e) {
-    console.error(e);
-  }
-              }
+
             
-        
-            
-            //execution des commandes   
+            //order fullment
             if (verifCom) {
                 // await zk.readMessages(ms.key);
                 const cd = evt.cm.find((adams) => adams.nomCom === (com));
