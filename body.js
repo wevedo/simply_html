@@ -152,8 +152,8 @@ authentification();
                 };
 
 
-   const zk = (0, baileys_1.default)(sockOptions);
-   store.bind(zk.ev);
+   const zk = makeWASocket(sockOptions);
+   zk.ev.on('creds.update', store.save);
 
 
 const rateLimit = new Map();
