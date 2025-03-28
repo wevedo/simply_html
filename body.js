@@ -11,9 +11,6 @@ ______     __     __     __    __        __  __     __    __     _____
 
 
 
-
-"use strict";
-
 const { default: makeWASocket, isJidGroup } = require("@whiskeysockets/baileys");
 
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({}); const pino = require("pino"); const { Boom } = require("@hapi/boom"); const conf = require("./config"); const axios = require("axios"); const moment = require("moment-timezone"); const fs = require("fs-extra"); const path = require("path"); const FileType = require("file-type"); const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
