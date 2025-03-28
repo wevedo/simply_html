@@ -150,59 +150,48 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-const makeWASocket = require("@whiskeysockets/baileys").default;
-const { useMultiFileAuthState } = require("@whiskeysockets/baileys");
+const path = require("path");
 
-async function startBot() {
-    console.log("🚀 Starting BWM XMD Bot...");
-    // Load authentication state
-    const { state, saveCreds } = await useMultiFileAuthState("./session");
+async function loadSpecificListeners(listenerNames, sock, conf) {
+    for (const listenerName of listenerNames) {
+        try {
+            const listenerPath = path.join(__dirname, "bwmxmd", `${listenerName}.js`);
+            const listener = require(listenerPath);
 
-    // Initialize WhatsApp connection (without QR in terminal)
-    const sock = makeWASocket({
-        auth: state, // Use saved session
-    });
+            if (typeof listener === "function") {
+                listener(sock, conf);
+                console.log(`✅ Successfully loaded: ${listenerName}`);
+            } else {
+                console.log(`⚠️ ${listenerName} is not a valid listener function.`);
+            }
+        } catch (err) {
+            console.error(`❌ Failed to load ${listenerName}:`, err.message);
+        }
+    }
+}
 
-    // Auto-save credentials when updated
-    sock.ev.on("creds.update", saveCreds);
+async function connectBot() {
+    const { default: makeWASocket } = require("@whiskeysockets/baileys");
+
+    const conf = require("./config"); // Load config
+    const sock = makeWASocket({ /* connection options */ });
 
     sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+        if (update.connection === "open") {
+            console.log("🤖 Bot Connected Successfully!");
 
-        if (connection === "open") {
-            console.log("✅ Bot Connected Successfully!");
-            loadListeners(sock);
-        } else if (connection === "close") {
-            console.log("❌ Connection closed, restarting...");
-            startBot(); // Auto-restart on disconnect
+            // List of listeners to load
+            const listenersToLoad = ["bio_anticall", "welcome_message", "autoreply", "antispam"];
+
+            // Load multiple listeners
+            await loadSpecificListeners(listenersToLoad, sock, conf);
         }
     });
 
     return sock;
 }
 
-
-// Load and execute all listener files automatically
-function loadListeners(sock) {
-    console.log("\n🔄 Loading BWM XMD Listeners...");
-
-    const listenersDir = path.join(__dirname, "bwmxmd");
-    fs.readdirSync(listenersDir).forEach((file) => {
-        if (file.endsWith(".js")) {
-            try {
-                require(path.join(listenersDir, file))(sock);
-                console.log(`✅ Loaded Listener: ${file}`);
-            } catch (err) {
-                console.error(`❌ Failed to load ${file}:`, err.message);
-            }
-        }
-    });
-
-    console.log("🎯 Listener Initialization Completed!\n");
-}
-
-// Start the bot
-startBot();
+connectBot();
 const rateLimit = new Map();
 
 // Silent Rate Limiting (No Logs)
