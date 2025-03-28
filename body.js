@@ -2197,59 +2197,73 @@ let msg = `
     const cron = require('node-cron');
     const { getCron } = require('./lib/cron');
 
-    let crons = await getCron();
-    console.log(crons);
+    try {
+        let crons = await getCron();
 
-    if (crons.length > 0) {
-        for (let i = 0; i < crons.length; i++) {
-            const cronItem = crons[i];
+        if (!crons || crons.length === 0) {
+            console.log("🚀 No cron jobs to activate.");
+            return;
+        }
 
-            if (cronItem.mute_at) {
-                let set = cronItem.mute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
+        console.log(`🛠 Activating ${crons.length} scheduled tasks...`);
 
-                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
-                    console.log(`Setting up auto-mute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
+        for (const cronItem of crons) {
+            const { group_id, mute_at, unmute_at } = cronItem;
 
-                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                        await zk.groupSettingUpdate(cronItem.group_id, 'announcement');
-                        zk.sendMessage(cronItem.group_id, {
-                            image: { url: './files/chrono.webp' },
-                            caption: "Hello, it's time to close the group; sayonara."
-                        });
+            if (mute_at) {
+                let muteTime = mute_at.replace(/\s/g, '').split(':');
+                if (muteTime.length === 2 && !isNaN(muteTime[0]) && !isNaN(muteTime[1])) {
+                    console.log(`⏳ Setting auto-mute for ${group_id} at ${muteTime[0]}:${muteTime[1]}`);
+
+                    cron.schedule(`${muteTime[1]} ${muteTime[0]} * * *`, async () => {
+                        try {
+                            await zk.groupSettingUpdate(group_id, 'announcement');
+                            await zk.sendMessage(group_id, {
+                                image: { url: './files/chrono.webp' },
+                                caption: "🔒 The group is now closed. Sayonara!"
+                            });
+                            console.log(`✅ Group ${group_id} muted successfully.`);
+                        } catch (error) {
+                            console.error(`❌ Error muting group ${group_id}:`, error);
+                        }
                     }, {
                         timezone: "Africa/Nairobi"
                     });
                 } else {
-                    console.error(`Invalid mute_at format: ${cronItem.mute_at}`);
+                    console.error(`⚠️ Invalid mute_at format for group ${group_id}: ${mute_at}`);
                 }
             }
 
-            if (cronItem.unmute_at) {
-                let set = cronItem.unmute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
+            if (unmute_at) {
+                let unmuteTime = unmute_at.replace(/\s/g, '').split(':');
+                if (unmuteTime.length === 2 && !isNaN(unmuteTime[0]) && !isNaN(unmuteTime[1])) {
+                    console.log(`⏳ Setting auto-unmute for ${group_id} at ${unmuteTime[0]}:${unmuteTime[1]}`);
 
-                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
-                    console.log(`Setting up auto-unmute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
-
-                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                        await zk.groupSettingUpdate(cronItem.group_id, 'not_announcement');
-                        zk.sendMessage(cronItem.group_id, {
-                            image: { url: './files/chrono.webp' },
-                            caption: "Good morning; it's time to open the group."
-                        });
+                    cron.schedule(`${unmuteTime[1]} ${unmuteTime[0]} * * *`, async () => {
+                        try {
+                            await zk.groupSettingUpdate(group_id, 'not_announcement');
+                            await zk.sendMessage(group_id, {
+                                image: { url: './files/chrono.webp' },
+                                caption: "🔓 Good morning! The group is now open."
+                            });
+                            console.log(`✅ Group ${group_id} unmuted successfully.`);
+                        } catch (error) {
+                            console.error(`❌ Error unmuting group ${group_id}:`, error);
+                        }
                     }, {
                         timezone: "Africa/Nairobi"
                     });
                 } else {
-                    console.error(`Invalid unmute_at format: ${cronItem.unmute_at}`);
+                    console.error(`⚠️ Invalid unmute_at format for group ${group_id}: ${unmute_at}`);
                 }
             }
         }
-    } else {
-        console.log("No cron jobs to activate.");
-    }
 
-    return;
+        console.log("🎯 All scheduled tasks activated successfully.");
+    } catch (error) {
+        console.error("❌ Error activating crons:", error);
     }
+}
 
 // Event: Bot Connection Handling
 zk.ev.on("connection.update", async (con) => {
