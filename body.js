@@ -112,10 +112,10 @@ async function authentification() {
 module.exports = { authentification };
 
 authentification();
-const { makeInMemoryStore } = require('@whiskeysockets/baileys');
-
-const store = makeInMemoryStore({
+const { makeCacheableSignalKeyStore, BufferJSON } = require('@whiskeysockets/baileys');
+const store = makeCacheableSignalKeyStore({
     logger: pino().child({ level: "silent", stream: "store" }),
+    KeyStore: BufferJSON,
 });
 setTimeout(() => {
 authentification();
