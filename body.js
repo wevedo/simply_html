@@ -502,7 +502,7 @@ var commandeOptions = {
                 await (0, baileys_1.delay)(200);
                 console.log("------");
                 await (0, baileys_1.delay)(300);
-                console.log("------------------/-----");
+                console.log("---------------------------");
                 console.log("Bwm xmd is Online 🕸\n\n");
                 //chargement des commandes 
                 console.log("Loading Bwm xmd Commands ...\n");
@@ -510,12 +510,12 @@ var commandeOptions = {
                     if (path.extname(fichier).toLowerCase() == (".js")) {
                         try {
                             require(__dirname + "/scs/" + fichier);
-                            console.log(fichier + " Installed Successfully✔️");
+                            console.log(fichier + " Installed Successfully 🌎");
                         }
                         catch (e) {
                             console.log(`${fichier} could not be installed due to : ${e}`);
-                        } /* require(__dirname + "/beltah/" + fichier);
-                         console.log(fichier + " Installed ✔️")*/
+                        } 
+                        
                         (0, baileys_1.delay)(300);
                     }
                 });
@@ -570,16 +570,11 @@ var commandeOptions = {
             ephemeralExpiration: 600 
         }
     );
-} // 🔴 This was missing, properly closing the if block
+  }
 
 }
  else if (connection == "close") { let disconnectReason = new Boom(lastDisconnect?.error)?.output.statusCode; if (disconnectReason === baileys_1.DisconnectReason.badSession) { console.log('Session ID error, please rescan.'); } else if (disconnectReason === baileys_1.DisconnectReason.connectionClosed) { console.log('Connection closed, reconnecting...'); main(); } else if (disconnectReason === baileys_1.DisconnectReason.connectionLost) { console.log('Connection lost, attempting to reconnect...'); main(); } else if (disconnectReason === baileys_1.DisconnectReason.connectionReplaced) { console.log('Connection replaced, another session is already active. Please close it.'); } else if (disconnectReason === baileys_1.DisconnectReason.loggedOut) { console.log('Logged out, please rescan the QR code.'); } else if (disconnectReason === baileys_1.DisconnectReason.restartRequired) { console.log('Restarting...'); main(); } else { console.log('Restarting due to an error:', disconnectReason); const { exec } = require("child_process"); exec("pm2 restart all"); } console.log("Connection status: " + connection); main(); }
-
-// Authentication event 
-         
  zk.ev.on("creds.update", saveCreds);
-
-// Utility functions 
 zk.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
     const quoted = message.msg || message;
     const mime = (message.msg || message).mimetype || "";
