@@ -2365,8 +2365,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
             ephemeralExpiration: 600 // Message disappears after 10 minutes 
         }
     );
-}
-            }
+}       
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
                 if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
