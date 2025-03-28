@@ -161,7 +161,7 @@ fs.readdirSync(__dirname + "/bwmxmd").forEach((file) => {
             // If the module exports a function, execute it with zk
             if (typeof listenerModule === "function") {
                 listenerModule(zk);
-                console.log(`${file} Listener initialized successfully ✅`);
+                console.log(`${file} Listener initialized successfully ✅`); // Removing emoji for testing
             } else {
                 console.log(`${file} is not a valid listener module ⚠️`);
             }
