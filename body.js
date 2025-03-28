@@ -481,6 +481,62 @@ var commandeOptions = {
         
     async function activateCrons() {
     const cron = require('node-cron');
+    const { getCron } = require('./lib/cron');
+
+    let crons = await getCron();
+    console.log(crons);
+
+    if (crons.length > 0) {
+        for (let i = 0; i < crons.length; i++) {
+            const cronItem = crons[i];
+
+            if (cronItem.mute_at) {
+                let set = cronItem.mute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
+
+                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
+                    console.log(`Setting up auto-mute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
+
+                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
+                        await zk.groupSettingUpdate(cronItem.group_id, 'announcement');
+                        zk.sendMessage(cronItem.group_id, {
+                            image: { url: './files/chrono.webp' },
+                            caption: "Hello, it's time to close the group; sayonara."
+                        });
+                    }, {
+                        timezone: "Africa/Nairobi"
+                    });
+                } else {
+                    console.error(`Invalid mute_at format: ${cronItem.mute_at}`);
+                }
+            }
+
+            if (cronItem.unmute_at) {
+                let set = cronItem.unmute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
+
+                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
+                    console.log(`Setting up auto-unmute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
+
+                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
+                        await zk.groupSettingUpdate(cronItem.group_id, 'not_announcement');
+                        zk.sendMessage(cronItem.group_id, {
+                            image: { url: './files/chrono.webp' },
+                            caption: "Good morning; it's time to open the group."
+                        });
+                    }, {
+                        timezone: "Africa/Nairobi"
+                    });
+                } else {
+                    console.error(`Invalid unmute_at format: ${cronItem.unmute_at}`);
+                }
+            }
+        }
+    } else {
+        console.log("No cron jobs to activate.");
+    }
+
+    return;
+}
+
         zk.ev.on("connection.update", async (con) => {
             const { lastDisconnect, connection } = con;
             if (connection === "connecting") {
