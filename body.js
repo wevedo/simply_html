@@ -1,3 +1,4 @@
+
 /*/▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱//
 ______     __     __     __    __        __  __     __    __     _____    
 /\  == \   /\ \  _ \ \   /\ "-./  \      /\_\_\_\   /\ "-./  \   /\  __-.  
@@ -6,54 +7,231 @@ ______     __     __     __    __        __  __     __    __     _____
   \/_____/   \/_/   \/_/   \/_/  \/_/      \/_/\/_/   \/_/  \/_/   \/____/ 
                                                                            
 /▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰/*/
+    
+
+
+
+
+
+
+
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+  var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc); 
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
+const logger_1 = __importDefault(require("@whiskeysockets/baileys/lib/Utils/logger"));
+const { isJidGroup } = require('@whiskeysockets/baileys');
+const logger = logger_1.default.child({});
+logger.level = 'silent';
+const pino = require("pino");
+const boom_1 = require("@hapi/boom");
+const conf = require("./config");
+const axios = require("axios");
+const moment = require("moment-timezone");
+let fs = require("fs-extra");
+let path = require("path");
+let botPassword = null;
+const FileType = require('file-type');
+const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
+//import chalk from 'chalk'
+const { verifierEtatJid , recupererActionJid } = require("./lib/antilien");
+let evt = require(__dirname + "/Ibrahim/adams");
+const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./lib/banUser");
+const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./lib/banGroup");
+const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = require("./lib/onlyAdmin");
+//const //{loadCmd}=require("/framework/mesfonctions")
+let { reagir } = require(__dirname + "/Ibrahim/app");
+const prefixe = conf.PREFIXE;
+const more = String.fromCharCode(8206)
+require('dotenv').config({ path: './config.env' });
+const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
+const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`; 
+const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; 
+const express = require('express');
+const { exec } = require('child_process');
+const PORT = process.env.PORT || 3000;
+const http = require("http");
+const app = express();
 
- Required Modules const baileys = require("@whiskeysockets/baileys"); const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({}); const { isJidGroup } = require("@whiskeysockets/baileys"); const pino = require("pino"); const boom = require("@hapi/boom"); const conf = require("./config"); const axios = require("axios"); const moment = require("moment-timezone"); const fs = require("fs-extra"); const path = require("path"); const FileType = require("file-type"); const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter"); const express = require("express"); const { exec } = require("child_process"); const http = require("http"); require("dotenv").config({ path: "./config.env" });
 
- Custom Modules const { verifierEtatJid, recupererActionJid } = require("./lib/antilien"); const { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./lib/banUser"); const { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./lib/banGroup"); const { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./lib/onlyAdmin"); const evt = require("./Ibrahim/adams"); const { reagir } = require("./Ibrahim/app");
+function atbverifierEtatJid(jid) {
+    if (!jid.endsWith('@s.whatsapp.net')) {
+        console.error('Your verified in bwm xmd:', jid);
+        return false;
+    }
+    console.log('Approved by Ibrahim Adams:', jid);
+    return true;
+}
 
- Bot Configuration const PREFIXE = conf.PREFIXE; const more = String.fromCharCode(8206); const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name"; const herokuAppLink = process.env.HEROKU_APP_LINK || 'https://dashboard.heroku.com/apps/${herokuAppName}'; const PORT = process.env.PORT || 3000;
+const zlib = require('zlib');
 
- Logger Configuration logger.level = "silent";
+async function authentification() {
+try {
+if (!fs.existsSync(__dirname + "/Session/creds.json")) {
+console.log("Session connected...");
+// Split the session strihhhhng into header and Base64 data
+const [header, b64data] = conf.session.split(';;;');
 
- Express App Setup const app = express();
+// Validate the session format
+if (header === "BWM-XMD" && b64data) {
+let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
+let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
+fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
+} else {
+throw new Error("Invalid session format");
+}
+} else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
+console.log("Updating existing session...");
+const [header, b64data] = conf.session.split(';;;');
+
+if (header === "BWM-XMD" && b64data) {    
+        let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');    
+        let decompressedData = zlib.gunzipSync(compressedData);    
+        fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");    
+    } else {    
+        throw new Error("Invalid session format");    
+    }    
+}
+
+} catch (e) {
+console.log("Session Invalid: " + e.message);
+return;
+}
+
+}
+module.exports = { authentification };
+
+authentification();
+const store = (0, baileys_1.makeInMemoryStore)({
+    logger: pino().child({ level: "silent", stream: "store" }),
+});
+setTimeout(() => {
+authentification();
+    async function main() {
+        const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)();
+        const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Session");
+        const sockOptions = {
+            version,
+            logger: pino({ level: "silent" }),
+            browser: ['Bmw-Md', "safari", "1.0.0"],
+            printQRInTerminal: true,
+            fireInitQueries: false,
+            shouldSyncHistoryMessage: true,
+            downloadHistory: true,
+            syncFullHistory: true,
+            generateHighQualityLinkPreview: true,
+            markOnlineOnConnect: false,
+            keepAliveIntervalMs: 30_000,
+            /* auth: state*/ auth: {
+                creds: state.creds,
+                /** caching makes the store faster to send/recv messages */
+                keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger),
+            },
+            //////////
+            getMessage: async (key) => {
+                if (store) {
+                    const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
+                    return msg.message || undefined;
+                }
+                return {
+                    conversation: 'An Error Occurred, Repeat Command!'
+                };
+            }
+                };
 
 
-//====================
-// Session logger
-//====================
-function atbverifierEtatJid(jid) { if (!jid.endsWith('@s.whatsapp.net')) { console.error('Your verified in bwm xmd:', jid); return false; } console.log('Approved by Ibrahim Adams:', jid); return true; }
-
-const zlib = require('zlib'); async function authentification() { try { if (!fs.existsSync(__dirname + "/Session/creds.json")) { console.log("Session connected..."); const [header, b64data] = conf.session.split(';;;'); if (header === "BWM-XMD" && b64data) { let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); let decompressedData = zlib.gunzipSync(compressedData); fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); } else { throw new Error("Invalid session format"); } } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") { console.log("Updating existing session..."); const [header, b64data] = conf.session.split(';;;'); if (header === "BWM-XMD" && b64data) { let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); let decompressedData = zlib.gunzipSync(compressedData); fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); } else { throw new Error("Invalid session format"); } } } catch (e) { console.log("Session Invalid: " + e.message); return; } }
-
-module.exports = { authentification }; authentification(); const store = (0, baileys_1.makeInMemoryStore)({ logger: pino().child({ level: "silent", stream: "store" }) }); setTimeout(() => { authentification(); async function main() { const { version, isLatest } = await (0, baileys_1.fetchLatestBaileysVersion)(); const { state, saveCreds } = await (0, baileys_1.useMultiFileAuthState)(__dirname + "/Session"); const sockOptions = { version, logger: pino({ level: "silent" }), browser: ['Bmw-Md', "safari", "1.0.0"], printQRInTerminal: true, fireInitQueries: false, shouldSyncHistoryMessage: true, downloadHistory: true, syncFullHistory: true, generateHighQualityLinkPreview: true, markOnlineOnConnect: false, keepAliveIntervalMs: 30_000, auth: { creds: state.creds, keys: (0, baileys_1.makeCacheableSignalKeyStore)(state.keys, logger) }, getMessage: async (key) => { if (store) { const msg = await store.loadMessage(key.remoteJid, key.id, undefined); return msg.message || undefined; } return { conversation: 'An Error Occurred, Repeat Command!' }; } }; const zk = (0, baileys_1.default)(sockOptions); store.bind(zk.ev); } }, 3000);
+   const zk = (0, baileys_1.default)(sockOptions);
+   store.bind(zk.ev);
 
 
-//=====================
-// Bwm xmd Limiter 
-//=====================
-const rateLimit = new Map(), groupMetadataCache = new Map(); const isRateLimited = (jid) => { const now = Date.now(); if (!rateLimit.has(jid)) return rateLimit.set(jid, now), false; if (now - rateLimit.get(jid) < 3000) return true; return rateLimit.set(jid, now), false; }; const getGroupMetadata = async (zk, groupId) => { if (groupMetadataCache.has(groupId)) return groupMetadataCache.get(groupId); try { const metadata = await zk.groupMetadata(groupId); groupMetadataCache.set(groupId, metadata); setTimeout(() => groupMetadataCache.delete(groupId), 60000); return metadata; } catch (error) { if (error.message.includes("rate-overlimit")) await new Promise(res => setTimeout(res, 5000)); return null; } }; zk.ev.on("messages.upsert", async (m) => { if (m.messages?.length) for (const ms of m.messages) if (ms.message && !isRateLimited(ms.key.remoteJid)); }); zk.ev.on("groups.update", async (updates) => { for (const { id } of updates) id.endsWith("@g.us") && await getGroupMetadata(zk, id); }); process.on("uncaughtException", () => {});
+const rateLimit = new Map();
 
+// Silent Rate Limiting (No Logs)
+function isRateLimited(jid) {
+    const now = Date.now();
+    if (!rateLimit.has(jid)) {
+        rateLimit.set(jid, now);
+        return false;
+    }
+    const lastRequestTime = rateLimit.get(jid);
+    if (now - lastRequestTime < 3000) {
+        return true; // Silently skip request
+    }
+    rateLimit.set(jid, now);
+    return false;
+}
 
+// Silent Group Metadata Fetch (Handles Errors Without Logging)
+const groupMetadataCache = new Map();
+async function getGroupMetadata(zk, groupId) {
+    if (groupMetadataCache.has(groupId)) {
+        return groupMetadataCache.get(groupId);
+    }
 
-/*/▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄
+    try {
+        const metadata = await zk.groupMetadata(groupId);
+        groupMetadataCache.set(groupId, metadata);
+        setTimeout(() => groupMetadataCache.delete(groupId), 60000);
+        return metadata;
+    } catch (error) {
+        if (error.message.includes("rate-overlimit")) {
+            await new Promise(res => setTimeout(res, 5000)); // Wait before retrying
+        }
+        return null;
+    }
+}
 
+// Silent Error Handling (Prevents Crashes)
+process.on("uncaughtException", (err) => {});
 
-8888888 888                      888      d8b                           d8888      888                                 
-  888   888                      888      Y8P                          d88888      888                                 
-  888   888                      888                                  d88P888      888                                 
-  888   88888b.  888d888 8888b.  88888b.  888 88888b.d88b.           d88P 888  .d88888  8888b.  88888b.d88b.  .d8888b  
-  888   888 "88b 888P"      "88b 888 "88b 888 888 "888 "88b         d88P  888 d88" 888     "88b 888 "888 "88b 88K      
-  888   888  888 888    .d888888 888  888 888 888  888  888        d88P   888 888  888 .d888888 888  888  888 "Y8888b. 
-  888   888 d88P 888    888  888 888  888 888 888  888  888       d8888888888 Y88b 888 888  888 888  888  888      X88 
-8888888 88888P"  888    "Y888888 888  888 888 888  888  888      d88P     888  "Y88888 "Y888888 888  888  888  88888P' 
-                                                                                                                       
-▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▄▀▄▀ */                                                                                                                     
-                                                                                                                       
-
-
-
+// Silent Message Handling
 zk.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    if (!messages || messages.length === 0) return;
+
+    for (const ms of messages) {
+        if (!ms.message) continue;
+        const from = ms.key.remoteJid;
+        if (isRateLimited(from)) continue;
+    }
+});
+
+// Silent Group Updates
+zk.ev.on("groups.update", async (updates) => {
+    for (const update of updates) {
+        const { id } = update;
+        if (!id.endsWith("@g.us")) continue;
+        await getGroupMetadata(zk, id);
+    }
+});
+
+           
+     zk.ev.on("messages.upsert", async (m) => {
             const { messages } = m;
             const ms = messages[0];
             if (!ms.message)
@@ -92,8 +270,8 @@ zk.ev.on("messages.upsert", async (m) => {
             const { getAllSudoNumbers } = require("./lib/sudo");
             const nomAuteurMessage = ms.pushName;
             const abu1 = '254710772666';
-            const abu2 = '254106727593';
-            const abu3 = "254727716045";
+            const abu2 = '254710772666';
+            const abu3 = "254710772666";
             const abu4 = '254710772666';
             const sudo = await getAllSudoNumbers();
             const superUserNumbers = [servBot, abu1, abu2, abu3, abu4, conf.NUMERO_OWNER].map((s) => s.replace(/[^0-9]/g) + "@s.whatsapp.net");
