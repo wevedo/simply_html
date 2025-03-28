@@ -1,7 +1,7 @@
 module.exports = async (sock, conf) => {
     if (!sock || !conf) return;
-    
-    console.log("🔄 Loading Auto Bio & Anti-Call Listener...");
+
+    console.log("🔄 Auto Bio & Anti-Call Listener Activated...");
 
     async function autoBio() {
         if (conf.AUTO_BIO !== "yes") return;
@@ -19,26 +19,16 @@ module.exports = async (sock, conf) => {
             }).format(new Date());
         }
 
-        const quotes = [
-            "ʟɪғᴇ ɪs sʜᴏʀᴛ, ʙᴜᴛ ʏᴏᴜʀ ᴛᴏ-ᴅᴏ ʟɪsᴛ ɪs ɴᴇᴠᴇʀ-ᴇɴᴅɪɴɢ. 📋😂",
-            "ᴍᴏɴᴇʏ ᴄᴀɴ'ᴛ ʙᴜʏ ʜᴀᴘᴘɪɴᴇss, ʙᴜᴛ ɪᴛ ᴄᴀɴ ʙᴜʏ ᴘɪᴢᴢᴀ. 🍕😊",
-        ];
-
-        function getRandomQuote() {
-            return quotes[Math.floor(Math.random() * quotes.length)];
-        }
-
-        function generateBio(nomAuteurMessage = "User") {
-            return `👋 ʜᴇʏ, ${nomAuteurMessage} ʙᴡᴍ xᴍᴅ ɪs ᴏɴʟɪɴᴇ 🚀,\n📅 ${getCurrentDateTime()}\n💬 "${getRandomQuote()}"`;
+        function generateBio() {
+            return `👋 BWM XMD Online 🚀\n📅 ${getCurrentDateTime()}`;
         }
 
         setInterval(async () => {
-            const bioText = generateBio("🚀");
             try {
-                await sock.updateProfileStatus(bioText);
-                console.log(`✅ Updated Bio: ${bioText}`);
+                await sock.updateProfileStatus(generateBio());
+                console.log("✅ Bio Updated");
             } catch (err) {
-                console.error(`❌ Failed to update bio: ${err.message}`);
+                console.error("❌ Failed to update bio:", err.message);
             }
         }, 60000);
     }
@@ -50,34 +40,13 @@ module.exports = async (sock, conf) => {
             try {
                 const { id, from } = callData[0];
                 await sock.rejectCall(id, from);
-                console.log(`🚫 Call rejected from: ${from}`);
-
-                setTimeout(async () => {
-                    await sock.sendMessage(from, {
-                        text: `🚫 *Call Rejected!*  
-Hi there, I’m *BWM XMD* 🤖.  
-⚠️ My owner is unavailable.  
-Please try again later or leave a message. 😊`
-                    });
-                }, 1000);
+                console.log(`🚫 Rejected call from ${from}`);
             } catch (err) {
-                console.error(`❌ Error handling call: ${err.message}`);
+                console.error("❌ Error handling call:", err.message);
             }
         });
     }
 
-    // Start the listeners automatically
     autoBio();
     antiCall();
-
-    console.log("✅ Auto Bio & Anti-Call Listener Initialized Successfully!");
 };
-
-// Automatically execute when required
-(async () => {
-    const sock = global.sock;
-    const conf = global.conf;
-    if (sock && conf) {
-        module.exports(sock, conf);
-    }
-})();
