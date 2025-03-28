@@ -3,7 +3,7 @@ const path = require('path');
 const googleTTS = require('google-tts-api');
 const ai = require('unlimited-ai');
 
-module.exports = (zk, conf) => {
+module.exports = (zk, conf = {}) => { // Ensure conf is always an object
     const chatStorePath = path.join(__dirname, '../store.json');
     
     zk.ev.on("messages.upsert", async (m) => {
@@ -18,30 +18,33 @@ module.exports = (zk, conf) => {
             const messageContent = ms.message.conversation || 
                                  ms.message.extendedTextMessage?.text;
 
-            if (ms.key.fromMe || remoteJid === `${conf.NUMERO_OWNER}@s.whatsapp.net`) return;
+            // Ensure conf.NUMERO_OWNER exists before checking
+            const ownerJid = conf.NUMERO_OWNER ? `${conf.NUMERO_OWNER}@s.whatsapp.net` : null;
+
+            if (ms.key.fromMe || remoteJid === ownerJid) return;
             if (conf.CHATBOT1 !== "yes") return;
 
             if (["conversation", "extendedTextMessage"].includes(messageType)) {
-                const userInput = messageContent.trim();
+                const userInput = messageContent?.trim();
                 if (!userInput) return;
 
                 let conversationData = await loadConversationData();
                 
                 const newEntry = [
                     { role: 'user', content: userInput },
-                    { role: 'system', content: 'You are Bwm xmd. Developed by Ibrahim Adams. Respond to commands, mention developer only when asked.' }
+                    { role: 'system', content: 'You are BWM XMD, developed by Ibrahim Adams. Respond to user messages and commands. Mention the developer only when asked.' }
                 ];
 
                 try {
                     const response = await processAIResponse([...conversationData, ...newEntry]);
+                    if (!response || response.trim() === "") return;
+
                     await handleAudioResponse(response, remoteJid);
                     
                     newEntry.push({ role: 'assistant', content: response });
                     await saveConversationData([...conversationData, ...newEntry]);
                 } catch (error) {
                     console.error("Chatbot Error:", error);
-                    // Optionally send error notification to owner
-                    // await zk.sendMessage(conf.NUMERO_OWNER+'@s.whatsapp.net', {text: `Chatbot Error: ${error.message}`})
                 }
             }
         } catch (e) {
@@ -67,31 +70,34 @@ module.exports = (zk, conf) => {
     }
 
     async function processAIResponse(conversation) {
-        return ai.generate('gpt-4-turbo-2024-04-09', conversation);
+        try {
+            return await ai.generate('gpt-4-turbo-2024-04-09', conversation);
+        } catch (error) {
+            console.error("AI Processing Error:", error);
+            return "Sorry, I couldn't process that request.";
+        }
     }
 
     async function handleAudioResponse(text, jid) {
-        const language = detectLanguage(text);
-        
-        const audioUrl = googleTTS.getAudioUrl(text, {
-            lang: language,
-            slow: false,
-            host: 'https://translate.google.com',
-            voice: language === 'sw' ? 'google_swahili_female' : 'google_en_us_female',
-            pitch: 10.6,
-            speed: 10.5
-        });
+        try {
+            const language = detectLanguage(text);
+            const audioUrl = googleTTS.getAudioUrl(text, {
+                lang: language,
+                slow: false
+            });
 
-        await zk.sendMessage(jid, {
-            audio: { url: audioUrl },
-            mimetype: 'audio/mp4',
-            ptt: true
-        });
+            await zk.sendMessage(jid, {
+                audio: { url: audioUrl },
+                mimetype: 'audio/mp4',
+                ptt: true
+            });
+        } catch (error) {
+            console.error("TTS Error:", error);
+        }
     }
 
     function detectLanguage(text) {
-        const hasSwahili = text.match(/swahili/i) || 
-                          text.match(/habari|asante|karibu/i);
+        const hasSwahili = text.match(/swahili|habari|asante|karibu/i);
         return hasSwahili ? 'sw' : 'en';
     }
 };
