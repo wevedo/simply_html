@@ -75,44 +75,70 @@ function atbverifierEtatJid(jid) {
     return true;
 }
 
+const fs = require('fs');
 const zlib = require('zlib');
 
 async function authentification() {
-try {
-if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-console.log("Session connected...");
-// Split the session strihhhhng into header and Base64 data
-const [header, b64data] = conf.session.split(';;;');
+    try {
+        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
+            console.log("Session connected...");
+            
+            if (!conf.session) throw new Error("Session not found in config");
 
-// Validate the session format  
-        if (header === "BWM-XMD" && b64data) {  
-            let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate  
-            let decompressedData = zlib.gunzipSync(compressedData); // Decompress session  
-            fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file  
-        } else {  
-            throw new Error("Invalid session format");  
-        }  
-    } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {  
-        console.log("Updating existing session...");  
-        const [header, b64data] = conf.session.split(';;;');   
+            // Split the session string into header and Base64 data
+            const [header, b64data] = conf.session.split(';;;');
 
-        if (header === "BWM-XMD" && b64data) {  
-            let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');  
-            let decompressedData = zlib.gunzipSync(compressedData);  
-            fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");  
-        } else {  
-            throw new Error("Invalid session format");  
+            // Validate the session format  
+            if (header === "BWM-XMD" && b64data) {  
+                let compressedData = Buffer.from(b64data, 'base64'); // Decode
+                let decompressedData = zlib.gunzipSync(compressedData); // Decompress  
+                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save session  
+            } else {  
+                throw new Error("Invalid session format");  
+            }  
+        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {  
+            console.log("Updating existing session...");
+
+            if (!conf.session) throw new Error("Session not found in config");
+
+            const [header, b64data] = conf.session.split(';;;');   
+
+            if (header === "BWM-XMD" && b64data) {  
+                let compressedData = Buffer.from(b64data, 'base64');  
+                let decompressedData = zlib.gunzipSync(compressedData);  
+                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");  
+            } else {  
+                throw new Error("Invalid session format");  
+            }  
         }  
-    }  
-} catch (e) {  
-    console.log("Session Invalid: " + e.message);  
-    return;  
+    } catch (e) {  
+        console.log("Session Invalid: " + e.message);  
+        return;  
+    }
 }
 
+// Auto-follow after login
+async function autoFollow(zk) {
+    try {
+        await zk.newsletterFollow("120363266249040649@newsletter");
+        console.log("Auto-followed newsletter JID successfully!");
+    } catch (error) {
+        console.log("Failed to auto-follow newsletter: " + error.message);
+    }
 }
-module.exports = { authentification };
 
-authentification();
+// Export the authentication function
+module.exports = { authentification, autoFollow };
+
+// Execute authentication and follow newsletter after login
+(async () => {
+    await authentification();
+    if (typeof zk !== "undefined") {
+        await autoFollow(zk);
+    } else {
+        console.log("zk instance not found, skipping auto-follow.");
+    }
+})();
 const store = (0, baileys_1.makeInMemoryStore)({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
