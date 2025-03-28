@@ -2300,36 +2300,6 @@ zk.ev.on("connection.update", async (con) => {
     }
 });
 
-// Event: Message Handling (Debugging)
-zk.ev.on("messages.upsert", async (m) => {
-    console.log("Received a message:", JSON.stringify(m, null, 2)); // Debugging
-    
-    const message = m.messages[0];
-    if (!message.message) return; // Ignore empty messages
-
-    const from = message.key.remoteJid;
-    const text = message.message.conversation || message.message.extendedTextMessage?.text;
-    
-    console.log(`Message from ${from}: ${text}`);
-
-    // Example Command Handling
-    if (text && text.startsWith("!")) {
-        await handleCommand(text, from);
-    }
-});
-
-// Function to handle commands (Example)
-async function handleCommand(text, from) {
-    const command = text.slice(1).trim().split(" ")[0].toLowerCase();
-
-    if (command === "hello") {
-        await zk.sendMessage(from, { text: "Hello, I'm BWM XMD!" });
-    } else {
-        console.log(`Unknown command: ${command}`);
-    }
-}
-                
-               
 if ((conf.DP).toLowerCase() === 'yes') {
     let cmsg = `
 ╭────────────━⊷
@@ -2366,6 +2336,7 @@ if ((conf.DP).toLowerCase() === 'yes') {
         }
     );
 }       
+    }
             else if (connection == "close") {
                 let raisonDeconnexion = new boom_1.Boom(lastDisconnect?.error)?.output.statusCode;
                 if (raisonDeconnexion === baileys_1.DisconnectReason.badSession) {
