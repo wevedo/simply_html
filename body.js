@@ -19,12 +19,6 @@ const { verifierEtatJid, recupererActionJid } = require("./lib/antilien");
 
 const evt = require("./Ibrahim/adams");
 
-const { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./lib/banUser");
-
-const { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./lib/banGroup");
-
-const { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./lib/onlyAdmin");
-
 const { reagir } = require("./Ibrahim/app"); const express = require("express"); const { exec } = require("child_process"); const http = require("http");
 
 require("dotenv").config({ path: "./config.env" });
@@ -457,7 +451,7 @@ var commandeOptions = {
 
 }
  else if (connection == "close") { let disconnectReason = new Boom(lastDisconnect?.error)?.output.statusCode; if (disconnectReason === baileys_1.DisconnectReason.badSession) { console.log('Session ID error, please rescan.'); } else if (disconnectReason === baileys_1.DisconnectReason.connectionClosed) { console.log('Connection closed, reconnecting...'); main(); } else if (disconnectReason === baileys_1.DisconnectReason.connectionLost) { console.log('Connection lost, attempting to reconnect...'); main(); } else if (disconnectReason === baileys_1.DisconnectReason.connectionReplaced) { console.log('Connection replaced, another session is already active. Please close it.'); } else if (disconnectReason === baileys_1.DisconnectReason.loggedOut) { console.log('Logged out, please rescan the QR code.'); } else if (disconnectReason === baileys_1.DisconnectReason.restartRequired) { console.log('Restarting...'); main(); } else { console.log('Restarting due to an error:', disconnectReason); const { exec } = require("child_process"); exec("pm2 restart all"); } console.log("Connection status: " + connection); main(); }
- zk.ev.on("creds.update", saveCreds;
+ zk.ev.on("creds.update", saveCreds);
 zk.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
     const quoted = message.msg || message;
     const mime = (message.msg || message).mimetype || "";
