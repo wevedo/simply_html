@@ -2,7 +2,7 @@ fs = require('fs-extra')
 path = require('path')
 ai = require('unlimited-ai')
 
-module.exports = (zk, conf) => {
+module.exports = (zk, conf = {}) => { // Ensure conf is always an object
     chatStorePath = path.join(__dirname, '../store.json')
 
     zk.ev.on("messages.upsert", async (m) => {
@@ -17,7 +17,7 @@ module.exports = (zk, conf) => {
             messageContent = ms.message.conversation || 
                              ms.message.extendedTextMessage?.text
 
-            // Ensure conf.NUMERO_OWNER is defined
+            // Ensure conf is defined and NUMERO_OWNER exists
             ownerNumber = conf.NUMERO_OWNER ? `${conf.NUMERO_OWNER}@s.whatsapp.net` : null
 
             // Skip conditions
