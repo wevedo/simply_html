@@ -26,9 +26,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const { makeInMemoryStore } = require('@whiskeysockets/baileys');
-const baileys = require('@whiskeysockets/baileys');
-const store = baileys.makeInMemoryStore();
 const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
 const logger_1 = __importDefault(require("@whiskeysockets/baileys/lib/Utils/logger"));
 const { isJidGroup } = require('@whiskeysockets/baileys');
@@ -115,7 +112,9 @@ async function authentification() {
 module.exports = { authentification };
 
 authentification();
-const store = (0, baileys_1.makeInMemoryStore)({
+const { makeInMemoryStore } = require('@whiskeysockets/baileys');
+
+const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
 setTimeout(() => {
