@@ -1,65 +1,12 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-  var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc); 
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const baileys_1 = __importStar(require("@whiskeysockets/baileys"));
-const logger_1 = __importDefault(require("@whiskeysockets/baileys/lib/Utils/logger"));
-const { isJidGroup } = require('@whiskeysockets/baileys');
-const logger = logger_1.default.child({});
-logger.level = 'silent';
-const pino = require("pino");
-const boom_1 = require("@hapi/boom");
-const conf = require("./config");
-const axios = require("axios");
-const moment = require("moment-timezone");
-let fs = require("fs-extra");
-let path = require("path");
-let botPassword = null;
-const FileType = require('file-type');
-const { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
-//import chalk from 'chalk'
-const { verifierEtatJid , recupererActionJid } = require("./lib/antilien");
-let evt = require(__dirname + "/Ibrahim/adams");
-const {isUserBanned , addUserToBanList , removeUserFromBanList} = require("./lib/banUser");
-const  {addGroupToBanList,isGroupBanned,removeGroupFromBanList} = require("./lib/banGroup");
-const {isGroupOnlyAdmin,addGroupToOnlyAdminList,removeGroupFromOnlyAdminList} = require("./lib/onlyAdmin");
-//const //{loadCmd}=require("/framework/mesfonctions")
-let { reagir } = require(__dirname + "/Ibrahim/app");
-const prefixe = conf.PREFIXE;
-const more = String.fromCharCode(8206)
-require('dotenv').config({ path: './config.env' });
-const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
-const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`; 
-const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; 
-const express = require('express');
-const { exec } = require('child_process');
-const PORT = process.env.PORT || 3000;
-const http = require("http");
-const app = express();
+/*/======================================//
+       BWM XMD BY SIR IBRAHIM ADAMS 
+//======================================/*/
+
+const { default: Baileys, ...baileys } = require("@whiskeysockets/baileys"), logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({ level: "silent" }), pino = require("pino"), { Boom } = require("@hapi/boom"), conf = require("./config"), axios = require("axios"), moment = require("moment-timezone"), fs = require("fs-extra"), path = require("path"), FileType = require("file-type"), { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter"), { verifierEtatJid, recupererActionJid } = require("./lib/antilien"), { isUserBanned, addUserToBanList, removeUserFromBanList } = require("./lib/banUser"), { addGroupToBanList, isGroupBanned, removeGroupFromBanList } = require("./lib/banGroup"), { isGroupOnlyAdmin, addGroupToOnlyAdminList, removeGroupFromOnlyAdminList } = require("./lib/onlyAdmin"), { reagir } = require("./Ibrahim/app"), prefixe = conf.PREFIXE, more = String.fromCharCode(8206);
+require("dotenv").config({ path: "./config.env" }); const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name", herokuAppLink = process.env.HEROKU_APP_LINK || https://dashboard.heroku.com/apps/${herokuAppName}, botOwner = process.env.NUMERO_OWNER || "Unknown Owner", express = require("express"), { exec } = require("child_process"), PORT = process.env.PORT || 3000, http = require("http"), app = express();
+
+
+
 
 
 function atbverifierEtatJid(jid) {
