@@ -150,37 +150,58 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
+const fs = require("fs");
+const path = require("path");
+
+console.log("\n🚀 Loading Bwm XMD Listeners...");
+
 // Function to load all listeners dynamically
 async function loadListeners(sock, conf) {
-    console.log("🔄 Loading listeners...");
-    
     const listenersDir = path.join(__dirname, "bwmxmd");
-    console.log("📂 Looking in directory:", listenersDir);
 
     try {
         const files = fs.readdirSync(listenersDir);
-        console.log("📁 Files found:", files);
+        console.log("📂 Found listener files:", files);
 
         files.forEach((file) => {
             if (file.endsWith(".js")) {
                 try {
                     console.log(`⏳ Loading ${file}...`);
                     const listener = require(path.join(listenersDir, file));
+
                     if (typeof listener === "function") {
                         listener(sock, conf); // Pass sock and conf
-                        console.log(`✅ Loaded Listener: ${file}`);
+                        console.log(`✅ ${file} Listener initialized successfully`);
                     } else {
                         console.log(`⚠️ ${file} does not export a function.`);
                     }
-                } catch (err) {
-                    console.error(`❌ Failed to load ${file}:`, err.message);
+                } catch (e) {
+                    console.error(`❌ Failed to load listener ${file}: ${e.message}`);
                 }
             }
         });
-    } catch (err) {
-        console.error("❌ Failed to read listeners directory:", err.message);
+    } catch (e) {
+        console.error("❌ Error reading listeners directory:", e.message);
     }
 }
+
+// Auto-execute when bot starts
+(async () => {
+    try {
+        const { default: makeWASocket } = require("@whiskeysockets/baileys");
+   
+        const sock = makeWASocket({ /* connection options */ });
+
+        sock.ev.on("connection.update", async (update) => {
+            if (update.connection === "open") {
+                console.log("🤖 Bot Connected Successfully!");
+                await loadListeners(sock, conf); // Auto-load all listeners
+            }
+        });
+    } catch (e) {
+        console.error("❌ Failed to start bot:", e.message);
+    }
+})();
 
 // Function to establish bot connection
 async function connectBot() {
