@@ -150,10 +150,7 @@ authentification();
 
    const zk = (0, baileys_1.default)(sockOptions);
    store.bind(zk.ev);
-
-const fs = require("fs");
-const path = require("path");
-
+        
 async function loadListeners(sock, conf) {
     const listenersDir = path.join(__dirname, "bwmxmd");
 
