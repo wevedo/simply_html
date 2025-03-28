@@ -378,7 +378,7 @@ var commandeOptions = {
             
             //execution des commandes   
             if (verifCom) {
-                //await await zk.readMessages(ms.key);
+                // await zk.readMessages(ms.key);
                 const cd = evt.cm.find((adams) => adams.nomCom === (com));
                 if (cd) {
                     try {
@@ -387,109 +387,11 @@ var commandeOptions = {
                 return;
           }
 
-                         /******************* PM_PERMT***************/
+        /******************* PM_PERMT***************/
 
-            if (!superUser && origineMessage === auteurMessage&& conf.PM_PERMIT === "yes" ) {
-                repondre("Sorry you don't have access to command this code") ; return }
-            ///////////////////////////////
-
-             
-            /*****************************banGroup  */
-            if (!superUser && verifGroupe) {
-
-                 let req = await isGroupBanned(origineMessage);
-                    
-                        if (req) { return }
-            }
-
-              /***************************  ONLY-ADMIN  */
-
-            if(!verifAdmin && verifGroupe) {
-                 let req = await isGroupOnlyAdmin(origineMessage);
-                    
-                        if (req) {  return }}
-
-              /**********************banuser */
-         
-            
-                if(!superUser) {
-                    let req = await isUserBanned(auteurMessage);
-                    
-                        if (req) {repondre("You are banned from bot commands"); return}
-                    
-
-                } 
-
-                        reagir(origineMessage, zk, ms, cd.reaction);
-                        cd.fonction(origineMessage, zk, commandeOptions);
-                    }
-                    catch (e) {
-                        console.log("😡😡 " + e);
-                        zk.sendMessage(origineMessage, { text: "😡😡 " + e }, { quoted: ms });
-                    }
-                }
-            }
-        });
-      
-
-        
-    async function activateCrons() {
-    const cron = require('node-cron');
-    const { getCron } = require('./lib/cron');
-
-    let crons = await getCron();
-    console.log(crons);
-
-    if (crons.length > 0) {
-        for (let i = 0; i < crons.length; i++) {
-            const cronItem = crons[i];
-
-            if (cronItem.mute_at) {
-                let set = cronItem.mute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
-
-                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
-                    console.log(`Setting up auto-mute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
-
-                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                        await zk.groupSettingUpdate(cronItem.group_id, 'announcement');
-                        zk.sendMessage(cronItem.group_id, {
-                            image: { url: './files/chrono.webp' },
-                            caption: "Hello, it's time to close the group; sayonara."
-                        });
-                    }, {
-                        timezone: "Africa/Nairobi"
-                    });
-                } else {
-                    console.error(`Invalid mute_at format: ${cronItem.mute_at}`);
-                }
-            }
-
-            if (cronItem.unmute_at) {
-                let set = cronItem.unmute_at.replace(/\s/g, '').split(':'); // Remove spaces and split
-
-                if (set.length === 2 && !isNaN(set[0]) && !isNaN(set[1])) {
-                    console.log(`Setting up auto-unmute for ${cronItem.group_id} at ${set[0]}:${set[1]}`);
-
-                    cron.schedule(`${set[1]} ${set[0]} * * *`, async () => {
-                        await zk.groupSettingUpdate(cronItem.group_id, 'not_announcement');
-                        zk.sendMessage(cronItem.group_id, {
-                            image: { url: './files/chrono.webp' },
-                            caption: "Good morning; it's time to open the group."
-                        });
-                    }, {
-                        timezone: "Africa/Nairobi"
-                    });
-                } else {
-                    console.error(`Invalid unmute_at format: ${cronItem.unmute_at}`);
-                }
-            }
-        }
-    } else {
-        console.log("No cron jobs to activate.");
-    }
-
-    return;
-}
+      if (!superUser && origineMessage === auteurMessage&& conf.PM_PERMIT === "yes" ) {
+        repondre("Sorry you don't have access to command this code") ; return }
+            //////////////////////////////
 
         zk.ev.on("connection.update", async (con) => {
             const { lastDisconnect, connection } = con;
@@ -533,7 +435,6 @@ var commandeOptions = {
                 }
                 console.log("Commands Installation Completed ✅");
 
-                await activateCrons();
                 if ((conf.DP).toLowerCase() === 'yes') {
     let cmsg = `
 ╭────────────━⊷
