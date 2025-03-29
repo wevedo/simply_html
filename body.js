@@ -267,28 +267,63 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
- const loadCommands = require('./utils/commandLoader');
+ 
+const { getMessageContent } = require('./utils/commandLoader'); // Create this utility
+
+// Command Loader
+const loadCommands = (commandRegistry) => {
+    const commandsDir = path.join(__dirname, 'commands');
+    
+    console.log('\nLoading commands...');
+    
+    try {
+        const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
+        
+        files.forEach(file => {
+            try {
+                const cmdPath = path.join(commandsDir, file);
+                const command = require(cmdPath);
+                
+                if (command.name && command.execute) {
+                    commandRegistry.set(command.name.toLowerCase(), command);
+                    console.log(`Loaded command: ${command.name}`);
+                }
+            } catch (e) {
+                console.log(`Failed to load ${file}: ${e.message}`);
+            }
+        });
+    } catch (dirError) {
+        console.log(`Command directory error: ${dirError.message}`);
+    }
+};
 
 // Initialize command registry
 const commandRegistry = new Map();
+loadCommands(commandRegistry);
 
-// Load commands on startup
-await loadCommands(commandRegistry);
-
-// Message handler
+// Message Handler
 adams.ev.on("messages.upsert", async ({ messages }) => {
     try {
         const msg = messages[0];
         if (!msg?.message || msg.key.fromMe) return;
 
-        const text = getMessageText(msg.message);
-        if (!text?.startsWith(conf.PREFIX)) return;
+        const text = getMessageContent(msg.message);
+        if (!text) return;
 
-        const [cmdName, ...args] = text.slice(conf.PREFIX.length).trim().split(/ +/);
+        console.log(`Received message: ${text}`); // Debug log
+
+        if (!text.startsWith(conf.PREFIX)) {
+            console.log(`Message doesn't start with prefix ${conf.PREFIX}`);
+            return;
+        }
+
+        const [cmdName, ...args] = text.slice(conf.PREFIX.length).trim().split(/\s+/);
+        console.log(`Processing command: ${cmdName} with args: ${args}`); // Debug log
+
         const command = commandRegistry.get(cmdName.toLowerCase());
-
+        
         if (command) {
-            console.log(chalk.blue(`\n[CMD] ${cmdName} by ${msg.key.remoteJid}`));
+            console.log(`Executing command: ${command.name}`);
             
             await command.execute({
                 adams,
@@ -296,22 +331,17 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                 args,
                 store,
                 config: conf,
-                commandRegistry,
-                listenerManager
+                commandRegistry
             });
+        } else {
+            console.log(`Command not found: ${cmdName}`);
         }
     } catch (error) {
-        console.error('Message handling error:', error.message);
+        console.error('Message handling error:', error);
     }
 });
 
-// Utility function to extract message text
-function getMessageContent(message) {
-    const type = Object.keys(message)[0];
-    return message[type]?.caption || 
-           message[type]?.text || 
-           (type === 'conversation' ? message.conversation : '');
-}
+
  
 //===============================================================================================================//
 
