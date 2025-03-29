@@ -111,9 +111,9 @@ authentification();
                 }
                 return {
                     conversation: 'An Error Occurred, Repeat Command!'
-                };
+                }
             }
-                };
+            
 
 
    const zk = (0, baileys_1.default)(sockOptions);
@@ -170,7 +170,7 @@ zk.ev.on("messages.upsert", async (m) => {
         const from = ms.key.remoteJid;
         if (isRateLimited(from)) continue;
     }
-});
+}
 
 // Silent Group Updates
 zk.ev.on("groups.update", async (updates) => {
@@ -179,7 +179,7 @@ zk.ev.on("groups.update", async (updates) => {
         if (!id.endsWith("@g.us")) continue;
         await getGroupMetadata(zk, id);
     }
-});
+}
 
            
      zk.ev.on("messages.upsert", async (m) => {
