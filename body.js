@@ -61,40 +61,83 @@ function atbverifierEtatJid(jid) {
     return true;
 }
 
-async function authentification() {
+async function authentication() {
     try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Bwm xmd session connected ✅");
-            // Split the session strihhhhng into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            // Validate the session format
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
-            } else {
+        const sessionPath = path.join(__dirname, "Session", "creds.json");
+        
+        if (!fs.existsSync(sessionPath)) {
+            console.log("BWM XMD session initialization...");
+            
+            const [header, b64data] = conf.session.split(';;;');
+            if (header !== "BWM-XMD" || !b64data) {
                 throw new Error("Invalid session format");
             }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
+
+            const compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
+            const decompressedData = zlib.gunzipSync(compressedData);
+            fs.writeFileSync(sessionPath, decompressedData);
+            console.log("New session created successfully");
+        } else if (conf.session !== "zokk") {
             console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
+            const [header, b64data] = conf.session.split(';;;');
+            
+            if (header !== "BWM-XMD" || !b64data) {
                 throw new Error("Invalid session format");
             }
+
+            const compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
+            const decompressedData = zlib.gunzipSync(compressedData);
+            fs.writeFileSync(sessionPath, decompressedData);
+            console.log("Session updated successfully");
         }
+
+        // Send connection message after successful auth
+        if (conf.DP.toLowerCase() === 'yes') {
+            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
+            const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${process.env.HEROKU_APP_NAME}`;
+            
+            const connectionMessage = `
+┏━━━━━━━━━━━━━━━━━━━━━━━◈
+┃                                   
+┃   🚀 *BWM XMD CONNECTED* 🚀  
+┃   _Version 7.0.8 - ${md} Mode_    
+┃                                   
+┣━━━━━━━━━━━━━━━━━━━━━━━◈
+┃   ⚙️ *Settings*  
+┃   ➟ Prefix: [ ${conf.PREFIX} ]  
+┃   ➟ Status: ${STATE === 1 ? 'Online' : 'Offline'}  
+┃                                   
+┣━━━━━━━━━━━━━━━━━━━━━━━◈
+┃   📦 *Heroku Deployment*  
+┃   ➟ App Name: ${herokuAppName}  
+┃   ➟ Dashboard: ${herokuAppLink}  
+┃                                   
+┣━━━━━━━━━━━━━━━━━━━━━━━◈`;
+
+            await adams.sendMessage(
+                adams.user.id, 
+                { text: connectionMessage },
+                {
+                    disappearingMessagesInChat: true,
+                    ephemeralExpiration: 600 // 10 minutes
+                }
+            );
+            console.log("Connection message sent to bot");
+        }
+
     } catch (e) {
-        console.log("Session Invalid: " + e.message);
-        return;
+        console.error("Authentication failed:", e.message);
+        process.exit(1);
     }
 }
-module.exports = { authentification };
-authentification();
+
+module.exports = authentication;
+
+// Initialize authentication when module loads
+authentication().catch(err => {
+    console.error("Critical auth error:", err);
+    process.exit(1);
+});
 
 
 //===============================================================================//
