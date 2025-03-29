@@ -13,6 +13,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
                    
 const { default: makeWASocket, isJidGroup, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
+const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
@@ -271,7 +272,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 const PREFIX = conf.PREFIX;
 const STATE = conf.PRESENCE;
 const BOT_OWNER = conf.OWNER_NUMBER;
-const SUDO_NUMBERS = ['254106727593', '254727716045', '254710772666'];
+
 
 // Improved Message Content Extractor
 function getMessageContent(message) {
@@ -355,17 +356,16 @@ class CommandSystem {
             console.error(`Command error [${command.name}]:`, e.message);
         }
     }
-
     createContext(msg) {
-        const chat = msg.key.remoteJid;
-        const sender = msg.key.participant || chat;
-        const isGroup = chat.endsWith("@g.us");
-        
-        return {
-            chat,
-            sender,
-            isGroup,
-            isOwner: true
+    const chat = msg.key.remoteJid;
+    const sender = msg.key.participant || chat;
+    const isGroup = chat.endsWith("@g.us");
+    
+    return {
+        chat,
+        sender,
+        isGroup,
+        isOwner: true 
         };
     }
 }
