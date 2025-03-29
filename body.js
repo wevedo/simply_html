@@ -48,7 +48,7 @@ app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}m
 
 //============================================================================//
 // In your main bot file
-const { getSettings } = require('./Ibrahim/adams');
+const { getSettings } = require('./utils/settings');
 
 // Modified message handler
 adams.ev.on("messages.upsert", async ({ messages }) => {
