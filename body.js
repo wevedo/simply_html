@@ -93,3 +93,98 @@ authentification();
 
 
 //===============================================================================//
+
+const store = makeInMemoryStore({
+    logger: pino().child({ level: "silent", stream: "store" })
+});
+
+let zk;
+
+async function main() {
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
+    
+    const sockOptions = {
+        version,
+        logger: pino({ level: "silent" }),
+        browser: ['BWM XMD', "safari", "1.0.0"],
+        printQRInTerminal: true,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, logger)
+        },
+        getMessage: async (key) => {
+            if (store) {
+                const msg = await store.loadMessage(key.remoteJid, key.id);
+                return msg.message || undefined;
+            }
+            return { conversation: 'Error occurred' };
+        }
+    };
+
+    zk = makeWASocket(sockOptions);
+    store.bind(zk.ev);
+
+    // Silent Rate Limiting
+    function isRateLimited(jid) {
+        const now = Date.now();
+        if (!rateLimit.has(jid)) {
+            rateLimit.set(jid, now);
+            return false;
+        }
+        const lastRequestTime = rateLimit.get(jid);
+        if (now - lastRequestTime < 3000) return true;
+        rateLimit.set(jid, now);
+        return false;
+    }
+
+    // Group Metadata Handling
+    const groupMetadataCache = new Map();
+    async function getGroupMetadata(groupId) {
+        if (groupMetadataCache.has(groupId)) {
+            return groupMetadataCache.get(groupId);
+        }
+        try {
+            const metadata = await zk.groupMetadata(groupId);
+            groupMetadataCache.set(groupId, metadata);
+            setTimeout(() => groupMetadataCache.delete(groupId), 60000);
+            return metadata;
+        } catch (error) {
+            if (error.message.includes("rate-overlimit")) {
+                await new Promise(res => setTimeout(res, 5000));
+            }
+            return null;
+        }
+    }
+
+    // Event Handlers
+    zk.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === "connecting") console.log("Connecting...");
+        if (connection === "open") {
+            console.log("Connected successfully");
+            // Initialize bot commands and status
+        }
+        if (connection === "close") {
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log("Connection closed, reconnecting...");
+            if (shouldReconnect) main();
+        }
+    });
+
+    zk.ev.on("creds.update", saveCreds);
+
+    // Message Handling
+    zk.ev.on("messages.upsert", async ({ messages }) => {
+        const ms = messages[0];
+        if (!ms.message) return;
+        
+        // Message processing logic here
+    });
+}
+
+setTimeout(() => {
+    main().catch(err => console.log("Initialization error:", err));
+}, 5000);
+
+
