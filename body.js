@@ -347,6 +347,7 @@ class CommandSystem {
         const chat = msg.key.remoteJid;
         const sender = msg.key.participant || chat;
         const isGroup = chat.endsWith("@g.us");
+        const fromMe = msg.key.fromMe;
         
         const isOwner = [BOT_OWNER]
             .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
@@ -361,7 +362,8 @@ class CommandSystem {
             sender,
             isGroup,
             isOwner,
-            isSudo
+            isSudo,
+            fromMe
         };
     }
 }
