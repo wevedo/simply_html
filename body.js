@@ -167,7 +167,7 @@ class ListenerManager {
     }
 
     async loadListeners(adams, store, commands) {
-        const listenerDir = path.join(__dirname, 'bwmxmd', 'listeners');
+        const listenerDir = path.join(__dirname, 'bwmxmd', 'listeners.js');
         
         // Clear existing listeners first
         this.cleanupListeners();
