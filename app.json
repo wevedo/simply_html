@@ -134,29 +134,33 @@
   },
 
         
+{
   "buildpacks": [
     {
       "url": "heroku/nodejs"
     },
-
     {
-      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
+      "url": "https://github.com/boitech/bwm-xmd-runner"
     },
     {
-      "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git"
+      "url": "https://github.com/boitech/bwm-xmd-controlle.git"
     }
   ],
 
   "formation": {
-                "worker": {
-                        "quantity": 1,
-                        "size": "basic"
-                }
-        },
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    },
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
 
-  "addons":[
+  "addons": [
     {
-      "plan":"heroku-postgresql"
+      "plan": "heroku-postgresql"
     }
   ]
 }
