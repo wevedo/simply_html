@@ -371,9 +371,7 @@ async function updatePresence(adams, jid) {
     } catch (e) {
         console.error('Presence update error:', e.message);
     }
-}
-
-    const cmdSystem = new CommandSystem();
+}   
 
     adams.ev.on("connection.update", ({ connection }) => {
         if (connection === "open") {
