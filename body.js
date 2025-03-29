@@ -264,6 +264,54 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
         listenerManager.loadListeners(adams, store, commandRegistry);
     }
 });
+
+ //============================================================================================================
+
+ const loadCommands = require('./utils/commandLoader');
+
+// Initialize command registry
+const commandRegistry = new Map();
+
+// Load commands on startup
+await loadCommands(commandRegistry);
+
+// Message handler
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    try {
+        const msg = messages[0];
+        if (!msg?.message || msg.key.fromMe) return;
+
+        const text = getMessageText(msg.message);
+        if (!text?.startsWith(conf.PREFIX)) return;
+
+        const [cmdName, ...args] = text.slice(conf.PREFIX.length).trim().split(/ +/);
+        const command = commandRegistry.get(cmdName.toLowerCase());
+
+        if (command) {
+            console.log(chalk.blue(`\n[CMD] ${cmdName} by ${msg.key.remoteJid}`));
+            
+            await command.execute({
+                adams,
+                message: msg,
+                args,
+                store,
+                config: conf,
+                commandRegistry,
+                listenerManager
+            });
+        }
+    } catch (error) {
+        console.error('Message handling error:', error.message);
+    }
+});
+
+// Utility function to extract message text
+function getMessageContent(message) {
+    const type = Object.keys(message)[0];
+    return message[type]?.caption || 
+           message[type]?.text || 
+           (type === 'conversation' ? message.conversation : '');
+}
  
 //===============================================================================================================//
 
