@@ -397,9 +397,7 @@ async function updatePresence(adams, jid) {
         await cmdSystem.processMessage(msg);
         await updatePresence(adams, msg.key.remoteJid);
     });
-})();
 
- 
 //===============================================================================================================//
 
 
