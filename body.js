@@ -359,17 +359,17 @@ adams.ev.on("connection.update", ({ connection }) => {
                 if (conf.DP.toLowerCase() === 'yes') {
             const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
             const connectionMsg = `
-╭──〔 *🚀 BWM XMD CONNECTED 🚀* 〕──◆  
-│ ✨ Version: 7.0.8 - ${md} Mode  
+ 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
+ 
+├──〔 ✨ Version: 7.0.8 〕
 │  
-├──〔 *🎭 Classic and Things* 〕──◆  
+├──〔 *🎭 Classic and Things* 〕 
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
 │ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
 │  
-├──〔 *📦 Heroku Deployment* 〕──◆  
+├──〔 *📦 Heroku Deployment* 〕
 │ 🏷️ App Name: ${herokuAppName}  
-│ 🌐 Dashboard: ${herokuAppLink}  
-╰──────────────────────────────◆`;
+╰──────────────────◆`;
 
             // Send disappearing status message
             adams.sendMessage(
