@@ -164,6 +164,44 @@ async function main() {
 
  //============================================================================//
 
+ // In your main message handler
+const { createNewsletterContext } = require('./utils/helper');
+
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const [msg] = messages;
+    if (!msg?.message) return;
+
+    const content = getMessageContent(msg.message);
+    if (!content?.startsWith(PREFIX)) return;
+
+    const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/\s+/);
+    const command = commandRegistry.get(cmdName.toLowerCase());
+
+    if (command) {
+        try {
+            const userJid = msg.key.participant || msg.key.remoteJid;
+            
+            await command.execute({
+                adams,
+                message: msg,
+                args,
+                reply: (content) => adams.sendMessage(
+                    msg.key.remoteJid,
+                    {
+                        ...content,
+                        contextInfo: createNewsletterContext(userJid)
+                    },
+                    { quoted: msg }
+                )
+            });
+        } catch (error) {
+            console.error(`Command execution error [${cmdName}]:`, error);
+        }
+    }
+});
+
+//============================================================================//
+                         
 // Listener Manager Class
 class ListenerManager {
     constructor() {
