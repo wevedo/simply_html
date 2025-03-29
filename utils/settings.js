@@ -2,7 +2,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const conf = require('/../config');
 
-const SETTINGS_PATH = path.join(__dirname, '..', 'bwm-settings.json');
+const SETTINGS_PATH = path.join(__dirname, '..', 'store.json');
 
 async function getSettings() {
     try {
