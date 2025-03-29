@@ -266,111 +266,134 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 });
 
  //============================================================================================================
-
-const PRESENCE = conf.PRESENCE;
+ 
+// Configuration
+const PREFIX = conf.PREFIX;
+const STATE = conf.PRESENCE;
 const BOT_OWNER = conf.OWNER_NUMBER;
-const SUDO_NUMBERS = ['254710772666', '254710772666', '254710772666', '254710772666'];
 
-// Core Utilities
-const decodeJid = (jid) => {
-    if (!jid) return jid;
-    const decoded = jidDecode(jid);
-    return decoded ? `${decoded.user}@${decoded.server}` : jid;
-};
+// Improved Message Content Extractor
+function getMessageContent(message) {
+    try {
+        if (!message) return '';
+        
+        const type = Object.keys(message)[0];
+        if (!type) return '';
+        
+        return {
+            conversation: message.conversation,
+            imageMessage: message.imageMessage?.caption,
+            videoMessage: message.videoMessage?.caption,
+            extendedTextMessage: message.extendedTextMessage?.text,
+            buttonsResponseMessage: message.buttonsResponseMessage?.selectedButtonId,
+            listResponseMessage: message.listResponseMessage?.singleSelectReply?.selectedRowId
+        }[type] || '';
+    } catch (e) {
+        console.error('Message content error:', e.message);
+        return '';
+    }
+}
 
-
-// Command System
-class CommandHandler {
+// Robust Command Handler
+class CommandSystem {
     constructor() {
         this.commands = new Map();
         this.loadCommands();
     }
 
     loadCommands() {
-        console.log("Loading bwm xmd Commands ♻️\n");
+        console.log("Loading commands...");
         const cmdDir = path.join(__dirname, "commands");
         
         fs.readdirSync(cmdDir).forEach(file => {
-            if (path.extname(file).toLowerCase() === ".js") {
-                try {
-                    const cmd = require(path.join(cmdDir, file));
+            if (!file.endsWith(".js")) return;
+            
+            try {
+                const cmdPath = path.join(cmdDir, file);
+                const cmd = require(cmdPath);
+                
+                if (cmd.name && cmd.execute) {
                     this.commands.set(cmd.name.toLowerCase(), cmd);
-                    console.log(`${file} loaded Successfully 🚀`);
-                } catch (e) {
-                    console.error(`${file} Failed: ${e.message}`);
+                    console.log(`Command loaded: ${cmd.name}`);
                 }
+            } catch (e) {
+                console.error(`Failed to load ${file}: ${e.message}`);
             }
         });
     }
 
-    async handleMessage(msg) {
-        const content = this.getMessageContent(msg);
-        if (!content?.startsWith(PREFIX)) return;
-
-        const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
-        const command = this.commands.get(cmdName.toLowerCase());
-
-        if (command) {
-            await this.executeCommand(command, msg, args);
+    async processMessage(msg) {
+        try {
+            if (!msg?.message) return;
+            
+            const content = getMessageContent(msg.message);
+            if (!content?.startsWith(PREFIX)) return;
+            
+            const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
+            const command = this.commands.get(cmdName.toLowerCase());
+            
+            if (command) {
+                console.log(`Executing command: ${cmdName}`);
+                await this.executeCommand(command, msg, args);
+            }
+        } catch (e) {
+            console.error('Message processing error:', e.message);
         }
-    }
-
-    getMessageContent(msg) {
-        const type = Object.keys(msg.message)[0];
-        return {
-            conversation: () => msg.message.conversation,
-            imageMessage: () => msg.message.imageMessage?.caption,
-            videoMessage: () => msg.message.videoMessage?.caption,
-            extendedTextMessage: () => msg.message.extendedTextMessage?.text
-        }[type]?.() || "";
     }
 
     async executeCommand(command, msg, args) {
         try {
             const context = this.createContext(msg);
-            await command.execute({ adams, args, ...context });
+            await command.execute({
+                adams,
+                args,
+                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg }),
+                ...context
+            });
         } catch (e) {
-            console.error(`Command Error [${command.name}]: ${e.message}`);
+            console.error(`Command error [${command.name}]:`, e.message);
         }
     }
 
     createContext(msg) {
-        const sender = decodeJid(msg.key.participant || msg.key.remoteJid);
-        const isOwner = [BOT_OWNER, ...SUDO_NUMBERS]
-            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
-            .includes(sender);
-
+        const chat = msg.key.remoteJid;
+        const sender = msg.key.participant || chat;
+        const isGroup = chat.endsWith("@g.us");
+        
         return {
+            chat,
             sender,
-            isOwner,
-            isGroup: msg.key.remoteJid.endsWith("@g.us"),
-            reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
+            isGroup,
+            isOwner: [BOT_OWNER, ...SUDO_NUMBERS]
+                .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
+                .includes(sender)
         };
     }
 }
 
 // Presence Manager
-class PresenceManager {
-    static states = {
-        1: "available",
-        2: "composing",
-        3: "recording",
-        default: "unavailable"
-    };
-
-    static async updateState(adams, jid) {
-        await adams.sendPresenceUpdate(this.states[PRESENCE] || this.states.default, jid);
+async function updatePresence(adams, jid) {
+    try {
+        const states = ["available", "composing", "recording", "unavailable"];
+        await adams.sendPresenceUpdate(states[STATE - 1] || "unavailable", jid);
+    } catch (e) {
+        console.error('Presence update error:', e.message);
     }
 }
 
 // Main Execution Flow
 (async () => {
-    const cmdHandler = new CommandHandler();
+    const adams = makeWASocket({
+        printQRInTerminal: true,
+        logger: { level: "silent" }
+    });
 
-    adams.ev.on("connection.update", async (update) => {
-        if (update.connection === "open") {
-            console.log("Bwm xmd online running 🌎");
-            await PresenceManager.updateState(adams, "status@broadcast");
+    const cmdSystem = new CommandSystem();
+
+    adams.ev.on("connection.update", ({ connection }) => {
+        if (connection === "open") {
+            console.log("Connected to WhatsApp");
+            updatePresence(adams, "status@broadcast");
         }
     });
 
@@ -378,8 +401,8 @@ class PresenceManager {
         const [msg] = messages;
         if (msg.key.fromMe) return;
 
-        await cmdHandler.handleMessage(msg);
-        await PresenceManager.updateState(adams, msg.key.remoteJid);
+        await cmdSystem.processMessage(msg);
+        await updatePresence(adams, msg.key.remoteJid);
     });
 })();
 
