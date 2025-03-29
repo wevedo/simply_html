@@ -46,35 +46,9 @@ app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}ms🚀`));
 
-//============================================================================//
-// In your main bot file
-const { getSettings } = require('./utils/settings');
-
-// Modified message handler
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const message = messages[0];
-    if (!message?.message || message.key.fromMe) return;
-
-    const text = getMessageText(message.message);
-    if (!text?.startsWith(conf.PREFIX)) return;
-
-    const [cmd, ...args] = text.slice(conf.PREFIX.length).split(/\s+/);
-    const command = commandRegistry.get(cmd.toLowerCase());
-
-    if (command) {
-        await command.execute({
-            adams,
-            message,
-            args,
-            store,
-            listenerManager,
-            commandRegistry,
-            config: conf
-        });
-    }
-});
 
 //============================================================================//
+
 
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
@@ -185,6 +159,35 @@ async function main() {
             return null;
         }
     }
+
+ //============================================================================//
+// In your main bot file
+const { getSettings } = require('./bwmxmd/settings');
+
+// Modified message handler
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const message = messages[0];
+    if (!message?.message || message.key.fromMe) return;
+
+    const text = getMessageText(message.message);
+    if (!text?.startsWith(conf.PREFIX)) return;
+
+    const [cmd, ...args] = text.slice(conf.PREFIX.length).split(/\s+/);
+    const command = commandRegistry.get(cmd.toLowerCase());
+
+    if (command) {
+        await command.execute({
+            adams,
+            message,
+            args,
+            store,
+            listenerManager,
+            commandRegistry,
+            config: conf
+        });
+    }
+});
+
  //==============================================================================//
 
 // Listener Manager Class
