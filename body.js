@@ -114,9 +114,9 @@ authentification();
                     return msg.message || undefined;
                 }
                 return {
-                    conversation: 'An Error Occurred, Repeat Command!'
-                }
-            }
+    conversation: 'An Error Occurred, Repeat Command!'
+   }; 
+ } 
 
 // Silent Rate Limiting (No Logs)
 function isRateLimited(jid) {
