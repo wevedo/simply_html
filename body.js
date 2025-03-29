@@ -158,7 +158,7 @@ async function main() {
         }
     }
  //==============================================================================//
-
+const chalk = require('chalk');
 // Listener Manager Class
 class ListenerManager {
     constructor() {
