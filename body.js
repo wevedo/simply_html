@@ -357,45 +357,28 @@ adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
-        // Send test message to confirm bot is listening to itself
-     //   adams.sendMessage(adams.user.id, { text: `${PREFIX}ping` });
-    }
-});
+     if (conf.DP.toLowerCase() === 'yes') {
+    const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
+    const connectionMessage = `
+╭──〔 *🚀 BWM XMD CONNECTED 🚀* 〕──◆  
+│ ✨ Version: 7.0.8 - ${md} Mode  
+│  
+├──〔 *🎭 Classic and Things* 〕──◆  
+│ ✅ Prefix: [ ${conf.PREFIX} ]  
+│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
+│  
+├──〔 *📦 Heroku Deployment* 〕──◆  
+│ 🏷️ App Name: ${herokuAppName}  
+│ 🌐 Dashboard: ${herokuAppLink}  
+╰──────────────────────────────◆`;
 
-// Modified message handler - processes ALL messages
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    console.log("New message received from:", msg.key.remoteJid);
-    await cmdSystem.processMessage(msg);
-    await updatePresence(adams, msg.key.remoteJid);
-});
-
-        if (conf.DP.toLowerCase() === 'yes') {
-            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
-            const connectionMessage = `
-┏━━━━━━━━━━━━━━━━━━━━━━━◈
-┃                                   
-┃   🚀 *BWM XMD CONNECTED* 🚀  
-┃   _Version 7.0.8 - ${md} Mode_    
-┃                                   
-┣━━━━━━━━━━━━━━━━━━━━━━━◈
-┃   ⚙️ *Settings*  
-┃   ➟ Prefix: [ ${conf.PREFIX} ]  
-┃   ➟ Status: ${STATE === 1 ? 'Online' : 'Offline'}  
-┃                                   
-┣━━━━━━━━━━━━━━━━━━━━━━━◈
-┃   📦 *Heroku Deployment*  
-┃   ➟ App Name: ${herokuAppName}  
-┃   ➟ Dashboard: ${herokuAppLink}  
-┃                                   
-┣━━━━━━━━━━━━━━━━━━━━━━━◈`;
-
-            await adams.sendMessage(
-    adams.user.id, 
-    { text: connectionMessage }, 
-    { ephemeralExpiration: 600 } // 10 minutes
-);
-
+    await adams.sendMessage(
+        adams.user.id, 
+        { text: connectionMessage }, 
+        { ephemeralExpiration: 600 } // 10 minutes
+    );
+}
+        
 //===============================================================================================================//
 
 // Event Handlers
