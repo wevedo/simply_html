@@ -15,7 +15,7 @@ module.exports = {
     
     // Owner Settings
     OWNER_NAME: process.env.OWNER_NAME || "Ibrahim Adams",
-    NUMERO_OWNER: process.env.NUMERO_OWNER || "254710772666,254106727593",
+    OWNER_NUMBER: process.env.OWNER_NUMBER || "254710772666,254106727593",
     
     // Bot Identity
     BOT_NAME: process.env.BOT || 'BWM-XMD',
