@@ -157,6 +157,87 @@ async function main() {
             return null;
         }
     }
+ //==============================================================================//
+
+
+// Listener Manager Class
+class ListenerManager {
+    constructor() {
+        this.activeListeners = new Map();
+    }
+
+    async loadListeners(adams, store, commands) {
+        const listenerDir = path.join(__dirname, 'bwmxmd', 'listeners');
+        
+        // Clear existing listeners first
+        this.cleanupListeners();
+        
+        // Load new listeners
+        const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
+        
+        for (const file of files) {
+            try {
+                const listenerPath = path.join(listenerDir, file);
+                const { setup } = require(listenerPath);
+                
+                if (typeof setup === 'function') {
+                    const cleanup = await setup(adams, { 
+                        store,
+                        commands,
+                        logger,
+                        config: conf
+                    });
+                    
+                    this.activeListeners.set(file, cleanup);
+                    console.log(chalk.green(`» Loaded listener: ${file}`));
+                }
+            } catch (e) {
+                console.error(chalk.red(`‚ĚĆ Error loading listener ${file}: ${e.message}`));
+            }
+        }
+    }
+
+    cleanupListeners() {
+        for (const [name, cleanup] of this.activeListeners) {
+            try {
+                if (typeof cleanup === 'function') cleanup();
+            } catch (e) {
+                console.error(`Error cleaning up listener ${name}: ${e.message}`);
+            }
+        }
+        this.activeListeners.clear();
+    }
+}
+
+// Initialize listener manager
+const listenerManager = new ListenerManager();
+
+// Add to connection handler
+adams.ev.on('connection.update', ({ connection }) => {
+    if (connection === 'open') {
+        // Load listeners when connected
+        listenerManager.loadListeners(adams, store, commandRegistry)
+            .then(() => console.log('‚úÖ All listeners initialized'))
+            .catch(console.error);
+    }
+    
+    if (connection === 'close') {
+        // Cleanup listeners on disconnect
+        listenerManager.cleanupListeners();
+    }
+});
+
+// Optional: Hot reload listeners when files change
+fs.watch(path.join(__dirname, 'bwmxmd', 'listeners'), (eventType, filename) => {
+    if (eventType === 'change' && filename.endsWith('.js')) {
+        console.log(`Reloading listener: ${filename}`);
+        delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', 'listeners', filename))];
+        listenerManager.loadListeners(adams, store, commandRegistry);
+    }
+});
+ 
+//===============================================================================================================//
+
 
     // Event Handlers
     adams.ev.on("connection.update", async (update) => {
