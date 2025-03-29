@@ -24,6 +24,7 @@ const path = require("path");
 const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const { verifierEtatJid, recupererActionJid } = require("./lib/antilien");
+const { getSettings } = require("./bwmxmd/settings");
 const evt = require("./Ibrahim/adams");
 const rateLimit = new Map();
 const chalk = require("chalk");
@@ -161,8 +162,6 @@ async function main() {
     }
 
  //============================================================================//
-// In your main bot file
-const { getSettings } = require('./bwmxmd/settings');
 
 // Modified message handler
 adams.ev.on("messages.upsert", async ({ messages }) => {
