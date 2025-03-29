@@ -140,10 +140,10 @@
       "url": "heroku/nodejs"
     },
     {
-      "url": "https://github.com/boitech/bwm-xmd-runner"
+      "url": "https://github.com/clhuang/heroku-buildpack-webp-binaries.git"
     },
     {
-      "url": "https://github.com/boitech/bwm-xmd-controlle.git"
+      "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest"
     }
   ],
 
