@@ -94,8 +94,6 @@ async function authentication() {
         // Send connection message after successful auth
         if (conf.DP.toLowerCase() === 'yes') {
             const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
-            const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${process.env.HEROKU_APP_NAME}`;
-            
             const connectionMessage = `
 ┏━━━━━━━━━━━━━━━━━━━━━━━◈
 ┃                                   
@@ -105,7 +103,6 @@ async function authentication() {
 ┣━━━━━━━━━━━━━━━━━━━━━━━◈
 ┃   ⚙️ *Settings*  
 ┃   ➟ Prefix: [ ${conf.PREFIX} ]  
-┃   ➟ Status: ${STATE === 1 ? 'Online' : 'Offline'}  
 ┃                                   
 ┣━━━━━━━━━━━━━━━━━━━━━━━◈
 ┃   📦 *Heroku Deployment*  
