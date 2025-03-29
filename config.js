@@ -2,102 +2,71 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const { config } = require('dotenv');
-const Joi = require('joi'); // Add validation
 
 // Load environment variables
-if (fs.existsSync(path.join(__dirname, '.env'))) {
-    config({ path: path.join(__dirname, '.env') });
+if (fs.existsSync('config.env')) {
+    require('dotenv').config({ path: path.join(__dirname, 'config.env') });
 }
 
-// Database configuration
-const databasePath = path.join(__dirname, 'database.db');
-const DEFAULT_DB_URL = 'postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway';
-
-// Validate environment variables
-const envVars = Joi.object({
-    SESSION_ID: Joi.string().optional(),
-    PREFIX: Joi.string().default('.'),
-    OWNER_NAME: Joi.string().default('Ibrahim Adams'),
-    NUMERO_OWNER: Joi.string().default('254710772666,254106727593'),
-    DATABASE_URL: Joi.string().uri().default(DEFAULT_DB_URL),
-    // Add validation for other variables...
-}).validate(process.env);
-
-if (envVars.error) {
-    throw new Error(`Config validation error: ${envVars.error.message}`);
-}
-
-const configuration = {
+module.exports = {
     // Core Settings
-    session: process.env.SESSION_ID || '',
-    database: {
-        url: process.env.DATABASE_URL || DEFAULT_DB_URL,
-        dialect: process.env.DATABASE_URL?.startsWith('postgres') ? 'postgres' : 'sqlite',
-        storage: databasePath,
-        logging: false,
-        dialectOptions: process.env.DATABASE_URL?.startsWith('postgres') ? {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false
-            }
-        } : {}
+    SESSION: process.env.SESSION_ID || '',
+    PREFIX: process.env.PREFIX || ".",
+    
+    // Owner Settings
+    OWNER_NAME: process.env.OWNER_NAME || "Ibrahim Adams",
+    NUMERO_OWNER: process.env.NUMERO_OWNER || "254710772666,254106727593",
+    
+    // Bot Identity
+    BOT_NAME: process.env.BOT || 'BWM-XMD',
+    BOT_MENU_IMAGE: process.env.BOT_MENU_LINKS || 'https://files.catbox.moe/h2ydge.jpg',
+    BWM_XMD: 'https://ibrahimadams.site/bwmxmd',
+    
+    // Behavior Flags
+    MODE: process.env.PUBLIC_MODE || "yes",
+    PM_PERMIT: process.env.PM_PERMIT || 'yes',
+    CHATBOT: process.env.CHATBOT || 'no',
+    MENU_TYPE: process.env.MENUTYPE || '',
+    
+    // Automation Settings
+    AUTO: {
+        READ: process.env.AUTO_READ || 'yes',
+        BIO: process.env.AUTO_BIO || 'yes',
+        REACT: process.env.AUTO_REACT || 'yes',
+        REPLY: process.env.AUTO_REPLY || 'no',
+        SAVE_CONTACTS: process.env.AUTO_SAVE_CONTACTS || 'yes',
+        REJECT_CALL: process.env.AUTO_REJECT_CALL || 'yes',
+        DOWNLOAD_STATUS: process.env.AUTO_DOWNLOAD_STATUS || 'no',
+        READ_STATUS: process.env.AUTO_READ_STATUS || 'yes'
     },
-
-    // Bot Settings
-    botSettings: {
-        prefix: process.env.PREFIX || '.',
-        name: process.env.BOT_NAME || 'BMW_MD',
-        menuImage: process.env.BOT_MENU_LINKS || 'https://files.catbox.moe/h2ydge.jpg',
-        presence: process.env.PRESENCE || '2',
-        menuType: process.env.MENUTYPE || 'text'
+    
+    // Security Features
+    ANTICALL: process.env.ANTICALL || 'yes',
+    ANTILINK_GROUP: process.env.ANTILINK_GROUP || 'yes',
+    ANTIDELETE: {
+        MESSAGES: process.env.ANTIDELETE_MESSAGES || 'yes',
+        STATUS: process.env.ANTIDELETE2 || 'yes'
     },
-
-    // Features Configuration
-    features: {
-        autoRead: process.env.AUTO_READ === 'yes',
-        pmPermit: process.env.PM_PERMIT === 'yes',
-        antiDelete: process.env.ANTIDELETE_MESSAGES === 'yes',
-        antiCall: process.env.ANTICALL === 'yes',
-        autoBio: process.env.AUTO_BIO === 'yes',
-        chatbot: {
-            text: process.env.CHATBOT === 'yes',
-            audio: process.env.AUDIO_CHATBOT === 'yes'
-        }
+    
+    // Heroku Deployment
+    HEROKU: {
+        APP_NAME: process.env.HEROKU_APP_NAME,
+        API_KEY: process.env.HEROKU_APY_KEY
     },
-
-    // Owner Configuration
-    owner: {
-        name: process.env.OWNER_NAME || 'Ibrahim Adams',
-        numbers: (process.env.OWNER_NUMBER || '254710772666,254106727593').split(','),
-        sudoNumbers: ['254710772666', '254710772666', '254710772666', '254710772666']
-    },
-
-    // Security Settings
-    security: {
-        warnLimit: parseInt(process.env.WARN_COUNT) || 3,
-        antiLinkGroups: process.env.ANTILINK_GROUP === 'yes',
-        autoReact: process.env.AUTO_REACT === 'yes'
-    },
-
-    // External Services
-    services: {
-        bwmXmd: 'https://ibrahimadams.site/bwmxmd',
-        heroku: {
-            appName: process.env.HEROKU_APP_NAME,
-            apiKey: process.env.HEROKU_API_KEY
-        }
-    }
+    
+    // Miscellaneous
+    WARN_LIMIT: process.env.WARN_COUNT || '3',
+    STARTUP_MESSAGE: process.env.STARTING_BOT_MESSAGE || "yes",
+    PRESENCE: process.env.PRESENCE || ''
 };
 
-// File change watcher
-if (require.main === module) {
-    fs.watchFile(__filename, () => {
-        console.log('Configuration updated - restart required');
-        process.exit(0);
-    });
-}
-
-module.exports = configuration;
+// Config file watcher
+const configFile = path.resolve(__filename);
+fs.watchFile(configFile, () => {
+    fs.unwatchFile(configFile);
+    console.log(`Config file updated: ${path.basename(configFile)}`);
+    delete require.cache[configFile];
+    require(configFile);
+});
 
 
