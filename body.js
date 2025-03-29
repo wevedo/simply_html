@@ -39,6 +39,7 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
 const PORT = process.env.PORT || 3000;
 const app = express();
+let adams;
 require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
 app.use(express.static("public"));
@@ -122,8 +123,8 @@ async function main() {
         }
     };
 
-    zk = makeWASocket(sockOptions);
-    store.bind(zk.ev);
+    adams = makeWASocket(sockOptions);
+    store.bind(adams.ev);
 
     // Silent Rate Limiting
     function isRateLimited(jid) {
@@ -158,7 +159,7 @@ async function main() {
     }
 
     // Event Handlers
-    zk.ev.on("connection.update", async (update) => {
+    adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === "connecting") console.log("Connecting...");
         if (connection === "open") {
@@ -172,10 +173,10 @@ async function main() {
         }
     });
 
-    zk.ev.on("creds.update", saveCreds);
+    adams.ev.on("creds.update", saveCreds);
 
     // Message Handling
-    zk.ev.on("messages.upsert", async ({ messages }) => {
+    adams.ev.on("messages.upsert", async ({ messages }) => {
         const ms = messages[0];
         if (!ms.message) return;
         
