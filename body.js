@@ -353,13 +353,15 @@ async function updatePresence(adams, jid) {
 const cmdSystem = new CommandSystem();
 
 // Modified connection handler
+// Modified connection handler
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
-     if (conf.DP.toLowerCase() === 'yes') {
-    const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
-    const connectionMessage = `
+
+        if (conf.DP.toLowerCase() === 'yes') {
+            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
+            const connectionMsg = `
 ╭──〔 *🚀 BWM XMD CONNECTED 🚀* 〕──◆  
 │ ✨ Version: 7.0.8 - ${md} Mode  
 │  
@@ -371,11 +373,21 @@ adams.ev.on("connection.update", ({ connection }) => {
 │ 🏷️ App Name: ${herokuAppName}  
 │ 🌐 Dashboard: ${herokuAppLink}  
 ╰──────────────────────────────◆`;
-    adams.sendMessage(adams.user.id, 
-        { text: connectionMessage }, 
-        { ephemeralExpiration: 600 } // 10 minutes
-    );
-}
+
+            // Send disappearing status message
+            adams.sendMessage(
+                adams.user.id, 
+                { 
+                    text: connectionMsg 
+                },
+                {
+                    disappearingMessagesInChat: true,
+                    ephemeralExpiration: 600 // 10 minutes
+                }
+            ).catch(err => console.error('Status message error:', err));
+        }
+    }
+});
         
 //===============================================================================================================//
 
