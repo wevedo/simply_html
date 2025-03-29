@@ -116,8 +116,7 @@ authentification();
                 return {
     conversation: 'An Error Occurred, Repeat Command!'
    }; 
- } 
-
+           
 // Silent Rate Limiting (No Logs)
 function isRateLimited(jid) {
     const now = Date.now();
