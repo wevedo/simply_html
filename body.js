@@ -344,7 +344,7 @@ class CommandSystem {
 async function updatePresence(adams, jid) {
     try {
         const states = ["available", "composing", "recording", "unavailable"];
-        await adams.sendPresenceUpdate(states[STATE - 1] || "unavailable", jid);
+        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
     } catch (e) {
         console.error('Presence update error:', e.message);
     }
@@ -358,7 +358,7 @@ adams.ev.on("connection.update", ({ connection }) => {
         console.log("Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
         // Send test message to confirm bot is listening to itself
-        adams.sendMessage(adams.user.id, { text: `${PREFIX}ping` });
+     //   adams.sendMessage(adams.user.id, { text: `${PREFIX}ping` });
     }
 });
 
