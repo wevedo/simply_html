@@ -364,9 +364,6 @@ class CommandSystem {
             chat,
             sender,
             isGroup,
-            isOwner: [BOT_OWNER, ...SUDO_NUMBERS]
-                .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
-                .includes(sender)
         };
     }
 }
