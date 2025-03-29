@@ -259,7 +259,7 @@ class CommandSystem {
     }
 
     loadCommands() {
-        console.log("Loading commands...");
+        console.log("Loading commands ♻️");
         const cmdDir = path.join(__dirname, "commands");
         
         fs.readdirSync(cmdDir).forEach(file => {
@@ -271,7 +271,7 @@ class CommandSystem {
                 
                 if (cmd.name && cmd.execute) {
                     this.commands.set(cmd.name.toLowerCase(), cmd);
-                    console.log(`Command loaded: ${cmd.name}`);
+                    console.log(`${cmd.name} loaded Successfully 🚀`);
                 }
             } catch (e) {
                 console.error(`Failed to load ${file}: ${e.message}`);
@@ -400,9 +400,9 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 // Event Handlers
 adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
-        if (connection === "connecting") console.log("Connecting...");
+        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
         if (connection === "open") {
-            console.log("Connected successfully");
+            console.log("🌎 BWM XMD ONLINE 🌎");
             // Initialize bot commands and status
         }
         if (connection === "close") {
