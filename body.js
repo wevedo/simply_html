@@ -62,9 +62,22 @@ const zlib = require('zlib');
 async function authentification() {
     try {
         if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Initializing session...");
-            const [header, b64data] = conf.session.split(';;;');
-            
+            console.log("Session connected...");
+            // Split the session strihhhhng into header and Base64 data
+            const [header, b64data] = conf.session.split(';;;'); 
+
+            // Validate the session format
+            if (header === "BWM-XMD" && b64data) {
+                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
+                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
+                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
+            } else {
+                throw new Error("Invalid session format");
+            }
+        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
+            console.log("Updating existing session...");
+            const [header, b64data] = conf.session.split(';;;'); 
+
             if (header === "BWM-XMD" && b64data) {
                 let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
                 let decompressedData = zlib.gunzipSync(compressedData);
@@ -72,23 +85,11 @@ async function authentification() {
             } else {
                 throw new Error("Invalid session format");
             }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating session...");
-            const [header, b64data] = conf.session.split(';;;');
-            
-            if (header === "BWM-XMD" && b64data) {    
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64");    
-                let decompressedData = zlib.gunzipSync(compressedData);    
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");    
-            } else {    
-                throw new Error("Invalid session format");    
-            }
         }
     } catch (e) {
-        console.log("Session error: " + e.message);
+        console.log("Session Invalid: " + e.message);
         return;
     }
 }
-
 module.exports = { authentification };
 authentification();
