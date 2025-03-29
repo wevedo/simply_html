@@ -242,127 +242,130 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
-const { getMessageContent } = require('./utils/handler');
+// Configuration
+const STATE = conf.PRESENCE;
+const BOT_OWNER = conf.OWNER_NUMBER;
+const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"];
+
+// Improved Message Content Extractor
+function getMessageContent(message) {
+    try {
+        if (!message) return '';
+        
+        const type = Object.keys(message)[0];
+        if (!type) return '';
+        
+        return {
+            conversation: message.conversation,
+            imageMessage: message.imageMessage?.caption,
+            videoMessage: message.videoMessage?.caption,
+            extendedTextMessage: message.extendedTextMessage?.text,
+            buttonsResponseMessage: message.buttonsResponseMessage?.selectedButtonId,
+            listResponseMessage: message.listResponseMessage?.singleSelectReply?.selectedRowId
+        }[type] || '';
+    } catch (e) {
+        console.error('Message content error:', e.message);
+        return '';
+    }
+}
+
+// Robust Command Handler
 class CommandSystem {
     constructor() {
         this.commands = new Map();
-        this.SUDO_NUMBERS = [
-            "254106727593",
-            "254727716045", 
-            "254710772666"
-        ].map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
-        
-        this.BOT_OWNER = conf.OWNER_NUMBER.replace(/\D/g, "") + "@s.whatsapp.net";
         this.loadCommands();
     }
 
     loadCommands() {
-        console.log("⌛ Loading commands...");
+        console.log("Loading commands...");
         const cmdDir = path.join(__dirname, "commands");
         
-        try {
-            fs.readdirSync(cmdDir).forEach(file => {
-                if (!file.endsWith(".js")) return;
+        fs.readdirSync(cmdDir).forEach(file => {
+            if (!file.endsWith(".js")) return;
+            
+            try {
+                const cmdPath = path.join(cmdDir, file);
+                const cmd = require(cmdPath);
                 
-                try {
-                    const cmdPath = path.join(cmdDir, file);
-                    const cmd = require(cmdPath);
-                    
-                    if (cmd.name && cmd.execute) {
-                        this.commands.set(cmd.name.toLowerCase(), cmd);
-                        console.log(`✓ Loaded command: ${cmd.name}`);
-                    } else {
-                        console.log(`⚠ Invalid command file: ${file}`);
-                    }
-                } catch (e) {
-                    console.error(`⚠ Failed ${file}: ${e.message}`);
+                if (cmd.name && cmd.execute) {
+                    this.commands.set(cmd.name.toLowerCase(), cmd);
+                    console.log(`Command loaded: ${cmd.name}`);
                 }
-            });
-        } catch (dirError) {
-            console.error("Command directory error:", dirError.message);
-        }
+            } catch (e) {
+                console.error(`Failed to load ${file}: ${e.message}`);
+            }
+        });
     }
 
     async processMessage(msg) {
-        if (!msg?.message || msg.key.fromMe) return;
-
-        const content = getMessageContent(msg.message);
-        if (!content?.startsWith(conf.PREFIX)) return;
-
-        const [cmdName, ...args] = content.slice(conf.PREFIX.length).trim().split(/\s+/);
-        const command = this.commands.get(cmdName.toLowerCase());
-
-        if (!command) {
-            console.log(`Command not found: ${cmdName}`);
-            return;
+        try {
+            if (!msg?.message) return;
+            
+            const content = getMessageContent(msg.message);
+            if (!content?.startsWith(PREFIX)) return;
+            
+            const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
+            const command = this.commands.get(cmdName.toLowerCase());
+            
+            if (command) {
+                console.log(`Executing command: ${cmdName}`);
+                await this.executeCommand(command, msg, args);
+            }
+        } catch (e) {
+            console.error('Message processing error:', e.message);
         }
+    }
 
-        const context = this.createContext(msg);
-        
-        // Mode-based permission check
-        if (conf.MODE.toLowerCase() === "yes" && !context.isAllowed) {
-            console.log(`Blocked command ${cmdName} from ${context.sender}`);
-            await this.sendBlockedResponse(msg, context.chat);
-            return;
+    async executeCommand(command, msg, args) {
+        try {
+            const context = this.createContext(msg);
+
+            let md;
+            if ((conf.MODE).toLocaleLowerCase() === "yes") {  
+                md = "public";  
+            } else if ((conf.MODE).toLocaleLowerCase() === "no") {  
+                md = "private";  
+            }
+
+            // Check mode and user permissions
+            if (md === "private" && !context.isOwner && !context.isSudo) {
+                return;
+            }
+
+            await command.execute({
+                adams,
+                args,
+                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg }),
+                ...context
+            });
+        } catch (e) {
+            console.error(`Command error [${command.name}]:`, e.message);
         }
-
-        console.log(`Executing: ${cmdName} by ${context.sender}`);
-        await this.executeCommand(command, msg, args, context);
     }
 
     createContext(msg) {
         const chat = msg.key.remoteJid;
-        const sender = (msg.key.participant || chat).replace(/\D/g, "");
-        const cleanOwner = this.BOT_OWNER.replace(/\D/g, "");
+        const sender = msg.key.participant || chat;
+        const isGroup = chat.endsWith("@g.us");
         
-        const isPrivateMode = conf.MODE.toLowerCase() === "no";
-        const isAllowed = isPrivateMode 
-            ? this.SUDO_NUMBERS.includes(sender) || sender === cleanOwner
-            : true;
+        const isOwner = [BOT_OWNER]
+            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
+            .includes(sender);
+
+        const isSudo = SUDO_NUMBERS
+            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
+            .includes(sender);
 
         return {
             chat,
             sender,
-            isAllowed,
-            isGroup: chat.endsWith("@g.us")
+            isGroup,
+            isOwner,
+            isSudo
         };
-    }
-
-    async sendBlockedResponse(msg, chat) {
-        try {
-            await adams.sendMessage(chat, { 
-                text: "🚫 This command is restricted in private mode!"
-            }, { quoted: msg });
-        } catch (e) {
-            console.error("Block response error:", e.message);
-        }
-    }
-
-    async executeCommand(command, msg, args, context) {
-        try {
-            await command.execute({
-                adams,
-                args,
-                context,
-                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg })
-            });
-        } catch (e) {
-            console.error(`Command '${command.name}' failed:`, e.message);
-            await adams.sendMessage(context.chat, { 
-                text: `⚠ Command failed: ${e.message}` 
-            }, { quoted: msg });
-        }
     }
 }
 
-// Initialize command system
-const cmdSystem = new CommandSystem();
-
-// Message handler
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    await cmdSystem.processMessage(msg);
-});
 // Presence Manager
 async function updatePresence(adams, jid) {
     try {
@@ -371,22 +374,24 @@ async function updatePresence(adams, jid) {
     } catch (e) {
         console.error('Presence update error:', e.message);
     }
-}   
+}
 
-    adams.ev.on("connection.update", ({ connection }) => {
-        if (connection === "open") {
-            console.log("Connected to WhatsApp");
-            updatePresence(adams, "status@broadcast");
-        }
-    });
+const cmdSystem = new CommandSystem();
 
-    adams.ev.on("messages.upsert", async ({ messages }) => {
-        const [msg] = messages;
-        if (msg.key.fromMe) return;
+adams.ev.on("connection.update", ({ connection }) => {
+    if (connection === "open") {
+        console.log("Connected to WhatsApp");
+        updatePresence(adams, "status@broadcast");
+    }
+});
 
-        await cmdSystem.processMessage(msg);
-        await updatePresence(adams, msg.key.remoteJid);
-    });
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const [msg] = messages;
+    if (msg.key.fromMe) return;
+
+    await cmdSystem.processMessage(msg);
+    await updatePresence(adams, msg.key.remoteJid);
+});
 
 //===============================================================================================================//
 
