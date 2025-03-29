@@ -242,32 +242,16 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
+const path = require('path');
+const fs = require('fs-extra');
+const { getMessageContent } = require('./messageUtils');
+
 // Configuration
+const PREFIX = conf.PREFIX;
 const STATE = conf.PRESENCE;
 const BOT_OWNER = conf.OWNER_NUMBER;
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"];
-
-// Improved Message Content Extractor
-function getMessageContent(message) {
-    try {
-        if (!message) return '';
-        
-        const type = Object.keys(message)[0];
-        if (!type) return '';
-        
-        return {
-            conversation: message.conversation,
-            imageMessage: message.imageMessage?.caption,
-            videoMessage: message.videoMessage?.caption,
-            extendedTextMessage: message.extendedTextMessage?.text,
-            buttonsResponseMessage: message.buttonsResponseMessage?.selectedButtonId,
-            listResponseMessage: message.listResponseMessage?.singleSelectReply?.selectedRowId
-        }[type] || '';
-    } catch (e) {
-        console.error('Message content error:', e.message);
-        return '';
-    }
-}
+const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
+    .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
 
 // Robust Command Handler
 class CommandSystem {
@@ -302,14 +286,23 @@ class CommandSystem {
             if (!msg?.message) return;
             
             const content = getMessageContent(msg.message);
-            if (!content?.startsWith(PREFIX)) return;
+            console.log(`Received message: ${content}`); // Debug log
             
+            if (!content?.startsWith(PREFIX)) {
+                console.log("Message doesn't start with prefix");
+                return;
+            }
+
             const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
+            console.log(`Processing command: ${cmdName}`, args);
+            
             const command = this.commands.get(cmdName.toLowerCase());
             
             if (command) {
-                console.log(`Executing command: ${cmdName}`);
+                console.log(`Executing command: ${command.name}`);
                 await this.executeCommand(command, msg, args);
+            } else {
+                console.log(`Command not found: ${cmdName}`);
             }
         } catch (e) {
             console.error('Message processing error:', e.message);
@@ -319,19 +312,8 @@ class CommandSystem {
     async executeCommand(command, msg, args) {
         try {
             const context = this.createContext(msg);
-
-            let md;
-            if ((conf.MODE).toLocaleLowerCase() === "yes") {  
-                md = "public";  
-            } else if ((conf.MODE).toLocaleLowerCase() === "no") {  
-                md = "private";  
-            }
-
-            // Check mode and user permissions
-            if (md === "private" && !context.isOwner && !context.isSudo) {
-                return;
-            }
-
+            
+            // Allow all commands regardless of mode
             await command.execute({
                 adams,
                 args,
@@ -349,20 +331,12 @@ class CommandSystem {
         const isGroup = chat.endsWith("@g.us");
         const fromMe = msg.key.fromMe;
         
-        const isOwner = [BOT_OWNER]
-            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
-            .includes(sender);
-
-        const isSudo = SUDO_NUMBERS
-            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
-            .includes(sender);
-
         return {
             chat,
             sender,
             isGroup,
-            isOwner,
-            isSudo,
+            isOwner: true, // Allow everyone
+            isSudo: true,  // Allow everyone
             fromMe
         };
     }
@@ -380,20 +354,40 @@ async function updatePresence(adams, jid) {
 
 const cmdSystem = new CommandSystem();
 
+// Modified connection handler
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
+        // Send test message to confirm bot is listening to itself
+        adams.sendMessage(adams.user.id, { text: `${PREFIX}ping` });
     }
 });
 
+// Modified message handler - processes ALL messages
 adams.ev.on("messages.upsert", async ({ messages }) => {
     const [msg] = messages;
-    if (msg.key.fromMe) return;
-
+    console.log("New message received from:", msg.key.remoteJid);
     await cmdSystem.processMessage(msg);
     await updatePresence(adams, msg.key.remoteJid);
 });
+
+// Create messageUtils.js if not existing
+// File: messageUtils.js
+// module.exports = {
+//     getMessageContent: (message) => {
+//         try {
+//             const type = Object.keys(message)[0];
+//             switch(type) {
+//                 case 'conversation': return message.conversation;
+//                 case 'extendedTextMessage': return message.extendedTextMessage.text;
+//                 case 'imageMessage': return message.imageMessage?.caption;
+//                 case 'videoMessage': return message.videoMessage?.caption;
+//                 default: return '';
+//             }
+//         } catch (e) { return ''; }
+//     }
+// };
 
 //===============================================================================================================//
 
