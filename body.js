@@ -19,6 +19,8 @@ const { verifierEtatJid, recupererActionJid } = require("./lib/antilien");
 
 const evt = require("./Ibrahim/adams");
 
+const rateLimit = new Map();
+
 const { reagir } = require("./Ibrahim/app"); const express = require("express"); const { exec } = require("child_process"); const http = require("http");
 
 require("dotenv").config({ path: "./config.env" });
@@ -115,9 +117,6 @@ authentification();
                     conversation: 'An Error Occurred, Repeat Command!'
                 }
             }
-
-
-const rateLimit = new Map();
 
 // Silent Rate Limiting (No Logs)
 function isRateLimited(jid) {
