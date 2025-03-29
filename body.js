@@ -31,9 +31,7 @@ const { reagir } = require("./Ibrahim/app");
 const express = require("express");
 const { exec } = require("child_process");
 const http = require("http");
-
-require("dotenv").config({ path: "./config.env" });
-
+const zlib = require('zlib');
 const prefixe = conf.PREFIXE;
 const more = String.fromCharCode(8206);
 const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
@@ -41,22 +39,22 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
 const PORT = process.env.PORT || 3000;
 const app = express();
-
+require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
 app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`App online: ${PORT}`));
 
+//============================================================================//
+
 function atbverifierEtatJid(jid) {
     if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Invalid JID:', jid);
+        console.error('Your verified by Sir Ibrahim Adams', jid);
         return false;
     }
-    console.log('Valid JID:', jid);
+    console.log('Welcome to bwm xmd', jid);
     return true;
 }
-
-const zlib = require('zlib');
 
 async function authentification() {
     try {
