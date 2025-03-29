@@ -248,7 +248,6 @@ function groupeAdmin(membreGroupe) {
 
 
             var etat = conf.ETAT;
-// Presence update logic based on etat value
 if (etat == 1) {
     await zk.sendPresenceUpdate("available", origineMessage);
 } else if (etat == 2) {
@@ -275,30 +274,7 @@ function mybotpic() {
      return lienAleatoire;
   }
 
-// Define command options object for reusability
-var commandeOptions = {
-    superUser, dev,
-    verifGroupe,
-    mbre,
-    membreGroupe,
-    verifAdmin,
-    infosGroupe,
-    nomGroupe,
-    auteurMessage,
-    nomAuteurMessage,
-    idBot,
-    verifZokouAdmin,
-    prefixe,
-    arg,
-    repondre,
-    mtype,
-    groupeAdmin,
-    msgRepondu,
-    auteurMsgRepondu,
-    ms,
-    mybotpic
-};
-                
+var commandeOptions = { superUser, dev, verifGroupe, mbre, membreGroupe, verifAdmin, infosGroupe, nomGroupe, auteurMessage, nomAuteurMessage, idBot, verifZokouAdmin, prefixe, arg, repondre, mtype, groupeAdmin, msgRepondu, auteurMsgRepondu, ms, mybotpic };
             
   if (origineMessage === "120363244435092946@g.us") {
         return;
