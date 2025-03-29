@@ -1,13 +1,18 @@
-module.exports = async (sock, conf) => {
-    if (!sock || !conf) return;
+module.exports = {
+    setup: async (adams, { config, logger }) => {
+        if (!adams || !config) return;
 
-    console.log("🔄 Auto Bio & Anti-Call Listener Activated...");
+        console.log("Initializing Auto Bio & Anti-Call systems...");
 
-    async function autoBio() {
-        if (conf.AUTO_BIO !== "yes") return;
+        // Store cleanup handlers
+        let bioInterval = null;
+        let activeCallHandler = null;
 
-        function getCurrentDateTime() {
-            return new Intl.DateTimeFormat("en-KE", {
+        // Auto Bio System
+        const startBioUpdates = () => {
+            if (config.AUTO_BIO !== "yes") return;
+
+            const getCurrentDateTime = () => new Intl.DateTimeFormat("en-KE", {
                 timeZone: "Africa/Nairobi",
                 year: "numeric",
                 month: "long",
@@ -17,36 +22,59 @@ module.exports = async (sock, conf) => {
                 second: "2-digit",
                 hour12: false,
             }).format(new Date());
-        }
 
-        function generateBio() {
-            return `👋 BWM XMD Online 🚀\n📅 ${getCurrentDateTime()}`;
-        }
+            const updateBio = async () => {
+                try {
+                    await adams.updateProfileStatus(`👋 BWM XMD Online 🚀\n📅 ${getCurrentDateTime()}`);
+                    logger.info("Bio updated successfully");
+                } catch (err) {
+                    logger.error("Bio update failed:", err.message);
+                }
+            };
 
-        setInterval(async () => {
-            try {
-                await sock.updateProfileStatus(generateBio());
-                console.log("✅ Bio Updated");
-            } catch (err) {
-                console.error("❌ Failed to update bio:", err.message);
-            }
-        }, 60000);
+            // Initial immediate update
+            updateBio();
+            // Set periodic updates
+            bioInterval = setInterval(updateBio, 60000);
+        };
+
+        // Anti-Call System
+        const startCallBlocking = () => {
+            if (config.ANTICALL !== "yes") return;
+
+            const callHandler = async (callData) => {
+                try {
+                    const { id, from } = callData[0];
+                    await adams.rejectCall(id, from);
+                    logger.info(`Blocked call from: ${from}`);
+                } catch (err) {
+                    logger.error("Call blocking failed:", err.message);
+                }
+            };
+
+            adams.ev.on('call', callHandler);
+            activeCallHandler = callHandler;
+        };
+
+        // Start systems
+        startBioUpdates();
+        startCallBlocking();
+
+        // Startup confirmation
+        console.log("✅ Auto Bio & Anti-Call systems operational");
+        logger.info("Protection systems now active");
+
+        // Cleanup function (MISSING IN ORIGINAL CODE)
+        return () => {
+            console.log("Shutting down Auto Bio & Anti-Call systems...");
+            
+            // Clear bio update interval
+            if (bioInterval) clearInterval(bioInterval);
+            
+            // Remove call event listener
+            if (activeCallHandler) adams.ev.off('call', activeCallHandler);
+            
+            logger.info("Systems terminated");
+        };
     }
-
-    async function antiCall() {
-        if (conf.ANTICALL !== "yes") return;
-
-        sock.ev.on("call", async (callData) => {
-            try {
-                const { id, from } = callData[0];
-                await sock.rejectCall(id, from);
-                console.log(`🚫 Rejected call from ${from}`);
-            } catch (err) {
-                console.error("❌ Error handling call:", err.message);
-            }
-        });
-    }
-
-    autoBio();
-    antiCall();
 };
