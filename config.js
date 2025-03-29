@@ -49,7 +49,7 @@ const configuration = {
         prefix: process.env.PREFIX || '.',
         name: process.env.BOT_NAME || 'BMW_MD',
         menuImage: process.env.BOT_MENU_LINKS || 'https://files.catbox.moe/h2ydge.jpg',
-        presence: process.env.PRESENCE || 'available',
+        presence: process.env.PRESENCE || '2',
         menuType: process.env.MENUTYPE || 'text'
     },
 
@@ -69,7 +69,7 @@ const configuration = {
     // Owner Configuration
     owner: {
         name: process.env.OWNER_NAME || 'Ibrahim Adams',
-        numbers: (process.env.NUMERO_OWNER || '254710772666,254106727593').split(','),
+        numbers: (process.env.OWNER_NUMBER || '254710772666,254106727593').split(','),
         sudoNumbers: ['254710772666', '254710772666', '254710772666', '254710772666']
     },
 
