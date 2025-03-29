@@ -79,6 +79,8 @@ return;
 module.exports = { authentification };
 
 authentification();
+const zk = (0, baileys_1.default)(sockOptions);
+   store.bind(zk.ev);
 const store = (0, baileys_1.makeInMemoryStore)({
     logger: pino().child({ level: "silent", stream: "store" }),
 });
@@ -113,11 +115,6 @@ authentification();
                     conversation: 'An Error Occurred, Repeat Command!'
                 }
             }
-            
-
-
-   const zk = (0, baileys_1.default)(sockOptions);
-   store.bind(zk.ev);
 
 
 const rateLimit = new Map();
