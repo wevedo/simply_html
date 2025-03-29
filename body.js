@@ -397,8 +397,8 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     disappearingMessagesInChat: true,
                     ephemeralExpiration: 600 // 10 minutes
                 }
-            );
-         });
+            });
+         
 //===============================================================================================================//
 
 
