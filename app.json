@@ -24,7 +24,7 @@
     {
       "description":"Enter yes for your bot to auto reject calls",
       "value":"no",
-      "required":false
+      "required":false 
     },
 "AUTO_BIO":
     {
@@ -146,10 +146,6 @@
     }
   ],
   "formation": {
-    "worker": {
-      "quantity": 1,
-      "size": "basic"
-    },
     "web": {
       "quantity": 1,
       "size": "basic"
