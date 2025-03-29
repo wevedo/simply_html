@@ -2,25 +2,27 @@ const { updateFeature } = require('../utils/settings');
 
 module.exports = {
     name: 'autobio',
-    description: 'Enable/disable automatic bio updates',
-    syntax: `${conf.PREFIX}autobio [on/off]`,
-    async execute({ adams, message, args, listenerManager, store, commandRegistry }) {
+    description: 'Toggle automatic bio updates',
+    syntax: '<on/off>',
+    async execute({ adams, message, args, listenerManager }) {
         const [state] = args;
         
-        if (!['on', 'off'].includes(state?.toLowerCase())) {
-            return adams.sendMessage(message.key.remoteJid, { 
-                text: `Invalid syntax! Usage:\n${this.syntax}`
+        // Validate input
+        if (!state || !['on', 'off'].includes(state.toLowerCase())) {
+            return adams.sendMessage(message.key.remoteJid, {
+                text: `Invalid usage! Usage:\n${conf.PREFIX}${this.name} ${this.syntax}`
             }, { quoted: message });
         }
 
-        const isEnabled = state.toLowerCase() === 'on';
+        // Update settings
         await updateFeature('AUTO_BIO', state);
         
         // Reload listeners to apply changes
         await listenerManager.loadListeners(adams, store, commandRegistry);
         
-        await adams.sendMessage(message.key.remoteJid, { 
-            text: `Automatic bio updates ${isEnabled ? 'activated ūüĎá' : 'deactivated ūüĎó'}`
+        // Send confirmation
+        await adams.sendMessage(message.key.remoteJid, {
+            text: `‚ö°ÔłŹ AutoBio ${state === 'on' ? 'activated' : 'disabled'}!`
         }, { quoted: message });
     }
 };
