@@ -11,8 +11,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
 
 
-                    
-  /* BWM XMD WhatsApp Bot */
+                   
 const { default: makeWASocket, isJidGroup, DisconnectReason, delay, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
