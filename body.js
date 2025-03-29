@@ -159,7 +159,6 @@ async function main() {
     }
  //==============================================================================//
 
-
 // Listener Manager Class
 class ListenerManager {
     constructor() {
@@ -167,12 +166,12 @@ class ListenerManager {
     }
 
     async loadListeners(adams, store, commands) {
-        const listenerDir = path.join(__dirname, 'bwmxmd', 'listeners.js');
+        const listenerDir = path.join(__dirname, 'bwmxmd');
         
         // Clear existing listeners first
         this.cleanupListeners();
         
-        // Load new listeners
+        // Load new listeners from bwmxmd folder
         const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
         
         for (const file of files) {
@@ -212,27 +211,32 @@ class ListenerManager {
 // Initialize listener manager
 const listenerManager = new ListenerManager();
 
-// Add to connection handler
+// Connection handler
 adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
-        // Load listeners when connected
         listenerManager.loadListeners(adams, store, commandRegistry)
-            .then(() => console.log('‚úÖ All listeners initialized'))
+            .then(() => console.log(chalk.green('‚úÖ All listeners initialized')))
             .catch(console.error);
     }
     
     if (connection === 'close') {
-        // Cleanup listeners on disconnect
         listenerManager.cleanupListeners();
     }
 });
 
-// Optional: Hot reload listeners when files change
-fs.watch(path.join(__dirname, 'bwmxmd', 'listeners'), (eventType, filename) => {
-    if (eventType === 'change' && filename.endsWith('.js')) {
-        console.log(`Reloading listener: ${filename}`);
-        delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', 'listeners', filename))];
-        listenerManager.loadListeners(adams, store, commandRegistry);
+// Hot reload listeners
+fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
+    if (filename && filename.endsWith('.js')) {
+        console.log(chalk.yellow(`Reloading listener: ${filename}`));
+        const fullPath = path.join(__dirname, 'bwmxmd', filename);
+        
+        try {
+            // Clear cache and reload
+            delete require.cache[require.resolve(fullPath)];
+            listenerManager.loadListeners(adams, store, commandRegistry);
+        } catch (e) {
+            console.error(chalk.red(`Hot reload failed for ${filename}: ${e.message}`));
+        }
     }
 });
  
