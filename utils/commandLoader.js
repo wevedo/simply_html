@@ -1,35 +1,20 @@
-const path = require('path');
-const fs = require('fs-extra');
-
-async function loadCommands(commandRegistry) {
-    const commandsDir = path.join(__dirname, '..', 'commands');
-    
-    console.log('\n» Loading commands...');
-    
-    try {
-        const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
-        
-        for (const file of files) {
-            try {
-                const cmdPath = path.join(commandsDir, file);
-                delete require.cache[require.resolve(cmdPath)];
-                const command = require(cmdPath);
-                
-                if (!command.name || !command.execute) {
-                    console.log(`Invalid command file: ${file}`);
-                    continue;
-                }
-                
-                commandRegistry.set(command.name.toLowerCase(), command);
-                console.log(`Loaded: ${command.name.padEnd(15)} ${file}`);
-                
-            } catch (e) {
-                console.log(`Failed ${file}: ${e.message}`);
+module.exports = {
+    getMessageContent: (message) => {
+        try {
+            const type = Object.keys(message)[0];
+            switch(type) {
+                case 'conversation':
+                    return message.conversation;
+                case 'extendedTextMessage':
+                    return message.extendedTextMessage.text;
+                case 'imageMessage':
+                case 'videoMessage':
+                    return message[type].caption;
+                default:
+                    return '';
             }
+        } catch (e) {
+            return '';
         }
-    } catch (dirError) {
-        console.log(`Command directory error: ${dirError.message}`);
     }
-}
-
-module.exports = loadCommands;
+};
