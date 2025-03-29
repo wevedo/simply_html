@@ -26,7 +26,6 @@ module.exports = {
     MODE: process.env.PUBLIC_MODE || "yes",
     PM_PERMIT: process.env.PM_PERMIT || 'yes',
     CHATBOT: process.env.CHATBOT || 'no',
-    MENU_TYPE: process.env.MENUTYPE || '',
     
     // Automation Settings
     AUTO: {
@@ -57,7 +56,7 @@ module.exports = {
     // Miscellaneous
     WARN_LIMIT: process.env.WARN_COUNT || '3',
     STARTUP_MESSAGE: process.env.STARTING_BOT_MESSAGE || "yes",
-    PRESENCE: process.env.PRESENCE || ''
+    PRESENCE: process.env.PRESENCE || '2'
 };
 
 // Config file watcher
