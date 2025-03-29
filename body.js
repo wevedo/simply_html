@@ -391,19 +391,15 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 ┣━━━━━━━━━━━━━━━━━━━━━━━◈`;
 
             await adams.sendMessage(
-                adams.user.id, 
-                { text: connectionMessage },
-                {
-                    disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600 // 10 minutes
-                }
-            });
-         
+    adams.user.id, 
+    { text: connectionMessage }, 
+    { ephemeralExpiration: 600 } // 10 minutes
+);
+
 //===============================================================================================================//
 
-
-    // Event Handlers
-    adams.ev.on("connection.update", async (update) => {
+// Event Handlers
+adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === "connecting") console.log("Connecting...");
         if (connection === "open") {
