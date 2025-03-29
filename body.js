@@ -21,6 +21,8 @@ const evt = require("./Ibrahim/adams");
 
 const rateLimit = new Map();
 
+const chalk = require("chalk");
+
 const { reagir } = require("./Ibrahim/app"); const express = require("express"); const { exec } = require("child_process"); const http = require("http");
 
 require("dotenv").config({ path: "./config.env" });
@@ -28,6 +30,17 @@ require("dotenv").config({ path: "./config.env" });
 const prefixe = conf.PREFIXE; const more = String.fromCharCode(8206); const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name"; const herokuAppLink = process.env.HEROKU_APP_LINK || 'https://dashboard.heroku.com/apps/${herokuAppName}'; const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; const PORT = process.env.PORT || 3000; const app = express();
 
 logger.level = "silent";
+
+app.use(express.static("public"));
+
+app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
+
+app.listen(port, () => console.log(`App online:${port}`));
+
+function start() {
+    console.log("Server Started!");
+}
+
 
 
 
@@ -439,18 +452,14 @@ zk.downloadAndSaveMediaMessage = async (message, filename, attachExtension = tru
   };
  });
 
-app.use(express.static("public"));
-app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
-app.listen(port, () => console.log(`Server listening on port http://localhost:${port}`));
-
 start();
 
 module.exports = start;
 
 let file = require.resolve(__filename);
 fs.watchFile(file, () => {
-  fs.unwatchFile(file);
-  console.log(chalk.redBright(`Update ${__filename}`));
-  delete require.cache[file];
-  require(file);
+    fs.unwatchFile(file);
+    console.log(chalk.redBright(`Update ${__filename}`));
+    delete require.cache[file];
+    require(file);
 });
