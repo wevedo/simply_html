@@ -267,8 +267,8 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-const PRESENCE = conf.ETAT;
-const BOT_OWNER = conf.NUMERO_OWNER;
+const PRESENCE = conf.PRESENCE;
+const BOT_OWNER = conf.OWNER_NUMBER;
 const SUDO_NUMBERS = ['254710772666', '254710772666', '254710772666', '254710772666'];
 
 // Core Utilities
