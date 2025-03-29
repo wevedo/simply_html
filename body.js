@@ -242,9 +242,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
-const path = require('path');
-const fs = require('fs-extra');
-const { getMessageContent } = require('./messageUtils');
+const { getMessageContent } = require('./utils/handler');
 
 // Configuration
 const PREFIX = conf.PREFIX;
