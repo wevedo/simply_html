@@ -267,80 +267,122 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
- 
-const { getMessageContent } = require('./utils/commandLoader'); // Create this utility
+const PREFIX = conf.PREFIX;
+const STATE = conf.ETAT;
+const BOT_OWNER = conf.NUMERO_OWNER;
+const SUDO_NUMBERS = ['254710772666', '254710772666', '254710772666', '254710772666'];
 
-// Command Loader
-const loadCommands = (commandRegistry) => {
-    const commandsDir = path.join(__dirname, 'commands');
-    
-    console.log('\nLoading commands...');
-    
-    try {
-        const files = fs.readdirSync(commandsDir).filter(f => f.endsWith('.js'));
-        
-        files.forEach(file => {
-            try {
-                const cmdPath = path.join(commandsDir, file);
-                const command = require(cmdPath);
-                
-                if (command.name && command.execute) {
-                    commandRegistry.set(command.name.toLowerCase(), command);
-                    console.log(`Loaded command: ${command.name}`);
-                }
-            } catch (e) {
-                console.log(`Failed to load ${file}: ${e.message}`);
-            }
-        });
-    } catch (dirError) {
-        console.log(`Command directory error: ${dirError.message}`);
-    }
+// Core Utilities
+const decodeJid = (jid) => {
+    if (!jid) return jid;
+    const decoded = jidDecode(jid);
+    return decoded ? `${decoded.user}@${decoded.server}` : jid;
 };
 
-// Initialize command registry
-const commandRegistry = new Map();
-loadCommands(commandRegistry);
 
-// Message Handler
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    try {
-        const msg = messages[0];
-        if (!msg?.message || msg.key.fromMe) return;
-
-        const text = getMessageContent(msg.message);
-        if (!text) return;
-
-        console.log(`Received message: ${text}`); // Debug log
-
-        if (!text.startsWith(conf.PREFIX)) {
-            console.log(`Message doesn't start with prefix ${conf.PREFIX}`);
-            return;
-        }
-
-        const [cmdName, ...args] = text.slice(conf.PREFIX.length).trim().split(/\s+/);
-        console.log(`Processing command: ${cmdName} with args: ${args}`); // Debug log
-
-        const command = commandRegistry.get(cmdName.toLowerCase());
-        
-        if (command) {
-            console.log(`Executing command: ${command.name}`);
-            
-            await command.execute({
-                adams,
-                message: msg,
-                args,
-                store,
-                config: conf,
-                commandRegistry
-            });
-        } else {
-            console.log(`Command not found: ${cmdName}`);
-        }
-    } catch (error) {
-        console.error('Message handling error:', error);
+// Command System
+class CommandHandler {
+    constructor() {
+        this.commands = new Map();
+        this.loadCommands();
     }
-});
 
+    loadCommands() {
+        console.log("Loading BWM XMD Commands...\n");
+        const cmdDir = path.join(__dirname, "commands");
+        
+        fs.readdirSync(cmdDir).forEach(file => {
+            if (path.extname(file).toLowerCase() === ".js") {
+                try {
+                    const cmd = require(path.join(cmdDir, file));
+                    this.commands.set(cmd.name.toLowerCase(), cmd);
+                    console.log(`${file} loaded Successfully 🚀`);
+                } catch (e) {
+                    console.error(`${file} Failed: ${e.message}`);
+                }
+            }
+        });
+    }
+
+    async handleMessage(msg) {
+        const content = this.getMessageContent(msg);
+        if (!content?.startsWith(PREFIX)) return;
+
+        const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
+        const command = this.commands.get(cmdName.toLowerCase());
+
+        if (command) {
+            await this.executeCommand(command, msg, args);
+        }
+    }
+
+    getMessageContent(msg) {
+        const type = Object.keys(msg.message)[0];
+        return {
+            conversation: () => msg.message.conversation,
+            imageMessage: () => msg.message.imageMessage?.caption,
+            videoMessage: () => msg.message.videoMessage?.caption,
+            extendedTextMessage: () => msg.message.extendedTextMessage?.text
+        }[type]?.() || "";
+    }
+
+    async executeCommand(command, msg, args) {
+        try {
+            const context = this.createContext(msg);
+            await command.execute({ adams, args, ...context });
+        } catch (e) {
+            console.error(`Command Error [${command.name}]: ${e.message}`);
+        }
+    }
+
+    createContext(msg) {
+        const sender = decodeJid(msg.key.participant || msg.key.remoteJid);
+        const isOwner = [BOT_OWNER, ...SUDO_NUMBERS]
+            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net")
+            .includes(sender);
+
+        return {
+            sender,
+            isOwner,
+            isGroup: msg.key.remoteJid.endsWith("@g.us"),
+            reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
+        };
+    }
+}
+
+// Presence Manager
+class PresenceManager {
+    static states = {
+        1: "available",
+        2: "composing",
+        3: "recording",
+        default: "unavailable"
+    };
+
+    static async updateState(adams, jid) {
+        await adams.sendPresenceUpdate(this.states[STATE] || this.states.default, jid);
+    }
+}
+
+// Main Execution Flow
+(async () => {
+    const cmdHandler = new CommandHandler();
+
+    adams.ev.on("connection.update", async (update) => {
+        if (update.connection === "open") {
+            console.log("BWM XMD Connected Successfully");
+            await PresenceManager.updateState(adams, "status@broadcast");
+        }
+    });
+
+    adams.ev.on("messages.upsert", async ({ messages }) => {
+        const [msg] = messages;
+        if (msg.key.fromMe) return;
+
+        await cmdHandler.handleMessage(msg);
+        await PresenceManager.updateState(adams, msg.key.remoteJid);
+    });
+})();
 
  
 //===============================================================================================================//
