@@ -33,7 +33,7 @@ const express = require("express");
 const { exec } = require("child_process");
 const http = require("http");
 const zlib = require('zlib');
-const prefixe = conf.PREFIXE;
+const PREFIX = conf.PREFIX;
 const more = String.fromCharCode(8206);
 const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
 const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`;
@@ -267,8 +267,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-const PREFIX = conf.PREFIX;
-const STATE = conf.ETAT;
+const PRESENCE = conf.ETAT;
 const BOT_OWNER = conf.NUMERO_OWNER;
 const SUDO_NUMBERS = ['254710772666', '254710772666', '254710772666', '254710772666'];
 
@@ -288,7 +287,7 @@ class CommandHandler {
     }
 
     loadCommands() {
-        console.log("Loading BWM XMD Commands...\n");
+        console.log("Loading bwm xmd Commands ♻️\n");
         const cmdDir = path.join(__dirname, "commands");
         
         fs.readdirSync(cmdDir).forEach(file => {
@@ -360,7 +359,7 @@ class PresenceManager {
     };
 
     static async updateState(adams, jid) {
-        await adams.sendPresenceUpdate(this.states[STATE] || this.states.default, jid);
+        await adams.sendPresenceUpdate(this.states[PRESENCE] || this.states.default, jid);
     }
 }
 
@@ -370,7 +369,7 @@ class PresenceManager {
 
     adams.ev.on("connection.update", async (update) => {
         if (update.connection === "open") {
-            console.log("BWM XMD Connected Successfully");
+            console.log("Bwm xmd online running 🌎");
             await PresenceManager.updateState(adams, "status@broadcast");
         }
     });
