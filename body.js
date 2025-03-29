@@ -381,13 +381,6 @@ async function updatePresence(adams, jid) {
     }
 }
 
-// Main Execution Flow
-(async () => {
-    const adams = makeWASocket({
-        printQRInTerminal: true,
-        logger: { level: "silent" }
-    });
-
     const cmdSystem = new CommandSystem();
 
     adams.ev.on("connection.update", ({ connection }) => {
