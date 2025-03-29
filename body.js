@@ -191,7 +191,7 @@ class ListenerManager {
                     console.log(chalk.green(`» Loaded listener: ${file}`));
                 }
             } catch (e) {
-                console.error(chalk.red(`‚ĚĆ Error loading listener ${file}: ${e.message}`));
+                console.error(chalk.green(`‚ĚĆ Error loading listener ${file}: ${e.message}`));
             }
         }
     }
