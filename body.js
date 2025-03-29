@@ -164,7 +164,7 @@ async function main() {
  //============================================================================//
 
 // Modified message handler
-adams.ev.on("messages.upsert", async ({ messages }) => {
+/*adams.ev.on("messages.upsert", async ({ messages }) => {
     const message = messages[0];
     if (!message?.message || message.key.fromMe) return;
 
@@ -185,7 +185,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
             config: conf
         });
     }
-});
+});*/
 
  //==============================================================================//
 
