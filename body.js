@@ -59,7 +59,7 @@ function atbverifierEtatJid(jid) {
 async function authentification() {
     try {
         if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Session connected...");
+            console.log("Bwm xmd session connected ✅");
             // Split the session strihhhhng into header and Base64 data
             const [header, b64data] = conf.session.split(';;;'); 
 
@@ -90,3 +90,6 @@ async function authentification() {
 }
 module.exports = { authentification };
 authentification();
+
+
+//===============================================================================//
