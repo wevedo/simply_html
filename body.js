@@ -37,11 +37,6 @@ app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 
 app.listen(port, () => console.log(`App online:${port}`));
 
-function start() {
-    console.log("Server Started!");
-}
-
-
 
 
 
@@ -436,21 +431,27 @@ var commandeOptions = { superUser, dev, verifGroupe, mbre, membreGroupe, verifAd
 }
  else if (connection == "close") { let disconnectReason = new Boom(lastDisconnect?.error)?.output.statusCode; if (disconnectReason === baileys_1.DisconnectReason.badSession) { console.log('Session ID error, please rescan.'); } else if (disconnectReason === baileys_1.DisconnectReason.connectionClosed) { console.log('Connection closed, reconnecting...'); main(); } else if (disconnectReason === baileys_1.DisconnectReason.connectionLost) { console.log('Connection lost, attempting to reconnect...'); main(); } else if (disconnectReason === baileys_1.DisconnectReason.connectionReplaced) { console.log('Connection replaced, another session is already active. Please close it.'); } else if (disconnectReason === baileys_1.DisconnectReason.loggedOut) { console.log('Logged out, please rescan the QR code.'); } else if (disconnectReason === baileys_1.DisconnectReason.restartRequired) { console.log('Restarting...'); main(); } else { console.log('Restarting due to an error:', disconnectReason); const { exec } = require("child_process"); exec("pm2 restart all"); } console.log("Connection status: " + connection); main(); }
  zk.ev.on("creds.update", saveCreds);
-zk.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
+ async function downloadAndSaveMediaMessage(message, filename, attachExtension = true) {
     const quoted = message.msg || message;
     const mime = (message.msg || message).mimetype || "";
     const messageType = message.mtype ? message.mtype.replace(/Message/gi, "") : mime.split("/")[0];
     const stream = await downloadContentFromMessage(quoted, messageType);
+    
     let buffer = Buffer.from([]);
     for await (const chunk of stream) {
-      buffer = Buffer.concat([buffer, chunk]);
+        buffer = Buffer.concat([buffer, chunk]);
     }
+
     const type = await FileType.fromBuffer(buffer);
     const trueFileName = attachExtension ? `${filename}.${type.ext}` : filename;
-    await fs.writeFileSync(trueFileName, buffer);
+    fs.writeFileSync(trueFileName, buffer);
+    
     return trueFileName;
-  };
- });
+}
+
+async function start() {
+    console.log("Bot started...");
+}
 
 start();
 
