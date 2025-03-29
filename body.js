@@ -371,9 +371,7 @@ adams.ev.on("connection.update", ({ connection }) => {
 │ 🏷️ App Name: ${herokuAppName}  
 │ 🌐 Dashboard: ${herokuAppLink}  
 ╰──────────────────────────────◆`;
-
-    await adams.sendMessage(
-        adams.user.id, 
+    adams.sendMessage(adams.user.id, 
         { text: connectionMessage }, 
         { ephemeralExpiration: 600 } // 10 minutes
     );
