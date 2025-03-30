@@ -4,13 +4,10 @@ const axios = require("axios");
 module.exports = {
     name: "ping",
     description: "Check bot responsiveness",
-    reaction: "🚀", // Updated reaction to a rocket
+    reaction: "🏓",
 
     async execute({ adams, chat, sender, message }) {
         try {
-            // React to the message with a 🚀 emoji
-            await adams.sendMessage(chat, { react: { text: "🚀", key: message.key } });
-
             // Generate ping metrics
             const responseTime = Math.floor(100 + Math.random() * 900);
 
