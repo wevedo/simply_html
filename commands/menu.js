@@ -13,7 +13,7 @@ module.exports = {
             const memoryUsage = process.memoryUsage().rss / 1024 / 1024;           
             
             // Bot Configuration
-            const botStatus = conf.STATUS || "ONLINE";
+            const botStatus = conf.PRESENCE || "ONLINE";
             const botMode = conf.MODE === "yes" ? "PUBLIC" : "PRIVATE";
             
             // Generate Header
