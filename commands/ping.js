@@ -1,6 +1,6 @@
 // commands/ping.js
-const { getMessageContent, getMessageMetadata } = require("../utils/messageUtils");
-const { createContext } = require("../utils/contextManager");
+const { getMessageContent, getMessageMetadata } = require("../utils/handle");
+const { createContext } = require("../utils/helper");
 const axios = require("axios");
 
 module.exports = {
