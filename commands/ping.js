@@ -13,7 +13,7 @@ module.exports = {
         try {
             // Generate random values
             const responseTime = Math.floor(100 + Math.random() * 900);
-            const randomFile = Math.floor(Math.random() * 161) + 1;
+            const randomFile = Math.floor(Math.random() * 100) + 1;
             const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFile}.mp3`;
 
             // Temporary storage
