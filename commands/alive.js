@@ -8,7 +8,7 @@ module.exports = {
 
     async execute({ adams, chat, sender, message }) {
         try {
-            // Generate a random response time (for effect)
+            // Generate a random response time
             const responseTime = Math.floor(100 + Math.random() * 900);
 
             // Get a random audio file
@@ -40,6 +40,15 @@ module.exports = {
             // Get file size
             const fileSize = headers["content-length"] || data.length;
 
+            // Prepare externalAdReply with a large thumbnail
+            const externalAdReply = {
+                title: "🔥 BWM XMD Alive 🔥",
+                body: "🚀 Always Active 🚀",
+                thumbnailUrl: randomThumbnail,
+                mediaType: 1,
+                renderLargerThumbnail: true
+            };
+
             // Build WhatsApp newsletter message
             const newsletterMessage = {
                 audio: Buffer.from(data),
@@ -51,7 +60,7 @@ module.exports = {
                 ...createContext(sender, {
                     title: "🔥 BWM XMD Alive 🔥",
                     body: `✅ Bot is Active & Running!\n📶 Response Time: ${responseTime}ms`,
-                    thumbnail: randomThumbnail // Attach a random large thumbnail
+                    externalAdReply // Attach large thumbnail
                 })
             };
 
