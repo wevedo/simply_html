@@ -4,11 +4,11 @@ const axios = require("axios");
 module.exports = {
     name: "ping",
     description: "Check bot responsiveness",
-    reaction: "🏓",
+    reaction: "🚀", // Updated reaction to a rocket
 
     async execute({ adams, chat, sender, message }) {
         try {
-            // React to the command message with 🚀
+            // React to the message with a 🚀 emoji
             await adams.sendMessage(chat, { react: { text: "🚀", key: message.key } });
 
             // Generate ping metrics
