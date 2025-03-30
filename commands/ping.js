@@ -2,25 +2,27 @@ const { createContext } = require("../utils/helper");
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
+const ffmpeg = require("fluent-ffmpeg");
 
 module.exports = {
     name: "ping",
     description: "Check bot responsiveness",
     reaction: "🏓",
-    
+
     async execute({ adams, chat, sender, message }) {
         try {
             // Generate ping metrics
             const responseTime = Math.floor(100 + Math.random() * 900);
-            
+
             // Get random audio file
             const randomFile = Math.floor(Math.random() * 100) + 1;
             const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFile}.mp3`;
-            
+
             // Temporary file path
             const tempDir = path.join(__dirname, '..', 'temp');
             await fs.ensureDir(tempDir);
             const tempFile = path.join(tempDir, `audio_${Date.now()}.mp3`);
+            const outputFile = path.join(tempDir, `converted_${Date.now()}.mp3`);
 
             // Download and save audio
             const response = await axios({
@@ -31,21 +33,38 @@ module.exports = {
 
             const writer = fs.createWriteStream(tempFile);
             response.data.pipe(writer);
-            
+
             await new Promise((resolve, reject) => {
-                writer.on('finish', resolve);
+                writer.on('finish', () => setTimeout(resolve, 100)); // Ensure file is written
                 writer.on('error', reject);
             });
 
-            // Get audio metadata
-            const stats = fs.statSync(tempFile);
-            const duration = Math.floor(stats.size / (128 * 1024));
+            // Convert audio to ensure compatibility
+            await new Promise((resolve, reject) => {
+                ffmpeg(tempFile)
+                    .audioCodec("libmp3lame")
+                    .toFormat("mp3")
+                    .on("end", resolve)
+                    .on("error", reject)
+                    .save(outputFile);
+            });
+
+            // Get audio duration
+            const duration = await new Promise((resolve, reject) => {
+                ffmpeg.ffprobe(outputFile, (err, metadata) => {
+                    if (err) reject(err);
+                    else resolve(Math.floor(metadata.format.duration || 30));
+                });
+            });
+
+            // Get file size
+            const stats = fs.statSync(outputFile);
 
             // Build WhatsApp-compatible message
             const audioMessage = {
                 audio: {
-                    url: tempFile,
-                    mimetype: "audio/mpeg",
+                    url: outputFile,
+                    mimetype: "audio/mp3",
                     ptt: false,
                     fileLength: stats.size.toString(),
                     seconds: duration > 0 ? duration : 30,
@@ -62,6 +81,7 @@ module.exports = {
 
             // Cleanup
             fs.unlinkSync(tempFile);
+            fs.unlinkSync(outputFile);
 
         } catch (error) {
             console.error("Ping command error:", error);
