@@ -5,7 +5,6 @@ module.exports = {
     getMessageContent: (message) => {
         try {
             if (!message) return '';
-            
             const type = getContentType(message);
             if (!type) return '';
             
@@ -44,19 +43,22 @@ module.exports = {
                     return '';
             }
         } catch (e) {
-            console.error('Message content error:', e.message);
             return '';
         }
     },
 
-    getMessageMetadata: (message) => {
-        const msgKey = message.key || {};
-        return {
-            remoteJid: msgKey.remoteJid,
-            participant: msgKey.participant,
-            fromMe: msgKey.fromMe,
-            id: msgKey.id,
-            timestamp: msgKey.timestamp
-        };
+    getMessageMetadata: (msgObj) => {
+        try {
+            return {
+                remoteJid: msgObj?.key?.remoteJid || '',
+                participant: msgObj?.key?.participant || '',
+                fromMe: msgObj?.key?.fromMe || false,
+                id: msgObj?.key?.id || '',
+                timestamp: msgObj?.key?.timestamp ? new Date(msgObj.key.timestamp * 1000) : null
+            };
+        } catch (e) {
+            console.error('Metadata error:', e.message);
+            return {};
+        }
     }
 };
