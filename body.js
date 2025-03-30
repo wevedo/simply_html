@@ -381,7 +381,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 });
 
  //============================================================================================================
- 
+ /*
 console.log("Loading Bwm xmd Commands ...\n");
 const commandPath = path.join(__dirname, "Taskflow");
 fs.readdirSync(commandPath).forEach((file) => {
@@ -474,7 +474,7 @@ if (typeof verifCom !== "undefined" && verifCom) {
 // Start the bot
 connectToWhatsApp();
 
-
+*/
 
 /////======//////=======/////=========//////////=========///////////========//////!=====//////========////
 
