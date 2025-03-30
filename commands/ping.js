@@ -1,5 +1,4 @@
 // commands/ping.js
-const { createContext } = require("../utils/helper");
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
@@ -9,29 +8,22 @@ module.exports = {
     description: "Check bot responsiveness",
     reaction: "🏓",
     
-    async execute({ adams, chat, sender, message }) {
+    async execute({ adams, chat, message }) {
         try {
-            // Generate random values
-            const responseTime = Math.floor(100 + Math.random() * 900);
-            const randomFile = Math.floor(Math.random() * 100) + 1;
-            const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFile}.mp3`;
-
-            // Temporary storage
-            const tempDir = path.join(__dirname, '..', 'temp');
-            const tempFile = path.join(tempDir, `audio_${Date.now()}.mp3`);
+            // Use guaranteed working audio URL
+            const audioUrl = "https://files.catbox.moe/89tvg4.mp3";
             
-            // Create temp directory if not exists
-            await fs.ensureDir(tempDir);
+            // Temporary file path
+            const tempPath = path.join(__dirname, '..', 'temp', `test_audio_${Date.now()}.mp3`);
+            await fs.ensureDir(path.dirname(tempPath));
 
-            // Download and verify audio
-            const response = await axios({
-                url: audioUrl,
-                method: 'GET',
-                responseType: 'stream'
+            // Download audio directly
+            const response = await axios.get(audioUrl, {
+                responseType: "stream"
             });
 
-            // Save to temporary file
-            const writer = fs.createWriteStream(tempFile);
+            // Save to file
+            const writer = fs.createWriteStream(tempPath);
             response.data.pipe(writer);
             
             await new Promise((resolve, reject) => {
@@ -39,40 +31,29 @@ module.exports = {
                 writer.on('error', reject);
             });
 
-            // Get file metadata
-            const stats = fs.statSync(tempFile);
-            const duration = Math.floor(stats.size / (128 * 1024)); // Approximate duration
+            // Get file stats
+            const stats = fs.statSync(tempPath);
+            console.log("Audio file size:", stats.size);
 
-            // Create newsletter context
-            const context = createContext(sender, {
-                title: "🏓 Ping Test",
-                body: `📶 Response Time: ${responseTime}ms`,
-                thumbnail: "https://files.catbox.moe/sd49da.jpg"
-            });
-
-            // Prepare audio message
-            const audioMessage = {
+            // Send pure audio message
+            await adams.sendMessage(chat, {
                 audio: {
-                    url: tempFile,
+                    url: tempPath,
                     mimetype: "audio/mpeg",
-                    ptt: true,
+                    ptt: false, // Disable push-to-talk
                     fileLength: stats.size,
-                    seconds: duration > 0 ? duration : 30
-                },
-                ...context
-            };
-
-            // Send message
-            await adams.sendMessage(chat, audioMessage, { quoted: message });
+                    seconds: Math.floor(stats.size / (128 * 1024)) // Calculate duration
+                }
+            }, { quoted: message });
 
             // Cleanup
-            fs.unlinkSync(tempFile);
+            fs.unlinkSync(tempPath);
+            console.log("Audio sent successfully");
 
         } catch (error) {
-            console.error("Ping command error:", error);
+            console.error("Ping command failed:", error);
             await adams.sendMessage(chat, {
-                text: "Failed to process ping command 🚨",
-                ...createContext(sender)
+                text: "Audio test failed ❌"
             }, { quoted: message });
         }
     }
