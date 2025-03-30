@@ -1,4 +1,4 @@
-const { createAudioContext } = require("../utils/contextManager");
+const { createAudioContext } = require("../utils/helper");
 
 module.exports = {
     name: "ping",
