@@ -18,7 +18,7 @@ const thumbnails = [
             // Select a random thumbnail
             const DEFAULT_THUMBNAIL = thumbnails[Math.floor(Math.random() * thumbnails.length)];
 
-const createContext = (userJid, options = {}) => ({
+const createContext2 = (userJid, options = {}) => ({
     contextInfo: {
         mentionedJid: [userJid],
         forwardingScore: 999,
