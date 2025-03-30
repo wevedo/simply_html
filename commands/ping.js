@@ -3,6 +3,7 @@ const axios = require("axios");
 
 module.exports = {
     name: "ping",
+    category: "🚀 System",
     description: "Check bot responsiveness",
     reaction: "🏓",
 
