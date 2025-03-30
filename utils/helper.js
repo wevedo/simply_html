@@ -1,83 +1,53 @@
 
-const axios = require("axios");
+// utils/contextManager.js
 const NEWS_LETTER_JID = "120363285388090068@newsletter";
 const BOT_NAME = "BWM-XMD";
 const DEFAULT_THUMBNAIL = "https://files.catbox.moe/sd49da.jpg";
 const GITHUB_AUDIO_BASE = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
 const AUDIO_FILES_COUNT = 161;
 
-async function getValidAudio() {
-    try {
-        const randomNumber = Math.floor(Math.random() * 161) + 1;
-        const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomNumber}.mp3`;
-        
-        // Verify audio exists and get duration
-        const response = await axios.head(audioUrl);
-        const contentLength = response.headers['content-length'];
-        const duration = Math.floor((contentLength / (128 * 1024)) * 60); // Estimate duration
-        
-        return {
-            url: audioUrl,
-            mimetype: "audio/mpeg",
-            ptt: true,
-            seconds: duration || 30, // Fallback duration
-            fileLength: contentLength
-        };
-    } catch (error) {
-        logger.error("Audio fetch error:", error.message);
-        return getFallbackAudio();
-    }
-}
+const NEWS_LETTER_CONTEXT = {
+    newsletterJid: NEWS_LETTER_JID,
+    newsletterName: BOT_NAME,
+    serverMessageId: () => Math.floor(100000 + Math.random() * 900000)
+};
 
-function getFallbackAudio() {
-    return {
-        url: "https://files.catbox.moe/89tvg4.mp3", // Default working audio
-        mimetype: "audio/mpeg",
-        ptt: true,
-        seconds: 30,
-        fileLength: "1024000"
-    };
-}
+const getRandomAudio = () => ({
+    url: `${GITHUB_AUDIO_BASE}/sound${Math.floor(Math.random() * AUDIO_FILES_COUNT) + 1}.mp3`,
+    mimetype: "audio/mpeg",
+    ptt: true
+});
 
-// Context creation with proper audio handling
-async function createAudioContext(userJid, options = {}) {
-    const audioData = await getValidAudio();
-    
+const createContext = (userJid, options = {}) => {
+    // Validate and format JID
+    const formattedJid = userJid?.endsWith('@s.whatsapp.net') 
+        ? userJid 
+        : `${(userJid || '').replace(/\D/g, "")}@s.whatsapp.net`;
+
     return {
-        audio: {
-            url: audioData.url,
-            mimetype: audioData.mimetype,
-            ptt: audioData.ptt
-        },
         contextInfo: {
-            mentionedJid: [formatJid(userJid)],
+            mentionedJid: [formattedJid],
             forwardingScore: 999,
             isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                ...NEWS_LETTER_CONTEXT,
+                serverMessageId: NEWS_LETTER_CONTEXT.serverMessageId()
+            },
             externalAdReply: {
                 title: options.title || BOT_NAME,
-                body: options.body || "Premium WhatsApp Bot",
+                body: options.body || "Premium WhatsApp Bot Solution",
                 thumbnailUrl: options.thumbnail || DEFAULT_THUMBNAIL,
                 mediaType: 1,
-                mediaUrl: audioData.url,
-                sourceUrl: "https://bwm-xmd.ibrahimaitech.us.kg",
-                showAdAttribution: true
+                showAdAttribution: true,
+                renderLargerThumbnail: false
             }
-        },
-        headerType: 4, // AUDIO_MESSAGE
-        mediaUploadTimeoutMs: 30000,
-        uploadMediaCallback: (progress) => {
-            logger.debug(`Upload progress: ${progress}%`);
         }
     };
-}
-
-// JID formatting helper
-function formatJid(jid) {
-    return jid.includes("@") ? jid : `${jid.replace(/\D/g, "")}@s.whatsapp.net`;
-}
+};
 
 module.exports = {
-    createAudioContext,
-    getValidAudio,
-    formatJid
+    getRandomAudio,
+    createContext,
+    DEFAULT_THUMBNAIL,
+    BOT_NAME
 };
