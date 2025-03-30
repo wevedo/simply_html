@@ -1,58 +1,62 @@
-// commands/menu.js
 const { createContext } = require("../utils/helper");
-
-const COMMAND_CATEGORIES = [
-    {
-        name: "📥 Downloaders",
-        commands: ["download", "get", "ytdl"]
-    },
-    {
-        name: "🔍 Search",
-        commands: ["search", "find", "lookup"]
-    },
-    {
-        name: "⚙️ Settings",
-        commands: ["set", "config", "toggle"]
-    }
-];
 
 module.exports = {
     name: "menu",
-    description: "Display command categories",
-    reaction: "📜",
+    description: "Display advanced command menu",
+    reaction: "🌀",
+    category: "🌎 General",
     
-    async execute({ adams, chat, sender, message, commandRegistry }) {
+    async execute({ adams, chat, sender, message, commandRegistry, conf }) {
         try {
-            // Generate categorized command list
-            const commandList = COMMAND_CATEGORIES.map(cat => {
-                const cmds = cat.commands
-                    .map(name => {
-                        const cmd = commandRegistry.get(name);
-                        return cmd ? `› ${cmd.name} - ${cmd.description}` : '';
-                    })
-                    .filter(Boolean)
-                    .join('\n');
-                
-                return `${cat.name}\n${cmds}`;
-            }).join('\n\n');
+            // System Information
+            const uptime = process.uptime();
+            const memoryUsage = process.memoryUsage().rss / 1024 / 1024;           
+            
+            // Bot Configuration
+            const botStatus = conf.STATUS || "ONLINE";
+            const botMode = conf.MODE === "yes" ? "PUBLIC" : "PRIVATE";
+            
+            // Generate Header
+            const header = `
+╭───◇◆♢♤ BWM XMD ♤♢◆◇───╮
+│
+│ ✦ 𝗩𝗲𝗿𝘀𝗶𝗼𝗻: 7.0.8
+│ ✦ 𝗣𝗿𝗲𝗳𝗶𝘅: [ ${conf.PREFIX} ]
+│ ✦ 𝗠𝗼𝗱𝗲: ${botMode} 𓃠
+│ ✦ 𝗦𝘁𝗮𝘁𝘂𝘀: ${botStatus} ${botStatus === "ONLINE" ? "🟢" : "🔴"}
+│
+│ ═══════◇◆◇═══════
+│ 𝗦𝘆𝘀𝘁𝗲𝗺 𝗥𝗲𝘀𝗼𝘂𝗿𝗰𝗲𝘀
+│ ◈ Uptime: ${formatUptime(uptime)}
+│ ◈ Memory: ${memoryUsage.toFixed(1)}MB
+│ ◈ CPU: ${os.cpus()[0].model.split('@')[0].trim()}
+│
+╰───◇◆♢♤ ${formatDate()} ♤♢◆◇───╯
 
-            // Prepare message with image and caption
-            const BWM_XMD_TEXT = `
-╭───※ ·❆· ※───╮
-       BWM XMD
-╰───※ ·❆· ※───╯
-
-${commandList}
-
-⚡ Version: 7.0.8
-🔧 Prefix: ${process.env.PREFIX}
+${readMore}
             `.trim();
+
+            // Generate Command Categories
+            const categories = Array.from(commandRegistry.values())
+                .reduce((acc, cmd) => {
+                    const category = cmd.category || "⚙️ General";
+                    acc[category] = (acc[category] || []).concat(cmd.name);
+                    return acc;
+                }, {});
+
+            const categoryList = Object.entries(categories)
+                .map(([cat, cmds]) => 
+                    `┌─⊰ ${cat}\n${cmds.sort().map(c => `│ ➫ ${c}`).join("\n")}`
+                ).join("\n\n");
+
+            // Full Message
+            const fullMessage = `${header}\n\n${categoryList}`;
 
             await adams.sendMessage(chat, {
                 image: { 
-                    url: 'https://files.catbox.moe/642del.jpeg' 
+                    url: 'https://files.catbox.moe/642del.jpeg',
+                    caption: fullMessage
                 },
-                caption: BWM_XMD_TEXT,
                 contextInfo: {
                     mentionedJid: [sender],
                     forwardingScore: 999,
@@ -61,6 +65,12 @@ ${commandList}
                         newsletterJid: "120363285388090068@newsletter",
                         newsletterName: "BWM-XMD",
                         serverMessageId: Math.floor(100000 + Math.random() * 900000)
+                    },
+                    externalAdReply: {
+                        title: "BWM XMD Command Center",
+                        body: "Premium WhatsApp Bot Solution",
+                        thumbnailUrl: "https://files.catbox.moe/sd49da.jpg",
+                        mediaType: 1
                     }
                 }
             }, { quoted: message });
@@ -68,9 +78,31 @@ ${commandList}
         } catch (error) {
             console.error("Menu command error:", error);
             await adams.sendMessage(chat, {
-                text: "Failed to load menu 🚨",
+                text: "Failed to generate enhanced menu 🚨",
                 ...createContext(sender)
             }, { quoted: message });
         }
     }
 };
+
+// Helper functions
+const formatUptime = (seconds) => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    return `${days}D ${hours}H`;
+};
+
+const formatDate = () => {
+    const date = new Date();
+    return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: '2-digit',
+        year: 'numeric'
+    }).toUpperCase();
+};
+
+const readMore = `
+╭───────────────◇◆◇───────────────╮
+│      📖 𝗥𝗘𝗔𝗗 𝗠𝗢𝗥𝗘 𝗕𝗘𝗟𝗢𝗪 ▼      
+╰───────────────◇◆◇───────────────╯
+`.trim();
