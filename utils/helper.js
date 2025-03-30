@@ -17,10 +17,17 @@ const getRandomAudio = () => ({
     ptt: true
 });
 
-const createContext = (userJid, options = {}) => ({
-    contextInfo: {
-        mentionedJid: [userJid],
-        forwardingScore: 999,
+// utils/contextManager.js
+const createContext = (userJid, options = {}) => {
+    // Ensure userJid is properly formatted
+    const formattedJid = userJid?.endsWith('@s.whatsapp.net') 
+        ? userJid 
+        : `${userJid.replace(/\D/g, "")}@s.whatsapp.net`;
+
+    return {
+        contextInfo: {
+            mentionedJid: [formattedJid],
+            forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
             ...NEWS_LETTER_CONTEXT,
@@ -32,7 +39,8 @@ const createContext = (userJid, options = {}) => ({
             thumbnailUrl: options.thumbnail || AUDIO_CONFIG.defaultThumbnail,
             mediaType: 1
         }
-    }
-});
+    };
+};
+
 
 module.exports = { getRandomAudio, createContext };
