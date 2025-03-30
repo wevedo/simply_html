@@ -16,16 +16,21 @@ module.exports = {
             const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFile}.mp3`;
 
             // Download audio as buffer
-            const { data } = await axios.get(audioUrl, {
+            const { data, headers } = await axios.get(audioUrl, {
                 responseType: "arraybuffer"
             });
+
+            // Calculate file size
+            const fileSize = headers["content-length"] || data.length;
 
             // Build WhatsApp-compatible message
             const audioMessage = {
                 audio: Buffer.from(data),
-                mimetype: "audio/mp3",
-                ptt: false,
-                waveform: new Uint8Array(100).fill(128),
+                mimetype: "audio/mpeg",
+                ptt: true, // Makes it a playable voice note
+                fileName: `ping_audio_${randomFile}.mp3`,
+                fileLength: fileSize.toString(),
+                waveform: new Uint8Array(100).fill(128)
             };
 
             // Send message
