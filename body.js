@@ -313,9 +313,15 @@ class CommandSystem {
             
             const content = getMessageContent(msg.message);
             console.log(`Received message: ${content}`); // Debug log
+
+           if (!content?.startsWith(PREFIX)) {
+               // console.log("Message doesn't start with prefix");
+                return;
+            }
+
            
             const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
-            console.log(`Processing command: ${cmdName}`, args);
+            //console.log(`Processing command: ${cmdName}`, args);
             
             const command = this.commands.get(cmdName.toLowerCase());
             
