@@ -160,7 +160,7 @@ async function main() {
     }
 
  //============================================================================//
-
+const { createContext } = require("./utils/helper");
  
 // Message handler with reactions
 adams.ev.on("messages.upsert", async ({ messages }) => {
@@ -313,12 +313,7 @@ class CommandSystem {
             
             const content = getMessageContent(msg.message);
             console.log(`Received message: ${content}`); // Debug log
-            
-            if (!content?.startsWith(PREFIX)) {
-                console.log("Message doesn't start with prefix");
-                return;
-            }
-
+           
             const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
             console.log(`Processing command: ${cmdName}`, args);
             
