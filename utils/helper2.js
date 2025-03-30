@@ -2,7 +2,21 @@
 // utils/contextManager.js
 const NEWS_LETTER_JID = "120363285388090068@newsletter";
 const BOT_NAME = "BWM-XMD";
-const DEFAULT_THUMBNAIL = "https://files.catbox.moe/sd49da.jpg";
+const thumbnails = [
+                "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
+                "https://bwm-xmd-files.vercel.app/bwmxmd_9s9jr8.jpeg",
+                "https://bwm-xmd-files.vercel.app/bwmxmd_psaclm.jpeg",
+                "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg",
+                "https://bwm-xmd-files.vercel.app/bwmxmd_v4jirh.jpeg",
+                "https://bwm-xmd-files.vercel.app/bwmxmd_d8cv2v.png",
+                "https://files.catbox.moe/jwwjd3.jpeg",
+                "https://files.catbox.moe/3k35q4.jpeg",
+                "https://files.catbox.moe/sgl022.jpeg",
+                "https://files.catbox.moe/xx6ags.jpeg"
+            ];
+
+            // Select a random thumbnail
+            const DEFAULT_THUMBNAIL = thumbnails[Math.floor(Math.random() * thumbnails.length)];
 
 const createContext = (userJid, options = {}) => ({
     contextInfo: {
