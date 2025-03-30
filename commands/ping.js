@@ -8,6 +8,9 @@ module.exports = {
 
     async execute({ adams, chat, sender, message }) {
         try {
+            // React to the command message with 🚀
+            await adams.sendMessage(chat, { react: { text: "🚀", key: message.key } });
+
             // Generate ping metrics
             const responseTime = Math.floor(100 + Math.random() * 900);
 
