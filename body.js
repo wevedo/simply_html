@@ -164,29 +164,36 @@ async function main() {
  
 const { createContext } = require("./utils/helper");
 // Message handler with reactions
+// In your message handler
 adams.ev.on("messages.upsert", async ({ messages }) => {
     const [msg] = messages;
+    if (!msg?.message || msg.key.fromMe) return;
+
+    const command = /* your command detection logic */;
     
-    if (msg?.message && !msg.key.fromMe) {
-        const command = detectCommand(msg.message); // Implement your command detection
-        
-        if (command) {
-            try {
-                // Add reaction first
+    if (command) {
+        try {
+            // Add reaction
+            if (command.reaction) {
                 await adams.sendMessage(msg.key.remoteJid, {
-                    react: { text: command.reaction, key: msg.key }
+                    react: {
+                        text: command.reaction,
+                        key: msg.key
+                    }
                 });
-                
-                // Execute command
-                await command.execute({ 
-                    adams, 
-                    message: msg,
-                    chat: msg.key.remoteJid,
-                    sender: msg.key.participant || msg.key.remoteJid
-                });
-            } catch (error) {
-                console.error(`Command error: ${error.message}`);
             }
+
+            // Execute command with proper context
+            await command.execute({
+                adams,
+                chat: msg.key.remoteJid,
+                sender: msg.key.participant || msg.key.remoteJid,
+                message: msg,
+                reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
+            });
+            
+        } catch (error) {
+            console.error(`Command error [${command.name}]:`, error.message);
         }
     }
 });
