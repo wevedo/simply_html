@@ -107,6 +107,10 @@ authentification();
 
 //===============================================================================//
 
+async function connectToWhatsApp() {
+    console.log("📡 Connecting to WhatsApp...");
+
+
 const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
@@ -416,49 +420,62 @@ if (typeof verifCom !== "undefined" && verifCom) {
 });    
 //===============================================================================================================//
 
-zk.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
+    adams.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
 
-    if (connection === "close") {
-        let reason = new boom_1.Boom(lastDisconnect?.error)?.output?.statusCode;
+        if (connection === "open") {
+            console.log("✅ Connected to WhatsApp");
+        } else if (connection === "close") {
+            let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
 
-        switch (reason) {
-            case baileys_1.DisconnectReason.badSession:
-                console.log("⚠️ Session error! Please rescan QR.");
-                process.exit(); // Exit the process to restart manually
-                break;
+            switch (reason) {
+                case DisconnectReason.badSession:
+                    console.log("⚠️ Bad session file! Rescan QR.");
+                    process.exit();
+                    break;
 
-            case baileys_1.DisconnectReason.connectionClosed:
-                console.log("🔄 Connection closed. Reconnecting...");
-                await connectToWhatsApp(); // Restart connection
-                break;
+                case DisconnectReason.connectionClosed:
+                    console.log("🔄 Connection closed. Reconnecting...");
+                    await connectToWhatsApp();
+                    break;
 
-            case baileys_1.DisconnectReason.connectionLost:
-                console.log("🌐 Connection lost. Trying to reconnect...");
-                await connectToWhatsApp();
-                break;
+                case DisconnectReason.connectionLost:
+                    console.log("🌐 Connection lost. Trying to reconnect...");
+                    await connectToWhatsApp();
+                    break;
 
-            case baileys_1.DisconnectReason.connectionReplaced:
-                console.log("❌ Connection replaced! Another session is active.");
-                process.exit();
-                break;
+                case DisconnectReason.connectionReplaced:
+                    console.log("❌ Connection replaced! Another session is active.");
+                    process.exit();
+                    break;
 
-            case baileys_1.DisconnectReason.loggedOut:
-                console.log("🚫 Logged out! Rescan QR to log in.");
-                process.exit();
-                break;
+                case DisconnectReason.loggedOut:
+                    console.log("🚫 Logged out! Rescan QR to log in.");
+                    process.exit();
+                    break;
 
-            case baileys_1.DisconnectReason.restartRequired:
-                console.log("🔄 Restarting bot...");
-                await connectToWhatsApp();
-                break;
+                case DisconnectReason.restartRequired:
+                    console.log("🔄 Restarting bot...");
+                    await connectToWhatsApp();
+                    break;
 
-            default:
-                console.log(`⚠️ Unknown disconnection reason: ${reason}`);
-                console.log("🔁 Restarting bot...");
-                const { exec } = require("child_process");
-                exec("pm2 restart all"); // Restart bot using PM2
-                break;
+                default:
+                    console.log(`⚠️ Unknown disconnection reason: ${reason}`);
+                    console.log("🔁 Restarting bot...");
+                    const { exec } = require("child_process");
+                    exec("pm2 restart all"); // Restart bot using PM2
+                    break;
+            }
         }
-    }
-});
+    });
+
+    return adams;
+}
+
+// Start the bot
+connectToWhatsApp();
+
+
+
+/////======//////=======/////=========//////////=========///////////========//////!=====//////========////
+
