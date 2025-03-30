@@ -1,41 +1,48 @@
-const axios = require('axios');
+const axios = require("axios");
 
-module.exports = {
-  name: "ping",
-  description: "Check bot responsiveness",
-  async execute({ zk, message, userJid }) {
-    // Generate a random ping response time
-    const randomPingValue = Math.floor(50 + Math.random() * 500); // Random response time between 50ms and 550ms
+module.exports = { name: "ping", description: "Check bot responsiveness", async execute({ adams, message }) { try { // Generate a random ping response value const randomPingValue = Math.floor(100 + Math.random() * 900); // Random between 100-999 ms
 
-    // Get a random song from the TikTok music repository
-    const randomSongIndex = Math.floor(Math.random() * 100) + 1; // Random number between 1 and 100
-    const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomSongIndex}.mp3`;
+// Select a random audio file from 1 to 100
+        const randomAudioIndex = Math.floor(1 + Math.random() * 100);
+        const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomAudioIndex}.mp3`;
 
-    // Send the audio and ping response in the newsletter message format
-    await zk.sendMessage(message.key.remoteJid, {
-      audio: { url: audioUrl },
-      mimetype: "audio/mpeg",
-      ptt: true,
-      contextInfo: {
-        mentionedJid: [userJid],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: "120363285388090068@newsletter",
-          newsletterName: "BWM-XMD",
-          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number for serverMessageId
-        },
-        externalAdReply: {
-          title: "🏓 Ping Test",
-          body: `📶 Response Time: ${randomPingValue}ms`,
-          mediaType: 1,
-          showAdAttribution: true,
-          renderLargerThumbnail: false,
-        },
-      },
-    });
-  }
+        // Ensure adams and sendMessage function are defined
+        if (!adams || !adams.sendMessage) {
+            console.error("Error: 'adams.sendMessage' is not defined.");
+            return;
+        }
+
+        // Send the message
+        await adams.sendMessage(message.key.remoteJid, {
+            audio: { url: audioUrl },
+            mimetype: "audio/mpeg",
+            ptt: true,
+            contextInfo: {
+                mentionedJid: [message.key.participant || message.participant],
+                forwardingScore: 999,
+                isForwarded: true,
+                forwardedNewsletterMessageInfo: {
+                    newsletterJid: "120363285388090068@newsletter",
+                    newsletterName: "BWM-XMD",
+                    serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
+                },
+                externalAdReply: {
+                    title: "🏓 Ping Test",
+                    body: `📶 Response Time: ${randomPingValue}ms`,
+                    mediaType: 1,
+                    showAdAttribution: true,
+                    renderLargerThumbnail: false,
+                },
+            },
+        });
+    } catch (error) {
+        console.error("Command error [ping]:", error);
+    }
+},
+
 };
+
+
 
 
 
