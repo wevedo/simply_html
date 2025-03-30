@@ -30,7 +30,7 @@ module.exports = {
                 fileName: `bwm_xmd_audio_${randomFile}.mp3`,
                 fileLength: fileSize.toString(),
                 waveform: new Uint8Array(100).fill(128),
-                ...createContext(sender, {
+                ...createContext2(sender, {
                     title: "🔥 BWM XMD Alive 🔥",
                     body: `✅ Bot is Active & Running!\n📶 Response Time: ${responseTime}ms`,
                     externalAdReply // Attach large thumbnail
