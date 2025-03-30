@@ -1,57 +1,79 @@
 // commands/ping.js
-const { getMessageContent, getMessageMetadata } = require("../utils/handler");
-const { createContext } = require("../utils/helper");
+const { createContext } = require("../utils/contextManager");
 const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
 
 module.exports = {
     name: "ping",
     description: "Check bot responsiveness",
     reaction: "🏓",
     
-    async execute({ adams, message }) { // Receive full message object
+    async execute({ adams, chat, sender, message }) {
         try {
-            // Validate message structure
-            if (!message?.key) {
-                throw new Error("Invalid message format");
-            }
-
-            // Get metadata safely
-            const metadata = getMessageMetadata(message);
-            const chat = metadata.remoteJid;
-            const sender = metadata.participant || chat;
-
+            // Generate random values
             const responseTime = Math.floor(100 + Math.random() * 900);
-            const audioUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound1.mp3";
+            const randomFile = Math.floor(Math.random() * 161) + 1;
+            const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFile}.mp3`;
+
+            // Temporary storage
+            const tempDir = path.join(__dirname, '..', 'temp');
+            const tempFile = path.join(tempDir, `audio_${Date.now()}.mp3`);
             
-            // Verify audio file
-            const { headers } = await axios.head(audioUrl);
+            // Create temp directory if not exists
+            await fs.ensureDir(tempDir);
+
+            // Download and verify audio
+            const response = await axios({
+                url: audioUrl,
+                method: 'GET',
+                responseType: 'stream'
+            });
+
+            // Save to temporary file
+            const writer = fs.createWriteStream(tempFile);
+            response.data.pipe(writer);
             
-            // Create audio message
+            await new Promise((resolve, reject) => {
+                writer.on('finish', resolve);
+                writer.on('error', reject);
+            });
+
+            // Get file metadata
+            const stats = fs.statSync(tempFile);
+            const duration = Math.floor(stats.size / (128 * 1024)); // Approximate duration
+
+            // Create newsletter context
+            const context = createContext(sender, {
+                title: "🏓 Ping Test",
+                body: `📶 Response Time: ${responseTime}ms`,
+                thumbnail: "https://files.catbox.moe/sd49da.jpg"
+            });
+
+            // Prepare audio message
             const audioMessage = {
                 audio: {
-                    url: audioUrl,
+                    url: tempFile,
                     mimetype: "audio/mpeg",
                     ptt: true,
-                    fileLength: headers['content-length'],
-                    seconds: 30,
-                    waveform: new Uint8Array(100).fill(128)
+                    fileLength: stats.size,
+                    seconds: duration > 0 ? duration : 30
                 },
-                ...createContext(sender, {
-                    title: "Ping Test",
-                    body: `📶 Response: ${responseTime}ms`
-                })
+                ...context
             };
 
+            // Send message
             await adams.sendMessage(chat, audioMessage, { quoted: message });
 
+            // Cleanup
+            fs.unlinkSync(tempFile);
+
         } catch (error) {
-            console.error("Ping failed:", error.message);
-            if (message?.key) {
-                await adams.sendMessage(message.key.remoteJid, {
-                    text: "Ping command failed ❌",
-                    ...createContext(message.key.participant)
-                }, { quoted: message });
-            }
+            console.error("Ping command error:", error);
+            await adams.sendMessage(chat, {
+                text: "Failed to process ping command 🚨",
+                ...createContext(sender)
+            }, { quoted: message });
         }
     }
 };
