@@ -4,6 +4,7 @@ const axios = require("axios");
 
 module.exports = {
     name: "alive",
+    category: "🚀 System",
     description: "Send BWM XMD Alive Message",
     reaction: "🚀",
 
