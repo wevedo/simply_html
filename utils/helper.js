@@ -1,8 +1,10 @@
-
-// utils/contextManager.js
 const NEWS_LETTER_JID = "120363285388090068@newsletter";
 const BOT_NAME = "BWM-XMD";
 const DEFAULT_THUMBNAIL = "https://files.catbox.moe/sd49da.jpg";
+const BOT_INFO = {
+    name: process.env.BOT_NAME || "BWM-XMD",
+    version: "7.0.8",
+    mode: process.env.NODE_ENV === "production" ? "Production" : "Development"
 
 const createContext = (userJid, options = {}) => ({
     contextInfo: {
@@ -26,5 +28,6 @@ const createContext = (userJid, options = {}) => ({
 });
 
 module.exports = {
-    createContext
+    createContext,
+    BOT_INFO
 };
