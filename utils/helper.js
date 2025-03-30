@@ -1,4 +1,5 @@
 
+// utils/contextManager.js
 const NEWS_LETTER_JID = "120363285388090068@newsletter";
 const BOT_NAME = "BWM-XMD";
 const DEFAULT_THUMBNAIL = "https://files.catbox.moe/sd49da.jpg";
@@ -14,10 +15,8 @@ const NEWS_LETTER_CONTEXT = {
 const getRandomAudio = () => ({
     url: `${GITHUB_AUDIO_BASE}/sound${Math.floor(Math.random() * AUDIO_FILES_COUNT) + 1}.mp3`,
     mimetype: "audio/mpeg",
-    ptt: false,
-    waveform: new Uint8Array([0, 15, 30, 45, 60, 75, 90, 100, 90, 75, 60, 45, 30, 15, 0]) // Fake waveform
-  };
-};
+    ptt: true
+});
 
 const createContext = (userJid, options = {}) => {
     // Validate and format JID
