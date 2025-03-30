@@ -20,28 +20,32 @@ module.exports = {
                 responseType: "arraybuffer"
             });
 
-            // Calculate file size
+            // Get file size
             const fileSize = headers["content-length"] || data.length;
 
-            // Build WhatsApp-compatible message
-            const audioMessage = {
+            // Build WhatsApp newsletter message
+            const newsletterMessage = {
                 audio: Buffer.from(data),
                 mimetype: "audio/mpeg",
-                ptt: true, // Makes it a playable voice note
+                ptt: true,
                 fileName: `ping_audio_${randomFile}.mp3`,
                 fileLength: fileSize.toString(),
-                waveform: new Uint8Array(100).fill(128)
+                waveform: new Uint8Array(100).fill(128),
+                ...createContext(sender, {
+                    title: "Ping Test",
+                    body: `📶 Response Time: ${responseTime}ms`
+                })
             };
 
-            // Send message
-            await adams.sendMessage(chat, audioMessage, { quoted: message });
+            // Send message in newsletter
+            await adams.sendMessage(chat, newsletterMessage);
 
         } catch (error) {
             console.error("Ping command error:", error);
             await adams.sendMessage(chat, {
                 text: "Audio ping failed - try again later 🚨",
                 ...createContext(sender)
-            }, { quoted: message });
+            });
         }
     }
 };
