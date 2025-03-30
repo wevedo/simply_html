@@ -416,33 +416,49 @@ if (typeof verifCom !== "undefined" && verifCom) {
      
 //===============================================================================================================//
 
-adams.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
-        if (connection === "open") {
-            console.log("🌎 BWM XMD ONLINE 🌎");
-            // Initialize bot commands and status
+zk.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "close") {
+        let reason = new boom_1.Boom(lastDisconnect?.error)?.output?.statusCode;
+
+        switch (reason) {
+            case baileys_1.DisconnectReason.badSession:
+                console.log("⚠️ Session error! Please rescan QR.");
+                process.exit(); // Exit the process to restart manually
+                break;
+
+            case baileys_1.DisconnectReason.connectionClosed:
+                console.log("🔄 Connection closed. Reconnecting...");
+                await connectToWhatsApp(); // Restart connection
+                break;
+
+            case baileys_1.DisconnectReason.connectionLost:
+                console.log("🌐 Connection lost. Trying to reconnect...");
+                await connectToWhatsApp();
+                break;
+
+            case baileys_1.DisconnectReason.connectionReplaced:
+                console.log("❌ Connection replaced! Another session is active.");
+                process.exit();
+                break;
+
+            case baileys_1.DisconnectReason.loggedOut:
+                console.log("🚫 Logged out! Rescan QR to log in.");
+                process.exit();
+                break;
+
+            case baileys_1.DisconnectReason.restartRequired:
+                console.log("🔄 Restarting bot...");
+                await connectToWhatsApp();
+                break;
+
+            default:
+                console.log(`⚠️ Unknown disconnection reason: ${reason}`);
+                console.log("🔁 Restarting bot...");
+                const { exec } = require("child_process");
+                exec("pm2 restart all"); // Restart bot using PM2
+                break;
         }
-        if (connection === "close") {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log("Connection closed, reconnecting...");
-            if (shouldReconnect) main();
-        }
-    });
-
-    adams.ev.on("creds.update", saveCreds);
-
-    // Message Handling
-    adams.ev.on("messages.upsert", async ({ messages }) => {
-        const ms = messages[0];
-        if (!ms.message) return;
-        
-        // Message processing logic here
-    });
-}
-
-setTimeout(() => {
-    main().catch(err => console.log("Initialization error:", err));
-}, 5000);
-
-
+    }
+});
