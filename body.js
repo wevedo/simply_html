@@ -194,13 +194,13 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     
     if (ms.key.fromMe) auteurMessage = idBot;
     var membreGroupe = verifGroupe ? ms.key.participant : '';
-
+    }
 
    // Command parsing
     const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
     const verifCom = texte ? texte.startsWith(prefix) : false;
     const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
-
+    }
 
 
 //============================================================================//
