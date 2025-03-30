@@ -581,4 +581,3 @@ adams.ev.on("connection.update", async (update) => {
 
 // Start the bot
 connectToWhatsApp();
-}
