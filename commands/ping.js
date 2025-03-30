@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-module.exports = { name: "ping", description: "Check bot responsiveness with random audio", async execute({ adams, message }) { try { // Generate a random ping response time const randomPingValue = Math.floor(50 + Math.random() * 150);
+module.exports = { name: "ping", description: "Check bot responsiveness with random audio", async execute({ adams, chat, sender, message }) { try { // Generate a random ping response time const randomPingValue = Math.floor(50 + Math.random() * 150);
 
 // Generate a random file number between 1 and 100
   const randomFileNumber = Math.floor(1 + Math.random() * 100);
