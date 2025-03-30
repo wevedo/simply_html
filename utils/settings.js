@@ -9,8 +9,8 @@ async function getSettings() {
         return await fs.readJson(SETTINGS_PATH);
     } catch (e) {
         return { 
-            AUTO_BIO: false,
-            ANTICALL: false 
+            AUTO_BIO: true,
+            ANTICALL: true 
         };
     }
 }
