@@ -1,46 +1,52 @@
 // utils/contextManager.js
+const NEWS_LETTER_JID = "120363285388090068@newsletter";
+const BOT_NAME = "BWM-XMD";
+const DEFAULT_THUMBNAIL = "https://files.catbox.moe/sd49da.jpg";
+const GITHUB_AUDIO_BASE = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
+const AUDIO_FILES_COUNT = 161;
+
 const NEWS_LETTER_CONTEXT = {
-    newsletterJid: "120363285388090068@newsletter",
-    newsletterName: "BWM-XMD",
+    newsletterJid: NEWS_LETTER_JID,
+    newsletterName: BOT_NAME,
     serverMessageId: () => Math.floor(100000 + Math.random() * 900000)
 };
 
-const AUDIO_CONFIG = {
-    baseUrl: "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic",
-    fileCount: 161,
-    defaultThumbnail: "https://files.catbox.moe/sd49da.jpg"
-};
-
 const getRandomAudio = () => ({
-    url: `${AUDIO_CONFIG.baseUrl}/sound${Math.floor(Math.random() * AUDIO_CONFIG.fileCount) + 1}.mp3`,
+    url: `${GITHUB_AUDIO_BASE}/sound${Math.floor(Math.random() * AUDIO_FILES_COUNT) + 1}.mp3`,
     mimetype: "audio/mpeg",
     ptt: true
 });
 
-// utils/contextManager.js
 const createContext = (userJid, options = {}) => {
-    // Ensure userJid is properly formatted
+    // Validate and format JID
     const formattedJid = userJid?.endsWith('@s.whatsapp.net') 
         ? userJid 
-        : `${userJid.replace(/\D/g, "")}@s.whatsapp.net`;
+        : `${(userJid || '').replace(/\D/g, "")}@s.whatsapp.net`;
 
     return {
         contextInfo: {
             mentionedJid: [formattedJid],
             forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            ...NEWS_LETTER_CONTEXT,
-            serverMessageId: NEWS_LETTER_CONTEXT.serverMessageId()
-        },
-        externalAdReply: {
-            title: options.title || "BWM-XMD",
-            body: options.body || "Premium WhatsApp Bot Solution",
-            thumbnailUrl: options.thumbnail || AUDIO_CONFIG.defaultThumbnail,
-            mediaType: 1
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                ...NEWS_LETTER_CONTEXT,
+                serverMessageId: NEWS_LETTER_CONTEXT.serverMessageId()
+            },
+            externalAdReply: {
+                title: options.title || BOT_NAME,
+                body: options.body || "Premium WhatsApp Bot Solution",
+                thumbnailUrl: options.thumbnail || DEFAULT_THUMBNAIL,
+                mediaType: 1,
+                showAdAttribution: true,
+                renderLargerThumbnail: false
+            }
         }
     };
 };
 
-
-module.exports = { getRandomAudio, createContext };
+module.exports = {
+    getRandomAudio,
+    createContext,
+    DEFAULT_THUMBNAIL,
+    BOT_NAME
+};
