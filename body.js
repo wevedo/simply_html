@@ -477,22 +477,14 @@ class CommandSystem {
     }
 }
 
-// Presence Manager
-async function updatePresence(adams, jid) {
-    try {
-        const states = ["available", "composing", "recording", "unavailable"];
-        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
-    } catch (e) {
-        console.error('Presence update error:', e.message);
-    }
-}
-
 const cmdSystem = new CommandSystem();
-// Modified connection handler
+
+ 
+ // Modified connection handler
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
-        updatePresence(adams, "status@broadcast");
+ 
                 if (conf.DP.toLowerCase() === 'yes') {
             const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
             const connectionMsg = `
