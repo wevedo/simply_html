@@ -471,3 +471,4 @@ if (typeof verifCom !== "undefined" && verifCom) {
 
 // Start the bot
 connectToWhatsApp();
+}
