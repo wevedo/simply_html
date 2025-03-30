@@ -7,13 +7,22 @@ ______     __     __     __    __        __  __     __    __     _____
   \/_____/   \/_/   \/_/   \/_/  \/_/      \/_/\/_/   \/_/  \/_/   \/____/ 
                                                                            
 /▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰/*/
-    
+const {
+    default: makeWASocket,
+    isJidGroup,
+    DisconnectReason,
+    getMessageText,
+    delay,
+    makeCacheableSignalKeyStore,
+    fetchLatestBaileysVersion,
+    useMultiFileAuthState,
+    makeInMemoryStore,
+    jidDecode,
+    getContentType
+} = require("@whiskeysockets/baileys");
 
+//////////////////////////////////////////////////!/////////////////////////////
 
-
-                   
-const { default: makeWASocket, isJidGroup, verifierEtatJid, recupererActionJid, baileys_1, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
