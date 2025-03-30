@@ -1,50 +1,90 @@
-const axios = require("axios");
+// commands/ping.js
+const { createContext } = require("../utils/contextManager");
+const fs = require("fs-extra");
+const path = require("path");
 
 module.exports = {
-  name: "ping",
-  description: "Check bot responsiveness",
-  async execute({ adams, chat, sender, message }) {
-    try {
-      // Generate a random ping value
-      const randomPingValue = Math.floor(100 + Math.random() * 900); // Random 3-digit ping
-      
-      // Get a random audio file number (1 to 100)
-      const randomFileNumber = Math.floor(1 + Math.random() * 100);
-      const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFileNumber}.mp3`;
+    name: "ping",
+    description: "Check bot responsiveness",
+    reaction: "🏓",
+    
+    async execute({ adams, chat, sender, message }) {
+        try {
+            const responseTime = Math.floor(100 + Math.random() * 900);
+            let audioMessage = null;
 
-      // Send response in newsletter format
-      await adams.sendMessage(message.key.remoteJid, {
-        text: `🏓 Pong!\n📶 Response Time: ${randomPingValue}ms`
-      }, { quoted: message });
+            // Check if replying to an audio message
+            const quotedMsg = message?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+            
+            if (quotedMsg && quotedMsg.audioMessage) {
+                // Handle replied audio message
+                const mediaPath = await adams.downloadAndSaveMediaMessage(quotedMsg.audioMessage);
+                const stats = fs.statSync(mediaPath);
 
-      await adams.sendMessage(message.key.remoteJid, {
-        audio: { url: audioUrl },
-        mimetype: "audio/mpeg",
-        ptt: true,
-        contextInfo: {
-          mentionedJid: [sender],
-          forwardingScore: 999,
-          isForwarded: true,
-          forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363285388090068@newsletter",
-            newsletterName: "BWM-XMD",
-            serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
-          },
-          externalAdReply: {
-            title: "🏓 Ping Test",
-            body: `📶 Response Time: ${randomPingValue}ms`,
-            mediaType: 1,
-            showAdAttribution: true,
-            renderLargerThumbnail: false,
-          },
-        },
-      });
+                audioMessage = {
+                    audio: {
+                        url: mediaPath,
+                        mimetype: "audio/mpeg", // Changed from audio/mp4
+                        ptt: false,
+                        fileLength: stats.size,
+                        seconds: Math.floor(stats.size / (128 * 1024)) || 30
+                    },
+                    ...createContext(sender, {
+                        title: "Ping Test",
+                        body: `📶 Response Time: ${responseTime}ms`
+                    })
+                };
+            } else {
+                // Get random audio from GitHub
+                const randomFile = Math.floor(Math.random() * 100) + 1;
+                const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFile}.mp3`;
+                
+                // Temporary file handling
+                const tempDir = path.join(__dirname, '..', 'temp');
+                await fs.ensureDir(tempDir);
+                const tempFile = path.join(tempDir, `audio_${Date.now()}.mp3`);
 
-    } catch (error) {
-      console.error("Command error [ping]:", error.message);
-      await adams.sendMessage(message.key.remoteJid, { text: "❌ An error occurred while executing the command." }, { quoted: message });
+                // Download and verify audio
+                const response = await adams.downloadAndSaveMediaMessage({
+                    url: audioUrl,
+                    mimetype: "audio/mpeg"
+                });
+
+                fs.writeFileSync(tempFile, response);
+
+                const stats = fs.statSync(tempFile);
+                audioMessage = {
+                    audio: {
+                        url: tempFile,
+                        mimetype: "audio/mpeg",
+                        ptt: false,
+                        fileLength: stats.size,
+                        seconds: Math.floor(stats.size / (128 * 1024)) || 30,
+                        waveform: new Uint8Array(100).fill(128)
+                    },
+                    ...createContext(sender, {
+                        title: "Ping Test",
+                        body: `📶 Response Time: ${responseTime}ms`
+                    })
+                };
+            }
+
+            // Send the audio message
+            await adams.sendMessage(chat, audioMessage, { quoted: message });
+
+            // Cleanup temporary files
+            if (audioMessage.audio.url.includes("temp")) {
+                fs.unlinkSync(audioMessage.audio.url);
+            }
+
+        } catch (error) {
+            console.error("Ping command error:", error);
+            await adams.sendMessage(chat, {
+                text: "Failed to process audio ping 🚨",
+                ...createContext(sender)
+            }, { quoted: message });
+        }
     }
-  },
 };
 
 
