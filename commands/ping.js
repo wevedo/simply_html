@@ -1,19 +1,17 @@
-// commands/ping.js
-const { getRandomAudio, createContext } = require("../utils/helper");
+const { getRandomAudio, createContext } = require("../utils/contextManager");
 
 module.exports = {
     name: "ping",
     description: "Check bot responsiveness",
     reaction: "🏓",
-    
-    async execute({ adams, message }) {
+    async execute({ adams, chat, sender, message }) { // Changed parameters
         const responseTime = Math.floor(100 + Math.random() * 900);
         
-        await adams.sendMessage(message.chat, {
+        await adams.sendMessage(chat, { // Use chat parameter directly
             audio: getRandomAudio(),
-            ...createContext(message.sender, {
+            ...createContext(sender, { // Use sender parameter
                 title: "Ping Test",
-                body: `📶 Response: ${responseTime}ms`
+                body: `📶 Response Time: ${responseTime}ms`
             })
         }, { quoted: message });
     }
