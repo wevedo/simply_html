@@ -379,10 +379,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
  //============================================================================================================
  
 console.log("Loading Bwm xmd Commands ...\n");
-
-// Load commands dynamically from "scs" folder
 const commandPath = path.join(__dirname, "Taskflow");
-
 fs.readdirSync(commandPath).forEach((file) => {
     if (path.extname(file).toLowerCase() === ".js") {
         try {
@@ -396,24 +393,19 @@ fs.readdirSync(commandPath).forEach((file) => {
 
 console.log("Commands Installation Completed ✅");
 
-// Ensure `verifCom` is defined before using it
-if (typeof verifCom !== "undefined" && verifCom) {
-    //await zk.readMessages(ms.key);  // Uncomment if needed
 
-    // Ensure `evt` and `evt.cm` are defined before accessing `find()`
+if (typeof verifCom !== "undefined" && verifCom) {
     if (evt && Array.isArray(evt.cm)) {
         const cd = evt.cm.find((adams) => adams.nomCom === com);
 
         if (cd) {
             try {
-                // Ensure `conf` and `conf.MODE` exist before checking
+                
                 if (typeof conf !== "undefined" && typeof conf.MODE !== "undefined") {
                     if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
                         return;
                     }
                 }
-
-                // Execute command logic here (if needed)
 
             } catch (error) {
                 console.error("Error executing command:", error.message);
@@ -421,55 +413,9 @@ if (typeof verifCom !== "undefined" && verifCom) {
         }
     }
 }
-
- 
- // Modified connection handler
-adams.ev.on("connection.update", ({ connection }) => {
-    if (connection === "open") {
-        console.log("Connected to WhatsApp");
- 
-                if (conf.DP.toLowerCase() === 'yes') {
-            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
-            const connectionMsg = `
- 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
- 
-├──〔 ✨ Version: 7.0.8 〕
-│  
-├──〔 *🎭 Classic and Things* 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
-│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
-│  
-├──〔 *📦 Heroku Deployment* 〕
-│ 🏷️ App Name: ${herokuAppName}  
-╰──────────────────◆`;
-
-            // Send disappearing status message
-            adams.sendMessage(
-                adams.user.id, 
-                { 
-                    text: connectionMsg 
-                },
-                {
-                    disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600 // 10 minutes
-                }
-            ).catch(err => console.error('Status message error:', err));
-        }
-    }
-});
-
-// Modified message handler - processes ALL messages
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    console.log("New message received from:", msg.key.remoteJid);
-    await cmdSystem.processMessage(msg);
-    await updatePresence(adams, msg.key.remoteJid);
-});
-
-        
+     
 //===============================================================================================================//
 
-// Event Handlers
 adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
