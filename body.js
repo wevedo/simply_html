@@ -397,94 +397,186 @@ if (typeof verifCom !== "undefined" && verifCom) {
 }
 //===============================================================================================================//
 
-async function connectToWhatsApp() {
-    console.log("🔄 Initializing WhatsApp connection...");
+const { getMessageContent } = require('./utils/handler');
 
-    // **Handle connection updates**
-    adams.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
-        console.log("🔄 Connection update:", update);
+// Configuration
+const PREFIX = conf.PREFIX;
+const STATE = conf.PRESENCE;
+const BOT_OWNER = conf.OWNER_NUMBER;
+const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
+    .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
 
-        if (connection === "close") {
-            let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+// Robust Command Handler
+class CommandSystem {
+    constructor() {
+        this.commands = new Map();
+        this.loadCommands();
+    }
+
+    loadCommands() {
+        console.log("Loading commands ♻️");
+        const cmdDir = path.join(__dirname, "commands");
+        
+        fs.readdirSync(cmdDir).forEach(file => {
+            if (!file.endsWith(".js")) return;
             
-            switch (reason) {
-                case DisconnectReason.badSession:
-                    console.log("⚠️ Bad session! Rescan the QR code.");
-                    process.exit();
-                    break;
-                case DisconnectReason.connectionClosed:
-                    console.log("🔄 Connection closed. Reconnecting...");
-                    await connectToWhatsApp();
-                    break;
-                case DisconnectReason.connectionLost:
-                    console.log("🌐 Connection lost. Trying to reconnect...");
-                    await connectToWhatsApp();
-                    break;
-                case DisconnectReason.connectionReplaced:
-                    console.log("❌ Connection replaced. Terminating session.");
-                    process.exit();
-                    break;
-                case DisconnectReason.loggedOut:
-                    console.log("🚫 Logged out! Please rescan the QR code.");
-                    process.exit();
-                    break;
-                case DisconnectReason.restartRequired:
-                    console.log("🔄 Restarting bot...");
-                    await connectToWhatsApp();
-                    break;
-                default:
-                    console.log(`⚠️ Unknown disconnection reason: ${reason}`);
-                    console.log("🔁 Restarting bot...");
-                    const { exec } = require("child_process");
-                    exec("pm2 restart all");
-                    break;
-            }
-        } else if (connection === "open") {
-            console.log("✅ Bot connected successfully!");
-            loadCommands(adams);
-        }
-    });
-
-    // **Handle incoming messages**
-    adams.ev.on("messages.upsert", async (message) => {
-        console.log("📩 New message received:", JSON.stringify(message, null, 2));
-        handleIncomingMessage(adams, message);
-    });
-}
-
-// **Command Loader**
-function loadCommands(adams) {
-    console.log("🚀 Loading commands...");
-
-    const commandPath = path.join(__dirname, "commands");
-    fs.readdirSync(commandPath).forEach((file) => {
-        if (path.extname(file).toLowerCase() === ".js") {
             try {
-                require(path.join(commandPath, file));
-                console.log(`✅ ${file} loaded successfully.`);
-            } catch (error) {
-                console.log(`❌ ${file} could not be loaded: ${error.message}`);
+                const cmdPath = path.join(cmdDir, file);
+                const cmd = require(cmdPath);
+                
+                if (cmd.name && cmd.execute) {
+                    this.commands.set(cmd.name.toLowerCase(), cmd);
+                    console.log(`${cmd.name} loaded Successfully 🚀`);
+                }
+            } catch (e) {
+                console.error(`Failed to load ${file}: ${e.message}`);
             }
+        });
+    }
+
+    async processMessage(msg) {
+        try {
+            if (!msg?.message) return;
+            
+            const content = getMessageContent(msg.message);
+            console.log(`Received message: ${content}`); // Debug log
+            
+            if (!content?.startsWith(PREFIX)) {
+               // console.log("Message doesn't start with prefix");
+                return;
+            }
+
+           
+            const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
+            //console.log(`Processing command: ${cmdName}`, args);
+            
+            const command = this.commands.get(cmdName.toLowerCase());
+            
+            if (command) {
+                console.log(`Executing command: ${command.name}`);
+                await this.executeCommand(command, msg, args);
+            } else {
+                console.log(`Command not found: ${cmdName}`);
+            }
+        } catch (e) {
+            console.error('Message processing error:', e.message);
+        }
+    }
+
+    async executeCommand(command, msg, args) {
+        try {
+            const context = this.createContext(msg);
+            
+            // Allow all commands regardless of mode
+            await command.execute({
+                adams,
+                args,
+                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg }),
+                ...context
+            });
+        } catch (e) {
+            console.error(`Command error [${command.name}]:`, e.message);
+        }
+    }
+
+    createContext(msg) {
+        const chat = msg.key.remoteJid;
+        const sender = msg.key.participant || chat;
+        const isGroup = chat.endsWith("@g.us");
+        const fromMe = msg.key.fromMe;
+        
+        return {
+            chat,
+            sender,
+            isGroup,
+            isOwner: true, // Allow everyone
+            isSudo: true,  // Allow everyone
+            fromMe
+        };
+    }
+}
+
+// Presence Manager
+async function updatePresence(adams, jid) {
+    try {
+        const states = ["available", "composing", "recording", "unavailable"];
+        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
+    } catch (e) {
+        console.error('Presence update error:', e.message);
+    }
+}
+
+const cmdSystem = new CommandSystem();
+// Modified connection handler
+adams.ev.on("connection.update", ({ connection }) => {
+    if (connection === "open") {
+        console.log("Connected to WhatsApp");
+        updatePresence(adams, "status@broadcast");
+                if (conf.DP.toLowerCase() === 'yes') {
+            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
+            const connectionMsg = `
+ 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
+ 
+├──〔 ✨ Version: 7.0.8 〕
+│  
+├──〔 *🎭 Classic and Things* 〕 
+│ ✅ Prefix: [ ${conf.PREFIX} ]  
+│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
+│  
+├──〔 *📦 Heroku Deployment* 〕
+│ 🏷️ App Name: ${herokuAppName}  
+╰──────────────────◆`;
+
+            // Send disappearing status message
+            adams.sendMessage(
+                adams.user.id, 
+                { 
+                    text: connectionMsg 
+                },
+                {
+                    disappearingMessagesInChat: true,
+                    ephemeralExpiration: 600 // 10 minutes
+                }
+            ).catch(err => console.error('Status message error:', err));
+        }
+    }
+});
+
+// Modified message handler - processes ALL messages
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const [msg] = messages;
+    console.log("New message received from:", msg.key.remoteJid);
+    await cmdSystem.processMessage(msg);
+    await updatePresence(adams, msg.key.remoteJid);
+});
+
+        
+//===============================================================================================================//
+
+// Event Handlers
+adams.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
+        if (connection === "open") {
+            console.log("🌎 BWM XMD ONLINE 🌎");
+            // Initialize bot commands and status
+        }
+        if (connection === "close") {
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log("Connection closed, reconnecting...");
+            if (shouldReconnect) main();
         }
     });
 
-    console.log("✅ All commands loaded!");
-}
+    adams.ev.on("creds.update", saveCreds);
 
-// **Handle Incoming Messages**
-async function handleIncomingMessage(adams, message) {
-    if (!message.messages || !message.messages[0]) return;
-
-    const msg = message.messages[0];
-    if (!msg.message || !msg.key.remoteJid) return;
-
-    const sender = msg.key.remoteJid;
-    const messageType = Object.keys(msg.message)[0];
-    console.log(`📨 Message from ${sender}:`, msg.message[messageType]);
-
-    // Example: Replying to any received message
-    await adams.sendMessage(sender, { text: "Hello! I am active. 🤖" });
+    // Message Handling
+    adams.ev.on("messages.upsert", async ({ messages }) => {
+        const ms = messages[0];
+        if (!ms.message) return;
+        
+        // Message processing logic here
+    });
 }
 
 // Start the bot
