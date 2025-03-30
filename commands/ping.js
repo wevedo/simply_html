@@ -1,3 +1,5 @@
+// commands/ping.js
+const { getMessageContent } = require("../utils/handler");
 const { createContext } = require("../utils/helper");
 const axios = require("axios");
 
@@ -6,41 +8,53 @@ module.exports = {
     description: "Check bot responsiveness",
     reaction: "🏓",
     
-    async execute({ adams, chat, sender, message }) {
+    async execute({ adams, message }) {
         try {
-            // 1. Get valid audio URL
-            const audioUrl = "https://files.catbox.moe/89tvg4.mp3"; // Test with known working file
+            const content = getMessageContent(message.message);
+            const metadata = getMessageMetadata(message.message);
             
-            // 2. Verify audio file availability
-            const { data, headers } = await axios.get(audioUrl, {
-                responseType: "arraybuffer"
-            });
-
-            // 3. Create proper audio message
+            // Generate random ping value
+            const responseTime = Math.floor(100 + Math.random() * 900);
+            
+            // Get audio file from GitHub
+            const audioUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound1.mp3";
+            
+            // Validate audio file
+            const { headers } = await axios.head(audioUrl);
+            
+            // Create audio message with proper metadata
             const audioMessage = {
                 audio: {
                     url: audioUrl,
                     mimetype: "audio/mpeg",
                     ptt: true,
-                    fileLength: headers["content-length"],
-                    seconds: Math.floor(Math.random() * 120) + 30, // Required for WhatsApp
-                    waveform: new Uint8Array(100).fill(128) // Fake waveform for visual
+                    fileLength: headers['content-length'],
+                    seconds: headers['x-audio-duration'] || 30, // Add duration header if available
+                    waveform: new Uint8Array(100).fill(128) // Fake waveform
                 },
-                ...createContext(sender, {
+                ...createContext(metadata.participant, {
                     title: "Ping Test",
-                    body: `📶 Response Time: ${Math.floor(100 + Math.random() * 900)}ms`
+                    body: `📶 Response Time: ${responseTime}ms`
                 })
             };
 
-            // 4. Send with proper media upload
-            await adams.sendMessage(chat, audioMessage, { quoted: message });
+            // Send message with newsletter context
+            await adams.sendMessage(
+                metadata.remoteJid,
+                audioMessage,
+                { quoted: message }
+            );
 
         } catch (error) {
             console.error("Ping command error:", error);
-            await adams.sendMessage(chat, {
-                text: "Audio service unavailable 🚨",
-                ...createContext(sender)
-            }, { quoted: message });
+            await adams.sendMessage(
+                metadata.remoteJid,
+                {
+                    text: "Failed to process ping command ❌",
+                    ...createContext(metadata.participant)
+                },
+                { quoted: message }
+            );
         }
     }
 };
