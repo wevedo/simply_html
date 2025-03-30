@@ -244,11 +244,9 @@ adams.ev.on("messages.upsert", async (m) => {
     }
 });
 
-/**
 //============================================================================//
 
- 
-    // Presence update logic based on etat value
+
     var etat = conf.ETAT;
     if (etat == 1) {
         await adams.sendPresenceUpdate("available", origineMessage);
@@ -303,7 +301,7 @@ adams.ev.on("messages.upsert", async (m) => {
     };
     
   //============================================================================//   
-/**
+
 // Listener Manager Class
 class ListenerManager {
     constructor() {
@@ -381,7 +379,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 });
 
  //============================================================================================================
- /*
+ 
 console.log("Loading Bwm xmd Commands ...\n");
 const commandPath = path.join(__dirname, "Taskflow");
 fs.readdirSync(commandPath).forEach((file) => {
@@ -473,8 +471,3 @@ if (typeof verifCom !== "undefined" && verifCom) {
 
 // Start the bot
 connectToWhatsApp();
-
-*/
-
-/////======//////=======/////=========//////////=========///////////========//////!=====//////========////
-
