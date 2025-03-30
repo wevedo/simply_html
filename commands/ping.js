@@ -4,12 +4,21 @@ module.exports = {
     name: "ping",
     description: "Check bot responsiveness",
     reaction: "🏓",
-    async execute({ adams, chat, sender, message }) { // Changed parameters
+    async execute({ adams, chat, sender, message }) {
         const responseTime = Math.floor(100 + Math.random() * 900);
         
-        await adams.sendMessage(chat, { // Use chat parameter directly
-            audio: getRandomAudio(),
-            ...createContext(sender, { // Use sender parameter
+        // Get audio details first
+        const audioDetails = getRandomAudio();
+        
+        await adams.sendMessage(chat, { 
+            audio: {
+                url: audioDetails.url,
+                mimetype: 'audio/mpeg',
+                ptt: false, // Disable push-to-talk
+                seconds: 60, // Set dummy duration
+                waveform: new Uint8Array([0, 255, 0, 255]) // Fake waveform
+            },
+            ...createContext(sender, {
                 title: "Ping Test",
                 body: `📶 Response Time: ${responseTime}ms`
             })
