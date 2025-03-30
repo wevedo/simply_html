@@ -163,31 +163,41 @@ async function main() {
 
  
 const { createContext } = require("./utils/helper");
-// Message handler with reactions
-// In your message handler
+ 
 adams.ev.on("messages.upsert", async ({ messages }) => {
     const [msg] = messages;
     if (!msg?.message || msg.key.fromMe) return;
 
-    const command = /* your command detection logic */;
-    
+    // Get message content
+    const content = getMessageContent(msg.message);
+    const PREFIX = conf.PREFIX;
+
+    // Command detection
+    let command;
+    if (content?.startsWith(PREFIX)) {
+        const [cmdName] = content.slice(PREFIX.length).trim().split(/ +/);
+        command = commandRegistry.get(cmdName.toLowerCase());
+    }
+
     if (command) {
         try {
-            // Add reaction
-            if (command.reaction) {
-                await adams.sendMessage(msg.key.remoteJid, {
-                    react: {
-                        text: command.reaction,
-                        key: msg.key
-                    }
-                });
-            }
+            // Add reaction first
+            await adams.sendMessage(msg.key.remoteJid, {
+                react: {
+                    text: command.reaction || "✅",
+                    key: msg.key
+                }
+            });
 
-            // Execute command with proper context
+            // Extract arguments
+            const args = content.slice(PREFIX.length).trim().split(/ +/).slice(1);
+
+            // Execute command with context
             await command.execute({
                 adams,
                 chat: msg.key.remoteJid,
                 sender: msg.key.participant || msg.key.remoteJid,
+                args,
                 message: msg,
                 reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
             });
