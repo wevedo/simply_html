@@ -241,7 +241,66 @@ adams.ev.on("messages.upsert", async (m) => {
 
 
 //============================================================================//
-                         
+
+ 
+    // Presence update logic based on etat value
+    var etat = conf.ETAT;
+    if (etat == 1) {
+        await adams.sendPresenceUpdate("available", origineMessage);
+    } else if (etat == 2) {
+        await adams.sendPresenceUpdate("composing", origineMessage);
+    } else if (etat == 3) {
+        await adams.sendPresenceUpdate("recording", origineMessage);
+    } else {
+        await adams.sendPresenceUpdate("unavailable", origineMessage);
+    }
+
+    // Fetch group participants
+    const mbre = verifGroupe ? await infosGroupe.participants : '';
+    let admins = verifGroupe ? groupeAdmin(mbre) : '';
+    const verifAdmin = verifGroupe ? admins.includes(auteurMessage) : false;
+    var verifZokouAdmin = verifGroupe ? admins.includes(idBot) : false;
+
+    // Command parsing
+    const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
+    const verifCom = texte ? texte.startsWith(prefixe) : false;
+    const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
+
+    // Handle bot picture selection
+    const lien = conf.URL.split(',');
+    function mybotpic() {
+        if (lien.length === 0) return null; // Prevent errors if empty
+        const indiceAleatoire = Math.floor(Math.random() * lien.length);
+        return lien[indiceAleatoire];
+    }
+
+    // Define command options object
+    var commandeOptions = {
+        superUser,
+        verifGroupe,
+        mbre,
+        membreGroupe,
+        verifAdmin,
+        infosGroupe,
+        nomGroupe,
+        auteurMessage,
+        idBot,
+        verifZokouAdmin,
+        prefixe,
+        arg,
+        repondre,
+        mtype,
+        groupeAdmin,
+        msgRepondu,
+        auteurMsgRepondu,
+        ms,
+        mybotpic
+    };
+
+});
+    
+  //============================================================================//   
+
 // Listener Manager Class
 class ListenerManager {
     constructor() {
