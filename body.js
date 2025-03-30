@@ -169,26 +169,26 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     if (msg?.message && !msg.key.fromMe) {
         const command = detectCommand(msg.message); // Implement your command detection
         
-        if (command) {
-            try {
-                // Add reaction first
-                await adams.sendMessage(msg.key.remoteJid, {
-                    react: { text: command.reaction, key: msg.key }
-                });
-                
-                // Execute command
-                await command.execute({ 
-                    adams, 
-                    message: msg,
-                    chat: msg.key.remoteJid,
-                    sender: msg.key.participant || msg.key.remoteJid
-                });
-            } catch (error) {
-                console.error(`Command error: ${error.message}`);
-            }
-        }
+        // In your message handler
+if (command) {
+    try {
+        // Add reaction first
+        await adams.sendMessage(msg.key.remoteJid, {
+            react: { text: command.reaction, key: msg.key }
+        });
+        
+        // Execute command with proper context
+        await command.execute({ 
+            adams,
+            message: msg,
+            chat: msg.key.remoteJid,
+            sender: msg.key.participant || msg.key.remoteJid,
+            reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
+        });
+    } catch (error) {
+        console.error(`Command error: ${error.message}`);
     }
-});
+}
 
 //============================================================================//
                          
