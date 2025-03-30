@@ -16,6 +16,7 @@ const {
     makeCacheableSignalKeyStore,
     fetchLatestBaileysVersion,
     useMultiFileAuthState,
+    commandRegistry,
     makeInMemoryStore,
     jidDecode,
     getContentType
