@@ -12,8 +12,7 @@ module.exports = {
             const uptime = process.uptime();
             const memoryUsage = process.memoryUsage().rss / 1024 / 1024;           
             
-            // Bot Configuration
-            const botStatus = conf.PRESENCE || "ONLINE";
+            // Bot Configuration          
             const botMode = conf.MODE === "yes" ? "PUBLIC" : "PRIVATE";
             
             // Generate Header
