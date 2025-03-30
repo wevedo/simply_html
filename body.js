@@ -168,45 +168,39 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     const [msg] = messages;
     if (!msg?.message || msg.key.fromMe) return;
 
-    // Get message content
-    const content = getMessageContent(msg.message);
-    const PREFIX = conf.PREFIX;
+   // Ensure message content type is checked safely
+    var mtype = ms.message ? getContentType(ms.message) : "";
+    var texte = mtype === "conversation" ? ms.message.conversation :
+                mtype === "imageMessage" ? ms.message.imageMessage?.caption :
+                mtype === "videoMessage" ? ms.message.videoMessage?.caption :
+                mtype === "extendedTextMessage" ? ms.message?.extendedTextMessage?.text :
+                mtype === "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId :
+                mtype === "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId :
+                mtype === "messageContextInfo" ? 
+                (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
 
-    // Command detection
-    let command;
-    if (content?.startsWith(PREFIX)) {
-        const [cmdName] = content.slice(PREFIX.length).trim().split(/ +/);
-        command = commandRegistry.get(cmdName.toLowerCase());
-    }
+    // Extract Message Metadata
+    var origineMessage = ms.key.remoteJid;
+    var idBot = decodeJid(adams.user.id);
+    var servBot = idBot.split('@')[0];
+    var verifGroupe = origineMessage?.endsWith("@g.us");
+    var infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage) : "";
+    var nomGroupe = verifGroupe ? infosGroupe.subject : "";
+    var msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage;
+    var auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant);
+    var mr = ms.message?.extendedTextMessage?.contextInfo?.mentionedJid;
+    var utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : "";
+    var auteurMessage = verifGroupe ? (ms.key.participant ? ms.key.participant : ms.participant) : origineMessage;
+    
+    if (ms.key.fromMe) auteurMessage = idBot;
+    var membreGroupe = verifGroupe ? ms.key.participant : '';
 
-    if (command) {
-        try {
-            // Add reaction first
-            await adams.sendMessage(msg.key.remoteJid, {
-                react: {
-                    text: command.reaction || "✅",
-                    key: msg.key
-                }
-            });
 
-            // Extract arguments
-            const args = content.slice(PREFIX.length).trim().split(/ +/).slice(1);
+   // Command parsing
+    const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
+    const verifCom = texte ? texte.startsWith(prefix) : false;
+    const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
 
-            // Execute command with context
-            await command.execute({
-                adams,
-                chat: msg.key.remoteJid,
-                sender: msg.key.participant || msg.key.remoteJid,
-                args,
-                message: msg,
-                reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
-            });
-            
-        } catch (error) {
-            console.error(`Command error [${command.name}]:`, error.message);
-        }
-    }
-});
 
 
 //============================================================================//
