@@ -1,108 +1,76 @@
 // commands/menu.js
-const { createContext } = require("../utils/helper");
+const { createContext } = require("../utils/contextManager");
 
-// Command categories configuration
 const COMMAND_CATEGORIES = [
     {
         name: "📥 Downloaders",
-        emoji: "📥",
-        include: ["download", "get", "fetch", "save"]
+        commands: ["download", "get", "ytdl"]
     },
     {
         name: "🔍 Search",
-        emoji: "🔍",
-        include: ["search", "find", "lookup"]
+        commands: ["search", "find", "lookup"]
     },
     {
         name: "⚙️ Settings",
-        emoji: "⚙️",
-        include: ["set", "config", "toggle"]
-    },
-    {
-        name: "🎭 Core",
-        emoji: "🎭",
-        include: ["ping", "menu", "help"]
-    },
-    {
-        name: "🛡️ Moderation",
-        emoji: "🛡️",
-        include: ["ban", "kick", "mute"]
-    },
-    {
-        name: "🎉 Fun",
-        emoji: "🎉",
-        include: ["joke", "meme", "gif"]
+        commands: ["set", "config", "toggle"]
     }
 ];
 
 module.exports = {
     name: "menu",
-    description: "Display categorized command list",
+    description: "Display command categories",
     reaction: "📜",
-    category: "🎭 Core",
     
-    async execute({ adams, chat, sender, message, commandRegistry, listenerManager }) {
+    async execute({ adams, chat, sender, message, commandRegistry }) {
         try {
-            const menuMessage = `
-╭─⊰ *BWM XMD COMMAND MENU* ⊱─○
-│
-│ ⚙️ ${formatSystemInfo(listenerManager)}
-│
-${generateCategorySections(commandRegistry)}
-│
-╰─⊰ *${process.env.BOT_NAME || "BWM-XMD"}* ⊱─○
+            // Generate categorized command list
+            const commandList = COMMAND_CATEGORIES.map(cat => {
+                const cmds = cat.commands
+                    .map(name => {
+                        const cmd = commandRegistry.get(name);
+                        return cmd ? `› ${cmd.name} - ${cmd.description}` : '';
+                    })
+                    .filter(Boolean)
+                    .join('\n');
+                
+                return `${cat.name}\n${cmds}`;
+            }).join('\n\n');
+
+            // Prepare message with image and caption
+            const BWM_XMD_TEXT = `
+╭───※ ·❆· ※───╮
+       BWM XMD
+╰───※ ·❆· ※───╯
+
+${commandList}
+
+⚡ Version: 7.0.8
+🔧 Prefix: ${process.env.PREFIX}
             `.trim();
 
             await adams.sendMessage(chat, {
-                text: menuMessage,
-                ...createContext(sender, {
-                    title: "Categorized Menu",
-                    body: "Explore commands by category",
-                    thumbnail: "https://files.catbox.moe/sd49da.jpg"
-                })
+                image: { 
+                    url: 'https://files.catbox.moe/642del.jpeg' 
+                },
+                caption: BWM_XMD_TEXT,
+                contextInfo: {
+                    mentionedJid: [sender],
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: "120363285388090068@newsletter",
+                        newsletterName: "BWM-XMD",
+                        serverMessageId: Math.floor(100000 + Math.random() * 900000)
+                    }
+                }
             }, { quoted: message });
 
         } catch (error) {
             console.error("Menu command error:", error);
             await adams.sendMessage(chat, {
-                text: "Failed to generate menu 🚨",
+                text: "Failed to load menu 🚨",
                 ...createContext(sender)
             }, { quoted: message });
         }
     }
 };
-
-// Helper functions
-function formatSystemInfo(listenerManager) {
-    return `*System Status*
-⌚ Uptime: ${formatUptime(process.uptime())}
-📡 Listeners: ${listenerManager.activeListeners.size} active
-💾 Memory: ${(process.memoryUsage().rss / 1024 / 1024).toFixed(1)}MB`;
-}
-
-function generateCategorySections(registry) {
-    return COMMAND_CATEGORIES.map(category => {
-        const commands = Array.from(registry.values())
-            .filter(cmd => 
-                category.include.some(keyword => cmd.name.includes(keyword)) ||
-                cmd.category === category.name
-            )
-            .map(cmd => formatCommand(cmd));
-
-        return commands.length > 0 
-            ? `├─⊰ ${category.emoji} ${category.name} ⊱─○\n${commands.join("\n")}`
-            : "";
-    }).filter(section => section !== "").join("\n│\n");
-}
-
-function formatCommand(cmd) {
-    const adminBadge = cmd.adminOnly ? " 🔒" : "";
-    return `│ ➤ ${cmd.name}${adminBadge}\n│    └ ${cmd.description}\n│    ╰ ${cmd.syntax || `Use: ${process.env.PREFIX}${cmd.name}`}`;
-}
-
-function formatUptime(seconds) {
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${days}d ${hours}h ${minutes}m`;
-}
