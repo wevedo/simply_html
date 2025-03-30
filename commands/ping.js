@@ -1,4 +1,3 @@
-// commands/ping.js
 const { createContext } = require("../utils/helper");
 const axios = require("axios");
 
@@ -9,34 +8,37 @@ module.exports = {
     
     async execute({ adams, chat, sender, message }) {
         try {
-            // Generate random ping value
-            const responseTime = Math.floor(100 + Math.random() * 900);
+            // 1. Get valid audio URL
+            const audioUrl = "https://files.catbox.moe/89tvg4.mp3"; // Test with known working file
             
-            // Get audio file details
-            const audioUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound1.mp3";
-            
-            // Verify audio URL exists
-            const { headers } = await axios.head(audioUrl);
-            
-            // Send audio with newsletter context
-            await adams.sendMessage(chat, {
-                audio: { 
+            // 2. Verify audio file availability
+            const { data, headers } = await axios.get(audioUrl, {
+                responseType: "arraybuffer"
+            });
+
+            // 3. Create proper audio message
+            const audioMessage = {
+                audio: {
                     url: audioUrl,
                     mimetype: "audio/mpeg",
                     ptt: true,
                     fileLength: headers["content-length"],
-                    seconds: Math.floor(Math.random() * 120) + 30 // Random duration
+                    seconds: Math.floor(Math.random() * 120) + 30, // Required for WhatsApp
+                    waveform: new Uint8Array(100).fill(128) // Fake waveform for visual
                 },
                 ...createContext(sender, {
                     title: "Ping Test",
-                    body: `📶 Response Time: ${responseTime}ms`
+                    body: `📶 Response Time: ${Math.floor(100 + Math.random() * 900)}ms`
                 })
-            }, { quoted: message });
+            };
+
+            // 4. Send with proper media upload
+            await adams.sendMessage(chat, audioMessage, { quoted: message });
 
         } catch (error) {
-            console.error("Ping command error:", error.message);
+            console.error("Ping command error:", error);
             await adams.sendMessage(chat, {
-                text: "Failed to process ping command ❌",
+                text: "Audio service unavailable 🚨",
                 ...createContext(sender)
             }, { quoted: message });
         }
