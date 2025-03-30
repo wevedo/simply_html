@@ -1,3 +1,38 @@
+const axios = require("axios");
+
+module.exports = { name: "ping", description: "Check bot responsiveness with random big numbers and TikTok music", async execute({ adams, message }) { const randomPingValue = Math.floor(1000 + Math.random() * 9000); // Random big number const randomSoundNumber = Math.floor(1 + Math.random() * 100); // Random sound file (1-100) const audioUrl = https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomSoundNumber}.mp3; const profilePic = "https://your-profile-pic-url.com"; // Replace with an actual profile pic URL
+
+await adams.sendMessage(message.key.remoteJid, {
+        audio: { url: audioUrl },
+        mimetype: "audio/mpeg",
+        ptt: true,
+        contextInfo: {
+            mentionedJid: [message.sender],
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363285388090068@newsletter",
+                newsletterName: "BWM-XMD",
+                serverMessageId: Math.floor(100000 + Math.random() * 900000),
+            },
+            externalAdReply: {
+                title: "🏓 Ping Test",
+                body: `📶 Response Time: ${randomPingValue}ms`,
+                thumbnailUrl: profilePic,
+                mediaType: 1,
+                showAdAttribution: true,
+                renderLargerThumbnail: false,
+            },
+        },
+    }, { quoted: message });
+}
+
+};
+
+
+
+
+/*
 // commands/ping.js
 const { createContext } = require("../utils/helper");
 const axios = require("axios");
@@ -69,3 +104,4 @@ module.exports = {
         }
     }
 };
+*/
