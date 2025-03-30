@@ -44,7 +44,7 @@ module.exports = {
             console.error("BWM XMD Alive Message Error:", error);
             await adams.sendMessage(chat, {
                 text: "🚨 BWM XMD Alive Message failed - try again later!",
-                ...createContext(sender)
+                ...createContext2(sender)
             });
         }
     }
