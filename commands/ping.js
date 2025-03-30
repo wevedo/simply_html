@@ -8,39 +8,50 @@ module.exports = {
     description: "Check bot responsiveness",
     reaction: "🏓",
     
-    async execute({ adams, chat, sender, message }) { // Fixed parameters
+    async execute({ adams, message }) { // Receive full message object
         try {
-            // Get message metadata from full message object
-            const metadata = getMessageMetadata(message); // Changed to use full message
-            
+            // Validate message structure
+            if (!message?.key) {
+                throw new Error("Invalid message format");
+            }
+
+            // Get metadata safely
+            const metadata = getMessageMetadata(message);
+            const chat = metadata.remoteJid;
+            const sender = metadata.participant || chat;
+
             const responseTime = Math.floor(100 + Math.random() * 900);
             const audioUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound1.mp3";
             
+            // Verify audio file
             const { headers } = await axios.head(audioUrl);
             
+            // Create audio message
             const audioMessage = {
                 audio: {
                     url: audioUrl,
                     mimetype: "audio/mpeg",
                     ptt: true,
                     fileLength: headers['content-length'],
-                    seconds: 30, // Set actual duration if available
+                    seconds: 30,
                     waveform: new Uint8Array(100).fill(128)
                 },
-                ...createContext(sender, { // Use sender from parameters
+                ...createContext(sender, {
                     title: "Ping Test",
-                    body: `📶 Response Time: ${responseTime}ms`
+                    body: `📶 Response: ${responseTime}ms`
                 })
             };
 
             await adams.sendMessage(chat, audioMessage, { quoted: message });
 
         } catch (error) {
-            console.error("Ping error:", error);
-            await adams.sendMessage(chat, {
-                text: "Ping failed 🚨",
-                ...createContext(sender)
-            }, { quoted: message });
+            console.error("Ping failed:", error.message);
+            if (message?.key) {
+                await adams.sendMessage(message.key.remoteJid, {
+                    text: "Ping command failed ❌",
+                    ...createContext(message.key.participant)
+                }, { quoted: message });
+            }
         }
     }
 };
