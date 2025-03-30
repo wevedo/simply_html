@@ -289,102 +289,39 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
-const { getMessageContent } = require('./utils/handler');
-
-// Configuration
-const PREFIX = conf.PREFIX;
-const STATE = conf.PRESENCE;
-const BOT_OWNER = conf.OWNER_NUMBER;
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
-    .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
-
-// Robust Command Handler
-class CommandSystem {
-    constructor() {
-        this.commands = new Map();
-        this.loadCommands();
+console.log("Loading Bwm xmd Commands ...\n");
+const commandPath = path.join(__dirname, "Taskflow");
+fs.readdirSync(commandPath).forEach((file) => {
+    if (path.extname(file).toLowerCase() === ".js") {
+        try {
+            require(path.join(commandPath, file));
+            console.log(`${file} Lorded Successfully 🛜`);
+        } catch (error) {
+            console.log(`${file} could not be installed due to: ${error.message}`);
+        }
     }
+});
 
-    loadCommands() {
-        console.log("Loading commands ♻️");
-        const cmdDir = path.join(__dirname, "commands");
-        
-        fs.readdirSync(cmdDir).forEach(file => {
-            if (!file.endsWith(".js")) return;
-            
+console.log("Commands Installation Completed ✅");
+
+
+if (typeof verifCom !== "undefined" && verifCom) {
+    if (evt && Array.isArray(evt.cm)) {
+        const cd = evt.cm.find((adams) => adams.nomCom === com);
+
+        if (cd) {
             try {
-                const cmdPath = path.join(cmdDir, file);
-                const cmd = require(cmdPath);
                 
-                if (cmd.name && cmd.execute) {
-                    this.commands.set(cmd.name.toLowerCase(), cmd);
-                    console.log(`${cmd.name} loaded Successfully 🚀`);
+                if (typeof conf !== "undefined" && typeof conf.MODE !== "undefined") {
+                    if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
+                        return;
+                    }
                 }
-            } catch (e) {
-                console.error(`Failed to load ${file}: ${e.message}`);
-            }
-        });
-    }
 
-    async processMessage(msg) {
-        try {
-            if (!msg?.message) return;
-            
-            const content = getMessageContent(msg.message);
-            console.log(`Received message: ${content}`); // Debug log
-            
-            if (!content?.startsWith(PREFIX)) {
-               // console.log("Message doesn't start with prefix");
-                return;
+            } catch (error) {
+                console.error("Error executing command:", error.message);
             }
-
-           
-            const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
-            //console.log(`Processing command: ${cmdName}`, args);
-            
-            const command = this.commands.get(cmdName.toLowerCase());
-            
-            if (command) {
-                console.log(`Executing command: ${command.name}`);
-                await this.executeCommand(command, msg, args);
-            } else {
-                console.log(`Command not found: ${cmdName}`);
-            }
-        } catch (e) {
-            console.error('Message processing error:', e.message);
         }
-    }
-
-    async executeCommand(command, msg, args) {
-        try {
-            const context = this.createContext(msg);
-            
-            // Allow all commands regardless of mode
-            await command.execute({
-                adams,
-                args,
-                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg }),
-                ...context
-            });
-        } catch (e) {
-            console.error(`Command error [${command.name}]:`, e.message);
-        }
-    }
-
-    createContext(msg) {
-        const chat = msg.key.remoteJid;
-        const sender = msg.key.participant || chat;
-        const isGroup = chat.endsWith("@g.us");
-        const fromMe = msg.key.fromMe;
-        
-        return {
-            chat,
-            sender,
-            isGroup,
-            isOwner: true, // Allow everyone
-            isSudo: true,  // Allow everyone
-            fromMe
-        };
     }
 }
 
