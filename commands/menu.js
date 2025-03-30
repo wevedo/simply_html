@@ -4,7 +4,7 @@ module.exports = {
     name: "menu",
     description: "Display advanced command menu",
     reaction: "🌀",
-    category: "🌎 General",
+    category: "🚀 System",
     
     async execute({ adams, chat, sender, message, commandRegistry, conf }) {
         try {
