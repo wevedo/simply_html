@@ -1,34 +1,38 @@
-// utils/helper.js
-const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
-const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
+// utils/contextManager.js
+const NEWS_LETTER_CONTEXT = {
+    newsletterJid: "120363285388090068@newsletter",
+    newsletterName: "BWM-XMD",
+    serverMessageId: () => Math.floor(100000 + Math.random() * 900000)
+};
 
-const emojiList = ["🏓", "⚡", "🎯", "🚀", "💫", "🎮", "🎵", "🎧", "📡", "💾"];
+const AUDIO_CONFIG = {
+    baseUrl: "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic",
+    fileCount: 161,
+    defaultThumbnail: "https://files.catbox.moe/sd49da.jpg"
+};
 
-module.exports = {
-    getRandomReaction: () => emojiList[Math.floor(Math.random() * emojiList.length)],
-    
-    getRandomAudio: () => ({
-        url: `${githubRawBaseUrl}/${audioFiles[Math.floor(Math.random() * audioFiles.length)]}`,
-        mimetype: "audio/mpeg",
-        ptt: true
-    }),
+const getRandomAudio = () => ({
+    url: `${AUDIO_CONFIG.baseUrl}/sound${Math.floor(Math.random() * AUDIO_CONFIG.fileCount) + 1}.mp3`,
+    mimetype: "audio/mpeg",
+    ptt: true
+});
 
-    createNewsletterContext: (userJid) => ({
+const createContext = (userJid, options = {}) => ({
+    contextInfo: {
         mentionedJid: [userJid],
         forwardingScore: 999,
         isForwarded: true,
         forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363285388090068@newsletter",
-            newsletterName: "BWM-XMD",
-            serverMessageId: Math.floor(100000 + Math.random() * 900000)
+            ...NEWS_LETTER_CONTEXT,
+            serverMessageId: NEWS_LETTER_CONTEXT.serverMessageId()
         },
         externalAdReply: {
-            title: "BWM XMD SYSTEM",
-            body: "Premium WhatsApp Bot Solution",
-            mediaType: 1,
-            thumbnailUrl: "https://files.catbox.moe/sd49da.jpg",
-            showAdAttribution: true,
-            renderLargerThumbnail: false
+            title: options.title || "BWM-XMD",
+            body: options.body || "Premium WhatsApp Bot Solution",
+            thumbnailUrl: options.thumbnail || AUDIO_CONFIG.defaultThumbnail,
+            mediaType: 1
         }
-    })
-};
+    }
+});
+
+module.exports = { getRandomAudio, createContext };
