@@ -171,25 +171,72 @@ async function main() {
  //============================================================================//
 
  
-adams.ev.on("messages.upsert", async (m) => { const { messages } = m; const ms = messages[0]; if (!ms.message) return;
+adams.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+    if (!ms.message) return;
 
-const decodeJid = (jid) => { if (!jid) return jid; if (/:\d+@/gi.test(jid)) { let decode = baileys_1.jidDecode(jid) || {}; return decode.user && decode.server && decode.user + '@' + decode.server || jid; } return jid; };
+    // Decode JID
+    const decodeJid = (jid) => {
+        if (!jid) return jid;
+        if (/:\d+@/gi.test(jid)) {
+            let decode = jidDecode(jid) || {};
+            return decode.user && decode.server ? decode.user + '@' + decode.server : jid;
+        }
+        return jid;
+    };
 
-var mtype = baileys_1.getContentType(ms.message); var texte = mtype == "conversation" ? ms.message.conversation : mtype == "imageMessage" ? ms.message.imageMessage?.caption : mtype == "videoMessage" ? ms.message.videoMessage?.caption : mtype == "extendedTextMessage" ? ms.message?.extendedTextMessage?.text : mtype == "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId : mtype == "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId : mtype == "messageContextInfo" ? (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
+    // Ensure message content type is checked safely
+    var mtype = ms.message ? getContentType(ms.message) : "";
+    var texte = mtype === "conversation" ? ms.message.conversation :
+                mtype === "imageMessage" ? ms.message.imageMessage?.caption :
+                mtype === "videoMessage" ? ms.message.videoMessage?.caption :
+                mtype === "extendedTextMessage" ? ms.message?.extendedTextMessage?.text :
+                mtype === "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId :
+                mtype === "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId :
+                mtype === "messageContextInfo" ? 
+                (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
 
-var origineMessage = ms.key.remoteJid; var idBot = decodeJid(adams.user.id); var servBot = idBot.split('@')[0]; var verifGroupe = origineMessage?.endsWith("@g.us"); var infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage) : ""; var nomGroupe = verifGroupe ? infosGroupe.subject : ""; var msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage; var auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant); var mr = ms.Message?.extendedTextMessage?.contextInfo?.mentionedJid; var utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : ""; var auteurMessage = verifGroupe ? (ms.key.participant ? ms.key.participant : ms.participant) : origineMessage; if (ms.key.fromMe) auteurMessage = idBot; var membreGroupe = verifGroupe ? ms.key.participant : '';
+    // Extract Message Metadata
+    var origineMessage = ms.key.remoteJid;
+    var idBot = decodeJid(adams.user.id);
+    var servBot = idBot.split('@')[0];
+    var verifGroupe = origineMessage?.endsWith("@g.us");
+    var infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage) : "";
+    var nomGroupe = verifGroupe ? infosGroupe.subject : "";
+    var msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage;
+    var auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant);
+    var mr = ms.message?.extendedTextMessage?.contextInfo?.mentionedJid;
+    var utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : "";
+    var auteurMessage = verifGroupe ? (ms.key.participant ? ms.key.participant : ms.participant) : origineMessage;
+    
+    if (ms.key.fromMe) auteurMessage = idBot;
+    var membreGroupe = verifGroupe ? ms.key.participant : '';
 
-BOT_OWNER = conf.OWNER_NUMBER; const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"] .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
+    // Define Owner and Sudo Users
+    const BOT_OWNER = conf.OWNER_NUMBER;
+    const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
+        .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
 
-const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net"); const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS); const superUser = allAllowedNumbers.includes(auteurMessage);
+    const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
+    const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS);
+    const superUser = allAllowedNumbers.includes(auteurMessage);
 
-function repondre(mes) { if (adams) { adams.sendMessage(origineMessage, { text: mes }, { quoted: ms }).catch((err) => { console.error("❌ Error sending message:", err.message); }); } }
+    // Function to Send a Response
+    function repondre(mes) {
+        if (adams) {
+            adams.sendMessage(origineMessage, { text: mes }, { quoted: ms })
+                .catch((err) => {
+                    console.error("❌ Error sending message:", err.message);
+                });
+        }
+    }
 
-function groupeAdmin(membreGroupe) { return membreGroupe.filter((m) => m.admin).map((m) => m.id); }
-
+    // Function to Get Group Admins
+    function groupeAdmin(membreGroupe) {
+        return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
+    }
 });
-
-
 
 
 //============================================================================//
