@@ -1,45 +1,50 @@
 const axios = require("axios");
 
-module.exports = { name: "ping", description: "Check bot responsiveness", async execute({ adams, message }) { try { // Generate a random ping response value const randomPingValue = Math.floor(100 + Math.random() * 900); // Random between 100-999 ms
+module.exports = {
+  name: "ping",
+  description: "Check bot responsiveness",
+  async execute({ adams, chat, sender, message }) {
+    try {
+      // Generate a random ping value
+      const randomPingValue = Math.floor(100 + Math.random() * 900); // Random 3-digit ping
+      
+      // Get a random audio file number (1 to 100)
+      const randomFileNumber = Math.floor(1 + Math.random() * 100);
+      const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFileNumber}.mp3`;
 
-// Select a random audio file from 1 to 100
-        const randomAudioIndex = Math.floor(1 + Math.random() * 100);
-        const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomAudioIndex}.mp3`;
+      // Send response in newsletter format
+      await adams.sendMessage(message.key.remoteJid, {
+        text: `🏓 Pong!\n📶 Response Time: ${randomPingValue}ms`
+      }, { quoted: message });
 
-        // Ensure adams and sendMessage function are defined
-        if (!adams || !adams.sendMessage) {
-            console.error("Error: 'adams.sendMessage' is not defined.");
-            return;
-        }
+      await adams.sendMessage(message.key.remoteJid, {
+        audio: { url: audioUrl },
+        mimetype: "audio/mpeg",
+        ptt: true,
+        contextInfo: {
+          mentionedJid: [sender],
+          forwardingScore: 999,
+          isForwarded: true,
+          forwardedNewsletterMessageInfo: {
+            newsletterJid: "120363285388090068@newsletter",
+            newsletterName: "BWM-XMD",
+            serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
+          },
+          externalAdReply: {
+            title: "🏓 Ping Test",
+            body: `📶 Response Time: ${randomPingValue}ms`,
+            mediaType: 1,
+            showAdAttribution: true,
+            renderLargerThumbnail: false,
+          },
+        },
+      });
 
-        // Send the message
-        await adams.sendMessage(message.key.remoteJid, {
-            audio: { url: audioUrl },
-            mimetype: "audio/mpeg",
-            ptt: true,
-            contextInfo: {
-                mentionedJid: [message.key.participant || message.participant],
-                forwardingScore: 999,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: "120363285388090068@newsletter",
-                    newsletterName: "BWM-XMD",
-                    serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
-                },
-                externalAdReply: {
-                    title: "🏓 Ping Test",
-                    body: `📶 Response Time: ${randomPingValue}ms`,
-                    mediaType: 1,
-                    showAdAttribution: true,
-                    renderLargerThumbnail: false,
-                },
-            },
-        });
     } catch (error) {
-        console.error("Command error [ping]:", error);
+      console.error("Command error [ping]:", error.message);
+      await adams.sendMessage(message.key.remoteJid, { text: "❌ An error occurred while executing the command." }, { quoted: message });
     }
-},
-
+  },
 };
 
 
