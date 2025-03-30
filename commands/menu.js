@@ -12,10 +12,6 @@ module.exports = {
             const uptime = process.uptime();
             const memoryUsage = process.memoryUsage().rss / 1024 / 1024;           
             
-            // Bot Configuration          
-            const botMode = conf.MODE === "yes" ? "PUBLIC" : "PRIVATE";
-            
-            // Generate Header
             const header = `
 ╭────────────────◇◆
 │      𝐁𝐖𝐌 𝐗𝐌𝐃 𝐕𝐎𝐑𝐓𝐄𝐗
