@@ -162,38 +162,31 @@ async function main() {
  //============================================================================//
 
  
- // In your main message handler
-const { createNewsletterContext } = require('./utils/helper');
-
+const { createContext } = require("./utils/helper");
+// Message handler with reactions
 adams.ev.on("messages.upsert", async ({ messages }) => {
     const [msg] = messages;
-    if (!msg?.message) return;
-
-    const content = getMessageContent(msg.message);
-    if (!content?.startsWith(PREFIX)) return;
-
-    const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/\s+/);
-    const command = commandRegistry.get(cmdName.toLowerCase());
-
-    if (command) {
-        try {
-            const userJid = msg.key.participant || msg.key.remoteJid;
-            
-            await command.execute({
-                adams,
-                message: msg,
-                args,
-                reply: (content) => adams.sendMessage(
-                    msg.key.remoteJid,
-                    {
-                        ...content,
-                        contextInfo: createNewsletterContext(userJid)
-                    },
-                    { quoted: msg }
-                )
-            });
-        } catch (error) {
-            console.error(`Command execution error [${cmdName}]:`, error);
+    
+    if (msg?.message && !msg.key.fromMe) {
+        const command = detectCommand(msg.message); // Implement your command detection
+        
+        if (command) {
+            try {
+                // Add reaction first
+                await adams.sendMessage(msg.key.remoteJid, {
+                    react: { text: command.reaction, key: msg.key }
+                });
+                
+                // Execute command
+                await command.execute({ 
+                    adams, 
+                    message: msg,
+                    chat: msg.key.remoteJid,
+                    sender: msg.key.participant || msg.key.remoteJid
+                });
+            } catch (error) {
+                console.error(`Command error: ${error.message}`);
+            }
         }
     }
 });
