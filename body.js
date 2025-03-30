@@ -107,10 +107,6 @@ authentification();
 
 //===============================================================================//
 
-async function connectToWhatsApp() {
-    console.log("📡 Connecting to WhatsApp...");
-
-
 const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
@@ -173,6 +169,9 @@ async function main() {
             return null;
         }
     }
+
+ async function connectToWhatsApp() {
+    console.log("📡 Connecting to WhatsApp...");
 
  //============================================================================//
 
