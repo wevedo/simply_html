@@ -1,5 +1,5 @@
 // commands/ping.js
-const { getRandomAudio, createContext } = require("../utils/contextManager");
+const { getRandomAudio, createContext } = require("../utils/helper");
 
 module.exports = {
     name: "ping",
