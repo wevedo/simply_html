@@ -113,7 +113,7 @@ const store = makeInMemoryStore({
 
 let zk;
 
-async function main() {
+async function connectToWhatsApp() {
     const { version, isLatest } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
     
@@ -169,9 +169,6 @@ async function main() {
             return null;
         }
     }
-
- async function connectToWhatsApp() {
-    console.log("📡 Connecting to WhatsApp...");
 
  //============================================================================//
 
@@ -379,22 +376,6 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
-console.log("Loading Bwm xmd Commands ...\n");
-const commandPath = path.join(__dirname, "Taskflow");
-fs.readdirSync(commandPath).forEach((file) => {
-    if (path.extname(file).toLowerCase() === ".js") {
-        try {
-            require(path.join(commandPath, file));
-            console.log(`${file} Lorded Successfully 🛜`);
-        } catch (error) {
-            console.log(`${file} could not be installed due to: ${error.message}`);
-        }
-    }
-});
-
-console.log("Commands Installation Completed ✅");
-
-
 if (typeof verifCom !== "undefined" && verifCom) {
     if (evt && Array.isArray(evt.cm)) {
         const cd = evt.cm.find((adams) => adams.nomCom === com);
@@ -416,56 +397,94 @@ if (typeof verifCom !== "undefined" && verifCom) {
 }
 //===============================================================================================================//
 
+async function connectToWhatsApp() {
+    console.log("🔄 Initializing WhatsApp connection...");
+
+    // **Handle connection updates**
     adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
+        console.log("🔄 Connection update:", update);
 
-        if (connection === "open") {
-            console.log("✅ Connected to WhatsApp");
-        } else if (connection === "close") {
+        if (connection === "close") {
             let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-
+            
             switch (reason) {
                 case DisconnectReason.badSession:
-                    console.log("⚠️ Bad session file! Rescan QR.");
+                    console.log("⚠️ Bad session! Rescan the QR code.");
                     process.exit();
                     break;
-
                 case DisconnectReason.connectionClosed:
                     console.log("🔄 Connection closed. Reconnecting...");
                     await connectToWhatsApp();
                     break;
-
                 case DisconnectReason.connectionLost:
                     console.log("🌐 Connection lost. Trying to reconnect...");
                     await connectToWhatsApp();
                     break;
-
                 case DisconnectReason.connectionReplaced:
-                    console.log("❌ Connection replaced! Another session is active.");
+                    console.log("❌ Connection replaced. Terminating session.");
                     process.exit();
                     break;
-
                 case DisconnectReason.loggedOut:
-                    console.log("🚫 Logged out! Rescan QR to log in.");
+                    console.log("🚫 Logged out! Please rescan the QR code.");
                     process.exit();
                     break;
-
                 case DisconnectReason.restartRequired:
                     console.log("🔄 Restarting bot...");
                     await connectToWhatsApp();
                     break;
-
                 default:
                     console.log(`⚠️ Unknown disconnection reason: ${reason}`);
                     console.log("🔁 Restarting bot...");
                     const { exec } = require("child_process");
-                    exec("pm2 restart all"); // Restart bot using PM2
+                    exec("pm2 restart all");
                     break;
+            }
+        } else if (connection === "open") {
+            console.log("✅ Bot connected successfully!");
+            loadCommands(adams);
+        }
+    });
+
+    // **Handle incoming messages**
+    adams.ev.on("messages.upsert", async (message) => {
+        console.log("📩 New message received:", JSON.stringify(message, null, 2));
+        handleIncomingMessage(adams, message);
+    });
+}
+
+// **Command Loader**
+function loadCommands(adams) {
+    console.log("🚀 Loading commands...");
+
+    const commandPath = path.join(__dirname, "commands");
+    fs.readdirSync(commandPath).forEach((file) => {
+        if (path.extname(file).toLowerCase() === ".js") {
+            try {
+                require(path.join(commandPath, file));
+                console.log(`✅ ${file} loaded successfully.`);
+            } catch (error) {
+                console.log(`❌ ${file} could not be loaded: ${error.message}`);
             }
         }
     });
 
-    return adams;
+    console.log("✅ All commands loaded!");
+}
+
+// **Handle Incoming Messages**
+async function handleIncomingMessage(adams, message) {
+    if (!message.messages || !message.messages[0]) return;
+
+    const msg = message.messages[0];
+    if (!msg.message || !msg.key.remoteJid) return;
+
+    const sender = msg.key.remoteJid;
+    const messageType = Object.keys(msg.message)[0];
+    console.log(`📨 Message from ${sender}:`, msg.message[messageType]);
+
+    // Example: Replying to any received message
+    await adams.sendMessage(sender, { text: "Hello! I am active. 🤖" });
 }
 
 // Start the bot
