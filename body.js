@@ -18,6 +18,7 @@ const {
     useMultiFileAuthState,
     commandRegistry,
     makeInMemoryStore,
+    origineMessage,
     jidDecode,
     getContentType
 } = require("@whiskeysockets/baileys");
@@ -259,7 +260,7 @@ adams.ev.on("messages.upsert", async (m) => {
     const mbre = verifGroupe ? await infosGroupe.participants : '';
     let admins = verifGroupe ? groupeAdmin(mbre) : '';
     const verifAdmin = verifGroupe ? admins.includes(auteurMessage) : false;
-    var verifZokouAdmin = verifGroupe ? admins.includes(idBot) : false;
+    var verifBwmxmdAdmin = verifGroupe ? admins.includes(idBot) : false;
 
     // Command parsing
     const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
@@ -285,7 +286,7 @@ adams.ev.on("messages.upsert", async (m) => {
         nomGroupe,
         auteurMessage,
         idBot,
-        verifZokouAdmin,
+        verifBwmxmdAdmin,
         prefixe,
         arg,
         repondre,
