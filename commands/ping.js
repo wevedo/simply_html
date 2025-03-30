@@ -1,40 +1,41 @@
-const axios = require("axios");
+const axios = require('axios');
 
-module.exports = { name: "ping", description: "Check bot responsiveness with random audio", async execute({ adams, chat, sender, message }) { try { // Generate a random ping response time const randomPingValue = Math.floor(50 + Math.random() * 150);
+module.exports = {
+  name: "ping",
+  description: "Check bot responsiveness",
+  async execute({ zk, message, userJid }) {
+    // Generate a random ping response time
+    const randomPingValue = Math.floor(50 + Math.random() * 500); // Random response time between 50ms and 550ms
 
-// Generate a random file number between 1 and 100
-  const randomFileNumber = Math.floor(1 + Math.random() * 100);
-  const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomFileNumber}.mp3`;
-  
-  // Send audio with ping response in newsletter format
-  await adams.sendMessage(message.key.remoteJid, {
-    audio: { url: audioUrl },
-    mimetype: "audio/mpeg",
-    ptt: true,
-    contextInfo: {
-      mentionedJid: [message.key.participant || message.key.remoteJid],
-      forwardingScore: 999,
-      isForwarded: true,
-      forwardedNewsletterMessageInfo: {
-        newsletterJid: "120363285388090068@newsletter",
-        newsletterName: "BWM-XMD",
-        serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number
+    // Get a random song from the TikTok music repository
+    const randomSongIndex = Math.floor(Math.random() * 100) + 1; // Random number between 1 and 100
+    const audioUrl = `https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic/sound${randomSongIndex}.mp3`;
+
+    // Send the audio and ping response in the newsletter message format
+    await zk.sendMessage(message.key.remoteJid, {
+      audio: { url: audioUrl },
+      mimetype: "audio/mpeg",
+      ptt: true,
+      contextInfo: {
+        mentionedJid: [userJid],
+        forwardingScore: 999,
+        isForwarded: true,
+        forwardedNewsletterMessageInfo: {
+          newsletterJid: "120363285388090068@newsletter",
+          newsletterName: "BWM-XMD",
+          serverMessageId: Math.floor(100000 + Math.random() * 900000), // Random big number for serverMessageId
+        },
+        externalAdReply: {
+          title: "🏓 Ping Test",
+          body: `📶 Response Time: ${randomPingValue}ms`,
+          mediaType: 1,
+          showAdAttribution: true,
+          renderLargerThumbnail: false,
+        },
       },
-      externalAdReply: {
-        title: "🏓 Ping Test",
-        body: `📶 Response Time: ${randomPingValue}ms`,
-        mediaType: 1,
-        showAdAttribution: true,
-        renderLargerThumbnail: false,
-      },
-    },
-  });
-} catch (error) {
-  console.error("Error in ping command:", error);
-  await adams.sendMessage(message.key.remoteJid, { text: "⚠️ Failed to fetch ping response." }, { quoted: message });
-}
-
-}, };
+    });
+  }
+};
 
 
 
