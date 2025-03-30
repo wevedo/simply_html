@@ -1,5 +1,5 @@
 // commands/ping.js
-const { getMessageContent, getMessageMetadata } = require("../utils/handle");
+const { getMessageContent, getMessageMetadata } = require("../utils/handler");
 const { createContext } = require("../utils/helper");
 const axios = require("axios");
 
