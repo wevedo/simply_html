@@ -54,7 +54,7 @@ module.exports = {
 
 
 module.exports = {
-   name: "alive",
+   name: "test",
     description: "Send BWM XMD Alive Message",
     reaction: "🚀",
 
