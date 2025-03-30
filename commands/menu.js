@@ -1,5 +1,5 @@
 // commands/menu.js
-const { createContext } = require("../utils/helper3");
+const { createContext } = require("../utils/contextManager");
 
 module.exports = {
     name: "menu",
@@ -8,10 +8,7 @@ module.exports = {
     
     async execute({ adams, chat, sender, message, commandRegistry, listenerManager }) {
         try {
-            // Generate menu content
-            const menuContent = generateMenuContent(commandRegistry, listenerManager);
-            
-            // Create formatted message
+            // Generate formatted menu
             const menuMessage = `
 ╭─⊰ *BWM XMD COMMAND MENU* ⊱─○
 │
@@ -31,7 +28,6 @@ ${generateListenerList(listenerManager)}
 ╰─⊰ *${process.env.BOT_NAME || "BWM-XMD"}* ⊱─○
             `.trim();
 
-            // Send menu with context
             await adams.sendMessage(chat, {
                 text: menuMessage,
                 ...createContext(sender, {
@@ -53,23 +49,26 @@ ${generateListenerList(listenerManager)}
 
 // Helper functions
 function generateCommandList(registry, isAdmin) {
-    return Array.from(registry.values())
+    const commands = Array.from(registry.values())
         .filter(cmd => isAdmin ? cmd.adminOnly : !cmd.adminOnly)
         .map(cmd => {
             const adminBadge = cmd.adminOnly ? " 🔒" : "";
             return `│ ➤ ${cmd.name}${adminBadge}\n│    └ ${cmd.description}\n│    ╰ ${cmd.syntax || `Use: ${process.env.PREFIX}${cmd.name}`}`;
-        })
-        .join("\n") || "│ ➤ No commands available";
+        });
+    
+    return commands.length > 0 ? commands.join("\n") : "│ ➤ No commands available";
 }
 
 function generateListenerList(listenerManager) {
-    return Array.from(listenerManager.activeListeners.keys())
-        .map(listener => `│ ➤ ${listener.replace('.js', '')}`)
-        .join("\n") || "│ ➤ No active listeners";
+    const listeners = Array.from(listenerManager.activeListeners.keys())
+        .map(listener => `│ ➤ ${listener.replace('.js', '')}`);
+    
+    return listeners.length > 0 ? listeners.join("\n") : "│ ➤ No active listeners";
 }
 
 function formatUptime(seconds) {
     const days = Math.floor(seconds / (3600 * 24));
     const hours = Math.floor((seconds % (3600 * 24)) / 3600);
-    return `${days}d ${hours}h`;
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${days}d ${hours}h ${minutes}m`;
 }
