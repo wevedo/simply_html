@@ -1,4 +1,5 @@
 // messageUtils.js - Advanced Message Content Extractor
+// messageUtils.js - Advanced Message Content Extractor
 module.exports = {
     getMessageContent: (message) => {
         try {
