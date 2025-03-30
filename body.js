@@ -378,16 +378,16 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
  
-console.log("Loading BWM XMD Commands ...\n");
+console.log("Loading Bwm xmd Commands ...\n");
 
 // Load commands dynamically from "scs" folder
-const commandPath = path.join(__dirname, "scs");
+const commandPath = path.join(__dirname, "Taskflow");
 
 fs.readdirSync(commandPath).forEach((file) => {
     if (path.extname(file).toLowerCase() === ".js") {
         try {
             require(path.join(commandPath, file));
-            console.log(`${file} Installed Successfully ✔️`);
+            console.log(`${file} Lorded Successfully 🛜`);
         } catch (error) {
             console.log(`${file} could not be installed due to: ${error.message}`);
         }
