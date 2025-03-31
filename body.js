@@ -307,42 +307,43 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
-const verifCom = texte ? texte.startsWith(PREFIX) : false;
-const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
- 
 console.log("Loading Bwm xmd Commands ...\n");
-const commandPath = path.join(__dirname, "Taskflow");
-fs.readdirSync(commandPath).forEach((file) => {
-    if (path.extname(file).toLowerCase() === ".js") {
+
+fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
+    if (path.extname(fichier).toLowerCase() == ".js") {
         try {
-            require(path.join(commandPath, file));
-            console.log(`${file} Lorded Successfully 🛜`);
-        } catch (error) {
-            console.log(`${file} could not be installed due to: ${error.message}`);
+            require(__dirname + "/scs/" + fichier);
+            console.log(fichier + " Installed Successfully✔️");
+        } catch (e) {
+            console.log(`${fichier} could not be installed due to : ${e}`);
         }
+        baileys_1.delay(300); // Using the correct delay method
     }
 });
 
-console.log("Commands Installation Completed ✅");
+baileys_1.delay(700);
 
+var md;
+let evt = require(__dirname + "/Ibrahim/adams");
 
-if (typeof verifCom !== "undefined" && verifCom) {
-    if (evt && Array.isArray(evt.cm)) {
-        const cd = evt.cm.find((adams) => adams.nomCom === com);
+// Define texte properly
+const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
+const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
+const verifCom = texte ? texte.startsWith(prefixe) : false;
+const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
 
-        if (cd) {
-            try {
-                
-                if (typeof conf !== "undefined" && typeof conf.MODE !== "undefined") {
-                    if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
-                        return;
-                    }
-                }
-
-            } catch (error) {
-                console.error("Error executing command:", error.message);
+if (verifCom) {
+    const cd = evt.cm.find((adams) => adams.nomCom === com);
+    if (cd) {
+        try {
+            if ((conf.MODE).toLocaleLowerCase() != 'yes' && !superUser) {
+                return;
             }
+
+            cd.fonction(dest, zk, { ms, repondre });
+
+        } catch (error) {
+            console.log(`Error executing command ${com}: ${error}`);
         }
     }
 }
