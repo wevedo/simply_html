@@ -161,12 +161,20 @@ async function main() {
 
  //============================================================================//
 
- 
-const { createContext } = require("./utils/helper");
- 
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    if (!msg?.message || msg.key.fromMe) return;
+adams.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    const ms = messages[0];
+    if (!ms.message) return;
+
+    // Decode JID
+    const decodeJid = (jid) => {
+        if (!jid) return jid;
+        if (/:\d+@/gi.test(jid)) {
+            let decode = jidDecode(jid) || {};
+            return decode.user && decode.server ? decode.user + '@' + decode.server : jid;
+        }
+        return jid;
+    };
 
    // Ensure message content type is checked safely
     var mtype = ms.message ? getContentType(ms.message) : "";
