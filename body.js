@@ -25,7 +25,7 @@ const path = require("path");
 const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const { getSettings } = require("./utils/settings");
-const { adams, cm } = require("./Ibrahim/adams");
+const { cm } = require("./Ibrahim/adams");
 const rateLimit = new Map();
 const chalk = require("chalk");
 const express = require("express");
@@ -39,6 +39,7 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
 const PORT = process.env.PORT || 3000;
 const app = express();
+let adams;
 require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
 app.use(express.static("public"));
