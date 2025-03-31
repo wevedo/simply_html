@@ -375,10 +375,14 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     return;
                 }
 
-                // Define repondre function to avoid "TypeError: repondre is not a function"
+                   // Define repondre function with zk.sendMessage
                 const repondre = async (message) => {
+                    if (!zk || !zk.sendMessage) {
+                        console.error("❌ Error: zk.sendMessage is not defined!");
+                        return;
+                    }
                     try {
-                        await adams.sendMessage(ms.key.remoteJid, { text: message });
+                        await zk.sendMessage(ms.key.remoteJid, { text: message });
                     } catch (error) {
                         console.error(`❌ Error sending message: ${error.message}`);
                     }
@@ -387,12 +391,18 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                 // React to message using the defined reaction or default to "🚘"
                 const reaction = cmd.reaction || "🚘";
                 try {
-                    await adams.sendMessage(ms.key.remoteJid, {
-                        react: { key: ms.key, text: reaction },
-                    });
+                    if (zk && zk.sendMessage) {
+                        await zk.sendMessage(ms.key.remoteJid, {
+                            react: { key: ms.key, text: reaction },
+                        });
+                    } else {
+                        console.error("⚠️ Error: zk.sendMessage is not available for reactions.");
+                    }
                 } catch (error) {
                     console.error(`⚠️ Error sending reaction: ${error.message}`);
-                }           
+                }
+
+                // Pass zk correctly to Taskflow commands
                 await cmd.fonction(ms.key.remoteJid, zk, { ms, arg, repondre });
             } catch (error) {
                 console.error(`❌ Error executing command "${com}": ${error.message}`);
@@ -402,6 +412,8 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 });
+
+
 // Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
