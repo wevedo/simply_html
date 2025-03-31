@@ -32,7 +32,7 @@ module.exports = {
                     try {
                         const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
                         const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}*`;
-                        const botOwnerJid = `${config.NUMERO_OWNER}@s.whatsapp.net`;
+                        const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
 
                         const sendMessage = async (jid, content) => {
                             await adams.sendMessage(jid, content);
