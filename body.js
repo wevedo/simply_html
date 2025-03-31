@@ -345,7 +345,7 @@ try {
         if (path.extname(fichier).toLowerCase() === ".js") {
             try {
                 require(path.join(taskflowPath, fichier));
-                console.log(`${fichier} Lorded Successfully 🚀`);
+                console.log(`✔️ ${fichier} installed successfully.`);
             } catch (e) {
                 console.error(`❌ Failed to load ${fichier}: ${e.message}`);
             }
@@ -357,8 +357,14 @@ try {
 
 await delay(700);
 
+// Ensure evt.ev exists
+if (!evt.ev || !evt.ev.on) {
+    console.error("❌ Initialization error: evt.ev is undefined. Ensure ev is correctly exported in Ibrahim/adams.js.");
+    process.exit(1); // Stop execution if ev is not properly loaded
+}
+
 // Ensure message processing
-evt.adams.ev.on("messages.upsert", async ({ messages }) => {
+evt.ev.on("messages.upsert", async ({ messages }) => {
     try {
         const ms = messages[0];
         if (!ms?.message) return;
@@ -383,7 +389,7 @@ evt.adams.ev.on("messages.upsert", async ({ messages }) => {
                     // Define `repondre` safely to prevent "TypeError: repondre is not a function"
                     const repondre = async (message) => {
                         try {
-                            await evt.adams.ev.relayMessage(ms.key.remoteJid, {
+                            await evt.ev.relayMessage(ms.key.remoteJid, {
                                 extendedTextMessage: { text: message },
                             });
                         } catch (error) {
@@ -394,7 +400,7 @@ evt.adams.ev.on("messages.upsert", async ({ messages }) => {
                     // React to message using the defined reaction or default to "🚘"
                     const reaction = cmd.reaction || "🚘";
                     try {
-                        await evt.adams.ev.relayMessage(ms.key.remoteJid, {
+                        await evt.ev.relayMessage(ms.key.remoteJid, {
                             reactionMessage: { key: ms.key, text: reaction },
                         });
                     } catch (error) {
