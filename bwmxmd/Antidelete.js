@@ -1,10 +1,12 @@
 module.exports = {
-    setup: async (zk, { config, logger, store }) => {
-        if (!zk || !config || !store) return;
+    setup: async (zk, { conf, store }) => {
+        if (!zk || !conf || !store) return;
 
-        console.log("Initializing Anti-Delete system...");
+        console.log("✅ Anti-Delete system activated!");
 
         zk.ev.on("messages.upsert", async (m) => {
+            if (conf.ANTIDELETE1 !== "yes" && conf.ANTIDELETE2 !== "yes") return;
+
             const { messages } = m;
             const ms = messages[0];
             if (!ms.message) return; // Skip empty messages
@@ -35,46 +37,43 @@ module.exports = {
                         const sender = `@${participant.split("@")[0]}`;
                         const notification = `*🛑 This message was deleted by ${sender}*`;
 
-                        const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+                        const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`;
 
                         const sendMessage = async (jid, content) => {
                             await zk.sendMessage(jid, { ...content, mentions: [participant] });
                         };
 
-                        // Message handling logic
                         let content = {};
                         if (deletedMessage.message.conversation) {
                             content = { text: `${notification}\nDeleted message: ${deletedMessage.message.conversation}` };
                         } else if (deletedMessage.message.imageMessage) {
                             const caption = deletedMessage.message.imageMessage.caption || "";
-                            const imagePath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.imageMessage);
-                            content = { image: { url: imagePath }, caption: `${notification}\n${caption}` };
+                            const buffer = await zk.downloadMediaMessage(deletedMessage);
+                            content = { image: buffer, caption: `${notification}\n${caption}` };
                         } else if (deletedMessage.message.videoMessage) {
                             const caption = deletedMessage.message.videoMessage.caption || "";
-                            const videoPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.videoMessage);
-                            content = { video: { url: videoPath }, caption: `${notification}\n${caption}` };
+                            const buffer = await zk.downloadMediaMessage(deletedMessage);
+                            content = { video: buffer, caption: `${notification}\n${caption}` };
                         } else if (deletedMessage.message.audioMessage) {
-                            const audioPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.audioMessage);
-                            content = { audio: { url: audioPath }, ptt: true, caption: notification };
+                            const buffer = await zk.downloadMediaMessage(deletedMessage);
+                            content = { audio: buffer, mimetype: "audio/mp4", ptt: true, caption: notification };
                         } else if (deletedMessage.message.stickerMessage) {
-                            const stickerPath = await zk.downloadAndSaveMediaMessage(deletedMessage.message.stickerMessage);
-                            content = { sticker: { url: stickerPath }, caption: notification };
+                            const buffer = await zk.downloadMediaMessage(deletedMessage);
+                            content = { sticker: buffer };
                         }
 
                         // Send messages based on settings
-                        if (config.ANTIDELETE1 === "yes") {
+                        if (conf.ANTIDELETE1 === "yes") {
                             await sendMessage(botOwnerJid, content); // Send to owner's inbox
                         }
-                        if (config.ANTIDELETE2 === "yes") {
+                        if (conf.ANTIDELETE2 === "yes") {
                             await sendMessage(remoteJid, content); // Recover in chat
                         }
                     } catch (error) {
-                        logger.error("Error handling deleted message:", error);
+                        console.error("❌ Error handling deleted message:", error);
                     }
                 }
             }
         });
-
-        console.log("✅ Anti-Delete system activated!");
     }
 };
