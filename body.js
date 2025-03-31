@@ -39,7 +39,6 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
 const PORT = process.env.PORT || 3000;
 const app = express();
-let zk;
 let adams;
 require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
@@ -94,7 +93,7 @@ async function authentification() {
 }
 module.exports = { authentification };
 authentification();
-
+let zk;
 
 //===============================================================================//
 
