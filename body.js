@@ -389,38 +389,35 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     }
 });
 
-// Handle connection updates
-adams.ev.on("connection.update", ({ connection }) => {
-    if (connection === "open") {
-        console.log("Connected to WhatsApp");
-        updatePresence(adams, "status@broadcast");
+// Handle connection updates adams.ev.on("connection.update", ({ connection }) => { if (connection === "open") { console.log("Connected to WhatsApp");
 
-        if (conf.DP.toLowerCase() === "yes") {
-            const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
-            const connectionMsg = `
-〔  *🚀 BWM XMD CONNECTED 🚀* 〕
+if (conf.DP.toLowerCase() === "yes") {
+        const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
+        const connectionMsg = `
 
-├──〔 ✨ Version: 7.0.8 〕
-│  
-├──〔 *🎭 Classic and Things* 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
-│ 🔹 Status: ${STATE === 1 ? "Online" : "Offline"}  
-│  
-├──〔 *📦 Heroku Deployment* 〕
-│ 🏷️ App Name: ${herokuAppName}  
+〔  🚀 BWM XMD CONNECTED 🚀 〕
+
+├──〔 ✨ Version: 7.0.8 〕 │
+├──〔 🎭 Classic and Things 〕 │ ✅ Prefix: [ ${conf.PREFIX} ]
+│ 🔹 Status: ${STATE === 1 ? "Online" : "Offline"}
+│
+├──〔 📦 Heroku Deployment 〕 │ 🏷️ App Name: ${herokuAppName}
 ╰──────────────────◆`;
 
-            adams.sendMessage(
-                adams.user.id,
-                { text: connectionMsg },
-                {
-                    disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600,
-                }
-            ).catch(err => console.error("Status message error:", err));
-        }
+adams.sendMessage(
+            adams.user.id,
+            { text: connectionMsg },
+            {
+                disappearingMessagesInChat: true,
+                ephemeralExpiration: 600,
+            }
+        ).catch(err => console.error("Status message error:", err));
     }
+}
+
 });
+
+
         
 //===============================================================================================================//
 
