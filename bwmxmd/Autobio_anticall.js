@@ -1,7 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const settingsFile = path.join(__dirname, "Session/store.json");
+const settingsFile = path.join(__dirname, "../Session/store.json");
+                               
+                               
 
 // Function to load settings
 const loadSettings = () => {
