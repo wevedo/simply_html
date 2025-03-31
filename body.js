@@ -354,7 +354,7 @@ try {
 }
 
 // Ensure message processing
-evt.ev.on("messages.upsert", async ({ messages }) => {
+adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message) return;
 
