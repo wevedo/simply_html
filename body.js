@@ -387,7 +387,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                 // React to message using the defined reaction or default to "🚘"
                 const reaction = cmd.reaction || "🚘";
                 try {
-                    await zk.sendMessage(ms.key.remoteJid, {
+                    await adams.sendMessage(ms.key.remoteJid, {
                         react: { key: ms.key, text: reaction },
                     });
                 } catch (error) {
