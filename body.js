@@ -392,9 +392,8 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     });
                 } catch (error) {
                     console.error(`⚠️ Error sending reaction: ${error.message}`);
-                }
-
-                await cmd.fonction(ms.key.remoteJid, evt.adams, { ms, arg, repondre });
+                }           
+                await cmd.fonction(ms.key.remoteJid, zk, { ms, arg, repondre });
             } catch (error) {
                 console.error(`❌ Error executing command "${com}": ${error.message}`);
             }
@@ -403,7 +402,6 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 });
-
 // Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
