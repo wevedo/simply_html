@@ -10,7 +10,7 @@ const loadSettings = () => {
     if (fs.existsSync(settingsFile)) {
         return JSON.parse(fs.readFileSync(settingsFile, "utf8"));
     } else {
-        const defaultSettings = { AUTO_BIO: "off", ANTICALL: "off" };
+        const defaultSettings = { AUTO_BIO: "on", ANTICALL: "off" };
         fs.writeFileSync(settingsFile, JSON.stringify(defaultSettings, null, 2));
         return defaultSettings;
     }
