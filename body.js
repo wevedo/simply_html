@@ -341,7 +341,6 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
 
 console.log("Loading Bwm xmd Commands ...\n");
-const { adams, cm } = require("./Ibrahim/adams");
 
 // Delay function
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
