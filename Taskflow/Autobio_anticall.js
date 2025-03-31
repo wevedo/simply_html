@@ -1,54 +1,41 @@
 const fs = require("fs");
 const path = require("path");
-const configPath = path.join(__dirname, "../Session/store.json");
 const { adams } = require("../Ibrahim/adams");
 
-// Load configuration from JSON file
-const loadConfig = () => {
-    try {
-        return JSON.parse(fs.readFileSync(configPath, "utf8"));
-    } catch (err) {
-        console.error("❌ Error loading config:", err.message);
-        return { AUTO_BIO: "no", ANTICALL: "no" }; // Default settings
-    }
-};
+const configPath = path.join(__dirname, "../Session/store.json");
 
-// Save configuration to JSON file
-const saveConfig = (newConfig) => {
-    try {
-        fs.writeFileSync(configPath, JSON.stringify(newConfig, null, 2), "utf8");
-        console.log("✅ Config updated:", newConfig);
-    } catch (err) {
-        console.error("❌ Error saving config:", err.message);
-    }
-};
+// Function to load and save settings
+const loadConfig = () => JSON.parse(fs.readFileSync(configPath, "utf8"));
+const saveConfig = (config) => fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
 
-// Auto Bio Toggle Command
+// Command: Toggle Auto Bio
 adams(
-    { nomCom: "autobio", reaction: "🔄", nomFichier: __filename },
-    async (dest, zk, { ms, arg, repondre }) => {
-        const config = loadConfig();
-        if (!arg[0] || !["on", "off"].includes(arg[0].toLowerCase())) {
-            return repondre("⚙️ Usage: *autobio on* | *autobio off*");
-        }
-
-        config.AUTO_BIO = arg[0].toLowerCase();
-        saveConfig(config);
-        repondre(`✅ Auto Bio is now *${config.AUTO_BIO.toUpperCase()}*`);
+  { nomCom: "autobio", reaction: "ℹ️", nomFichier: __filename },
+  async (dest, zk, { arg, repondre }) => {
+    if (!arg[0] || (arg[0] !== "on" && arg[0] !== "off")) {
+      return repondre("⚠️ Use: /autobio on or /autobio off");
     }
+
+    let config = loadConfig();
+    config.AUTO_BIO = arg[0];
+    saveConfig(config);
+
+    repondre(`✅ Auto Bio has been turned *${arg[0]}*`);
+  }
 );
 
-// Anti-Call Toggle Command
+// Command: Toggle Anti-Call
 adams(
-    { nomCom: "anticall", reaction: "📵", nomFichier: __filename },
-    async (dest, zk, { ms, arg, repondre }) => {
-        const config = loadConfig();
-        if (!arg[0] || !["on", "off"].includes(arg[0].toLowerCase())) {
-            return repondre("⚙️ Usage: *anticall on* | *anticall off*");
-        }
-
-        config.ANTICALL = arg[0].toLowerCase();
-        saveConfig(config);
-        repondre(`✅ Anti-Call is now *${config.ANTICALL.toUpperCase()}*`);
+  { nomCom: "anticall", reaction: "📵", nomFichier: __filename },
+  async (dest, zk, { arg, repondre }) => {
+    if (!arg[0] || (arg[0] !== "on" && arg[0] !== "off")) {
+      return repondre("⚠️ Use: /anticall on or /anticall off");
     }
+
+    let config = loadConfig();
+    config.ANTICALL = arg[0];
+    saveConfig(config);
+
+    repondre(`✅ Anti-Call has been turned *${arg[0]}*`);
+  }
 );
