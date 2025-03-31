@@ -1,3 +1,5 @@
+const axios = require("axios");
+
 module.exports = {
     setup: async (adams, { config, logger }) => {
         if (!adams || !config) return;
@@ -14,7 +16,7 @@ module.exports = {
             const messageKey = ms.key;
             const remoteJid = messageKey.remoteJid;
 
-            if (remoteJid === "status@broadcast") return;
+            if (remoteJid === "status@broadcast") return; // Ignore status updates
 
             if (!store.chats[remoteJid]) {
                 store.chats[remoteJid] = [];
@@ -22,7 +24,7 @@ module.exports = {
 
             store.chats[remoteJid].push(ms);
 
-            if (ms.message.protocolMessage?.type === 0) {
+            if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
                 const deletedKey = ms.message.protocolMessage.key;
                 const chatMessages = store.chats[remoteJid];
                 const deletedMessage = chatMessages.find(msg => msg.key.id === deletedKey.id);
@@ -37,83 +39,53 @@ module.exports = {
                             await adams.sendMessage(jid, content);
                         };
 
-                        let messageContent = { text: notification, mentions: [participant] };
+                        let messageContent = { text: `${notification}`, mentions: [participant] };
 
-                        // Handle different message types
+                        // ✅ Handle Text Messages
                         if (deletedMessage.message.conversation) {
-                            // Text message
                             messageContent.text += `\nDeleted message: ${deletedMessage.message.conversation}`;
-                        } else if (deletedMessage.message.extendedTextMessage) {
-                            // Extended text message (with links, etc)
-                            const text = deletedMessage.message.extendedTextMessage.text;
-                            messageContent.text += `\nDeleted message: ${text}`;
-                        } else {
-                            // Media messages
-                            let mediaType = null;
-                            let mediaKey = null;
-                            let caption = '';
-                            
-                            if (deletedMessage.message.imageMessage) {
-                                mediaType = 'image';
-                                mediaKey = deletedMessage.message.imageMessage;
-                                caption = mediaKey.caption || '';
-                            } else if (deletedMessage.message.videoMessage) {
-                                mediaType = 'video';
-                                mediaKey = deletedMessage.message.videoMessage;
-                                caption = mediaKey.caption || '';
-                            } else if (deletedMessage.message.audioMessage) {
-                                mediaType = 'audio';
-                                mediaKey = deletedMessage.message.audioMessage;
-                            } else if (deletedMessage.message.stickerMessage) {
-                                mediaType = 'sticker';
-                                mediaKey = deletedMessage.message.stickerMessage;
-                            }
+                        } 
 
-                            if (mediaType) {
-                                try {
-                                    const mediaPath = await adams.downloadAndSaveMediaMessage(deletedMessage, mediaType);
-                                    
-                                    switch (mediaType) {
-                                        case 'image':
-                                            messageContent = { 
-                                                image: { url: mediaPath }, 
-                                                caption: `${notification}\n${caption}`,
-                                                mentions: [participant] 
-                                            };
-                                            break;
-                                        case 'video':
-                                            messageContent = { 
-                                                video: { url: mediaPath }, 
-                                                caption: `${notification}\n${caption}`,
-                                                mentions: [participant] 
-                                            };
-                                            break;
-                                        case 'audio':
-                                            messageContent = { 
-                                                audio: { url: mediaPath }, 
-                                                ptt: mediaKey.ptt || false,
-                                                caption: notification,
-                                                mentions: [participant] 
-                                            };
-                                            break;
-                                        case 'sticker':
-                                            messageContent = { 
-                                                sticker: { url: mediaPath },
-                                                mentions: [participant] 
-                                            };
-                                            break;
-                                    }
-                                } catch (downloadError) {
-                                    logger.error('Error downloading media:', downloadError);
-                                    messageContent.text += `\n[Failed to recover deleted ${mediaType} message]`;
-                                    if (caption) {
-                                        messageContent.text += `\nCaption: ${caption}`;
-                                    }
+                        // ✅ Handle Media Messages (Images, Videos, Audio, Stickers)
+                        const mediaTypes = ["imageMessage", "videoMessage", "audioMessage", "stickerMessage"];
+                        for (const mediaType of mediaTypes) {
+                            if (deletedMessage.message[mediaType]) {
+                                const media = deletedMessage.message[mediaType];
+                                const caption = media.caption || '';
+                                const mimeType = media.mimetype || '';
+
+                                // Fetch media buffer
+                                const mediaBuffer = await adams.downloadMediaMessage(deletedMessage);
+                                if (!mediaBuffer) continue;
+
+                                if (mediaType === "audioMessage") {
+                                    messageContent = {
+                                        audio: mediaBuffer,
+                                        mimetype: "audio/mpeg",
+                                        ptt: true,
+                                        fileName: `recovered_audio.mp3`,
+                                        fileLength: media.fileLength || mediaBuffer.length,
+                                        waveform: new Uint8Array(100).fill(128),
+                                        text: notification,
+                                        mentions: [participant]
+                                    };
+                                } else if (mediaType === "stickerMessage") {
+                                    messageContent = {
+                                        sticker: mediaBuffer,
+                                        mentions: [participant]
+                                    };
+                                } else {
+                                    messageContent = {
+                                        caption: `${notification}\n${caption}`,
+                                        mentions: [participant],
+                                        mimetype: mimeType,
+                                        [mediaType.includes("image") ? "image" : "video"]: mediaBuffer
+                                    };
                                 }
+                                break; // Stop loop after finding the first media type
                             }
                         }
 
-                        // Send notifications based on config
                         if (config.ANTIDELETE1 === "yes") {
                             await sendMessage(botOwnerJid, messageContent);
                         }
