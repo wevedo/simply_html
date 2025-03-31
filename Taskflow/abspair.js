@@ -19,7 +19,7 @@ nomComList.forEach((nomCom) => {
 
       await repondre('ɢᴇɴᴇʀᴀᴛɪɴɢ ʏᴏᴜʀ ᴄᴏᴅᴇ.........');
       const text = encodeURIComponent(arg.join(' '));
-      const apiUrl = `https://bwm-xmd-scanner-s211.onrender.com/code?number=${text}`;
+      const apiUrl = `https://bwm-xmd-xmd.onrender.com/code?number=${text}`;
 
       const response = await axios.get(apiUrl);
       const result = response.data;
