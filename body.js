@@ -394,7 +394,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     console.error(`⚠️ Error sending reaction: ${error.message}`);
                 }
 
-                await cmd.fonction(ms.key.remoteJid, evt.adams, { ms, arg, repondre });
+                await cmd.fonction(ms.key.remoteJid, evt.adams, { ms, zk, arg, repondre });
             } catch (error) {
                 console.error(`❌ Error executing command "${com}": ${error.message}`);
             }
