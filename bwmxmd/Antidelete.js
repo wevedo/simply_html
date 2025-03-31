@@ -37,7 +37,7 @@ module.exports = {
                         const sender = `@${participant.split("@")[0]}`;
                         const notification = `*🛑 This message was deleted by ${sender}*`;
 
-                        const botOwnerJid = `${conf.NUMERO_OWNER}@s.whatsapp.net`;
+                        const botOwnerJid = `${conf.OWNER_NUMBER}@s.whatsapp.net`;
 
                         const sendMessage = async (jid, content) => {
                             await zk.sendMessage(jid, { ...content, mentions: [participant] });
