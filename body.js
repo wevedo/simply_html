@@ -164,21 +164,11 @@ async function main() {
 
 adams.ev.on("messages.upsert", async (m) => {
     try {
-        console.log("🔄 New message event received...");
-
         const { messages } = m;
-        if (!messages || messages.length === 0) {
-            console.log("⚠️ No messages found in the event.");
-            return;
-        }
-
+        if (!messages || messages.length === 0) return;
+        
         const ms = messages[0];
-        if (!ms.message) {
-            console.log("⚠️ Message has no content.");
-            return;
-        }
-
-        console.log("📩 Processing message:", ms);
+        if (!ms.message) return;
 
         // Decode JID
         const decodeJid = (jid) => {
@@ -190,7 +180,7 @@ adams.ev.on("messages.upsert", async (m) => {
             return jid;
         };
 
-        // Ensure message content type is checked safely
+        // Get message type and extract text
         var mtype = ms.message ? getContentType(ms.message) : "";
         var texte = mtype === "conversation" ? ms.message.conversation :
             mtype === "imageMessage" ? ms.message.imageMessage?.caption :
@@ -201,9 +191,7 @@ adams.ev.on("messages.upsert", async (m) => {
             mtype === "messageContextInfo" ?
                 (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
 
-        console.log("📝 Extracted text:", texte);
-
-        // Extract Message Metadata
+        // Extract message metadata
         var origineMessage = ms.key.remoteJid;
         var idBot = decodeJid(adams.user.id);
         var servBot = idBot.split('@')[0];
@@ -219,12 +207,6 @@ adams.ev.on("messages.upsert", async (m) => {
         if (ms.key.fromMe) auteurMessage = idBot;
         var membreGroupe = verifGroupe ? ms.key.participant : '';
 
-        console.log("📢 Message Metadata:", {
-            groupe: nomGroupe,
-            auteur: auteurMessage,
-            type: mtype,
-        });
-
         // Define Owner and Sudo Users
         const BOT_OWNER = conf.OWNER_NUMBER;
         const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
@@ -234,18 +216,14 @@ adams.ev.on("messages.upsert", async (m) => {
         const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS);
         const superUser = allAllowedNumbers.includes(auteurMessage);
 
-        console.log("🔍 User verification:", {
-            superUser,
-            auteurMessage,
-        });
-
         // Function to Send a Response
         function repondre(mes) {
-            if (adams) {
-                adams.sendMessage(origineMessage, { text: mes }, { quoted: ms })
-                    .then(() => console.log("✅ Message sent successfully."))
-                    .catch((err) => console.error("❌ Error sending message:", err.message));
-            }
+            try {
+                if (adams) {
+                    adams.sendMessage(origineMessage, { text: mes }, { quoted: ms })
+                        .catch(() => {}); // Prevent errors from stopping execution
+                }
+            } catch (err) {}
         }
 
         // Function to Get Group Admins
@@ -253,9 +231,26 @@ adams.ev.on("messages.upsert", async (m) => {
             return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
         }
 
-        console.log("✅ Message processing completed.");
+        // Define command options
+        var commandeOptions = {
+            superUser,
+            verifGroupe,
+            membreGroupe,
+            infosGroupe,
+            nomGroupe,
+            auteurMessage,
+            idBot,
+            PREFIX: conf.PREFIX,
+            repondre,
+            mtype,
+            groupeAdmin,
+            msgRepondu,
+            auteurMsgRepondu,
+            ms
+        };
+
     } catch (error) {
-        console.error("🚨 Error in message processing:", error.message);
+        // Handle errors without crashing
     }
 });
             
