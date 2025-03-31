@@ -402,7 +402,6 @@ adams.ev.on("connection.update", ({ connection }) => {
 ├──〔 ✨ Version: 7.0.8 〕 
 ├──〔 🎭 Classic and Things 〕 
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
-│ 🔹 Status: ${STATE === 1 ? "Online" : "Offline"}  
 │  
 ├──〔 📦 Heroku Deployment 〕 
 │ 🏷️ App Name: ${herokuAppName}  
