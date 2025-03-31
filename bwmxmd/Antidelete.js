@@ -1,6 +1,6 @@
 module.exports = {
-    setup: async (adams, { config, logger, store }) => {
-        if (!adams|| !config || !store) return;
+    setup: async (zk, { conf, store }) => {
+        if (!zk || !conf || !store) return;
 
         console.log("Initializing Anti-Delete system...");
 
