@@ -241,6 +241,7 @@ adams.ev.on("messages.upsert", async (m) => {
             idBot,
             PREFIX: conf.PREFIX,
             repondre,
+            sendMessage,
             mtype,
             groupeAdmin,
             msgRepondu,
