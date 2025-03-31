@@ -12,7 +12,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
 
                    
-const { default: makeWASocket, isJidGroup, CommandSystem, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, isJidGroup, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
@@ -258,29 +258,6 @@ adams.ev.on("messages.upsert", async (m) => {
         console.error("🚨 Error in message processing:", error.message);
     }
 });
-
-var commandeOptions = {
-    superUser, dev,
-    verifGroupe,
-    mbre,
-    membreGroupe,
-    verifAdmin,
-    infosGroupe,
-    nomGroupe,
-    auteurMessage,
-    nomAuteurMessage,
-    idBot,
-    verifZokouAdmin,
-    prefixe,
-    arg,
-    repondre,
-    mtype,
-    groupeAdmin,
-    msgRepondu,
-    auteurMsgRepondu,
-    ms,
-    mybotpic
-};
             
 //============================================================================//
                          
