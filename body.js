@@ -39,6 +39,7 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
 const PORT = process.env.PORT || 3000;
 const app = express();
+let zk;
 let adams;
 require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
@@ -100,8 +101,6 @@ authentification();
 const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
-
-let zk;
 
 async function main() {
     const { version, isLatest } = await fetchLatestBaileysVersion();
@@ -375,34 +374,26 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     return;
                 }
 
-                   // Define repondre function with zk.sendMessage
+                    // Define `repondre` function properly
                 const repondre = async (message) => {
-                    if (!zk || !zk.sendMessage) {
-                        console.error("❌ Error: zk.sendMessage is not defined!");
-                        return;
-                    }
                     try {
-                        await zk.sendMessage(ms.key.remoteJid, { text: message });
+                        await adams.sendMessage(ms.key.remoteJid, { text: message });
                     } catch (error) {
                         console.error(`❌ Error sending message: ${error.message}`);
                     }
                 };
 
-                // React to message using the defined reaction or default to "🚘"
+                // React to message before running command
                 const reaction = cmd.reaction || "🚘";
                 try {
-                    if (zk && zk.sendMessage) {
-                        await zk.sendMessage(ms.key.remoteJid, {
-                            react: { key: ms.key, text: reaction },
-                        });
-                    } else {
-                        console.error("⚠️ Error: zk.sendMessage is not available for reactions.");
-                    }
+                    await adams.sendMessage(ms.key.remoteJid, {
+                        react: { key: ms.key, text: reaction },
+                    });
                 } catch (error) {
                     console.error(`⚠️ Error sending reaction: ${error.message}`);
                 }
 
-                // Pass zk correctly to Taskflow commands
+                // Execute command with `zk` properly passed
                 await cmd.fonction(ms.key.remoteJid, zk, { ms, arg, repondre });
             } catch (error) {
                 console.error(`❌ Error executing command "${com}": ${error.message}`);
@@ -412,7 +403,6 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 });
-
 
 // Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
