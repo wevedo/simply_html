@@ -25,7 +25,7 @@ const path = require("path");
 const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const { getSettings } = require("./utils/settings");
-const { cm } = require("./Ibrahim/adams");
+const evt = require("./Ibrahim/adams");
 const rateLimit = new Map();
 const chalk = require("chalk");
 const express = require("express");
@@ -334,53 +334,83 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-
-console.log("Loading Bwm xmd Commands ...\n");
-
-// Delay function
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+console.log("Loading Bwm xmd Commands...\n");
+
 // Load commands from Taskflow folder
-fs.readdirSync(__dirname + "/Taskflow").forEach((fichier) => {
-    if (path.extname(fichier).toLowerCase() === ".js") {
-        try {
-            require(__dirname + "/Taskflow/" + fichier);
-            console.log(fichier + " Installed Successfully✔️");
-        } catch (e) {
-            console.log(`${fichier} could not be installed due to : ${e}`);
+try {
+    const taskflowPath = path.join(__dirname, "Taskflow");
+    fs.readdirSync(taskflowPath).forEach((fichier) => {
+        if (path.extname(fichier).toLowerCase() === ".js") {
+            try {
+                require(path.join(taskflowPath, fichier));
+                console.log(`${fichier} Lorded Successfully 🚀`);
+            } catch (e) {
+                console.error(`❌ Failed to load ${fichier}: ${e.message}`);
+            }
         }
-    }
-});
+    });
+} catch (error) {
+    console.error("❌ Error reading Taskflow folder:", error.message);
+}
 
 await delay(700);
 
-// Import event system
-const evt = require("./Ibrahim/adams");
-
 // Ensure message processing
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const ms = messages[0];
-    if (!ms?.message) return;
+evt.adams.ev.on("messages.upsert", async ({ messages }) => {
+    try {
+        const ms = messages[0];
+        if (!ms?.message) return;
 
-    console.log("New message received from:", ms.key.remoteJid);
+        console.log(`📩 New message from: ${ms.key.remoteJid}`);
 
-    const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
-    const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
-    const verifCom = texte ? texte.startsWith(PREFIX) : false;
-    const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
+        const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
+        const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
+        const verifCom = texte.startsWith(PREFIX);
+        const com = verifCom ? texte.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase() : null;
 
-    if (verifCom) {
-        const cmd = cm.find((adams) => adams.nomCom === com);
-        if (cmd) {
-            try {
-                if ((conf.MODE).toLowerCase() !== "yes" && !superUser) {
-                    return;
+        if (verifCom && com) {
+            const cmd = evt.cm.find((c) => c.nomCom === com || (c.aliases && c.aliases.includes(com)));
+
+            if (cmd) {
+                try {
+                    if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
+                        console.log(`⛔ Command "${com}" blocked: bot is not in active mode.`);
+                        return;
+                    }
+
+                    // Define `repondre` safely to prevent "TypeError: repondre is not a function"
+                    const repondre = async (message) => {
+                        try {
+                            await evt.adams.ev.relayMessage(ms.key.remoteJid, {
+                                extendedTextMessage: { text: message },
+                            });
+                        } catch (error) {
+                            console.error(`❌ Error sending message: ${error.message}`);
+                        }
+                    };
+
+                    // React to message using the defined reaction or default to "🚘"
+                    const reaction = cmd.reaction || "🚘";
+                    try {
+                        await evt.adams.ev.relayMessage(ms.key.remoteJid, {
+                            reactionMessage: { key: ms.key, text: reaction },
+                        });
+                    } catch (error) {
+                        console.error(`⚠️ Error sending reaction: ${error.message}`);
+                    }
+
+                    await cmd.fonction(ms.key.remoteJid, evt.adams, { ms, arg, repondre });
+                } catch (error) {
+                    console.error(`❌ Error executing command "${com}": ${error.message}`);
                 }
-                await cmd.fonction(ms.key.remoteJid, adams, { ms, repondre });
-            } catch (error) {
-                console.log(`Error executing command ${com}: ${error}`);
+            } else {
+                console.log(`⚠️ Unknown command: ${com}`);
             }
         }
+    } catch (error) {
+        console.error("❌ Unexpected error in message processing:", error.message);
     }
 });
 
