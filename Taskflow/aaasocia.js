@@ -3,7 +3,7 @@
 const { adams } = require('../Ibrahim/adams');
 const axios = require('axios');
 const fs = require('fs-extra');
-const { mediafireDl } = require("../Ibrahim/dl/Function");
+const { mediafireDl } = require("../Ibrahim/Function");
 const { igdl } = require("ruhend-scraper");
 const getFBInfo = require("@xaviabot/fb-downloader");
 const { downloadTiktok } = require('@mrnima/tiktok-downloader');
