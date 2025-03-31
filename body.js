@@ -298,6 +298,10 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 });
 
  //============================================================================================================
+
+const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
+const verifCom = texte ? texte.startsWith(PREFIX) : false;
+const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
  
 console.log("Loading Bwm xmd Commands ...\n");
 const commandPath = path.join(__dirname, "Taskflow");
