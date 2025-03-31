@@ -161,87 +161,101 @@ async function main() {
 
  //============================================================================//
 
-adams.ev.on("messages.upsert", async (m) => { if (!m || !m.messages || !m.messages[0]) return;
+adams.ev.on("messages.upsert", async (m) => {
+    try {
+        console.log("🔄 New message event received...");
 
-const { messages } = m;
-const ms = messages[0];
-if (!ms.message) return;
+        const { messages } = m;
+        if (!messages || messages.length === 0) {
+            console.log("⚠️ No messages found in the event.");
+            return;
+        }
 
-console.log("\n========== NEW MESSAGE RECEIVED ==========");
+        const ms = messages[0];
+        if (!ms.message) {
+            console.log("⚠️ Message has no content.");
+            return;
+        }
 
-// Decode JID
-const decodeJid = (jid) => {
-    if (!jid) return jid;
-    if (/:\d+@/gi.test(jid)) {
-        let decode = jidDecode(jid) || {};
-        return decode.user && decode.server ? decode.user + '@' + decode.server : jid;
+        console.log("📩 Processing message:", ms);
+
+        // Decode JID
+        const decodeJid = (jid) => {
+            if (!jid) return jid;
+            if (/:\d+@/gi.test(jid)) {
+                let decode = jidDecode(jid) || {};
+                return decode.user && decode.server ? decode.user + '@' + decode.server : jid;
+            }
+            return jid;
+        };
+
+        // Ensure message content type is checked safely
+        var mtype = ms.message ? getContentType(ms.message) : "";
+        var texte = mtype === "conversation" ? ms.message.conversation :
+            mtype === "imageMessage" ? ms.message.imageMessage?.caption :
+            mtype === "videoMessage" ? ms.message.videoMessage?.caption :
+            mtype === "extendedTextMessage" ? ms.message?.extendedTextMessage?.text :
+            mtype === "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId :
+            mtype === "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId :
+            mtype === "messageContextInfo" ?
+                (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
+
+        console.log("📝 Extracted text:", texte);
+
+        // Extract Message Metadata
+        var origineMessage = ms.key.remoteJid;
+        var idBot = decodeJid(adams.user.id);
+        var servBot = idBot.split('@')[0];
+        var verifGroupe = origineMessage?.endsWith("@g.us");
+        var infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage) : "";
+        var nomGroupe = verifGroupe ? infosGroupe.subject : "";
+        var msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        var auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant);
+        var mr = ms.message?.extendedTextMessage?.contextInfo?.mentionedJid;
+        var utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : "";
+        var auteurMessage = verifGroupe ? (ms.key.participant ? ms.key.participant : ms.participant) : origineMessage;
+
+        if (ms.key.fromMe) auteurMessage = idBot;
+        var membreGroupe = verifGroupe ? ms.key.participant : '';
+
+        console.log("📢 Message Metadata:", {
+            groupe: nomGroupe,
+            auteur: auteurMessage,
+            type: mtype,
+        });
+
+        // Define Owner and Sudo Users
+        const BOT_OWNER = conf.OWNER_NUMBER;
+        const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
+            .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
+
+        const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
+        const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS);
+        const superUser = allAllowedNumbers.includes(auteurMessage);
+
+        console.log("🔍 User verification:", {
+            superUser,
+            auteurMessage,
+        });
+
+        // Function to Send a Response
+        function repondre(mes) {
+            if (adams) {
+                adams.sendMessage(origineMessage, { text: mes }, { quoted: ms })
+                    .then(() => console.log("✅ Message sent successfully."))
+                    .catch((err) => console.error("❌ Error sending message:", err.message));
+            }
+        }
+
+        // Function to Get Group Admins
+        function groupeAdmin(membreGroupe) {
+            return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
+        }
+
+        console.log("✅ Message processing completed.");
+    } catch (error) {
+        console.error("🚨 Error in message processing:", error.message);
     }
-    return jid;
-};
-
-// Ensure message content type is checked safely
-const mtype = getContentType(ms.message) || "";
-const texte = mtype === "conversation" ? ms.message.conversation :
-              mtype === "imageMessage" ? ms.message.imageMessage?.caption :
-              mtype === "videoMessage" ? ms.message.videoMessage?.caption :
-              mtype === "extendedTextMessage" ? ms.message?.extendedTextMessage?.text :
-              mtype === "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId :
-              mtype === "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId :
-              mtype === "messageContextInfo" ?
-              (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
-
-console.log("Message Type:", mtype);
-console.log("Message Text:", texte);
-
-// Extract Message Metadata
-const origineMessage = ms.key.remoteJid;
-const idBot = decodeJid(adams.user.id);
-const servBot = idBot.split('@')[0];
-const verifGroupe = origineMessage?.endsWith("@g.us");
-const infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage) : "";
-const nomGroupe = verifGroupe ? infosGroupe.subject : "";
-const auteurMessage = verifGroupe ? (ms.key.participant || ms.participant) : origineMessage;
-const msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage;
-const auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant);
-const mr = ms.message?.extendedTextMessage?.contextInfo?.mentionedJid;
-const utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : "";
-
-if (ms.key.fromMe) {
-    auteurMessage = idBot;
-}
-const membreGroupe = verifGroupe ? ms.key.participant : '';
-
-console.log("Group Status:", verifGroupe ? "Group Chat" : "Private Chat");
-if (verifGroupe) console.log("Group Name:", nomGroupe);
-console.log("Message Sender:", auteurMessage);
-
-// Define Owner and Sudo Users
-const BOT_OWNER = conf.OWNER_NUMBER;
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
-    .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
-const superUserNumbers = [servBot, BOT_OWNER]
-    .map(s => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
-const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS);
-const superUser = allAllowedNumbers.includes(auteurMessage);
-
-console.log("Super User:", superUser);
-
-// Function to Send a Response
-function repondre(mes) {
-    if (adams) {
-        adams.sendMessage(origineMessage, { text: mes }, { quoted: ms })
-            .then(() => console.log("✅ Message sent successfully"))
-            .catch((err) => console.error("❌ Error sending message:", err.message));
-    }
-}
-
-// Function to Get Group Admins
-function groupeAdmin(membreGroupe) {
-    return membreGroupe ? membreGroupe.filter(m => m.admin).map(m => m.id) : [];
-}
-
-console.log("========== MESSAGE PROCESSING COMPLETED ==========");
-
 });
 
 
