@@ -334,8 +334,6 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 console.log("Loading Bwm xmd Commands...\n");
 
 // Load commands from Taskflow folder
@@ -355,68 +353,54 @@ try {
     console.error("❌ Error reading Taskflow folder:", error.message);
 }
 
-await delay(700);
-
-// Ensure evt.ev exists
-if (!evt.ev || !evt.ev.on) {
-    console.error("❌ Initialization error: evt.ev is undefined. Ensure ev is correctly exported in Ibrahim/adams.js.");
-    process.exit(1); // Stop execution if ev is not properly loaded
-}
-
 // Ensure message processing
 evt.ev.on("messages.upsert", async ({ messages }) => {
-    try {
-        const ms = messages[0];
-        if (!ms?.message) return;
+    const ms = messages[0];
+    if (!ms?.message) return;
 
-        console.log(`📩 New message from: ${ms.key.remoteJid}`);
+    console.log(`📩 New message from: ${ms.key.remoteJid}`);
 
-        const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
-        const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
-        const verifCom = texte.startsWith(PREFIX);
-        const com = verifCom ? texte.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase() : null;
+    const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
+    const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
+    const verifCom = texte.startsWith(PREFIX);
+    const com = verifCom ? texte.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase() : null;
 
-        if (verifCom && com) {
-            const cmd = evt.cm.find((c) => c.nomCom === com || (c.aliases && c.aliases.includes(com)));
+    if (verifCom && com) {
+        const cmd = evt.cm.find((c) => c.nomCom === com || (c.aliases && c.aliases.includes(com)));
 
-            if (cmd) {
-                try {
-                    if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
-                        console.log(`⛔ Command "${com}" blocked: bot is not in active mode.`);
-                        return;
-                    }
-
-                    // Define `repondre` safely to prevent "TypeError: repondre is not a function"
-                    const repondre = async (message) => {
-                        try {
-                            await evt.ev.relayMessage(ms.key.remoteJid, {
-                                extendedTextMessage: { text: message },
-                            });
-                        } catch (error) {
-                            console.error(`❌ Error sending message: ${error.message}`);
-                        }
-                    };
-
-                    // React to message using the defined reaction or default to "🚘"
-                    const reaction = cmd.reaction || "🚘";
-                    try {
-                        await evt.ev.relayMessage(ms.key.remoteJid, {
-                            reactionMessage: { key: ms.key, text: reaction },
-                        });
-                    } catch (error) {
-                        console.error(`⚠️ Error sending reaction: ${error.message}`);
-                    }
-
-                    await cmd.fonction(ms.key.remoteJid, evt.adams, { ms, arg, repondre });
-                } catch (error) {
-                    console.error(`❌ Error executing command "${com}": ${error.message}`);
+        if (cmd) {
+            try {
+                if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
+                    console.log(`⛔ Command "${com}" blocked: bot is not in active mode.`);
+                    return;
                 }
-            } else {
-                console.log(`⚠️ Unknown command: ${com}`);
+
+                // Define repondre function to avoid "TypeError: repondre is not a function"
+                const repondre = async (message) => {
+                    try {
+                        await zk.sendMessage(ms.key.remoteJid, { text: message });
+                    } catch (error) {
+                        console.error(`❌ Error sending message: ${error.message}`);
+                    }
+                };
+
+                // React to message using the defined reaction or default to "🚘"
+                const reaction = cmd.reaction || "🚘";
+                try {
+                    await zk.sendMessage(ms.key.remoteJid, {
+                        react: { key: ms.key, text: reaction },
+                    });
+                } catch (error) {
+                    console.error(`⚠️ Error sending reaction: ${error.message}`);
+                }
+
+                await cmd.fonction(ms.key.remoteJid, evt.adams, { ms, arg, repondre });
+            } catch (error) {
+                console.error(`❌ Error executing command "${com}": ${error.message}`);
             }
+        } else {
+            console.log(`⚠️ Unknown command: ${com}`);
         }
-    } catch (error) {
-        console.error("❌ Unexpected error in message processing:", error.message);
     }
 });
 
