@@ -1,1 +1,4 @@
-
+{
+  "AUTO_BIO": "on",
+  "ANTICALL": "off"
+}
