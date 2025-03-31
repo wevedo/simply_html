@@ -24,7 +24,6 @@ module.exports = {
 
             if (ms.message.protocolMessage && ms.message.protocolMessage.type === 0) {
                 const deletedKey = ms.message.protocolMessage.key;
-
                 const chatMessages = store.chats[remoteJid];
                 const deletedMessage = chatMessages.find(msg => msg.key.id === deletedKey.id);
 
@@ -32,7 +31,7 @@ module.exports = {
                     try {
                         const participant = deletedMessage.key.participant || deletedMessage.key.remoteJid;
                         const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}*`;
-                        const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
+                        const botOwnerJid = `${config.NUMERO_OWNER}@s.whatsapp.net`;
 
                         const sendMessage = async (jid, content) => {
                             await adams.sendMessage(jid, content);
@@ -42,20 +41,32 @@ module.exports = {
 
                         if (deletedMessage.message.conversation) {
                             messageContent.text += `\nDeleted message: ${deletedMessage.message.conversation}`;
-                        } else if (deletedMessage.message.imageMessage) {
+                        } 
+                        
+                        // ✅ Handle Image
+                        else if (deletedMessage.message.imageMessage) {
                             const caption = deletedMessage.message.imageMessage.caption || '';
-                            const imagePath = await adams.downloadAndSaveMediaMessage(deletedMessage);
+                            const imagePath = await adams.downloadAndSaveMediaMessage(deletedMessage, "image");
                             messageContent = { image: { url: imagePath }, caption: `${notification}\n${caption}`, mentions: [participant] };
-                        } else if (deletedMessage.message.videoMessage) {
+                        } 
+                        
+                        // ✅ Handle Video
+                        else if (deletedMessage.message.videoMessage) {
                             const caption = deletedMessage.message.videoMessage.caption || '';
-                            const videoPath = await adams.downloadAndSaveMediaMessage(deletedMessage);
+                            const videoPath = await adams.downloadAndSaveMediaMessage(deletedMessage, "video");
                             messageContent = { video: { url: videoPath }, caption: `${notification}\n${caption}`, mentions: [participant] };
-                        } else if (deletedMessage.message.audioMessage) {
-                            const audioPath = await adams.downloadAndSaveMediaMessage(deletedMessage);
+                        } 
+                        
+                        // ✅ Handle Audio (Voice Message)
+                        else if (deletedMessage.message.audioMessage) {
+                            const audioPath = await adams.downloadAndSaveMediaMessage(deletedMessage, "audio");
                             messageContent = { audio: { url: audioPath }, ptt: true, caption: notification, mentions: [participant] };
-                        } else if (deletedMessage.message.stickerMessage) {
-                            const stickerPath = await adams.downloadAndSaveMediaMessage(deletedMessage);
-                            messageContent = { sticker: { url: stickerPath }, caption: notification, mentions: [participant] };
+                        } 
+                        
+                        // ✅ Handle Sticker
+                        else if (deletedMessage.message.stickerMessage) {
+                            const stickerPath = await adams.downloadAndSaveMediaMessage(deletedMessage, "sticker");
+                            messageContent = { sticker: { url: stickerPath }, mentions: [participant] };
                         }
 
                         if (config.ANTIDELETE1 === "yes") {
