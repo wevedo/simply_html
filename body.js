@@ -378,7 +378,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                 // Define repondre function to avoid "TypeError: repondre is not a function"
                 const repondre = async (message) => {
                     try {
-                        await zk.sendMessage(ms.key.remoteJid, { text: message });
+                        await adams.sendMessage(ms.key.remoteJid, { text: message });
                     } catch (error) {
                         console.error(`❌ Error sending message: ${error.message}`);
                     }
