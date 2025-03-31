@@ -1,4 +1,5 @@
 const axios = require("axios");
+const abu = require(__dirname + "/../config");
 
 module.exports = {
     setup: async (adams, { config, logger }) => {
@@ -26,7 +27,7 @@ module.exports = {
 
         // Auto Bio System
         const startBioUpdates = async () => {
-            if (config.AUTO_BIO !== "yes") return;
+            if (abu.AUTO_BIO !== "yes") return;
 
             const getCurrentDateTime = () => new Intl.DateTimeFormat("en-KE", {
                 timeZone: "Africa/Nairobi",
@@ -55,7 +56,7 @@ module.exports = {
 
         // Anti-Call System
         const startCallBlocking = () => {
-            if (config.ANTICALL !== "yes") return;
+            if (abu.ANTICALL !== "yes") return;
 
             const callHandler = async (callData) => {
                 try {
