@@ -22,7 +22,7 @@ const getUserProfilePic = async (zk, userJid) => {
 // 🏓 PING COMMAND
 adams(
   { nomCom: "ping", reaction: "🏓", nomFichier: __filename },
-  async (dest, zk, commandeOptions) => {
+  async (dest, adams, commandeOptions) => {
     const { ms, repondre } = commandeOptions;
     const userJid = ms?.sender || dest;
 
@@ -38,7 +38,7 @@ adams(
   //  await zk.sendMessage(dest, { delete: pingingMessage.key });
 
     // Send the ping result
-    await zk.sendMessage(dest, {
+    await adams.sendMessage(dest, {
       audio: { url: audioUrl },
       mimetype: "audio/mpeg",
       ptt: true,
@@ -68,11 +68,11 @@ adams(
 
 adams(
   { nomCom: "pairaudio", reaction: "🎵", nomFichier: __filename },
-  async (dest, zk, commandeOptions) => {
+  async (dest, adams, commandeOptions) => {
     const { ms } = commandeOptions;
     const userJid = ms?.sender || dest;
 
-    await zk.sendMessage(dest, {
+    await adams.sendMessage(dest, {
       audio: { url: "https://files.catbox.moe/89tvg4.mp3" },
       mimetype: "audio/mpeg",
       ptt: true,
@@ -93,7 +93,7 @@ adams(
 // ⏳ UPTIME COMMAND
 adams(
   { nomCom: "uptime", reaction: "⏳", nomFichier: __filename },
-  async (dest, zk, commandeOptions) => {
+  async (dest, adams, commandeOptions) => {
     const { ms, repondre } = commandeOptions;
     const userJid = ms?.sender || dest;
 
@@ -114,7 +114,7 @@ adams(
     const audioUrl = `${githubRawBaseUrl}/${randomAudioFile}`;
 
     // Delete the "Calculating..." message
-    await zk.sendMessage(dest, { delete: calculatingMessage.key });
+    await adams.sendMessage(dest, { delete: calculatingMessage.key });
 
     // Send the uptime result
     await zk.sendMessage(dest, {
