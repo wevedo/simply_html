@@ -63,9 +63,9 @@ adams(
     categorie: "Control",
   },
   async (chatId, zk, context) => {
-    const { repondre, superUser } = context;
+    const { repondre, isSuperUser } = context;
 
-    if (!superUser) {
+    if (!isSuperUser) {
       return repondre(
         "🚫 *Access Denied!* This command is restricted to the bot owner."
       );
@@ -217,7 +217,7 @@ adams(
     categorie: "Control",
   },
   async (chatId, zk, context) => {
-    const { repondre, superUser } = context;
+    const { repondre, isSuperUser } = context;
 
     if (!superUser) {
       return repondre(
@@ -368,7 +368,7 @@ adams({
   nomCom: 'setvar',
   categorie: "Control"
 }, async (chatId, zk, context) => {
-  const { repondre, superUser, arg } = context;
+  const { repondre, isSuperUser, arg } = context;
 
   if (!superUser) {
     return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
@@ -415,7 +415,7 @@ adams({
   nomCom: 'update',
   categorie: "Control"
 }, async (chatId, zk, context) => {
-  const { repondre, superUser } = context;
+  const { repondre, isSuperUser } = context;
 
   if (!superUser) {
     return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
