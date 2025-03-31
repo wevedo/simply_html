@@ -39,7 +39,6 @@ const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.c
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
 const PORT = process.env.PORT || 3000;
 const app = express();
-let adams;
 require("dotenv").config({ path: "./config.env" });
 logger.level = "silent";
 app.use(express.static("public"));
