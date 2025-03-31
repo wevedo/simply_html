@@ -1,60 +1,41 @@
 const fs = require("fs");
 const path = require("path");
 
-const configPath = path.join(__dirname, "../Session/store.json");
+const settingsFile = path.join(__dirname, "Session/store.json");
 
-// Load existing settings or create default
-const loadConfig = () => {
-    try {
-        if (fs.existsSync(configPath)) {
-            return JSON.parse(fs.readFileSync(configPath, "utf8"));
-        }
-    } catch (err) {
-        console.error("❌ Error loading config:", err.message);
-    }
-    return { AUTO_BIO: "off", ANTICALL: "off" };
-};
-
-// Save updated settings
-const saveConfig = (config) => {
-    try {
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2), "utf8");
-    } catch (err) {
-        console.error("❌ Error saving config:", err.message);
+// Function to load settings
+const loadSettings = () => {
+    if (fs.existsSync(settingsFile)) {
+        return JSON.parse(fs.readFileSync(settingsFile, "utf8"));
+    } else {
+        const defaultSettings = { AUTO_BIO: "off", ANTICALL: "off" };
+        fs.writeFileSync(settingsFile, JSON.stringify(defaultSettings, null, 2));
+        return defaultSettings;
     }
 };
 
-// Store cleanup handlers
-let bioInterval = null;
-let activeCallHandler = null;
+// Function to save settings
+const saveSettings = (key, value) => {
+    let settings = loadSettings();
+    settings[key] = value;
+    fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
+};
 
+// Main system setup
 module.exports = {
-    setup: async (adams, { config, logger }) => {
-        if (!adams || !config) return;
-
+    setup: async (adams, { logger }) => {
         console.log("⚙️ Initializing Auto Bio & Anti-Call systems...");
 
-        // Load settings
-        const settings = loadConfig();
+        let settings = loadSettings();
+        let bioInterval = null;
+        let activeCallHandler = null;
 
-        // Auto Bio System
         const startBioUpdates = () => {
             if (settings.AUTO_BIO !== "on") return;
 
-            const getCurrentDateTime = () => new Intl.DateTimeFormat("en-KE", {
-                timeZone: "Africa/Nairobi",
-                year: "numeric",
-                month: "long",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: false,
-            }).format(new Date());
-
             const updateBio = async () => {
                 try {
-                    await adams.updateProfileStatus(`👋 BWM XMD Online 🚀\n📅 ${getCurrentDateTime()}`);
+                    await adams.updateProfileStatus(`👋 BWM XMD Online 🚀\n📅 ${new Date().toLocaleString()}`);
                     logger.info("✅ Bio updated successfully");
                 } catch (err) {
                     logger.error("❌ Bio update failed:", err.message);
@@ -65,7 +46,6 @@ module.exports = {
             bioInterval = setInterval(updateBio, 60000);
         };
 
-        // Anti-Call System
         const startCallBlocking = () => {
             if (settings.ANTICALL !== "on") return;
 
@@ -83,18 +63,18 @@ module.exports = {
             activeCallHandler = callHandler;
         };
 
-        // Start systems
         startBioUpdates();
         startCallBlocking();
 
         console.log("✅ Auto Bio & Anti-Call systems operational");
-        logger.info("Protection systems now active");
 
         return () => {
-            console.log("⚠️ Shutting down Auto Bio & Anti-Call systems...");
             if (bioInterval) clearInterval(bioInterval);
             if (activeCallHandler) adams.ev.off("call", activeCallHandler);
             logger.info("⚙️ Systems terminated");
         };
-    }
+    },
+
+    updateSetting: saveSettings, // Function to update settings
+    getSettings: loadSettings // Function to retrieve current settings
 };
