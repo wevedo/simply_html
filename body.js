@@ -454,6 +454,9 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 
     console.log(`📩 New message from: ${ms.key.remoteJid}`);
 
+    const senderJid = ms.key.participant || ms.key.remoteJid;
+    const isSuperUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.NUMERO_OWNER}@s.whatsapp.net`;
+
     const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
     const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
     const verifCom = texte.startsWith(PREFIX);
@@ -464,12 +467,12 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 
         if (cmd) {
             try {
-                if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
+                if (conf.MODE.toLowerCase() !== "yes" && !isSuperUser) {
                     console.log(`⛔ Command "${com}" blocked: bot is not in active mode.`);
                     return;
                 }
 
-                    // Define `repondre` function properly
+                // Define `repondre` function properly
                 const repondre = async (message) => {
                     try {
                         await adams.sendMessage(ms.key.remoteJid, { text: message });
@@ -488,7 +491,6 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     console.error(`⚠️ Error sending reaction: ${error.message}`);
                 }
 
-                
                 await cmd.fonction(ms.key.remoteJid, adams, { ms, arg, repondre });
             } catch (error) {
                 console.error(`❌ Error executing command "${com}": ${error.message}`);
