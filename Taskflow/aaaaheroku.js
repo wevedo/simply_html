@@ -370,7 +370,7 @@ adams({
 }, async (chatId, zk, context) => {
   const { repondre, isSuperUser, arg } = context;
 
-  if (!superUser) {
+  if (!isSuperUser) {
     return repondre("🚫 *Access Denied!* This command is restricted to the bot owner.");
   }
 
