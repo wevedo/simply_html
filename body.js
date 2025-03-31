@@ -12,7 +12,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
 
                    
-const { default: makeWASocket, isJidGroup, baileys_1, CommandSystem, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, isJidGroup, delay, CommandSystem, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
@@ -317,11 +317,11 @@ fs.readdirSync(__dirname + "/Taskflow").forEach((fichier) => {
         } catch (e) {
             console.log(`${fichier} could not be installed due to : ${e}`);
         }
-        baileys_1.delay(300); // Using the correct delay method
+        delay(300);
     }
 });
 
-baileys_1.delay(700);
+await delay(700); // Fixed
 
 var md;
 let evt = require(__dirname + "/Ibrahim/adams");
@@ -329,7 +329,7 @@ let evt = require(__dirname + "/Ibrahim/adams");
 // Define texte properly
 const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
 const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
-const verifCom = texte ? texte.startsWith(PREFIX) : false;
+const verifCom = texte ? texte.startsWith(prefixe) : false;
 const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
 
 if (verifCom) {
