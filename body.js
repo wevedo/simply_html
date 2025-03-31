@@ -339,141 +339,96 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
  //============================================================================================================
 
-console.log("Loading Bwm xmd Commands ...\n");
 
+console.log("Loading Bwm xmd Commands ...\n");
+const { adams, cm } = require("./Ibrahim/adams");
+
+// Delay function
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Load commands from Taskflow folder
 fs.readdirSync(__dirname + "/Taskflow").forEach((fichier) => {
-    if (path.extname(fichier).toLowerCase() == ".js") {
+    if (path.extname(fichier).toLowerCase() === ".js") {
         try {
             require(__dirname + "/Taskflow/" + fichier);
             console.log(fichier + " Installed Successfully✔️");
         } catch (e) {
             console.log(`${fichier} could not be installed due to : ${e}`);
         }
-        delay(300);
     }
 });
 
-await delay(700); // Fixed
+await delay(700);
 
-var md;
-let evt = require(__dirname + "/Ibrahim/adams");
-const cmdSystem = new CommandSystem();
+// Import event system
+const evt = require("./Ibrahim/adams");
 
-// **Modified message handler - Ensuring `ms` is defined**
+// Ensure message processing
 adams.ev.on("messages.upsert", async ({ messages }) => {
-    try {
-        if (!messages || messages.length === 0) {
-            console.log("⚠️ No messages received.");
-            return;
-        }
+    const ms = messages[0];
+    if (!ms?.message) return;
 
-        const ms = messages[0];
-        if (!ms.message) {
-            console.log("⚠️ Received an empty message.");
-            return;
-        }
+    console.log("New message received from:", ms.key.remoteJid);
 
-        console.log("📩 New message received from:", ms.key.remoteJid);
+    const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
+    const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
+    const verifCom = texte ? texte.startsWith(PREFIXE) : false;
+    const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
 
-        // **Extract text from message**
-        const texte = ms?.message?.conversation ||
-            ms?.message?.extendedTextMessage?.text ||
-            ms?.message?.imageMessage?.caption ||
-            ms?.message?.videoMessage?.caption ||
-            "";
-            
-        if (!texte) {
-            console.log("⚠️ No text found in message.");
-            return;
-        }
-
-        console.log("📝 Extracted text:", texte);
-
-        const verifCom = texte.startsWith(PREFIXE);
-        const arg = texte.trim().split(/ +/).slice(1);
-        const com = verifCom ? texte.slice(PREFIXE.length).trim().split(/ +/).shift().toLowerCase() : false;
-
-        console.log("🛠️ Command check:", { verifCom, com });
-
-        if (verifCom && com) {
-            const cd = evt.cm.find((adams) => adams.nomCom === com);
-            if (cd) {
-                try {
-                    console.log(`🚀 Executing command: ${com}`);
-                    
-                    // **Check superUser permissions**
-                    const BOT_OWNER = conf.OWNER_NUMBER;
-                    const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
-                        .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
-
-                    const servBot = adams.user.id.split('@')[0];
-                    const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
-                    const allAllowedNumbers = superUserNumbers.concat(SUDO_NUMBERS);
-                    const superUser = allAllowedNumbers.includes(ms.key.remoteJid);
-
-                    if (conf.MODE.toLowerCase() !== 'yes' && !superUser) {
-                        console.log("❌ Command not allowed in non-superuser mode.");
-                        return;
-                    }
-
-                    cd.fonction(ms.key.remoteJid, adams, { ms, repondre });
-
-                } catch (error) {
-                    console.log(`❌ Error executing command ${com}:`, error);
+    if (verifCom) {
+        const cmd = cm.find((adams) => adams.nomCom === com);
+        if (cmd) {
+            try {
+                if ((conf.MODE).toLowerCase() !== "yes" && !superUser) {
+                    return;
                 }
-            } else {
-                console.log(`⚠️ Command '${com}' not found.`);
+                await cmd.fonction(ms.key.remoteJid, adams, { ms, repondre });
+            } catch (error) {
+                console.log(`Error executing command ${com}: ${error}`);
             }
         }
-
-        // **Update Presence**
-        await updatePresence(adams, ms.key.remoteJid);
-    } catch (error) {
-        console.error("🚨 Error in message processing:", error);
     }
 });
 
-// **Presence Manager**
+// Function to send bot presence updates
 async function updatePresence(adams, jid) {
     try {
         const states = ["available", "composing", "recording", "unavailable"];
         await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
-        console.log("📡 Presence updated:", jid);
     } catch (e) {
-        console.error('⚠️ Presence update error:', e.message);
+        console.error("Presence update error:", e.message);
     }
 }
 
-// **Modified connection handler**
+// Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
-        console.log("✅ Connected to WhatsApp");
+        console.log("Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
 
-        if (conf.DP.toLowerCase() === 'yes') {
-            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
+        if (conf.DP.toLowerCase() === "yes") {
+            const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
             const connectionMsg = `
- 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
- 
+〔  *🚀 BWM XMD CONNECTED 🚀* 〕
+
 ├──〔 ✨ Version: 7.0.8 〕
 │  
 ├──〔 *🎭 Classic and Things* 〕 
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
-│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
+│ 🔹 Status: ${STATE === 1 ? "Online" : "Offline"}  
 │  
 ├──〔 *📦 Heroku Deployment* 〕
 │ 🏷️ App Name: ${herokuAppName}  
 ╰──────────────────◆`;
 
-            // **Send disappearing status message**
             adams.sendMessage(
-                adams.user.id, 
+                adams.user.id,
                 { text: connectionMsg },
                 {
                     disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600 // 10 minutes
+                    ephemeralExpiration: 600,
                 }
-            ).catch(err => console.error('⚠️ Status message error:', err));
+            ).catch(err => console.error("Status message error:", err));
         }
     }
 });
