@@ -430,6 +430,8 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
 console.log("Loading Bwm xmd Commands...\n");
 
+const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
+
 // Load commands from Taskflow folder
 try {
     const taskflowPath = path.join(__dirname, "Taskflow");
@@ -455,7 +457,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     console.log(`📩 New message from: ${ms.key.remoteJid}`);
 
     const senderJid = ms.key.participant || ms.key.remoteJid;
-    const isSuperUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.NUMERO_OWNER}@s.whatsapp.net`;
+    const superUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.NUMERO_OWNER}@s.whatsapp.net`;
 
     const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
     const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
@@ -467,8 +469,8 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 
         if (cmd) {
             try {
-                if (conf.MODE.toLowerCase() !== "yes" && !isSuperUser) {
-                    console.log(`⛔ Command "${com}" blocked: bot is not in active mode.`);
+                if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
+                    console.log(`⛔ Command "${com}" blocked: Your not allowed to use my commands.`);
                     return;
                 }
 
@@ -491,7 +493,8 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     console.error(`⚠️ Error sending reaction: ${error.message}`);
                 }
 
-                await cmd.fonction(ms.key.remoteJid, adams, { ms, arg, repondre });
+                // ✅ Pass `superUser` in `context`
+                await cmd.fonction(ms.key.remoteJid, adams, { ms, arg, repondre, superUser });
             } catch (error) {
                 console.error(`❌ Error executing command "${com}": ${error.message}`);
             }
