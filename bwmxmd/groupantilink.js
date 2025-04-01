@@ -1,55 +1,108 @@
-module.exports = (zk, conf) => {
-    const isAnyLink = (message) => {
-        // Regex pattern to detect any link
-        const linkPattern = /https?:\/\/[^\s]+/;
-        return linkPattern.test(message);
-    };
+const isAnyLink = (message) => {
+    const linkPattern = /https?:\/\/[^\s]+/;
+    return linkPattern.test(message);
+};
 
-    zk.ev.on('messages.upsert', async (msg) => {
-        try {
-            const { messages } = msg;
-            const message = messages[0];
+module.exports = {
+    setup: async (adams, { config, logger }) => {
+        if (!adams || !config) {
+            logger.error('Missing adams or config');
+            return;
+        }
 
-            if (!message.message) return;
+        const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
+        const welcomeImage = 'https://files.catbox.moe/h2ydge.jpg';
+        const businessLink = 'https://business.bwmxmd.online/';
+        const infoLink = 'https://ibrahimadams.site/';
 
-            const from = message.key.remoteJid;
-            const sender = message.key.participant || message.key.remoteJid;
-            const isGroup = from.endsWith('@g.us');
+        // Welcome/Goodbye system
+        adams.ev.on('group-participants.update', async (update) => {
+            try {
+                if (config.WELCOME_MESSAGE !== 'yes' && config.GOODBYE_MESSAGE !== 'yes') return;
 
-            if (!isGroup) return;
+                const { id, participants, action } = update;
+                const groupMetadata = await adams.groupMetadata(id);
+                const groupAdmins = groupMetadata.participants
+                    .filter((member) => member.admin)
+                    .map((admin) => admin.id);
 
-            const groupMetadata = await zk.groupMetadata(from);
-            const groupAdmins = groupMetadata.participants
-                .filter((member) => member.admin)
-                .map((admin) => admin.id);
+                for (const participant of participants) {
+                    // Skip actions for bot and admins
+                    if (participant === botJid || groupAdmins.includes(participant)) continue;
 
-            if (conf.ANTILINK_GROUP === 'yes') {
-                const messageType = Object.keys(message.message)[0];
-                const body = messageType === 'conversation' 
-                    ? message.message.conversation
-                    : message.message[messageType]?.text || '';
+                    if (action === 'add' && config.WELCOME_MESSAGE === 'yes') {
+                        await adams.sendMessage(id, {
+                            image: { url: welcomeImage },
+                            caption: `🎉 Welcome @${participant.split('@')[0]} to the group!\n\n` +
+                                     `📌 Please read the group rules and enjoy your stay.\n\n` +
+                                     `🌐 For more info, visit:\n${infoLink}\n` +
+                                     `💼 Business: ${businessLink}`,
+                            mentions: [participant]
+                        });
+                    } 
+                    else if (action === 'remove' && config.GOODBYE_MESSAGE === 'yes') {
+                        await adams.sendMessage(id, {
+                            text: `👋 @${participant.split('@')[0]} has left the group.\n\n` +
+                                  `🌐 Visit us at: ${infoLink}\n` +
+                                  `💼 Business: ${businessLink}`,
+                            mentions: [participant]
+                        });
+                    }
+                }
+            } catch (err) {
+                logger.error('Error in group participants update:', err);
+            }
+        });
 
-                if (!body) return;
+        // Anti-link protection
+        adams.ev.on('messages.upsert', async (msg) => {
+            try {
+                if (config.GROUP_ANTILINK !== 'yes') return;
+
+                const { messages } = msg;
+                const message = messages[0];
+
+                if (!message.message) return;
+
+                const from = message.key.remoteJid;
+                const sender = message.key.participant || message.key.remoteJid;
+                const isGroup = from.endsWith('@g.us');
+
+                if (!isGroup || sender === botJid) return;
+
+                const groupMetadata = await adams.groupMetadata(from);
+                const groupAdmins = groupMetadata.participants
+                    .filter((member) => member.admin)
+                    .map((admin) => admin.id);
 
                 if (groupAdmins.includes(sender)) return;
 
+                const messageType = Object.keys(message.message)[0];
+                const body =
+                    messageType === 'conversation'
+                        ? message.message.conversation
+                        : message.message[messageType]?.text || '';
+
+                if (!body) return;
+
                 if (isAnyLink(body)) {
-                    await zk.sendMessage(from, { delete: message.key });
-                    await zk.groupParticipantsUpdate(from, [sender], 'remove');
+                    await adams.sendMessage(from, { delete: message.key });
+                    await adams.groupParticipantsUpdate(from, [sender], 'remove');
                     
-                    await zk.sendMessage(
+                    await adams.sendMessage(
                         from,
                         {
-                            text: `⚠️Bwm xmd anti-link online!\nUser @${sender.split('@')[0]} removed for sharing a link.\n\n🌐 More info: https://ibrahimadamscenter.us.kg`,
-                            mentions: [sender]
+                            text: `⚠️ Bwm xmd anti-link active!\n` +
+                                  `User @${sender.split('@')[0]} has been removed for sharing a link.\n\n` +
+                                  `🌐 For more info, visit:\n${infoLink}\n` +
+                                  `💼 Business: ${businessLink}`,
+                            mentions: [sender],
                         }
                     );
                 }
+            } catch (err) {
+                logger.error('Error handling message:', err);
             }
-        } catch (err) {
-            console.error('Antilink Error:', err);
-            // Optionally send error notification to owner
-            // await zk.sendMessage(conf.NUMERO_OWNER+'@s.whatsapp.net', {text: `Antilink Error: ${err.message}`})
-        }
-    });
+        });
+    }
 };
