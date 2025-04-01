@@ -3,6 +3,7 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 module.exports = {
     setup: async (adams, { config, logger }) => {
+        if (!adams || !config) return;
     const validPresenceStates = new Set([
         "available", "composing", "recording", "paused", "unavailable"
     ]);
