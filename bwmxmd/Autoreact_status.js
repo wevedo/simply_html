@@ -4,7 +4,6 @@ module.exports = {
         if (!adams || !config) {
             logger.error('Auto_like_stutas Missing adams or config');
             return;
-        }
 if (config.AUTO_REACT_STATUS === "yes") { console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
 
 adams.ev.on("messages.upsert", async (m) => {
