@@ -49,7 +49,7 @@ module.exports = {
                         });
                     }
                     // Goodbye message
-                    else if (action === 'left' && config.GOODBYE_MESSAGE === 'yes') {
+                    else if (action === 'remove' && config.GOODBYE_MESSAGE === 'yes') {
                         await adams.sendMessage(id, {
                             text: `👋 @${participant.split('@')[0]} has left the group\n\n` +
                                   `🔗 ${businessLink}\n` +
