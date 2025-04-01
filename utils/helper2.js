@@ -3,16 +3,8 @@
 const NEWS_LETTER_JID = "120363285388090068@newsletter";
 const BOT_NAME = "BWM-XMD";
 const thumbnails = [
-                "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
-                "https://bwm-xmd-files.vercel.app/bwmxmd_9s9jr8.jpeg",
-                "https://bwm-xmd-files.vercel.app/bwmxmd_psaclm.jpeg",
-                "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg",
-                "https://bwm-xmd-files.vercel.app/bwmxmd_v4jirh.jpeg",
-                "https://bwm-xmd-files.vercel.app/bwmxmd_d8cv2v.png",
-                "https://files.catbox.moe/jwwjd3.jpeg",
-                "https://files.catbox.moe/3k35q4.jpeg",
-                "https://files.catbox.moe/sgl022.jpeg",
-                "https://files.catbox.moe/xx6ags.jpeg"
+                "https://files.catbox.moe/165qf7.jpg",
+                "https://files.catbox.moe/24j10y.jpeg"
             ];
 
             // Select a random thumbnail
