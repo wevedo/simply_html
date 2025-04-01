@@ -50,7 +50,7 @@ module.exports = {
                     const participant = deletedMessage.key?.participant || deletedMessage.key?.remoteJid;
                     if (!participant) return;
 
-                    const notification = `*♻️ Bwm xmd antidelete online ♻️*\n\n🛑 This message was deleted by @${participant.split("@")[0]}*`;
+                    const notification = `*♻️ Bwm xmd antidelete online ♻️*\n\n*🛑 Deleted by @${participant.split("@")[0]}*`;
                     const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
 
                     const sendMessage = async (jid, content) => {
@@ -65,10 +65,10 @@ module.exports = {
                         let messageContent = { text: notification, mentions: [participant] };
 
                         if (deletedMessage.message?.conversation) {
-                            messageContent.text += `\nDeleted message: ${deletedMessage.message.conversation}`;
+                            messageContent.text += `\n\n🚮 *Deleted message:* ${deletedMessage.message.conversation}`;
                         } 
                         else if (deletedMessage.message?.extendedTextMessage?.text) {
-                            messageContent.text += `\nDeleted message: ${deletedMessage.message.extendedTextMessage.text}`;
+                            messageContent.text += `\n\n🚮 *Deleted message:* ${deletedMessage.message.extendedTextMessage.text}`;
                         } 
                         else {
                             let mediaType, mediaInfo;
