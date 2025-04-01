@@ -11,7 +11,7 @@ adams.ev.on("messages.upsert", async (m) => {
     const { messages } = m;
     
     // Fetch emojis from conf and split into an array
-    const reactionEmojis = (config.STATUS_REACT_EMOJIS || "🚀,🌎,♻️").split(",").map(e => e.trim());
+    const reactionEmojis = (config.STATUS_REACT_EMOJIS || "🚀,🌎,✅,💚,🩵,🤖").split(",").map(e => e.trim());
 
     for (const message of messages) {
         if (message.key && message.key.remoteJid === "status@broadcast") {
