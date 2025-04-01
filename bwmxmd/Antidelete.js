@@ -8,103 +8,68 @@ const pipeline = util.promisify(stream.pipeline);
 module.exports = {
     setup: async (adams, { config, logger }) => {
         if (!adams || !config) {
-            console.error('❌ Anti-Delete: Missing adams or config');
+            logger.error('Anti-Delete: Missing adams or config');
             return;
         }
 
-        console.log('Initializing Anti-Delete System...');
-
+        const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
         let store = { chats: {} };
 
         adams.ev.on("messages.upsert", async (m) => {
             try {
-                console.log('📩 New message upsert event received');
                 const { messages } = m;
                 const ms = messages[0];
                 
-                if (!ms?.message) {
-                    console.log('⚠️ No message content found, skipping');
-                    return;
-                }
+                if (!ms?.message) return;
 
                 const messageKey = ms.key;
-                if (!messageKey?.remoteJid) {
-                    console.log('⚠️ No remoteJid found, skipping');
-                    return;
-                }
+                if (!messageKey?.remoteJid) return;
 
                 const remoteJid = messageKey.remoteJid;
-                console.log(`💬 Message in: ${remoteJid}`);
+                const senderJid = messageKey.participant || messageKey.remoteJid;
 
-                if (remoteJid === "status@broadcast") {
-                    console.log('⏭️ Status update, skipping');
-                    return;
-                }
+                // Skip status updates and messages from self
+                if (remoteJid === "status@broadcast" || senderJid === botJid) return;
 
                 if (!store.chats[remoteJid]) {
-                    console.log(`➕ New chat added to store: ${remoteJid}`);
                     store.chats[remoteJid] = [];
                 }
 
                 store.chats[remoteJid].push(ms);
-                console.log(`📥 Stored message (Total in chat: ${store.chats[remoteJid].length})`);
 
                 if (ms.message?.protocolMessage?.type === 0) {
-                    console.log('🔍 Detected protocol message (possible delete)');
                     const protocolMsg = ms.message.protocolMessage;
-                    
-                    if (!protocolMsg?.key?.id) {
-                        console.log('⚠️ No key.id in protocol message, skipping');
-                        return;
-                    }
+                    if (!protocolMsg?.key?.id) return;
 
                     const deletedKey = protocolMsg.key;
-                    console.log(`🗑️ Delete target ID: ${deletedKey.id}`);
-
                     const chatMessages = store.chats[remoteJid] || [];
                     const deletedMessage = chatMessages.find(msg => msg?.key?.id === deletedKey.id);
 
-                    if (!deletedMessage?.message) {
-                        console.log('⚠️ Deleted message not found in store or has no content');
-                        return;
-                    }
+                    if (!deletedMessage?.message) return;
 
-                    console.log('✅ Found deleted message in store');
                     const participant = deletedMessage.key?.participant || deletedMessage.key?.remoteJid;
-                    if (!participant) {
-                        console.log('⚠️ Could not identify participant');
-                        return;
-                    }
+                    if (!participant) return;
 
-                    console.log(`👤 Deleted by: ${participant}`);
-                    const notification = `*🛑 This message was deleted by @${participant.split("@")[0]}*`;
+                    const notification = `*♻️ Bwm xmd antidelete online ♻️*\n\n🛑 This message was deleted by @${participant.split("@")[0]}*`;
                     const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
 
                     const sendMessage = async (jid, content) => {
-                        console.log(`✉️ Attempting to send to ${jid}`);
                         try {
                             await adams.sendMessage(jid, content);
-                            console.log('✅ Message sent successfully');
                         } catch (sendError) {
-                            console.error('❌ Failed to send message:', sendError);
-                            throw sendError;
+                            logger.error('Failed to send message:', sendError);
                         }
                     };
 
                     try {
                         let messageContent = { text: notification, mentions: [participant] };
 
-                        // Text message handling
                         if (deletedMessage.message?.conversation) {
-                            console.log('📝 Handling text message');
                             messageContent.text += `\nDeleted message: ${deletedMessage.message.conversation}`;
                         } 
-                        // Extended text (links, etc)
                         else if (deletedMessage.message?.extendedTextMessage?.text) {
-                            console.log('📝 Handling extended text message');
                             messageContent.text += `\nDeleted message: ${deletedMessage.message.extendedTextMessage.text}`;
                         } 
-                        // Media handling
                         else {
                             let mediaType, mediaInfo;
                             
@@ -126,11 +91,9 @@ module.exports = {
                             }
 
                             if (mediaType && mediaInfo) {
-                                console.log(`🖼️ Handling ${mediaType} message`);
                                 try {
-                                    const mediaStream = await downloadMediaMessage(deletedMessage, { logger });
+                                    const mediaStream = await downloadMediaMessage(deletedMessage);
                                     
-                                    // Determine file extension
                                     let ext;
                                     switch (mediaType) {
                                         case 'image': ext = 'jpg'; break;
@@ -146,11 +109,8 @@ module.exports = {
                                     const tempPath = path.join(__dirname, `temp_media.${ext}`);
                                     const writeStream = fs.createWriteStream(tempPath);
                                     
-                                    console.log(`📥 Downloading ${mediaType} to ${tempPath}`);
                                     await pipeline(mediaStream, writeStream);
-                                    console.log('💾 Media saved successfully');
                                     
-                                    // Prepare message content
                                     const caption = mediaInfo.caption || '';
                                     messageContent = {
                                         [mediaType]: { url: tempPath },
@@ -168,51 +128,37 @@ module.exports = {
                                         } : {})
                                     };
                                     
-                                    console.log(`🖼️ Prepared ${mediaType} message content`);
-                                    
-                                    // Send notifications
                                     if (config.ANTIDELETE1 === "yes") {
-                                        console.log('👑 Sending to owner');
                                         await sendMessage(botOwnerJid, messageContent);
                                     }
 
                                     if (config.ANTIDELETE2 === "yes") {
-                                        console.log('💬 Sending to chat');
                                         await sendMessage(remoteJid, messageContent);
                                     }
                                     
-                                    // Clean up
-                                    console.log('🧹 Cleaning up temp file');
                                     fs.unlinkSync(tempPath);
-                                    console.log('🗑️ Temp file deleted');
                                     return;
                                     
                                 } catch (mediaError) {
-                                    console.error(`❌ Failed to process ${mediaType}:`, mediaError);
-                                    throw new Error(`Failed to process ${mediaType}: ${mediaError.message}`);
+                                    logger.error(`Failed to process ${mediaType}:`, mediaError);
+                                    throw new Error(`Failed to process ${mediaType}`);
                                 }
-                            } else {
-                                console.log('⚠️ Unsupported message type:', Object.keys(deletedMessage.message)[0]);
-                                throw new Error('Unsupported message type');
                             }
                         }
 
-                        // Send notifications for non-media messages
                         if (config.ANTIDELETE1 === "yes") {
-                            console.log('👑 Sending to owner');
                             await sendMessage(botOwnerJid, messageContent);
                         }
 
                         if (config.ANTIDELETE2 === "yes") {
-                            console.log('💬 Sending to chat');
                             await sendMessage(remoteJid, messageContent);
                         }
 
                     } catch (error) {
-                        console.error('❌ Error handling deleted message:', error);
+                        logger.error('Error handling deleted message:', error);
                         try {
                             const fallbackContent = {
-                                text: `*🛑 A message was deleted but couldn't be recovered*\n${error.message}`,
+                                text: `*🛑 A message was deleted but couldn't be recovered*`,
                                 mentions: participant ? [participant] : []
                             };
                             if (config.ANTIDELETE1 === "yes") {
@@ -222,15 +168,13 @@ module.exports = {
                                 await adams.sendMessage(remoteJid, fallbackContent);
                             }
                         } catch (err) {
-                            console.error('❌ Fallback message failed:', err);
+                            logger.error('Fallback message failed:', err);
                         }
                     }
                 }
             } catch (outerError) {
-                console.error('❌ Outer error in message processing:', outerError);
+                logger.error('Outer error in message processing:', outerError);
             }
         });
-
-        console.log('✅ Anti-Delete System operational');
     }
 };
