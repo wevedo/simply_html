@@ -457,14 +457,6 @@ adams.ev.on("connection.update", ({ connection }) => {
     }
 });
 
-// Modified message handler - processes ALL messages
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    console.log("New message received from:", msg.key.remoteJid);
-    await cmdSystem.processMessage(msg);
-    await updatePresence(adams, msg.key.remoteJid);
-});
-
         
 //===============================================================================================================//
 
