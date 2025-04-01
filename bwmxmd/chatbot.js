@@ -1,82 +1,50 @@
-fs = require('fs-extra')
-path = require('path')
-ai = require('unlimited-ai')
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms)); let lastReactionTime = 0;
+module.exports = {
+    setup: async (adams, { config, logger }) => {
+        if (!adams || !config) {
+            logger.error('Auto_like_stutas Missing adams or config');
+            return;
+        }
+if (config.AUTO_REACT_STATUS === "yes") { console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
 
-module.exports = (zk, conf = {}) => { // Ensure conf is always an object
-    chatStorePath = path.join(__dirname, '../store.json')
+adams.ev.on("messages.upsert", async (m) => {
+    const { messages } = m;
+    
+    // Fetch emojis from conf and split into an array
+    const reactionEmojis = (config.STATUS_REACT_EMOJIS || "🚀,🌎,♻️").split(",").map(e => e.trim());
 
-    zk.ev.on("messages.upsert", async (m) => {
-        try {
-            messages = m.messages
-            ms = messages[0]
+    for (const message of messages) {
+        if (message.key && message.key.remoteJid === "status@broadcast") {
+            console.log("Detected status update from:", message.key.remoteJid);
 
-            if (!ms.message) return
-
-            messageType = Object.keys(ms.message)[0]
-            remoteJid = ms.key.remoteJid
-            messageContent = ms.message.conversation || 
-                             ms.message.extendedTextMessage?.text
-
-            // Ensure conf is defined and NUMERO_OWNER exists
-            ownerNumber = conf.NUMERO_OWNER ? `${conf.NUMERO_OWNER}@s.whatsapp.net` : null
-
-            // Skip conditions
-            if (ms.key.fromMe || 
-                (ownerNumber && remoteJid === ownerNumber) || 
-                conf.CHATBOT !== "yes") return
-
-            if (["conversation", "extendedTextMessage"].includes(messageType)) {
-                userInput = messageContent?.trim()
-                if (!userInput) return
-
-                conversationData = await loadConversationData()
-
-                newEntry = [
-                    { role: 'user', content: userInput },
-                    { role: 'system', content: 'You are BWM XMD, developed by Ibrahim Adams. Respond to user messages and commands. Mention the developer only when asked.' }
-                ]
-
-                try {
-                    response = await processAIResponse([...conversationData, ...newEntry])
-                    if (!response || response.trim() === "") return
-
-                    await zk.sendMessage(remoteJid, { text: response })
-
-                    newEntry.push({ role: 'assistant', content: response })
-                    await saveConversationData([...conversationData, ...newEntry])
-                } catch (error) {
-                    console.error("Chatbot AI Error:", error)
-                }
+            const now = Date.now();
+            if (now - lastReactionTime < 5000) {  // 5-second interval
+                console.log("Throttling reactions to prevent overflow.");
+                continue;
             }
-        } catch (e) {
-            console.error("Chatbot Framework Error:", e)
-        }
-    })
 
-    // Helper functions
-    async function loadConversationData() {
-        try {
-            if (await fs.pathExists(chatStorePath)) {
-                rawData = await fs.readFile(chatStorePath, 'utf8')
-                return JSON.parse(rawData) || []
+            const adam = adams.user && adams.user.id ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+            if (!adam) {
+                console.log("Bot's user ID not available. Skipping reaction.");
+                continue;
             }
-            return []
-        } catch (err) {
-            console.log('Initializing new conversation store')
-            return []
+
+            // Select a random reaction emoji
+            const randomEmoji = reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)];
+
+            await adams.sendMessage(message.key.remoteJid, {
+                react: {
+                    key: message.key,
+                    text: randomEmoji,
+                },
+            }, {
+                statusJidList: [message.key.participant, adam],
+            });
+
+            lastReactionTime = Date.now();
+            console.log(`Reacted with '${randomEmoji}' to status update by ${message.key.remoteJid}`);
+
+            await delay(2000); // 2-second delay between reactions
         }
     }
-
-    async function saveConversationData(data) {
-        await fs.writeFile(chatStorePath, JSON.stringify(data, null, 2))
-    }
-
-    async function processAIResponse(conversation) {
-        try {
-            return await ai.generate('gpt-4-turbo-2024-04-09', conversation)
-        } catch (error) {
-            console.error("AI Processing Error:", error)
-            return "Sorry, I couldn't process that request."
-        }
-    }
-}
+});                                      
