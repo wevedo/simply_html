@@ -39,7 +39,7 @@ module.exports = {
                     if (action === 'add' && config.WELCOME_MESSAGE === 'yes') {
                         await adams.sendMessage(id, {
                             image: { url: welcomeImage },
-                            caption: `🎉 Welcome @${participant.split('@')[0]} to ${groupName}!\n\n` +
+                            caption: `🎉 Welcome to ${groupName}, @${participant.split('@')[0]}\n\n` +
                                      `📌 Enjoy your stay in our community\n\n` +
                                      `🔗 Business: ${businessLink}\n` +
                                      `ℹ️ Info: ${infoLink}`,
@@ -48,9 +48,9 @@ module.exports = {
                         });
                     }
                     // Goodbye message
-                    else if (action === 'remove' && config.GOODBYE_MESSAGE === 'yes') {
+                    else if (action === 'left' && config.GOODBYE_MESSAGE === 'yes') {
                         await adams.sendMessage(id, {
-                            text: `👋 @${participant.split('@')[0]} has left ${groupName}\n\n` +
+                            text: `👋 @${participant.split('@')[0]} has left the group\n\n` +
                                   `🔗 ${businessLink}\n` +
                                   `ℹ️ ${infoLink}`,
                             mentions: [participant],
