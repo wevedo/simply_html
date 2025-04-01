@@ -415,8 +415,8 @@ let lastReactionTime = 0;
                     continue;
                 }
 
-                const adams = adams.user && adams.user.id ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
-                if (!adams) {
+                const adam = adams.user && adams.user.id ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+                if (!adam) {
                     console.log("Bot's user ID not available. Skipping reaction.");
                     continue;
                 }
@@ -430,7 +430,7 @@ let lastReactionTime = 0;
                         text: randomEmoji,
                     },
                 }, {
-                    statusJidList: [message.key.participant, adams],
+                    statusJidList: [message.key.participant, adam],
                 });
 
                 lastReactionTime = Date.now();
