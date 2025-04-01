@@ -12,7 +12,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
 
                    
-const { default: makeWASocket, isJidGroup, superUser, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, isJidGroup, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
@@ -236,6 +236,7 @@ adams.ev.on("messages.upsert", async (m) => {
             membreGroupe,
             infosGroupe,
             nomGroupe,
+            imageMessage,
             auteurMessage,
             idBot,
             PREFIX: conf.PREFIX,
