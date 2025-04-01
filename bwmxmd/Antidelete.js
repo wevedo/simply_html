@@ -1,179 +1,108 @@
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const fs = require('fs');
-const path = require('path');
-const stream = require('stream');
-const util = require('util');
-const pipeline = util.promisify(stream.pipeline);
+const isAnyLink = (message) => {
+    const linkPattern = /https?:\/\/[^\s]+/;
+    return linkPattern.test(message);
+};
 
 module.exports = {
-    setup: async (adams, { config, logger }) => {
-        if (!adams || !config) {
-            logger.error('Anti-Delete: Missing adams or config');
+    setup: async (zk, { config, logger }) => {
+        if (!zk || !config) {
+            logger.error('Missing zk or config');
             return;
         }
 
-        const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
-        let store = { chats: {} };
+        const botJid = `${zk.user?.id.split(':')[0]}@s.whatsapp.net`;
+        const welcomeImage = 'https://files.catbox.moe/h2ydge.jpg';
+        const businessLink = 'https://business.bwmxmd.online/';
+        const infoLink = 'https://ibrahimadams.site/';
 
-        adams.ev.on("messages.upsert", async (m) => {
+        // Anti-link + Welcome/Goodbye system
+        zk.ev.on('group-participants.update', async (update) => {
             try {
-                const { messages } = m;
-                const ms = messages[0];
-                
-                if (!ms?.message) return;
+                if (config.GROUP_ANTILINK !== 'yes' || 
+                    config.WELCOME_MESSAGE !== 'yes' && config.GOODBYE_MESSAGE !== 'yes') return;
 
-                const messageKey = ms.key;
-                if (!messageKey?.remoteJid) return;
+                const { id, participants, action } = update;
+                const groupMetadata = await zk.groupMetadata(id);
+                const groupAdmins = groupMetadata.participants
+                    .filter((member) => member.admin)
+                    .map((admin) => admin.id);
 
-                const remoteJid = messageKey.remoteJid;
-                const senderJid = messageKey.participant || messageKey.remoteJid;
+                for (const participant of participants) {
+                    // Skip actions for bot and admins
+                    if (participant === botJid || groupAdmins.includes(participant)) continue;
 
-                // Skip status updates and messages from self
-                if (remoteJid === "status@broadcast" || senderJid === botJid) return;
-
-                if (!store.chats[remoteJid]) {
-                    store.chats[remoteJid] = [];
-                }
-
-                store.chats[remoteJid].push(ms);
-
-                if (ms.message?.protocolMessage?.type === 0) {
-                    const protocolMsg = ms.message.protocolMessage;
-                    if (!protocolMsg?.key?.id) return;
-
-                    const deletedKey = protocolMsg.key;
-                    const chatMessages = store.chats[remoteJid] || [];
-                    const deletedMessage = chatMessages.find(msg => msg?.key?.id === deletedKey.id);
-
-                    if (!deletedMessage?.message) return;
-
-                    const participant = deletedMessage.key?.participant || deletedMessage.key?.remoteJid;
-                    if (!participant) return;
-
-                    const notification = `*♻️ Bwm xmd antidelete online ♻️*\n\n*🛑 Deleted by @${participant.split("@")[0]}*`;
-                    const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
-
-                    const sendMessage = async (jid, content) => {
-                        try {
-                            await adams.sendMessage(jid, content);
-                        } catch (sendError) {
-                            logger.error('Failed to send message:', sendError);
-                        }
-                    };
-
-                    try {
-                        let messageContent = { text: notification, mentions: [participant] };
-
-                        if (deletedMessage.message?.conversation) {
-                            messageContent.text += `\n\n🚮 *Deleted message:* ${deletedMessage.message.conversation}`;
-                        } 
-                        else if (deletedMessage.message?.extendedTextMessage?.text) {
-                            messageContent.text += `\n\n🚮 *Deleted message:* ${deletedMessage.message.extendedTextMessage.text}`;
-                        } 
-                        else {
-                            let mediaType, mediaInfo;
-                            
-                            if (deletedMessage.message?.imageMessage) {
-                                mediaType = 'image';
-                                mediaInfo = deletedMessage.message.imageMessage;
-                            } else if (deletedMessage.message?.videoMessage) {
-                                mediaType = 'video';
-                                mediaInfo = deletedMessage.message.videoMessage;
-                            } else if (deletedMessage.message?.audioMessage) {
-                                mediaType = 'audio';
-                                mediaInfo = deletedMessage.message.audioMessage;
-                            } else if (deletedMessage.message?.stickerMessage) {
-                                mediaType = 'sticker';
-                                mediaInfo = deletedMessage.message.stickerMessage;
-                            } else if (deletedMessage.message?.documentMessage) {
-                                mediaType = 'document';
-                                mediaInfo = deletedMessage.message.documentMessage;
-                            }
-
-                            if (mediaType && mediaInfo) {
-                                try {
-                                    const mediaStream = await downloadMediaMessage(deletedMessage);
-                                    
-                                    let ext;
-                                    switch (mediaType) {
-                                        case 'image': ext = 'jpg'; break;
-                                        case 'video': ext = 'mp4'; break;
-                                        case 'audio': ext = 'ogg'; break;
-                                        case 'sticker': ext = 'webp'; break;
-                                        case 'document': 
-                                            ext = mediaInfo.fileName?.split('.').pop() || 'bin';
-                                            break;
-                                        default: ext = 'bin';
-                                    }
-                                    
-                                    const tempPath = path.join(__dirname, `temp_media.${ext}`);
-                                    const writeStream = fs.createWriteStream(tempPath);
-                                    
-                                    await pipeline(mediaStream, writeStream);
-                                    
-                                    const caption = mediaInfo.caption || '';
-                                    messageContent = {
-                                        [mediaType]: { url: tempPath },
-                                        ...(mediaType !== 'audio' && mediaType !== 'sticker' ? { 
-                                            caption: `${notification}\n${caption}`.trim() 
-                                        } : {}),
-                                        mentions: [participant],
-                                        ...(mediaType === 'document' ? {
-                                            mimetype: mediaInfo.mimetype,
-                                            fileName: mediaInfo.fileName
-                                        } : {}),
-                                        ...(mediaType === 'audio' ? {
-                                            ptt: mediaInfo.ptt,
-                                            mimetype: 'audio/ogg; codecs=opus'
-                                        } : {})
-                                    };
-                                    
-                                    if (config.ANTIDELETE1 === "yes") {
-                                        await sendMessage(botOwnerJid, messageContent);
-                                    }
-
-                                    if (config.ANTIDELETE2 === "yes") {
-                                        await sendMessage(remoteJid, messageContent);
-                                    }
-                                    
-                                    fs.unlinkSync(tempPath);
-                                    return;
-                                    
-                                } catch (mediaError) {
-                                    logger.error(`Failed to process ${mediaType}:`, mediaError);
-                                    throw new Error(`Failed to process ${mediaType}`);
-                                }
-                            }
-                        }
-
-                        if (config.ANTIDELETE1 === "yes") {
-                            await sendMessage(botOwnerJid, messageContent);
-                        }
-
-                        if (config.ANTIDELETE2 === "yes") {
-                            await sendMessage(remoteJid, messageContent);
-                        }
-
-                    } catch (error) {
-                        logger.error('Error handling deleted message:', error);
-                        try {
-                            const fallbackContent = {
-                                text: `*🛑 A message was deleted but couldn't be recovered*`,
-                                mentions: participant ? [participant] : []
-                            };
-                            if (config.ANTIDELETE1 === "yes") {
-                                await adams.sendMessage(botOwnerJid, fallbackContent);
-                            }
-                            if (config.ANTIDELETE2 === "yes") {
-                                await adams.sendMessage(remoteJid, fallbackContent);
-                            }
-                        } catch (err) {
-                            logger.error('Fallback message failed:', err);
-                        }
+                    if (action === 'add' && config.WELCOME_MESSAGE === 'yes') {
+                        await zk.sendMessage(id, {
+                            image: { url: welcomeImage },
+                            caption: `🎉 Welcome @${participant.split('@')[0]} to the group!\n\n` +
+                                     `📌 Please read the group rules and enjoy your stay.\n\n` +
+                                     `🌐 For more info, visit:\n${infoLink}\n` +
+                                     `💼 Business: ${businessLink}`,
+                            mentions: [participant]
+                        });
+                    } 
+                    else if (action === 'remove' && config.GOODBYE_MESSAGE === 'yes') {
+                        await zk.sendMessage(id, {
+                            text: `👋 @${participant.split('@')[0]} has left the group.\n\n` +
+                                  `🌐 Visit us at: ${infoLink}\n` +
+                                  `💼 Business: ${businessLink}`,
+                            mentions: [participant]
+                        });
                     }
                 }
-            } catch (outerError) {
-                logger.error('Outer error in message processing:', outerError);
+            } catch (err) {
+                logger.error('Error in group participants update:', err);
+            }
+        });
+
+        // Anti-link protection
+        zk.ev.on('messages.upsert', async (msg) => {
+            try {
+                if (config.GROUP_ANTILINK !== 'yes') return;
+
+                const { messages } = msg;
+                const message = messages[0];
+
+                if (!message.message) return;
+
+                const from = message.key.remoteJid;
+                const sender = message.key.participant || message.key.remoteJid;
+                const isGroup = from.endsWith('@g.us');
+
+                if (!isGroup || sender === botJid) return;
+
+                const groupMetadata = await zk.groupMetadata(from);
+                const groupAdmins = groupMetadata.participants
+                    .filter((member) => member.admin)
+                    .map((admin) => admin.id);
+
+                if (groupAdmins.includes(sender)) return;
+
+                const messageType = Object.keys(message.message)[0];
+                const body =
+                    messageType === 'conversation'
+                        ? message.message.conversation
+                        : message.message[messageType]?.text || '';
+
+                if (!body) return;
+
+                if (isAnyLink(body)) {
+                    await zk.sendMessage(from, { delete: message.key });
+                    await zk.groupParticipantsUpdate(from, [sender], 'remove');
+                    
+                    await zk.sendMessage(
+                        from,
+                        {
+                            text: `⚠️ Bwm xmd anti-link active!\n` +
+                                  `User @${sender.split('@')[0]} has been removed for sharing a link.\n\n` +
+                                  `🌐 For more info, visit:\n${infoLink}\n` +
+                                  `💼 Business: ${businessLink}`,
+                            mentions: [sender],
+                        }
+                    );
+                }
+            } catch (err) {
+                logger.error('Error handling message:', err);
             }
         });
     }
