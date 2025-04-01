@@ -15,16 +15,69 @@ module.exports = {
             if (validStates.includes(config.PRESENCE)) {
                 logger.info(`[Presence] Setting to: ${config.PRESENCE}`);
                 
+                // Set initial presence
+                await adams.sendPresenceUpdate(config.PRESENCE);
+                
+                // Update presence on reconnection
                 adams.ev.on("connection.update", async (update) => {
                     if (update.connection === "open") {
                         await adams.sendPresenceUpdate(config.PRESENCE);
-                        logger.info(`[Presence] Updated to ${config.PRESENCE}`);
+                        logger.info(`[Presence] Reconnected, maintained ${config.PRESENCE}`);
                     }
                 });
             } else {
                 logger.warn(`[Presence] Invalid state: ${config.PRESENCE}`);
             }
         }
+
+        // ==================== STATUS REACT ====================
+        if (config.AUTO_REACT_STATUS === "yes") {
+            logger.info("[Status] Auto-react enabled");
+            
+            // Custom emojis from config or default set
+            const reactionEmojis = config.STATUS_REACT_EMOJIS ?
+                config.STATUS_REACT_EMOJIS.split(',').map(e => e.trim()) : 
+                ["🚀", "🌎"]; // Your default emojis
+            
+            let lastReactionTime = 0;
+            const reactionCooldown = 5000; // 5 second cooldown
+
+            adams.ev.on("messages.upsert", async (m) => {
+                try {
+                    const { messages } = m;
+                    const now = Date.now();
+
+                    for (const message of messages) {
+                        // Only react to status updates
+                        if (!message.key || message.key.remoteJid !== "status@broadcast") continue;
+                        
+                        // Respect cooldown period
+                        if (now - lastReactionTime < reactionCooldown) continue;
+
+                        // Select random emoji
+                        const randomEmoji = reactionEmojis[
+                            Math.floor(Math.random() * reactionEmojis.length)
+                        ];
+                        
+                        // Send reaction
+                        await adams.sendMessage(message.key.remoteJid, {
+                            react: {
+                                key: message.key,
+                                text: randomEmoji,
+                            },
+                        });
+
+                        lastReactionTime = now;
+                        logger.info(`[Status] Reacted with ${randomEmoji}`);
+                        await delay(1000); // Small delay between reactions
+                    }
+                } catch (err) {
+                    logger.error("[Status] React error:", err);
+                }
+            });
+           }
+         }
+        };
 
         // ==================== AUTO READ ====================
         if (config.AUTO_READ === "yes") {
@@ -62,47 +115,6 @@ module.exports = {
             });
         }
 
-        // ==================== STATUS REACT ====================
-        if (config.AUTO_REACT_STATUS === "yes") {
-            logger.info("[Status] Auto-react enabled");
-            
-            // Custom emojis from config or default set
-            const reactionEmojis = config.STATUS_REACT_EMOJIS?.split(',') || [
-                "❤️", "💖", "💞", "💕", "😍", "💓", "💗", "🔥"
-            ];
-            
-            let lastReactionTime = 0;
-            const reactionCooldown = 5000; // 5 seconds
-
-            adams.ev.on("messages.upsert", async (m) => {
-                try {
-                    const { messages } = m;
-                    const now = Date.now();
-
-                    for (const message of messages) {
-                        if (!message.key || message.key.remoteJid !== "status@broadcast") continue;
-                        if (now - lastReactionTime < reactionCooldown) continue;
-
-                        const randomEmoji = reactionEmojis[
-                            Math.floor(Math.random() * reactionEmojis.length)
-                        ];
-                        
-                        await adams.sendMessage(message.key.remoteJid, {
-                            react: {
-                                key: message.key,
-                                text: randomEmoji,
-                            },
-                        });
-
-                        lastReactionTime = now;
-                        logger.info(`[Status] Reacted with ${randomEmoji}`);
-                        await delay(2000);
-                    }
-                } catch (err) {
-                    logger.error("[Status] React error:", err);
-                }
-            });
-        }
 
         // ==================== STATUS DOWNLOAD ====================
         if (config.AUTO_DOWNLOAD_STATUS === "yes" && config.STATUS_LOG_JID) {
