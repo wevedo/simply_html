@@ -448,13 +448,21 @@ adams.ev.on("connection.update", ({ connection }) => {
         
 //===============================================================================================================//
 
-// Event Handlers
-adams.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
-        if (connection === "open") {
-            console.log("🌎 BWM XMD ONLINE 🌎");
-            adams.newsletterFollow("120363285388090068@newsletter");
+const STATE = conf.PRESENCE;
+async function updatePresence(adams, jid) {
+    try {
+        const states = ["available", "composing", "recording", "unavailable"];
+        await adams.sendPresenceUpdate(states[STATE - 1] || "unavailable", jid);
+    } catch (e) {
+        console.error('Presence update error:', e.message);
+    }
+}
+
+adams.ev.on("connection.update", ({ connection }) => {
+    if (connection === "open") {
+        console.log("🌎 BWM XMD ONLINE 🌎");
+        adams.newsletterFollow("120363285388090068@newsletter");
+        updatePresence(adams, "status@broadcast");
         }
         if (connection === "close") {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
@@ -470,7 +478,7 @@ adams.ev.on("connection.update", async (update) => {
         const ms = messages[0];
         if (!ms.message) return;
         
-        // Message processing logic here
+        
     });
 }
 
