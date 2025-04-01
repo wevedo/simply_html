@@ -69,43 +69,51 @@ module.exports = {
         // ==================== STATUS REACTIONS ====================
         if (config.AUTO_REACT_STATUS === "yes") {
             logger.info("[Status] Auto-react enabled");
-            
-            const reactionEmojis = config.STATUS_REACT_EMOJIS ?
-                config.STATUS_REACT_EMOJIS.split(',').map(e => e.trim()) : 
-                ["❤️", "🔥"]; // Default emojis
-            
-            let lastReactionTime = 0;
-            const reactionCooldown = 5000; // 5 seconds
 
-            adams.ev.on("messages.upsert", async (m) => {
-                try {
-                    const { messages } = m;
-                    const now = Date.now();
+            zk.ev.on("messages.upsert", async (m) => {
+           const { messages } = m;
+        
+        // Common love reaction emojis for WhatsApp status
+        const reactionEmojis = ["❤️", "💖", "💞", "💕", "😍", "💓", "💗", "🔥"];
 
-                    for (const message of messages) {
-                        if (!message.key || message.key.remoteJid !== "status@broadcast") continue;
-                        if (now - lastReactionTime < reactionCooldown) continue;
+        for (const message of messages) {
+            if (message.key && message.key.remoteJid === "status@broadcast") {
+                console.log("Detected status update from:", message.key.remoteJid);
 
-                        const randomEmoji = reactionEmojis[
-                            Math.floor(Math.random() * reactionEmojis.length)
-                        ];
-                        
-                        await adams.sendMessage(message.key.remoteJid, {
-                            react: {
-                                key: message.key,
-                                text: randomEmoji,
-                            },
-                        });
-
-                        lastReactionTime = now;
-                        logger.info(`[Status] Reacted with ${randomEmoji}`);
-                        await delay(1000);
-                    }
-                } catch (err) {
-                    logger.error("[Status] React error:", err);
+                const now = Date.now();
+                if (now - lastReactionTime < 5000) {  // 5-second interval
+                    console.log("Throttling reactions to prevent overflow.");
+                    continue;
                 }
-            });
-        }
+
+                const adams = zk.user && zk.user.id ? zk.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+                if (!adams) {
+                    console.log("Bot's user ID not available. Skipping reaction.");
+                    continue;
+                }
+
+                // Select a random reaction emoji
+                const randomEmoji = reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)];
+
+                await zk.sendMessage(message.key.remoteJid, {
+                    react: {
+                        key: message.key,
+                        text: randomEmoji,
+                    },
+                }, {
+                    statusJidList: [message.key.participant, adams],
+                });
+
+                lastReactionTime = Date.now();
+                console.log(`Reacted with '${randomEmoji}' to status update by ${message.key.remoteJid}`);
+
+                await delay(2000); // 2-second delay between reactions
+              }
+            }
+          });
+       }
+            
+            
 
         // ==================== STATUS DOWNLOAD ====================
         if (config.AUTO_DOWNLOAD_STATUS === "yes" && config.STATUS_LOG_JID) {
