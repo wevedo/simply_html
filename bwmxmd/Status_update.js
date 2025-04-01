@@ -159,3 +159,94 @@ module.exports = (adams, conf) => {
         });
     }
 };
+
+    // =========================
+    // 5. AUTO-REACT
+    // =========================
+
+    if (conf.AUTO_REACT === "yes") {
+        console.log("[React] Auto-reaction enabled");
+
+    // Comprehensive emoji sets
+    const emojiSets = {
+        greetings: ["👋", "🙂", "😊", "🤗", "🖐️"],
+        positivity: ["❤️", "✨", "👍", "👌", "🎯", "💯"],
+        laughter: ["😂", "🤣", "😆", "😅", "💀"],
+        surprise: ["😮", "😲", "🤯", "👀", "🫢"],
+        love: ["🥰", "😍", "💖", "💕", "💘"],
+        celebration: ["🎉", "🥳", "🎊", "👏", "🍾"],
+        sadness: ["😢", "😭", "🥺", "💔", "😞"],
+        confusion: ["🤔", "😕", "🫤", "😐", "⁉️"]
+    };
+
+    // Default reaction emojis (combined from all sets)
+    const defaultEmojis = Object.values(emojiSets).flat();
+
+    let lastReactionTime = 0;
+    const reactionCooldown = 2000; // 2 seconds
+
+    adams.ev.on("messages.upsert", async (m) => {
+        try {
+            const { messages } = m;
+            const now = Date.now();
+
+            for (const message of messages) {
+                // Skip if:
+                // - No message key
+                // - From status broadcast
+                // - Too frequent
+                if (!message.key || 
+                    message.key.remoteJid === "status@broadcast" || 
+                    now - lastReactionTime < reactionCooldown) {
+                    continue;
+                }
+
+                // Get message text
+                const msgText = (
+                    message.message?.conversation ||
+                    message.message?.extendedTextMessage?.text ||
+                    ""
+                ).toLowerCase();
+
+                // Select appropriate emoji set based on message content
+                let selectedEmojis = defaultEmojis;
+                
+                if (msgText.includes("haha") || msgText.includes("lol")) {
+                    selectedEmojis = emojiSets.laughter;
+                } 
+                else if (/(hi|hello|hey|greetings)/.test(msgText)) {
+                    selectedEmojis = emojiSets.greetings;
+                }
+                else if (/(good|great|nice|awesome|perfect)/.test(msgText)) {
+                    selectedEmojis = emojiSets.positivity;
+                }
+                else if (/(love|like|adore)/.test(msgText)) {
+                    selectedEmojis = emojiSets.love;
+                }
+                else if (/(sad|upset|cry|miss)/.test(msgText)) {
+                    selectedEmojis = emojiSets.sadness;
+                }
+
+                // Get random emoji from selected set
+                const reactionEmoji = selectedEmojis[
+                    Math.floor(Math.random() * selectedEmojis.length)
+                ];
+
+                // Send reaction
+                await adams.sendMessage(message.key.remoteJid, {
+                    react: {
+                        text: reactionEmoji,
+                        key: message.key
+                    }
+                });
+
+                lastReactionTime = now;
+                console.log(`[React] Sent ${reactionEmoji} to ${message.key.remoteJid}`);
+                await delay(800); // Brief delay between reactions
+            }
+        } catch (err) {
+            console.error("[React] Error:", err);
+        }
+    });
+};
+
