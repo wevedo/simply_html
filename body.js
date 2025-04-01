@@ -228,18 +228,7 @@ adams.ev.on("messages.upsert", async (m) => {
         function groupeAdmin(membreGroupe) {
             return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
         }
-               var etat = conf.PRESENCE;
-// Presence update logic based on etat value
-if (etat == 1) {
-    await adams.sendPresenceUpdate("available", origineMessage);
-} else if (etat == 2) {
-    await adams.sendPresenceUpdate("composing", origineMessage);
-} else if (etat == 3) {
-    await adams.sendPresenceUpdate("recording", origineMessage);
-} else {
-    await adams.sendPresenceUpdate("unavailable", origineMessage);
-}
-
+               
         // Define command options
         var commandeOptions = {
             superUser,
