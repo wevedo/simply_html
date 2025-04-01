@@ -159,70 +159,6 @@ async function main() {
     }
 
  //============================================================================//
-
- if (conf.AUTO_REACT_STATUS === "yes") {
-    
-    adams.ev.on("messages.upsert", async (m) => {
-        const { messages } = m;
-     const reactionEmojis = [
-    // Positive Feedback
-    "👍", "👌", "💯", "✨", "🌟", "🏆", "🎯", "✅",
-    
-    // Appreciation
-    "🙏", "❤️", "💖", "💝", "💐", "🌹",
-    
-    // Neutral Positive
-    "😊", "🙂", "👋", "🤝", "🫱🏻‍🫲🏽",
-    
-    // Celebration
-    "🎉", "🎊", "🥂", "🍾", "🎈", "🎁",
-    
-    // Time/Seasons
-    "🌞", "☀️", "🌙", "⭐", "🌈", "☕",
-    
-    // Nature/Travel
-    "🌍", "✈️", "🗺️", "🌻", "🌸", "🌊",
-    
-    // Professional/Creative
-    "📚", "🎨", "📝", "🔍", "💡", "⚙️",
-    
-    // Objects/Symbols
-    "📌", "📍", "🕰️", "⏳", "📊", "📈"];
-        for (const message of messages) {
-            if (message.key && message.key.remoteJid === "status@broadcast") {
-                
-                const now = Date.now();
-                if (now - lastReactionTime < 7000) {  // 5-second interval                
-                    continue;
-                }
-
-                const adam = adams.user && adams.user.id ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
-                if (!adam) {
-                    continue;
-                }
-
-                // Select a random reaction emoji
-                const randomEmoji = reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)];
-
-                await adams.sendMessage(message.key.remoteJid, {
-                    react: {
-                        key: message.key,
-                        text: randomEmoji,
-                    },
-                }, {
-                    statusJidList: [message.key.participant, adam],
-                });
-
-                lastReactionTime = Date.now();
-                
-                await delay(2000); // 2-second delay between reactions
-            }
-        }
-    });
-}
-
-
- //============================================================================//
  
 adams.ev.on("messages.upsert", async (m) => {
     try {
@@ -292,13 +228,13 @@ adams.ev.on("messages.upsert", async (m) => {
         function groupeAdmin(membreGroupe) {
             return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
         }
-            var PRESENCE = conf.PRESENCE;
-// Presence update logic based  
-if (PRESENCE == available) {
+               var etat = conf.PRESENCE;
+// Presence update logic based on etat value
+if (etat == 1) {
     await adams.sendPresenceUpdate("available", origineMessage);
-} else if (PRESENCE == composing) {
+} else if (etat == 2) {
     await adams.sendPresenceUpdate("composing", origineMessage);
-} else if (PRESENCE == recording) {
+} else if (etat == 3) {
     await adams.sendPresenceUpdate("recording", origineMessage);
 } else {
     await adams.sendPresenceUpdate("unavailable", origineMessage);
@@ -432,7 +368,81 @@ try {
     console.error("❌ Error reading Taskflow folder:", error.message);
 }
 
-// Ensure message processing
+ 
+ //============================================================================//
+
+ if (conf.AUTO_REACT_STATUS === "yes") {
+    console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
+
+    adams.ev.on("messages.upsert", async (m) => {
+        const { messages } = m;
+        
+        const reactionEmojis = [
+    // Positive Feedback
+    "👍", "👌", "💯", "✨", "🌟", "🏆", "🎯", "✅",
+    
+    // Appreciation
+    "🙏", "❤️", "💖", "💝", "💐", "🌹",
+    
+    // Neutral Positive
+    "😊", "🙂", "👋", "🤝", "🫱🏻‍🫲🏽",
+    
+    // Celebration
+    "🎉", "🎊", "🥂", "🍾", "🎈", "🎁",
+    
+    // Time/Seasons
+    "🌞", "☀️", "🌙", "⭐", "🌈", "☕",
+    
+    // Nature/Travel
+    "🌍", "✈️", "🗺️", "🌻", "🌸", "🌊",
+    
+    // Professional/Creative
+    "📚", "🎨", "📝", "🔍", "💡", "⚙️",
+    
+    // Objects/Symbols
+    "📌", "📍", "🕰️", "⏳", "📊", "📈"];
+
+        for (const message of messages) {
+            if (message.key && message.key.remoteJid === "status@broadcast") {
+                console.log("Detected status update from:", message.key.remoteJid);
+
+                const now = Date.now();
+                if (now - lastReactionTime < 5000) {  // 5-second interval
+                    console.log("Throttling reactions to prevent overflow.");
+                    continue;
+                }
+
+                const adams = adams.user && adams.user.id ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+                if (!adams) {
+                    console.log("Bot's user ID not available. Skipping reaction.");
+                    continue;
+                }
+
+                // Select a random reaction emoji
+                const randomEmoji = reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)];
+
+                await adams.sendMessage(message.key.remoteJid, {
+                    react: {
+                        key: message.key,
+                        text: randomEmoji,
+                    },
+                }, {
+                    statusJidList: [message.key.participant, adams],
+                });
+
+                lastReactionTime = Date.now();
+                console.log(`Reacted with '${randomEmoji}' to status update by ${message.key.remoteJid}`);
+
+                await delay(2000); // 2-second delay between reactions
+            }
+        }
+    });
+ }
+
+ 
+ //============================================================================//
+
+ 
 adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message) return;
