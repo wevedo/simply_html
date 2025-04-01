@@ -89,7 +89,8 @@ module.exports = {
                         
                         const newsletterContext = createContext(senderJid, {
                             title: "AI Text Response",
-                            body: "Powered by BWM-XMD"
+                            body: "Powered by BWM-XMD",
+                            thumbnail: "https://files.catbox.moe/24j10y.jpeg"
                         });
 
                         await adams.sendMessage(
