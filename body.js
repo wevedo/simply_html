@@ -160,6 +160,70 @@ async function main() {
 
  //============================================================================//
 
+ if (conf.AUTO_REACT_STATUS === "yes") {
+    
+    adams.ev.on("messages.upsert", async (m) => {
+        const { messages } = m;
+     const reactionEmojis = [
+    // Positive Feedback
+    "👍", "👌", "💯", "✨", "🌟", "🏆", "🎯", "✅",
+    
+    // Appreciation
+    "🙏", "❤️", "💖", "💝", "💐", "🌹",
+    
+    // Neutral Positive
+    "😊", "🙂", "👋", "🤝", "🫱🏻‍🫲🏽",
+    
+    // Celebration
+    "🎉", "🎊", "🥂", "🍾", "🎈", "🎁",
+    
+    // Time/Seasons
+    "🌞", "☀️", "🌙", "⭐", "🌈", "☕",
+    
+    // Nature/Travel
+    "🌍", "✈️", "🗺️", "🌻", "🌸", "🌊",
+    
+    // Professional/Creative
+    "📚", "🎨", "📝", "🔍", "💡", "⚙️",
+    
+    // Objects/Symbols
+    "📌", "📍", "🕰️", "⏳", "📊", "📈"];
+        for (const message of messages) {
+            if (message.key && message.key.remoteJid === "status@broadcast") {
+                
+                const now = Date.now();
+                if (now - lastReactionTime < 7000) {  // 5-second interval                
+                    continue;
+                }
+
+                const adam = adams.user && adams.user.id ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+                if (!adam) {
+                    continue;
+                }
+
+                // Select a random reaction emoji
+                const randomEmoji = reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)];
+
+                await adams.sendMessage(message.key.remoteJid, {
+                    react: {
+                        key: message.key,
+                        text: randomEmoji,
+                    },
+                }, {
+                    statusJidList: [message.key.participant, adam],
+                });
+
+                lastReactionTime = Date.now();
+                
+                await delay(2000); // 2-second delay between reactions
+            }
+        }
+    });
+}
+
+
+ //============================================================================//
+ 
 adams.ev.on("messages.upsert", async (m) => {
     try {
         const { messages } = m;
@@ -228,13 +292,13 @@ adams.ev.on("messages.upsert", async (m) => {
         function groupeAdmin(membreGroupe) {
             return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
         }
-            var etat = conf.PRESENCE;
+            var PRESENCE = conf.PRESENCE;
 // Presence update logic based  
-if (etat == available) {
+if (PRESENCE == available) {
     await adams.sendPresenceUpdate("available", origineMessage);
-} else if (etat == composing) {
+} else if (PRESENCE == composing) {
     await adams.sendPresenceUpdate("composing", origineMessage);
-} else if (etat == recording) {
+} else if (PRESENCE == recording) {
     await adams.sendPresenceUpdate("recording", origineMessage);
 } else {
     await adams.sendPresenceUpdate("unavailable", origineMessage);
