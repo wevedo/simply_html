@@ -413,49 +413,40 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 });
-// Presence Manager
-async function updatePresence(adams, jid) {
-    try {
-        const states = ["available", "composing", "recording", "unavailable"];
-        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
-    } catch (e) {
-        console.error('Presence update error:', e.message);
-    }
-}
 
+ 
+//===============================================================================================================
+ 
+// Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
-        updatePresence(adams, "status@broadcast");
-                if (conf.DP.toLowerCase() === 'yes') {
-            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
+
+        if (conf.DP.toLowerCase() === "yes") {
+            const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
             const connectionMsg = `
- 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
- 
-├──〔 ✨ Version: 7.0.8 〕
-│  
-├──〔 *🎭 Classic and Things* 〕 
+〔  🚀 BWM XMD CONNECTED 🚀 〕
+
+├──〔 ✨ Version: 7.0.8 〕 
+├──〔 🎭 Classic and Things 〕 
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
-│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
 │  
-├──〔 *📦 Heroku Deployment* 〕
+├──〔 📦 Heroku Deployment 〕 
 │ 🏷️ App Name: ${herokuAppName}  
 ╰──────────────────◆`;
 
-            // Send disappearing status message
             adams.sendMessage(
-                adams.user.id, 
-                { 
-                    text: connectionMsg 
-                },
+                adams.user.id,
+                { text: connectionMsg },
                 {
                     disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600 // 10 minutes
+                    ephemeralExpiration: 600,
                 }
-            ).catch(err => console.error('Status message error:', err));
+            ).catch(err => console.error("Status message error:", err));
         }
     }
 });
+
 
         
 //===============================================================================================================//
@@ -466,7 +457,7 @@ adams.ev.on("connection.update", async (update) => {
         if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
         if (connection === "open") {
             console.log("🌎 BWM XMD ONLINE 🌎");
-                  adams.newsletterFollow("120363285388090068@newsletter");
+            adams.newsletterFollow("120363285388090068@newsletter");
         }
         if (connection === "close") {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
