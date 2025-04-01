@@ -2,104 +2,96 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 module.exports = {
     setup: async (adams, { config, logger }) => {
-        console.log("[Status] Initializing reaction system...");
-        console.log("[Debug] Received config:", {
-            AUTO_REACT_STATUS: config.AUTO_REACT_STATUS,
-            STATUS_REACT_EMOJIS: config.STATUS_REACT_EMOJIS
-        });
+        console.log("[Status] Initializing reaction system with enhanced debugging...");
 
-        // Validation checks
-        if (!adams) {
-            console.error("[Error] Adams client not provided");
-            return;
-        }
-        
-        if (!config) {
-            console.error("[Error] Config not provided");
+        // Validate requirements
+        if (!adams || !adams.sendMessage) {
+            console.error("[Critical] Invalid adams client - missing sendMessage function");
             return;
         }
 
-        // Corrected config check - using AUTO_REACT_STATUS instead of STATUS_REACT_EMOJIS
-        if (config.AUTO_REACT_STATUS !== "yes") {
-            console.log("[Status] Disabled - AUTO_REACT_STATUS is not 'yes'");
-            console.log(`[Debug] Current value: '${config.AUTO_REACT_STATUS}' (type: ${typeof config.AUTO_REACT_STATUS})`);
+        if (config?.AUTO_REACT_STATUS !== "yes") {
+            console.log("[Status] Feature disabled (AUTO_REACT_STATUS ≠ 'yes')");
             return;
         }
 
-        console.log("[Status] Feature enabled - proceeding with setup");
+        console.log("[Debug] Bot user ID:", adams.user?.id);
+        console.log("[Debug] Connection state:", adams.connection);
 
-        // Professional emoji set (with configurable option)
-        const defaultEmojis = ["👍", "❤️", "🙏", "🎉", "✨", "👏", "💯", "🌞"];
-        let reactionEmojis = defaultEmojis;
-        
-        if (config.STATUS_REACT_EMOJIS) {
-            try {
-                reactionEmojis = config.STATUS_REACT_EMOJIS.split(',')
-                    .map(e => e.trim())
-                    .filter(e => e.length > 0);
-                console.log("[Status] Using custom emojis from config:", reactionEmojis);
-            } catch (e) {
-                console.warn("[Status] Failed to parse custom emojis, using defaults");
-            }
-        }
-
-        console.log("[Status] Final emoji set:", reactionEmojis);
-
+        // Professional emoji set
+        const reactionEmojis = ["👍", "❤️", "🙏", "🎉", "✨", "👏", "💯", "🌞"];
         let lastReactionTime = 0;
-        const reactionCooldown = 5000; // 5 seconds
 
         adams.ev.on("messages.upsert", async (m) => {
-            console.log("[Status] New message batch received");
-            
-            try {
-                const { messages } = m;
-                const now = Date.now();
+            console.log(`[Status] Received ${m.messages.length} message(s)`);
 
-                for (const message of messages) {
-                    console.log(`[Status] Processing message from ${message.key?.remoteJid}`);
-                    
-                    // Status message validation
-                    if (!message.key || message.key.remoteJid !== "status@broadcast") {
-                        console.log("[Status] Not a status update - skipping");
+            for (const message of messages) {
+                try {
+                    // Validate status message
+                    if (!message?.key || message.key.remoteJid !== "status@broadcast") {
                         continue;
                     }
 
-                    // Rate limiting check
-                    if (now - lastReactionTime < reactionCooldown) {
-                        console.log(`[Status] Rate limited - ${reactionCooldown - (now - lastReactionTime)}ms remaining`);
+                    console.log("[Debug] Status message structure:", JSON.stringify({
+                        key: message.key,
+                        message: {
+                            type: Object.keys(message.message || {})[0],
+                            hasMedia: !!message.message?.imageMessage || !!message.message?.videoMessage
+                        }
+                    }, null, 2));
+
+                    // Rate limiting
+                    const now = Date.now();
+                    if (now - lastReactionTime < 5000) {
+                        console.log(`[RateLimit] ${5000 - (now - lastReactionTime)}ms remaining`);
                         continue;
                     }
 
-                    // Get status content
-                    const statusText = message.message?.conversation || 
-                                     message.message?.extendedTextMessage?.text || "";
-                    console.log("[Status] Status content:", statusText);
-
-                    // Select random emoji
+                    // Select emoji
                     const reactionEmoji = reactionEmojis[Math.floor(Math.random() * reactionEmojis.length)];
-                    console.log("[Status] Selected reaction:", reactionEmoji);
+                    console.log("[React] Attempting to react with:", reactionEmoji);
 
-                    // Send reaction
+                    // Enhanced reaction attempt with full error capture
                     try {
-                        await adams.sendMessage(message.key.remoteJid, {
+                        const reaction = {
                             react: {
                                 text: reactionEmoji,
                                 key: message.key
                             }
-                        });
-                        console.log("[Status] Reaction sent successfully");
-                        lastReactionTime = now;
+                        };
+
+                        console.log("[Debug] Reaction payload:", JSON.stringify(reaction, null, 2));
+
+                        const result = await adams.sendMessage(message.key.remoteJid, reaction);
+                        console.log("[Debug] Reaction result:", result);
+
+                        // Verify reaction
+                        if (result?.status === 1 || result?.key?.id) {
+                            console.log("[Success] Reaction verified with delivery receipt");
+                            lastReactionTime = now;
+                        } else {
+                            console.warn("[Warning] Reaction sent but no confirmation received");
+                        }
                     } catch (sendError) {
-                        console.error("[Status] Failed to send reaction:", sendError);
+                        console.error("[Error] Reaction failed:", {
+                            error: sendError.message,
+                            stack: sendError.stack,
+                            participant: message.key.participant
+                        });
                     }
 
-                    await delay(2000); // Brief delay between reactions
+                    await delay(2000);
+                } catch (err) {
+                    console.error("[Processing Error]", err);
                 }
-            } catch (err) {
-                console.error("[Status] Message processing error:", err);
             }
         });
 
-        console.log("[Status] Reaction system active and listening");
+        // Add event listeners to track message acknowledgments
+        adams.ev.on('messages.ack', (ack) => {
+            console.log("[Ack] Message acknowledgment:", JSON.stringify(ack, null, 2));
+        });
+
+        console.log("[Status] Reaction system fully initialized");
     }
 };
