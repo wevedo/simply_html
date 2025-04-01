@@ -1,35 +1,24 @@
 const { adams } = require("../Ibrahim/adams");
 
-// Kick a specific member
-adams( { nomCom: "kick", reaction: "👢", nomFichier: __filename }, async (chatId, adams, { ms, arg, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!ms.participant) return repondre("Mention a user to kick!"); await adams.groupParticipantsUpdate(chatId, [ms.participant], "remove"); repondre("✅ User removed!"); } );
+adams({ nomCom: "kick", reaction: "👢", nomFichier: __filename }, async (chatId, zk, { ms, arg, superUser }) => { if (!ms.key.participant.endsWith('@g.us')) return; if (!superUser && !(await zk.groupMetadata(chatId)).participants.find(p => p.id === ms.key.participant)?.admin) return; const user = arg[0]?.replace(/[@+]/g, "") + "@s.whatsapp.net"; if (!user) return zk.sendMessage(chatId, { text: "Tag someone to kick." }); await zk.groupParticipantsUpdate(chatId, [user], "remove"); });
 
-// Kick all members
-adams( { nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (chatId, adams, { repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); const group = await adams.groupMetadata(chatId); const members = group.participants.map((p) => p.id); await adams.groupParticipantsUpdate(chatId, members, "remove"); repondre("✅ All members removed!"); } );
+adams({ nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (chatId, zk, { superUser }) => { if (!superUser) return; const metadata = await zk.groupMetadata(chatId); const users = metadata.participants.map(p => p.id); await zk.groupParticipantsUpdate(chatId, users, "remove"); });
 
-// Open group to everyone
-adams( { nomCom: "opengroup", reaction: "🔓", nomFichier: __filename }, async (chatId, adams, { repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); await adams.groupSettingUpdate(chatId, "not_announcement"); repondre("✅ Group is now open to everyone!"); } );
+adams({ nomCom: "opengroup", reaction: "🔓", nomFichier: __filename }, async (chatId, zk, { superUser }) => { if (!superUser) return; await zk.groupSettingUpdate(chatId, "not_announcement"); });
 
-// Close group to admins
-only adams( { nomCom: "closegroup", reaction: "🔒", nomFichier: __filename }, async (chatId, adams, { repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); await adams.groupSettingUpdate(chatId, "announcement"); repondre("✅ Group is now admin-only!"); } );
+adams({ nomCom: "closegroup", reaction: "🔒", nomFichier: __filename }, async (chatId, zk, { superUser }) => { if (!superUser) return; await zk.groupSettingUpdate(chatId, "announcement"); });
 
-// Tag all members
-adams( { nomCom: "tagall", reaction: "📢", nomFichier: __filename }, async (chatId, adams, { repondre }) => { const group = await adams.groupMetadata(chatId); const members = group.participants.map((p) => @${p.id.split("@")[0]}).join(" "); await adams.sendMessage(chatId, { text: 📣 Tagging everyone: ${members}, mentions: group.participants.map((p) => p.id) }); } );
+adams({ nomCom: "tagall", reaction: "📢", nomFichier: __filename }, async (chatId, zk) => { const metadata = await zk.groupMetadata(chatId); const mentions = metadata.participants.map(p => p.id); const message = "@everyone"; await zk.sendMessage(chatId, { text: message, mentions }); });
 
-// Promote member to admin
-adams( { nomCom: "promote", reaction: "⬆️", nomFichier: __filename }, async (chatId, adams, { ms, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!ms.participant) return repondre("Mention a user to promote!"); await adams.groupParticipantsUpdate(chatId, [ms.participant], "promote"); repondre("✅ User promoted to admin!"); } );
+adams({ nomCom: "promote", reaction: "⬆️", nomFichier: __filename }, async (chatId, zk, { arg, superUser }) => { if (!superUser) return; const user = arg[0]?.replace(/[@+]/g, "") + "@s.whatsapp.net"; if (!user) return zk.sendMessage(chatId, { text: "Tag someone to promote." }); await zk.groupParticipantsUpdate(chatId, [user], "promote"); });
 
-// Demote admin to member
-adams( { nomCom: "demote", reaction: "⬇️", nomFichier: __filename }, async (chatId, adams, { ms, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!ms.participant) return repondre("Mention a user to demote!"); await adams.groupParticipantsUpdate(chatId, [ms.participant], "demote"); repondre("✅ User demoted to member!"); } );
+adams({ nomCom: "demote", reaction: "⬇️", nomFichier: __filename }, async (chatId, zk, { arg, superUser }) => { if (!superUser) return; const user = arg[0]?.replace(/[@+]/g, "") + "@s.whatsapp.net"; if (!user) return zk.sendMessage(chatId, { text: "Tag someone to demote." }); await zk.groupParticipantsUpdate(chatId, [user], "demote"); });
 
-// Change group profile picture
-adams( { nomCom: "gpp", reaction: "🖼️", nomFichier: __filename }, async (chatId, adams, { ms, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!ms.imageMessage) return repondre("Send an image with the command!"); const buffer = await adams.downloadMediaMessage(ms.imageMessage); await adams.updateProfilePicture(chatId, buffer); repondre("✅ Group profile updated!"); } );
+adams({ nomCom: "gpp", reaction: "🖼️", nomFichier: __filename }, async (chatId, zk, { ms, superUser }) => { if (!superUser || !ms.message.imageMessage) return; const buffer = await zk.downloadMediaMessage(ms.message.imageMessage); await zk.updateProfilePicture(chatId, buffer); });
 
-// Change group name 
-adams( { nomCom: "groupname", reaction: "✏️", nomFichier: __filename }, async (chatId, adams, { arg, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!arg.length) return repondre("Enter a new group name!"); await adams.groupUpdateSubject(chatId, arg.join(" ")); repondre("✅ Group name changed!"); } );
+adams({ nomCom: "groupname", reaction: "✏️", nomFichier: __filename }, async (chatId, zk, { arg, superUser }) => { if (!superUser) return; const newName = arg.join(" "); if (!newName) return zk.sendMessage(chatId, { text: "Provide a new group name." }); await zk.groupUpdateSubject(chatId, newName); });
 
-// Change group description
-adams( { nomCom: "groupd", reaction: "📝", nomFichier: __filename }, async (chatId, adams, { arg, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!arg.length) return repondre("Enter a new group description!"); await adams.groupUpdateDescription(chatId, arg.join(" ")); repondre("✅ Group description changed!"); } );
+adams({ nomCom: "groupd", reaction: "📝", nomFichier: __filename }, async (chatId, zk, { arg, superUser }) => { if (!superUser) return; const newDesc = arg.join(" "); if (!newDesc) return zk.sendMessage(chatId, { text: "Provide a new group description." }); await zk.groupUpdateDescription(chatId, newDesc); });
 
-// Broadcast message to all groups
-adams( { nomCom: "broadcast", reaction: "📢", nomFichier: __filename }, async (chatId, adams, { arg, repondre, superUser }) => { if (!superUser) return repondre("❌ You don't have permission!"); if (!arg.length) return repondre("Enter a message to broadcast!"); const message = arg.join(" "); const groups = await adams.groupFetchAllParticipating(); for (const group of Object.values(groups)) { await adams.sendMessage(group.id, { text: message }); } repondre("✅ Message broadcasted to all groups!"); } );
+adams({ nomCom: "broadcast", reaction: "📡", nomFichier: __filename }, async (chatId, zk, { arg, superUser }) => { if (!superUser) return; const message = arg.join(" "); if (!message) return zk.sendMessage(chatId, { text: "Provide a message to broadcast." }); const groups = (await zk.groupFetchAllParticipating()).map(g => g.id); for (const group of groups) { await zk.sendMessage(group, { text: message }); } });
 
