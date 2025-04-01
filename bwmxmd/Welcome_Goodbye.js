@@ -1,4 +1,4 @@
-const { createContext } = require('../utils/contextManager');
+const { createContext } = require('../utils/helper');
 
 module.exports = {
     setup: async (adams, { config, logger }) => {
