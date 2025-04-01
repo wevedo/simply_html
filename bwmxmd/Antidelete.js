@@ -1,3 +1,6 @@
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const fs = require("fs-extra");
+const ffmpeg = require("fluent-ffmpeg");
 module.exports = {
     setup: async (adams, { config, logger }) => {
         if (!adams || !config) return;
