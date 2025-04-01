@@ -1,8 +1,8 @@
 const conf = require(__dirname + "/../config");
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-module.exports = (adams, conf) => {
-    // Valid presence states
+module.exports = {
+    setup: async (adams, { config, logger }) => {
     const validPresenceStates = new Set([
         "available", "composing", "recording", "paused", "unavailable"
     ]);
