@@ -370,7 +370,10 @@ try {
 
  
  //============================================================================//
-/*
+
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+let lastReactionTime = 0;
  if (conf.AUTO_REACT_STATUS === "yes") {
     console.log("AUTO_REACT_STATUS is enabled. Listening for status updates...");
 
