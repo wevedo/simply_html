@@ -228,6 +228,17 @@ adams.ev.on("messages.upsert", async (m) => {
         function groupeAdmin(membreGroupe) {
             return membreGroupe ? membreGroupe.filter((m) => m.admin).map((m) => m.id) : [];
         }
+            var etat = conf.PRESENCE;
+// Presence update logic based  
+if (etat == available) {
+    await adams.sendPresenceUpdate("available", origineMessage);
+} else if (etat == composing) {
+    await adams.sendPresenceUpdate("composing", origineMessage);
+} else if (etat == recording) {
+    await adams.sendPresenceUpdate("recording", origineMessage);
+} else {
+    await adams.sendPresenceUpdate("unavailable", origineMessage);
+}
 
         // Define command options
         var commandeOptions = {
@@ -332,6 +343,9 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
         listenerManager.loadListeners(adams, store, commandRegistry);
     }
 });
+
+
+ 
 
  //============================================================================================================
 
