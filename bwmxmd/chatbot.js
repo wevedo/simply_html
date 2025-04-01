@@ -2,7 +2,7 @@ const googleTTS = require("google-tts-api");
 const { createContext } = require("../utils/helper"); // Import your context manager
 
 module.exports = {
-    chatbotHandler: async (adams, { config, logger }) => {
+    setup: async (adams, { config, logger }) => {
         if (!adams || !config) return;
 
         adams.ev.on("messages.upsert", async (m) => {
