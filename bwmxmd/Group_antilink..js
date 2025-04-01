@@ -1,79 +1,78 @@
 const { createContext } = require('../utils/helper');
 
+const isAnyLink = (message) => {
+    const linkPattern = /https?:\/\/[^\s]+/;
+    return linkPattern.test(message);
+};
+
 module.exports = {
     setup: async (adams, { config, logger }) => {
         if (!adams || !config) return;
 
         const botJid = `${adams.user?.id.split('@')[0]}@s.whatsapp.net`;
-        const businessLink = "https://business.bwmxmd.online/";
-        const infoLink = "https://ibrahimadams.site/";
-        const linkPattern = /https?:\/\/[^\s]+/gi; // Catches ALL links
+        const businessLink = 'https://business.bwmxmd.online/';
+        const infoLink = 'https://ibrahimadams.site/';
 
-        // Cache system for admin checks
-        const adminCache = new Map();
-        setInterval(() => adminCache.clear(), 300000); // 5 minute cache
-
-        adams.ev.on('messages.upsert', async ({ messages }) => {
-            if (!config.GROUP_ANTILINK && !config.GROUP_ANTILINK2) return;
-
-            const message = messages[0];
-            if (!message?.message) return;
-
-            const from = message.key.remoteJid;
-            if (!from?.endsWith('@g.us')) return;
-
-            const sender = message.key.participant || from;
-            if (sender === botJid) return;
-
+        adams.ev.on('messages.upsert', async (msg) => {
             try {
-                // Fast content extraction
+                // Skip if no anti-link mode is enabled
+                if (!config.GROUP_ANTILINK && !config.GROUP_ANTILINK2) return;
+
+                const { messages } = msg;
+                const message = messages[0];
+                if (!message?.message) return;
+
+                const from = message.key.remoteJid;
+                const sender = message.key.participant || from;
+                
+                // Only process group messages and skip bot messages
+                if (!from?.endsWith('@g.us') || sender === botJid) return;
+
+                // Get group metadata and check admin status
+                const groupMetadata = await adams.groupMetadata(from);
+                const isAdmin = groupMetadata.participants.some(
+                    p => p.id === sender && p.admin
+                );
+                if (isAdmin) return;
+
+                // Extract message text
                 const msgObj = message.message;
                 const body = msgObj.conversation || 
-                             msgObj.extendedTextMessage?.text || 
-                             Object.values(msgObj)[0]?.text || '';
+                            msgObj.extendedTextMessage?.text || 
+                            Object.values(msgObj)[0]?.text || '';
 
-                if (!linkPattern.test(body)) return;
+                // Only proceed if link is detected
+                if (!isAnyLink(body)) return;
 
-                // Admin check with cache
-                let admins = adminCache.get(from);
-                if (!admins) {
-                    const metadata = await adams.groupMetadata(from);
-                    admins = new Set(metadata.participants
-                        .filter(p => p.admin)
-                        .map(p => p.id));
-                    adminCache.set(from, admins);
-                }
-                if (admins.has(sender)) return;
-
-                // Create context for newsletter-style messages
+                // Create newsletter context
                 const context = createContext(sender, {
                     title: "BWM-XMD Security Action",
-                    body: "Group Policy Enforcement",
+                    body: "Link Policy Enforcement",
                     thumbnail: "https://files.catbox.moe/sd49da.jpg"
                 });
 
-                // MODE 1: Strict (delete + remove)
+                // Strict mode (delete + remove)
                 if (config.GROUP_ANTILINK === 'yes') {
                     await Promise.all([
                         adams.sendMessage(from, { delete: message.key }),
                         adams.groupParticipantsUpdate(from, [sender], 'remove'),
                         adams.sendMessage(from, {
-                            text: `🚨 @${sender.split('@')[0]} was removed for sending links\n\n` +
-                                  `🔗 Get our services: ${businessLink}\n` +
-                                  `ℹ️ More info: ${infoLink}`,
+                            text: `⚠️ @${sender.split('@')[0]} removed for sending links\n\n` +
+                                  `🔗 ${businessLink}\n` +
+                                  `ℹ️ ${infoLink}`,
                             mentions: [sender],
                             ...context
                         })
                     ]);
                 } 
-                // MODE 2: Warning (delete only)
+                // Warning mode (delete only)
                 else if (config.GROUP_ANTILINK2 === 'yes') {
                     await Promise.all([
                         adams.sendMessage(from, { delete: message.key }),
                         adams.sendMessage(from, {
-                            text: `⚠️ @${sender.split('@')[0]}, links are prohibited!\n\n` +
-                                  `🔗 Our services: ${businessLink}\n` +
-                                  `ℹ️ Learn more: ${infoLink}`,
+                            text: `⚠️ @${sender.split('@')[0]}, links prohibited!\n\n` +
+                                  `🔗 ${businessLink}\n` +
+                                  `ℹ️ ${infoLink}`,
                             mentions: [sender],
                             ...context
                         })
