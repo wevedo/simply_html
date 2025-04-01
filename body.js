@@ -452,7 +452,7 @@ const STATE = conf.PRESENCE;
 async function updatePresence(adams, jid) {
     try {
         const states = ["available", "composing", "recording", "unavailable"];
-        await adams.sendPresenceUpdate(states[STATE - 1] || "unavailable", jid);
+        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
     } catch (e) {
         console.error('Presence update error:', e.message);
     }
