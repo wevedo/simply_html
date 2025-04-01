@@ -13,9 +13,9 @@ module.exports = {
         const businessLink = 'https://business.bwmxmd.online/';
         const infoLink = 'https://ibrahimadams.site/';
 
+        // Only listen to messages (not group participant updates)
         adams.ev.on('messages.upsert', async (msg) => {
             try {
-                // Skip if no anti-link mode is enabled
                 if (!config.GROUP_ANTILINK && !config.GROUP_ANTILINK2) return;
 
                 const { messages } = msg;
@@ -53,30 +53,26 @@ module.exports = {
 
                 // Strict mode (delete + remove)
                 if (config.GROUP_ANTILINK === 'yes') {
-                    await Promise.all([
-                        adams.sendMessage(from, { delete: message.key }),
-                        adams.groupParticipantsUpdate(from, [sender], 'remove'),
-                        adams.sendMessage(from, {
-                            text: `⚠️ @${sender.split('@')[0]} removed for sending links\n\n` +
-                                  `🔗 ${businessLink}\n` +
-                                  `ℹ️ ${infoLink}`,
-                            mentions: [sender],
-                            ...context
-                        })
-                    ]);
+                    await adams.sendMessage(from, { delete: message.key });
+                    await adams.groupParticipantsUpdate(from, [sender], 'remove');
+                    await adams.sendMessage(from, {
+                        text: `⚠️ @${sender.split('@')[0]} removed for sending links\n\n` +
+                              `🔗 ${businessLink}\n` +
+                              `ℹ️ ${infoLink}`,
+                        mentions: [sender],
+                        ...context
+                    });
                 } 
                 // Warning mode (delete only)
                 else if (config.GROUP_ANTILINK2 === 'yes') {
-                    await Promise.all([
-                        adams.sendMessage(from, { delete: message.key }),
-                        adams.sendMessage(from, {
-                            text: `⚠️ @${sender.split('@')[0]}, links prohibited!\n\n` +
-                                  `🔗 ${businessLink}\n` +
-                                  `ℹ️ ${infoLink}`,
-                            mentions: [sender],
-                            ...context
-                        })
-                    ]);
+                    await adams.sendMessage(from, { delete: message.key });
+                    await adams.sendMessage(from, {
+                        text: `⚠️ @${sender.split('@')[0]}, links prohibited!\n\n` +
+                              `🔗 ${businessLink}\n` +
+                              `ℹ️ ${infoLink}`,
+                        mentions: [sender],
+                        ...context
+                    });
                 }
 
             } catch (err) {
