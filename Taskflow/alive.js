@@ -6,7 +6,7 @@ const axios = require("axios");
 const githubRawBaseUrl =
   "https://raw.githubusercontent.com/ibrahimaitech/bwm-xmd-music/master/tiktokmusic";
 
-const audioFiles = Array.from({ length: 161 }, (_, i) => `sound${i + 1}.mp3`);
+const audioFiles = Array.from({ length: 100 }, (_, i) => `sound${i + 1}.mp3`);
 
 const images = [
   "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
