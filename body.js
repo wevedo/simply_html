@@ -336,8 +336,6 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
 console.log("Loading Bwm xmd Commands...\n");
 
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
-
 // Load commands from Taskflow folder
 try {
     const taskflowPath = path.join(__dirname, "Taskflow");
