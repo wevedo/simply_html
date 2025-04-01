@@ -70,7 +70,7 @@ module.exports = {
         if (config.AUTO_REACT_STATUS === "yes") {
             logger.info("[Status] Auto-react enabled");
 
-            zk.ev.on("messages.upsert", async (m) => {
+            adams.ev.on("messages.upsert", async (m) => {
            const { messages } = m;
         
         // Common love reaction emojis for WhatsApp status
@@ -86,9 +86,9 @@ module.exports = {
                     continue;
                 }
 
-                const adams = zk.user && zk.user.id ? zk.user.id.split(":")[0] + "@s.whatsapp.net" : null;
+                const adams = adams.user && adams ? adams.user.id.split(":")[0] + "@s.whatsapp.net" : null;
                 if (!adams) {
-                    console.log("Bot's user ID not available. Skipping reaction.");
+                    //console.log("Bot's user ID not available. Skipping reaction.");
                     continue;
                 }
 
@@ -105,7 +105,7 @@ module.exports = {
                 });
 
                 lastReactionTime = Date.now();
-                console.log(`Reacted with '${randomEmoji}' to status update by ${message.key.remoteJid}`);
+               // console.log(`Reacted with '${randomEmoji}' to status update by ${message.key.remoteJid}`);
 
                 await delay(2000); // 2-second delay between reactions
               }
