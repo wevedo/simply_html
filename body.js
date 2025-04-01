@@ -422,18 +422,10 @@ async function updatePresence(adams, jid) {
         console.error('Presence update error:', e.message);
     }
 }
-
-adams.ev.on("connection.update", ({ connection }) => {
-    if (connection === "open") {
-        console.log("🌎 BWM XMD ONLINE 🌎");
-        adams.newsletterFollow("120363285388090068@newsletter");
-        updatePresence(adams, "status@broadcast");
-        }
-// Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
-
+        updatePresence(adams, "status@broadcast");
         if (conf.DP.toLowerCase() === "yes") {
             const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
             const connectionMsg = `
@@ -469,7 +461,11 @@ adams.ev.on("connection.update", ({ connection }) => {
             if (shouldReconnect) main();
         }
     });
-
+    adams.ev.on("connection.update", ({ connection }) => {
+    if (connection === "open") {
+        console.log("🌎 BWM XMD ONLINE 🌎");
+        adams.newsletterFollow("120363285388090068@newsletter");
+        }
     adams.ev.on("creds.update", saveCreds);
 
     // Message Handling
