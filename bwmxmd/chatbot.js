@@ -1,5 +1,6 @@
 const googleTTS = require("google-tts-api");
-const { createContext } = require("../utils/helper"); // Import your context manager
+const { createContext } = require("../utils/helper");
+const { createContext2 } = require("../utils/helper2");
 
 module.exports = {
     setup: async (adams, { config, logger }) => {
@@ -58,10 +59,10 @@ module.exports = {
                         });
 
                         // Create newsletter context
-                        const newsletterContext = createContext(senderJid, {
+                        const newsletterContext = createContext2(senderJid, {
                             title: "AI Voice Response",
-                            body: "Powered by BWM-XMD",
-                            thumbnail: "https://files.catbox.moe/sd49da.jpg"
+                            body: "Powered by BWM-XMD"
+                            //thumbnail: "https://files.catbox.moe/sd49da.jpg"
                         });
 
                         await adams.sendMessage(
