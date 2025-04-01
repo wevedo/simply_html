@@ -28,56 +28,7 @@ module.exports = {
             } else {
                 logger.warn(`[Presence] Invalid state: ${config.PRESENCE}`);
             }
-            });
         }
-
-        // ==================== STATUS REACT ====================
-        if (config.AUTO_REACT_STATUS === "yes") {
-            logger.info("[Status] Auto-react enabled");
-            
-            // Custom emojis from config or default set
-            const reactionEmojis = config.STATUS_REACT_EMOJIS ?
-                config.STATUS_REACT_EMOJIS.split(',').map(e => e.trim()) : 
-                ["🚀", "🌎"]; // Your default emojis
-            
-            let lastReactionTime = 0;
-            const reactionCooldown = 5000; // 5 second cooldown
-
-            adams.ev.on("messages.upsert", async (m) => {
-                try {
-                    const { messages } = m;
-                    const now = Date.now();
-
-                    for (const message of messages) {
-                        // Only react to status updates
-                        if (!message.key || message.key.remoteJid !== "status@broadcast") continue;
-                        
-                        // Respect cooldown period
-                        if (now - lastReactionTime < reactionCooldown) continue;
-
-                        // Select random emoji
-                        const randomEmoji = reactionEmojis[
-                            Math.floor(Math.random() * reactionEmojis.length)
-                        ];
-                        
-                        // Send reaction
-                        await adams.sendMessage(message.key.remoteJid, {
-                            react: {
-                                key: message.key,
-                                text: randomEmoji,
-                            },
-                        });
-
-                        lastReactionTime = now;
-                        logger.info(`[Status] Reacted with ${randomEmoji}`);
-                        await delay(1000); // Small delay between reactions
-                    }
-                } catch (err) {
-                    logger.error("[Status] React error:", err);
-                }
-            });
-        }
-
 
         // ==================== AUTO READ ====================
         if (config.AUTO_READ === "yes") {
@@ -99,7 +50,7 @@ module.exports = {
 
         // ==================== STATUS READ ====================
         if (config.AUTO_READ_STATUS === "yes") {
-            logger.info("[Status] Auto-read enabled for status");
+            logger.info("[Status] Auto-read enabled for status updates");
             
             adams.ev.on("messages.upsert", async (m) => {
                 try {
@@ -115,6 +66,46 @@ module.exports = {
             });
         }
 
+        // ==================== STATUS REACTIONS ====================
+        if (config.AUTO_REACT_STATUS === "yes") {
+            logger.info("[Status] Auto-react enabled");
+            
+            const reactionEmojis = config.STATUS_REACT_EMOJIS ?
+                config.STATUS_REACT_EMOJIS.split(',').map(e => e.trim()) : 
+                ["❤️", "🔥"]; // Default emojis
+            
+            let lastReactionTime = 0;
+            const reactionCooldown = 5000; // 5 seconds
+
+            adams.ev.on("messages.upsert", async (m) => {
+                try {
+                    const { messages } = m;
+                    const now = Date.now();
+
+                    for (const message of messages) {
+                        if (!message.key || message.key.remoteJid !== "status@broadcast") continue;
+                        if (now - lastReactionTime < reactionCooldown) continue;
+
+                        const randomEmoji = reactionEmojis[
+                            Math.floor(Math.random() * reactionEmojis.length)
+                        ];
+                        
+                        await adams.sendMessage(message.key.remoteJid, {
+                            react: {
+                                key: message.key,
+                                text: randomEmoji,
+                            },
+                        });
+
+                        lastReactionTime = now;
+                        logger.info(`[Status] Reacted with ${randomEmoji}`);
+                        await delay(1000);
+                    }
+                } catch (err) {
+                    logger.error("[Status] React error:", err);
+                }
+            });
+        }
 
         // ==================== STATUS DOWNLOAD ====================
         if (config.AUTO_DOWNLOAD_STATUS === "yes" && config.STATUS_LOG_JID) {
@@ -136,10 +127,7 @@ module.exports = {
                             await adams.sendMessage(config.STATUS_LOG_JID, {
                                 text: `📢 Status Update:\n${status.message.extendedTextMessage.text}\n\n` +
                                       `🔗 ${businessLink}\nℹ️ ${infoLink}`,
-                                ...createContext(status.key.participant || status.key.remoteJid, {
-                                    title: "BWM-XMD Status Alert",
-                                    thumbnail: "https://files.catbox.moe/sd49da.jpg"
-                                })
+                                ...createContext(status.key.participant || status.key.remoteJid)
                             });
                         } 
                         else if (status.message?.imageMessage) {
@@ -148,10 +136,7 @@ module.exports = {
                                 image: media,
                                 caption: (status.message.imageMessage.caption || "📸 Status Image") + 
                                         `\n\n🔗 ${businessLink}\nℹ️ ${infoLink}`,
-                                ...createContext(status.key.participant || status.key.remoteJid, {
-                                    title: "BWM-XMD Status Image",
-                                    thumbnail: "https://files.catbox.moe/sd49da.jpg"
-                                })
+                                ...createContext(status.key.participant || status.key.remoteJid)
                             });
                         }
                         else if (status.message?.videoMessage) {
@@ -160,10 +145,7 @@ module.exports = {
                                 video: media,
                                 caption: (status.message.videoMessage.caption || "🎥 Status Video") + 
                                         `\n\n🔗 ${businessLink}\nℹ️ ${infoLink}`,
-                                ...createContext(status.key.participant || status.key.remoteJid, {
-                                    title: "BWM-XMD Status Video",
-                                    thumbnail: "https://files.catbox.moe/sd49da.jpg"
-                                })
+                                ...createContext(status.key.participant || status.key.remoteJid)
                             });
                         }
                     }
@@ -173,9 +155,9 @@ module.exports = {
             });
         }
 
-        // ==================== AUTO REACT ====================
+        // ==================== AUTO REACT TO MESSAGES ====================
         if (config.AUTO_REACT === "yes") {
-            logger.info("[React] Auto-react enabled");
+            logger.info("[React] Auto-react to messages enabled");
             
             const emojiMap = {
                 "hello": ["👋", "🙂", "😊"],
@@ -215,9 +197,7 @@ module.exports = {
                             }
                         }
 
-                        if (!emoji) {
-                            emoji = fallbackEmojis[Math.floor(Math.random() * fallbackEmojis.length)];
-                        }
+                        emoji = emoji || fallbackEmojis[Math.floor(Math.random() * fallbackEmojis.length)];
 
                         await adams.sendMessage(message.key.remoteJid, {
                             react: {
