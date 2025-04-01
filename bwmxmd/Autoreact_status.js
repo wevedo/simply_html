@@ -2,27 +2,23 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 module.exports = {
     setup: async (adams, { config, logger }) => {
-        if (!adams || !config || config.AUTO_REACT_STATUS !== "yes") return;
+        if (!adams || !config || config.STATUS_REACT_EMOJIS !== "yes") return;
 
-        logger.info("[Status] Random reactions enabled");
+        logger.info("[Status] Professional reactions enabled");
         
-        // Get emojis from config or use defaults
-        const reactionEmojis = config.STATUS_REACT_EMOJIS ?
-            config.STATUS_REACT_EMOJIS.split(',').map(e => e.trim()) : 
-            ["❤️", "🔥", "👍", "🎉"]; // Default emojis
-        
+        // Mature, universally appropriate emoji sets
+        const professionalEmojis = {
+            general: ["👍", "👌", "💯", "✨", "🌟"], // Neutral positive reactions
+            greetings: ["👋", "🙂", "😊", "🤗"],    // For hello/hi messages
+            appreciation: ["🙏", "❤️", "💖", "💐"], // For thank you messages
+            celebration: ["🎉", "🎊", "🥂", "🏆"],  // For achievements/events
+            nature: ["🌞", "🌻", "🌎", "🌸"],      // For nature/travel
+            time: ["🕰️", "⏳", "🌙", "☀️"],        // For time-related (good morning/night)
+            objects: ["📚", "🎵", "🍵", "✈️"]      // Neutral object symbols
+        };
+
         let lastReactionTime = 0;
         const botJid = `${adams.user?.id.split('@')[0]}@s.whatsapp.net`;
-
-        // Enhanced emoji mapping for keywords
-        const keywordEmojis = {
-            "happy": ["😊", "😄", "🥰"],
-            "sad": ["😢", "😔", "🥺"],
-            "love": ["❤️", "💖", "💘"],
-            "party": ["🎉", "🎊", "🥳"],
-            "travel": ["✈️", "🌎", "🗺️"],
-            "food": ["🍕", "🍔", "🍣"]
-        };
 
         adams.ev.on("messages.upsert", async (m) => {
             try {
@@ -40,23 +36,25 @@ module.exports = {
                         ""
                     ).toLowerCase();
 
-                    // Select reaction - first try keyword matches, then random from config
-                    let reactionEmoji;
+                    // Select appropriate emoji category
+                    let emojiSet = professionalEmojis.general;
                     
-                    // Check for keywords
-                    for (const [keyword, emojis] of Object.entries(keywordEmojis)) {
-                        if (statusText.includes(keyword)) {
-                            reactionEmoji = emojis[Math.floor(Math.random() * emojis.length)];
-                            break;
-                        }
+                    if (/(good\s(morning|night)|day|evening)/.test(statusText)) {
+                        emojiSet = professionalEmojis.time;
+                    } else if (/(thank|appreciate|grateful)/.test(statusText)) {
+                        emojiSet = professionalEmojis.appreciation;
+                    } else if (/(hi|hello|hey|greet)/.test(statusText)) {
+                        emojiSet = professionalEmojis.greetings;
+                    } else if (/(celebrate|congrat|achievement)/.test(statusText)) {
+                        emojiSet = professionalEmojis.celebration;
+                    } else if (/(travel|nature|weather)/.test(statusText)) {
+                        emojiSet = professionalEmojis.nature;
+                    } else if (/(book|music|tea|coffee|flight)/.test(statusText)) {
+                        emojiSet = professionalEmojis.objects;
                     }
-                    
-                    // Fallback to configured emojis
-                    if (!reactionEmoji) {
-                        reactionEmoji = reactionEmojis[
-                            Math.floor(Math.random() * reactionEmojis.length)
-                        ];
-                    }
+
+                    // Select random emoji from chosen set
+                    const reactionEmoji = emojiSet[Math.floor(Math.random() * emojiSet.length)];
 
                     // Send reaction
                     await adams.sendMessage(message.key.remoteJid, {
@@ -67,7 +65,7 @@ module.exports = {
                     });
 
                     lastReactionTime = now;
-                    logger.info(`[Status] Reacted with ${reactionEmoji} to ${message.key.participant || 'unknown'}'s status`);
+                    logger.info(`[Status] Reacted with ${reactionEmoji} to status`);
                     await delay(2000); // 2-second delay between reactions
                 }
             } catch (err) {
