@@ -28,6 +28,7 @@ module.exports = {
             } else {
                 logger.warn(`[Presence] Invalid state: ${config.PRESENCE}`);
             }
+            });
         }
 
         // ==================== STATUS REACT ====================
@@ -75,9 +76,8 @@ module.exports = {
                     logger.error("[Status] React error:", err);
                 }
             });
-           }
-         }
-        };
+        }
+
 
         // ==================== AUTO READ ====================
         if (config.AUTO_READ === "yes") {
