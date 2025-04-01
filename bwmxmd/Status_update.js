@@ -1,5 +1,4 @@
-// Import necessary modules
-// utils/statusUtils.js
+const conf = require(__dirname + "/../config");
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 module.exports = (adams, conf) => {
