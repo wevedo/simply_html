@@ -359,7 +359,7 @@ try {
 
  //============================================================================//
 
- 
+const STATE = conf.PRESENCE; 
 adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message) return;
@@ -413,7 +413,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 });
-const STATE = conf.PRESENCE;
+// Presence Manager
 async function updatePresence(adams, jid) {
     try {
         const states = ["available", "composing", "recording", "unavailable"];
@@ -422,50 +422,67 @@ async function updatePresence(adams, jid) {
         console.error('Presence update error:', e.message);
     }
 }
+
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
         console.log("Connected to WhatsApp");
         updatePresence(adams, "status@broadcast");
-        if (conf.DP.toLowerCase() === "yes") {
-            const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
+                if (conf.DP.toLowerCase() === 'yes') {
+            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
             const connectionMsg = `
-〔  🚀 BWM XMD CONNECTED 🚀 〕
-
-├──〔 ✨ Version: 7.0.8 〕 
-├──〔 🎭 Classic and Things 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
+ 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
+ 
+├──〔 ✨ Version: 7.0.8 〕
 │  
-├──〔 📦 Heroku Deployment 〕 
+├──〔 *🎭 Classic and Things* 〕 
+│ ✅ Prefix: [ ${conf.PREFIX} ]  
+│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
+│  
+├──〔 *📦 Heroku Deployment* 〕
 │ 🏷️ App Name: ${herokuAppName}  
 ╰──────────────────◆`;
 
+            // Send disappearing status message
             adams.sendMessage(
-                adams.user.id,
-                { text: connectionMsg },
+                adams.user.id, 
+                { 
+                    text: connectionMsg 
+                },
                 {
                     disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600,
+                    ephemeralExpiration: 600 // 10 minutes
                 }
-            ).catch(err => console.error("Status message error:", err));
+            ).catch(err => console.error('Status message error:', err));
         }
     }
 });
 
+// Modified message handler - processes ALL messages
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const [msg] = messages;
+    console.log("New message received from:", msg.key.remoteJid);
+    await cmdSystem.processMessage(msg);
+    await updatePresence(adams, msg.key.remoteJid);
+});
 
         
 //===============================================================================================================//
 
+// Event Handlers
+adams.ev.on("connection.update", async (update) => {
+        const { connection, lastDisconnect } = update;
+        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
+        if (connection === "open") {
+            console.log("🌎 BWM XMD ONLINE 🌎");
+                  adams.newsletterFollow("120363285388090068@newsletter");
+        }
         if (connection === "close") {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log("Connection closed, reconnecting...");
             if (shouldReconnect) main();
         }
     });
-    adams.ev.on("connection.update", ({ connection }) => {
-    if (connection === "open") {
-        console.log("🌎 BWM XMD ONLINE 🌎");
-        adams.newsletterFollow("120363285388090068@newsletter");
-        }
+
     adams.ev.on("creds.update", saveCreds);
 
     // Message Handling
@@ -473,12 +490,10 @@ adams.ev.on("connection.update", ({ connection }) => {
         const ms = messages[0];
         if (!ms.message) return;
         
-        
+        // Message processing logic here
     });
 }
 
 setTimeout(() => {
     main().catch(err => console.log("Initialization error:", err));
 }, 5000);
-
-
