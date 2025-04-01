@@ -413,7 +413,22 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 });
+const STATE = conf.PRESENCE;
+async function updatePresence(adams, jid) {
+    try {
+        const states = ["available", "composing", "recording", "unavailable"];
+        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
+    } catch (e) {
+        console.error('Presence update error:', e.message);
+    }
+}
 
+adams.ev.on("connection.update", ({ connection }) => {
+    if (connection === "open") {
+        console.log("🌎 BWM XMD ONLINE 🌎");
+        adams.newsletterFollow("120363285388090068@newsletter");
+        updatePresence(adams, "status@broadcast");
+        }
 // Handle connection updates
 adams.ev.on("connection.update", ({ connection }) => {
     if (connection === "open") {
@@ -448,22 +463,6 @@ adams.ev.on("connection.update", ({ connection }) => {
         
 //===============================================================================================================//
 
-const STATE = conf.PRESENCE;
-async function updatePresence(adams, jid) {
-    try {
-        const states = ["available", "composing", "recording", "unavailable"];
-        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
-    } catch (e) {
-        console.error('Presence update error:', e.message);
-    }
-}
-
-adams.ev.on("connection.update", ({ connection }) => {
-    if (connection === "open") {
-        console.log("🌎 BWM XMD ONLINE 🌎");
-        adams.newsletterFollow("120363285388090068@newsletter");
-        updatePresence(adams, "status@broadcast");
-        }
         if (connection === "close") {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log("Connection closed, reconnecting...");
