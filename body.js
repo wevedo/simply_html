@@ -364,11 +364,34 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message) return;
 
-   // console.log(`📩 New message from: ${ms.key.remoteJid}`);
-
+    // Define JIDs and permissions
     const senderJid = ms.key.participant || ms.key.remoteJid;
-    const superUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.OWNER_NUMBER}@s.whatsapp.net`;
+    const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
+    
+    // SUPER USER DEFINITION (Full control)
+    const superUser = 
+        SUDO_NUMBERS.includes(senderJid) || 
+        senderJid === `${conf.OWNER_NUMBER}@s.whatsapp.net` || 
+        senderJid === botJid;
 
+    // Group checks
+    const isGroup = ms.key.remoteJid.endsWith('@g.us');
+    let verifAdmin = false;
+    let botIsAdmin = false;
+
+    if (isGroup) {
+        try {
+            const groupData = await adams.groupMetadata(ms.key.remoteJid);
+            const admins = groupData.participants.filter(p => p.admin).map(p => p.id);
+            
+            verifAdmin = admins.includes(senderJid);
+            botIsAdmin = admins.includes(botJid);
+        } catch (err) {
+            console.log("⚠️ Group metadata error:", err.message);
+        }
+    }
+
+    // Message processing
     const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
     const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
     const verifCom = texte.startsWith(PREFIX);
@@ -379,41 +402,52 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
 
         if (cmd) {
             try {
-                if (conf.MODE.toLowerCase() !== "yes" && !superUser) {
-                    console.log(`⛔ Command "${com}" blocked: Your not allowed to use my commands.`);
-                    return;
+                // SUPER USERS bypass all restrictions
+                if (!superUser) {
+                    // Normal user restrictions
+                    if (conf.MODE.toLowerCase() !== "yes") {
+                        console.log(`⛔ Command blocked: ${senderJid} not authorized`);
+                        return;
+                    }
+
+                    // Optional: Add group-specific restrictions here
+                    // if (cmd.groupOnly && !isGroup) return;
                 }
 
-                // Define `repondre` function properly
-                const repondre = async (message) => {
-                    try {
-                        await adams.sendMessage(ms.key.remoteJid, { text: message });
-                    } catch (error) {
-                        console.error(`❌ Error sending message: ${error.message}`);
-                    }
+                // Reply function
+                const repondre = async (text) => {
+                    await adams.sendMessage(ms.key.remoteJid, { text });
                 };
 
-                // React to message before running command
-                const reaction = cmd.reaction || "🚘";
+                // Add reaction
                 try {
                     await adams.sendMessage(ms.key.remoteJid, {
-                        react: { key: ms.key, text: reaction },
+                        react: { key: ms.key, text: cmd.reaction || "⚡" }
                     });
-                } catch (error) {
-                    console.error(`⚠️ Error sending reaction: ${error.message}`);
+                } catch (err) {
+                    console.log("⚠️ Reaction failed:", err.message);
                 }
 
-                // ✅ Pass `superUser` in `context`
-                await cmd.fonction(ms.key.remoteJid, adams, { ms, arg, repondre, superUser });
+                // Execute command with full context
+                await cmd.fonction(ms.key.remoteJid, adams, { 
+                    ms, 
+                    arg, 
+                    repondre,
+                    superUser,     // Full control flag
+                    verifAdmin,    // Group admin status
+                    botIsAdmin,   // Bot's admin status
+                    isGroup       // Group chat flag
+                });
+
             } catch (error) {
-                console.error(`❌ Error executing command "${com}": ${error.message}`);
+                console.error(`❌ Command [${com}] error:`, error.message);
+                await adams.sendMessage(ms.key.remoteJid, { 
+                    text: `🚨 Command failed: ${error.message}` 
+                });
             }
-        } else {
-            console.log(`⚠️ Unknown command: ${com}`);
         }
     }
 });
-
  
 //===============================================================================================================
  
