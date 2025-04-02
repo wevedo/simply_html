@@ -44,7 +44,7 @@ async function verifyGroup(zk, dest, repondre) {
 // Helper to get sender info safely
 function getSenderInfo(commandeOptions) {
   return {
-    groupName: commandeOptions.nomGroupe || commandeOptions.infosGroupe?.subject || "Unknown Group",
+    groupName: commandeOptions.nomGroupe || commandeOptions.infosGroupe?.subject || "",
     senderName: commandeOptions.nomAuteurMessage || "Admin",
     isAdmin: commandeOptions.verifAdmin || false,
     isSuperUser: commandeOptions.superUser || false
@@ -75,10 +75,8 @@ adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, z
   }
 
   const tagMessage = `
-🟣 *${BOT_NAME} Group Mention* 🟣
+🟣 *${BOT_NAME} GROUP TAG* 🟣
 
-📌 *Group:* ${groupName}
-👤 *From:* ${senderName}
 📝 *Message:* ${message}
 
 ${members.map((m, i) => `${i % 2 === 0 ? '🔹' : '🔸'} @${m.id.split('@')[0]}`).join('\n')}
@@ -127,7 +125,7 @@ adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, 
   });
 
   await zk.sendMessage(dest, {
-    text: `🔇 *${BOT_NAME} Silent Alert*\n\n📌 *Group:* ${groupName}\n👤 *From:* ${senderName}\n📝 *Message:* ${message}\n${hiddenMentions}`,
+    text: `🔇 *${BOT_NAME} SILENT ALERT*\n\n👤 *From:* ${senderName}\n📝 *Message:* ${message}\n${hiddenMentions}`,
     mentions: members.map(m => m.id),
     ...context
   }, { quoted: ms });
@@ -183,7 +181,7 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
   for (const member of members) {
     try {
       await zk.sendMessage(member.id, {
-        text: `✉️ *Message from ${senderName}*\n\n📌 *Group:* ${groupName}\n📝 *Message:* ${message}\n\n_${BOT_TAGLINE}_`,
+        text: `✉️ *Message from ${senderName}*\n\n📝 *Message:* ${message}\n\n_${BOT_TAGLINE}_`,
         ...createContext(member.id, {
           title: `Message from ${groupName}`,
           body: senderName
@@ -198,7 +196,6 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
   const resultText = [
     `${EMOJI_THEME.success} *Broadcast Complete*`,
     `✅ Success: ${success}`,
-    `📌 Group: ${groupName}`,
     failed.length ? `❌ Failed: ${failed.length}\n${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '...' : ''}` : ''
   ].filter(Boolean).join('\n');
 
