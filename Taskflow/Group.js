@@ -1,5 +1,53 @@
 const { adams } = require("../Ibrahim/adams");
 
+
+adams({ nomCom: "leave", reaction: "🚪", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => {
+  try {
+    if (!superUser) {
+      return repondre("❌ This command is reserved for the bot owner only");
+    }
+
+    const metadata = await zk.groupMetadata(chatId);
+    repondre(`👋 Leaving group: ${metadata.subject || "Unknown Group"}`);
+    await zk.groupLeave(chatId);
+  } catch (error) {
+    repondre(`❌ Failed to leave group: ${error.message}`);
+  }
+});
+
+adams({ nomCom: "kick", reaction: "👢", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
+  try {
+    // Check permissions - either superUser or group admin
+    if (!superUser && !verifAdmin) {
+      return repondre("❌ You need admin privileges to use this command");
+    }
+
+    if (!arg || !arg[0]) {
+      return repondre("ℹ️ Usage: !kick @user\nExample: !kick 1234567890");
+    }
+
+    const user = arg[0].replace(/[@+]/g, "") + "@s.whatsapp.net";
+    
+    // Verify the user is in group
+    const metadata = await zk.groupMetadata(chatId);
+    const isMember = metadata.participants.some(p => p.id === user);
+    
+    if (!isMember) {
+      return repondre("❌ This user is not in the group");
+    }
+
+    // Check if trying to kick an admin (only superUser can do this)
+    const targetIsAdmin = metadata.participants.find(p => p.id === user)?.admin;
+    if (targetIsAdmin && !superUser) {
+      return repondre("❌ You can't kick admins - only bot owner can do this");
+    }
+
+    await zk.groupParticipantsUpdate(chatId, [user], "remove");
+    repondre(`✅ @${user.split('@')[0]} has been removed from the group`, { mentions: [user] });
+  } catch (error) {
+    repondre(`❌ Failed to kick user: ${error.message}`);
+  }
+});
 // Kick all non-admin members except superUser and bot
 adams({ nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, auteurMessage }) => { 
   if (!superUser) {
