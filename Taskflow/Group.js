@@ -5,6 +5,11 @@ const conf = require("../config");
 const { default: axios } = require('axios');
 const { createContext } = require("../utils/helper");
 
+// Helper function to decode JID
+function decodeJid(jid) {
+  return jid?.decodeJid?.() || jid;
+}
+
 // Constants for the new branding
 const BOT_NAME = "BWM_XMD";
 const BOT_TAGLINE = "Next-Gen WhatsApp Automation";
@@ -19,13 +24,20 @@ const EMOJI_THEME = {
   broadcast: "📡"
 };
 
-// Enhanced group verification with metadata
-async function verifyGroup(zk, dest, repondre) {
+// Enhanced group verification with proper metadata extraction
+async function verifyGroup(zk, dest, repondre, ms) {
   try {
     const metadata = await zk.groupMetadata(dest);
+    
+    // Extract sender information
+    const senderJid = ms.key.participant || ms.key.remoteJid;
+    const senderName = ms.pushName || "User";
+    
     return {
       isGroup: true,
-      metadata
+      metadata,
+      groupName: metadata.subject || "Unknown Group",
+      senderName
     };
   } catch (error) {
     const context = createContext(dest, {
@@ -41,28 +53,18 @@ async function verifyGroup(zk, dest, repondre) {
   }
 }
 
-// Helper to get sender info safely
-function getSenderInfo(commandeOptions) {
-  return {
-    groupName: commandeOptions.nomGroupe || commandeOptions.infosGroupe?.subject || "",
-    senderName: commandeOptions.nomAuteurMessage || "Admin",
-    isAdmin: commandeOptions.verifAdmin || false,
-    isSuperUser: commandeOptions.superUser || false
-  };
-}
-
-// Premium tagall command with newsletter styling
+// Premium tagall command with fixed metadata
 adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
+  const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  const { isGroup, metadata } = await verifyGroup(zk, dest, repondre);
+  // Get proper group metadata
+  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
   if (!isGroup) return;
 
-  const { groupName, senderName, isAdmin, isSuperUser } = getSenderInfo(commandeOptions);
   const message = arg?.join(' ') || 'Notification from admin';
   const members = metadata.participants;
   
-  if (!isAdmin && !isSuperUser) {
+  if (!verifAdmin && !superUser) {
     const context = createContext(dest, {
       title: "Admin Privileges Required",
       body: "Tagall command restricted"
@@ -75,11 +77,13 @@ adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, z
   }
 
   const tagMessage = `
-🟣 *${BOT_NAME} GROUP TAG* 🟣
+🟣 *${BOT_NAME} Group Mention* 🟣
 
+📌 *Group:* ${groupName}
+👤 *From:* ${senderName}
 📝 *Message:* ${message}
 
-${members.map((m, i) => `${i % 2 === 0 ? '🔹' : '🔸'} @${m.id.split('@')[0]}`).join('\n')}
+${members.map(m => `◎ @${m.id.split('@')[0]}`).join('\n')}
   `;
 
   const context = createContext(dest, {
@@ -94,16 +98,14 @@ ${members.map((m, i) => `${i % 2 === 0 ? '🔹' : '🔸'} @${m.id.split('@')[0]}
   }, { quoted: ms });
 });
 
-// Stealth hidetag command
+// Fixed hidetag command with proper names
 adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
+  const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  const { isGroup, metadata } = await verifyGroup(zk, dest, repondre);
+  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
   if (!isGroup) return;
 
-  const { groupName, senderName, isAdmin, isSuperUser } = getSenderInfo(commandeOptions);
-  
-  if (!isAdmin && !isSuperUser) {
+  if (!verifAdmin && !superUser) {
     const context = createContext(dest, {
       title: "Admin Privileges Required",
       body: "Hidetag command restricted"
@@ -125,22 +127,20 @@ adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, 
   });
 
   await zk.sendMessage(dest, {
-    text: `🔇 *${BOT_NAME} SILENT ALERT*\n\n👤 *From:* ${senderName}\n📝 *Message:* ${message}\n${hiddenMentions}`,
+    text: `🔇 *${BOT_NAME} Silent Alert*\n\n${message}\n${hiddenMentions}`,
     mentions: members.map(m => m.id),
     ...context
   }, { quoted: ms });
 });
 
-// Premium DM broadcast command
+// Fixed senttoall command with proper names
 adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg } = commandeOptions;
+  const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  const { isGroup, metadata } = await verifyGroup(zk, dest, repondre);
+  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
   if (!isGroup) return;
 
-  const { groupName, senderName, isAdmin, isSuperUser } = getSenderInfo(commandeOptions);
-  
-  if (!isAdmin && !isSuperUser) {
+  if (!verifAdmin && !superUser) {
     const context = createContext(dest, {
       title: "Admin Privileges Required",
       body: "Broadcast command restricted"
@@ -181,7 +181,7 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
   for (const member of members) {
     try {
       await zk.sendMessage(member.id, {
-        text: `✉️ *Message from ${senderName}*\n\n📝 *Message:* ${message}\n\n_${BOT_TAGLINE}_`,
+        text: `✉️ *Message from ${senderName} in ${groupName}*\n\nMessage: ${message}\n\n_${BOT_TAGLINE}_`,
         ...createContext(member.id, {
           title: `Message from ${groupName}`,
           body: senderName
