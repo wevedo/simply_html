@@ -1,6 +1,6 @@
 const { adams } = require("../Ibrahim/adams");
 
-// Kick all members (owner only)
+// Kick all non-admin members except superUser and bot
 adams({ nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, auteurMessage }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
@@ -8,19 +8,62 @@ adams({ nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (ch
   
   try {
     const metadata = await zk.groupMetadata(chatId);
-    const botJid = zk.user.id; // Get bot's JID
-    const users = metadata.participants
-      .filter(p => p.id !== auteurMessage && p.id !== botJid) // Exclude yourself and bot
-      .map(p => p.id);
+    const botJid = zk.user.id;
     
-    if (users.length === 0) {
-      return repondre("ℹ️ No members to kick (only you and the bot are in the group)");
+    // Get regular members to kick (non-admins, not you, not bot)
+    const toKick = metadata.participants
+      .filter(p => 
+        p.id !== auteurMessage && 
+        p.id !== botJid &&
+        !p.admin
+      );
+    
+    if (toKick.length === 0) {
+      return repondre("ℹ️ No regular members to kick (only admins and bot remain)");
     }
     
-    await zk.groupParticipantsUpdate(chatId, users, "remove");
-    repondre(`✅ Kicked ${users.length} members (you and the bot were not removed)`);
+    // Create mention message before kicking
+    const mentionMessage = `🔥 *Mass Removal* 🔥\n\n` +
+                         `The following members were removed:\n` +
+                         `${toKick.map(m => `◎ @${m.id.split('@')[0]}`).join('\n')}`;
+    
+    await zk.sendMessage(chatId, {
+      text: mentionMessage,
+      mentions: toKick.map(m => m.id)
+    });
+    
+    // Actually perform the kick
+    await zk.groupParticipantsUpdate(chatId, toKick.map(m => m.id), "remove");
+    
+    repondre(`✅ Kicked ${toKick.length} members\n🛡️ Admins and bot were spared`);
   } catch (error) {
     repondre(`❌ Failed to kick members: ${error.message}`);
+  }
+});
+
+// Enhanced member list with tagging
+adams({ nomCom: "tagall", reaction: "👥", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
+  try {
+    const metadata = await zk.groupMetadata(chatId);
+    const allMembers = metadata.participants;
+    
+    // Create tagged list
+    const memberList = allMembers.map(m => {
+      const number = m.id.split('@')[0];
+      return m.admin ? `🛡️ @${number}` : `◎ @${number}`;
+    }).join('\n');
+    
+    const message = `👥 *Group Members* 👥\n\n` +
+                   `📊 Total: ${allMembers.length}\n` +
+                   `🛡️ Admins: ${allMembers.filter(m => m.admin).length}\n\n` +
+                   `${memberList}`;
+    
+    await zk.sendMessage(chatId, {
+      text: message,
+      mentions: allMembers.map(m => m.id)
+    });
+  } catch (error) {
+    repondre(`❌ Failed to get members list: ${error.message}`);
   }
 });
 
@@ -53,14 +96,14 @@ adams({ nomCom: "closegroup", reaction: "🔒", nomFichier: __filename }, async 
 });
 
 // Tag all members
-adams({ nomCom: "tagall", reaction: "📢", nomFichier: __filename }, async (chatId, zk, { repondre, arg }) => { 
+adams({ nomCom: "hidetag", reaction: "📢", nomFichier: __filename }, async (chatId, zk, { repondre, arg }) => { 
   try {
     const metadata = await zk.groupMetadata(chatId);
     const mentions = metadata.participants.map(p => p.id);
     const message = arg?.join(' ') || "@everyone";
     
     await zk.sendMessage(chatId, { 
-      text: `📢 ${message}\n\n` + ' '.repeat(mentions.length),
+      text: `*${message}*` + ' '.repeat(mentions.length),
       mentions 
     });
   } catch (error) {
