@@ -2,12 +2,12 @@ const googleTTS = require("google-tts-api");
 const { createContext } = require("../utils/helper");
 const { createContext2 } = require("../utils/helper2");
 
-
 // Enhanced Memory System with TTL
 class ConversationMemory {
     constructor() {
         this.store = new Map();
-        this.ttl = 60 * 60 * 1000; // 30 minutes retention
+        this.ttl = 60 * 60 * 1000; // 1 hour retention
+        this.apiUsage = new Map(); // Track last used API per conversation
     }
 
     get(jid) {
@@ -46,6 +46,13 @@ class ConversationMemory {
         }
         return info;
     }
+
+    getNextApiIndex(jid, totalApis) {
+        const lastUsed = this.apiUsage.get(jid) || -1;
+        const nextIndex = (lastUsed + 1) % totalApis;
+        this.apiUsage.set(jid, nextIndex);
+        return nextIndex;
+    }
 }
 
 const memory = new ConversationMemory();
@@ -53,6 +60,90 @@ const memory = new ConversationMemory();
 module.exports = {
     setup: async (adams, { config, logger }) => {
         if (!adams || !config) return;
+
+        const availableApis = [
+            {
+                url: "https://apis.davidcyriltech.my.id/ai/qwen2Coder?text=",
+                name: "Qwen2 Coder"
+            },
+            {
+                url: "https://bk9.fun/ai/chataibot?q=",
+                name: "ChatAI Bot"
+            },
+            {
+                url: "https://apis.davidcyriltech.my.id/ai/qvq?text=",
+                name: "QVQ API"
+            },
+            {
+                url: "https://apis-keith.vercel.app/ai/deepseek?q=",
+                name: "DeepSeek"
+            },
+            {
+                url: "https://apis.davidcyriltech.my.id/ai/gemma?text=",
+                name: "Gemma"
+            },
+            {
+                url: "https://apis.davidcyriltech.my.id/ai/pixtral?text=",
+                name: "Pixtral"
+            },
+            {
+                url: "https://apis.davidcyriltech.my.id/ai/uncensor?text=",
+                name: "Uncensor"
+            },
+            {
+                url: "https://apis.davidcyriltech.my.id/ai/claudeSonnet?text=",
+                name: "Claude Sonnet"
+            }
+        ];
+
+        // Function to try APIs in round-robin fashion with fallback
+        const tryApis = async (jid, query, context) => {
+            const contextualQuery = [
+                query,
+                ...Object.entries(context.userData).map(([k,v]) => `[User ${k}: ${v}]`),
+                ...context.history.slice(-2).map((h, i) => `[Previous: ${h}]`)
+            ].join(" ");
+
+            let lastError = null;
+            let attempts = 0;
+            const maxAttempts = availableApis.length;
+            
+            while (attempts < maxAttempts) {
+                const apiIndex = memory.getNextApiIndex(jid, availableApis.length);
+                const api = availableApis[apiIndex];
+                
+                try {
+                    const url = api.url + encodeURIComponent(contextualQuery);
+                    logger.debug(`Trying API: ${api.name} (${url.substring(0, 60)}...)`);
+                    
+                    const response = await fetch(url, { timeout: 8000 });
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const data = await response.json();
+                    const result = data.result || data.response || data.message;
+                    
+                    if (result) {
+                        logger.debug(`Success with API: ${api.name}`);
+                        return {
+                            response: result,
+                            apiUsed: api.name
+                        };
+                    }
+                } catch (error) {
+                    lastError = error;
+                    logger.debug(`API ${api.name} failed: ${error.message}`);
+                    attempts++;
+                    
+                    // If this was our last attempt, wait a bit before retrying
+                    if (attempts === maxAttempts - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
+            
+            throw lastError || new Error("All APIs failed to respond");
+        };
 
         adams.ev.on("messages.upsert", async (m) => {
             const { messages } = m;
@@ -136,56 +227,23 @@ module.exports = {
                 );
             }
 
-            // Enhanced API Handler with Memory Context
+            // Enhanced API Handler with round-robin selection
             const getAIResponse = async (query) => {
-                const apis = [
-                    "https://apis.davidcyriltech.my.id/ai/qwen2Coder?text=",
-                    "https://bk9.fun/ai/chataibot?q=",
-                    "https://apis.davidcyriltech.my.id/ai/qvq?text=",
-                    "https://apis-keith.vercel.app/ai/deepseek?q=",
-                    "https://apis.davidcyriltech.my.id/ai/gemma?text=",
-                    "https://apis.davidcyriltech.my.id/ai/pixtral?text=",
-                    "https://apis.davidcyriltech.my.id/ai/uncensor?text=",
-                    "https://apis.davidcyriltech.my.id/ai/claudeSonnet?text="
-                ];
+                try {
+                    const { response, apiUsed } = await tryApis(remoteJid, query, context);
+                    
+                    // Update memory with response and API used
+                    memory.set(remoteJid, {
+                        ...context,
+                        history: [...context.history.slice(-3), `${query} → ${response.substring(0,30)}...`],
+                        lastApiUsed: apiUsed
+                    });
 
-                const contextualQuery = [
-                    query,
-                    ...Object.entries(context.userData).map(([k,v]) => `[User ${k}: ${v}]`),
-                    ...context.history.slice(-2).map((h, i) => `[Previous: ${h}]`)
-                ].join(" ");
-
-                let lastValidResponse = "I couldn't process that. Could you rephrase?";
-                let lastError = null;
-
-                for (const api of apis) {
-                    try {
-                        const url = api + encodeURIComponent(contextualQuery);
-                        const response = await fetch(url, { timeout: 8000 });
-                        
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        
-                        const data = await response.json();
-                        const result = data.result || data.response || data.message;
-                        
-                        if (result) {
-                            lastValidResponse = result;
-                            break;
-                        }
-                    } catch (error) {
-                        lastError = error;
-                        logger.debug(`API ${api} failed: ${error.message}`);
-                        continue;
-                    }
+                    return response;
+                } catch (error) {
+                    logger.error("All API attempts failed:", error.message);
+                    return "I'm having trouble connecting to my knowledge sources. Please try again later.";
                 }
-
-                // Update memory
-                memory.set(remoteJid, {
-                    ...context,
-                    history: [...context.history.slice(-1), `${query} → ${lastValidResponse.substring(0,30)}...`]
-                });
-
-                return lastValidResponse;
             };
 
             // Voice Response Handler
@@ -209,13 +267,17 @@ module.exports = {
                                 ...createContext2(senderJid, {
                                     title: `${context.botName} Voice Response`,
                                     body: `For ${context.userData.name || "User"}`
-                                    //thumbnail: "https://files.catbox.moe/sd49da.jpg"
                                 })
                             },
                             { quoted: ms }
                         );
                     } catch (error) {
                         logger.error("Voice response failed:", error.message);
+                        await adams.sendMessage(
+                            remoteJid,
+                            { text: "I couldn't generate a voice response, but here's the text:\n\n" + error.message },
+                            { quoted: ms }
+                        );
                     }
                 }
             }
@@ -240,6 +302,11 @@ module.exports = {
                         );
                     } catch (error) {
                         logger.error("Text response failed:", error.message);
+                        await adams.sendMessage(
+                            remoteJid,
+                            { text: "Sorry, I encountered an error processing your request. Please try again." },
+                            { quoted: ms }
+                        );
                     }
                 }
             }
