@@ -77,7 +77,7 @@ adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, z
   }
 
   const tagMessage = `
-🟣 *${BOT_NAME} Group Mention* 🟣
+🟣 *${BOT_NAME} GROUP TAG* 🟣
 
 📌 *Group:* ${groupName}
 👤 *From:* ${senderName}
@@ -98,11 +98,10 @@ ${members.map(m => `◎ @${m.id.split('@')[0]}`).join('\n')}
   }, { quoted: ms });
 });
 
-// Fixed hidetag command with proper names
 adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
+  const { isGroup, metadata } = await verifyGroup(zk, dest, repondre, ms);
   if (!isGroup) return;
 
   if (!verifAdmin && !superUser) {
@@ -121,15 +120,9 @@ adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, 
   const members = metadata.participants;
   const hiddenMentions = Array(members.length).fill('‎').join('\n'); // Zero-width spaces
 
-  const context = createContext(dest, {
-    title: "Stealth Notification",
-    body: `Silent alert in ${groupName}`
-  });
-
+  // Only quote the original message without sending new text
   await zk.sendMessage(dest, {
-    text: `🔇 *${BOT_NAME} Silent Alert*\n\n${message}\n${hiddenMentions}`,
-    mentions: members.map(m => m.id),
-    ...context
+    mentions: members.map(m => m.id)
   }, { quoted: ms });
 });
 
