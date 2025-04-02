@@ -26,7 +26,7 @@ const formatDuration = (ms) => {
 };
 
 // Open Group with Delay
-adams({ nomCom: "opentime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "opentime",categorie: "Group", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, verifAdmin, superUser } = commandeOptions;
   
   // Check permissions
@@ -79,7 +79,7 @@ adams({ nomCom: "opentime", reaction: "⏱️", nomFichier: __filename }, async 
 });
 
 // Close Group with Delay
-adams({ nomCom: "closetime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "closetime", categorie: "Group",reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, verifAdmin, superUser } = commandeOptions;
   
   // Check permissions
@@ -132,7 +132,7 @@ adams({ nomCom: "closetime", reaction: "⏱️", nomFichier: __filename }, async
 });
 
 // Cancel Scheduled Operation
-adams({ nomCom: "canceltimer", reaction: "❌", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "canceltimer", categorie: "Group",reaction: "❌", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre, verifAdmin, superUser } = commandeOptions;
   
   if (!verifAdmin && !superUser) {
@@ -149,7 +149,7 @@ adams({ nomCom: "canceltimer", reaction: "❌", nomFichier: __filename }, async 
 });
 
 
-adams({ nomCom: "online", reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "online", categorie: "Group",reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
   
   try {
@@ -213,7 +213,7 @@ adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) 
   });
 
 
-adams({ nomCom: "lockdown", reaction: "🚫", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "lockdown", categorie: "Group",reaction: "🚫", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
     if (!verifAdmin) return repondre("❌ Admin privileges required");
     
@@ -225,7 +225,7 @@ adams({ nomCom: "lockdown", reaction: "🚫", nomFichier: __filename }, async (c
   }
 });
 
-adams({ nomCom: "tagadmin", reaction: "🛡️", nomFichier: __filename }, async (chatId, zk, { repondre, arg }) => {
+adams({ nomCom: "tagadmin", categorie: "Group",reaction: "🛡️", nomFichier: __filename }, async (chatId, zk, { repondre, arg }) => {
   try {
     const metadata = await zk.groupMetadata(chatId);
     const admins = metadata.participants.filter(p => p.admin);
@@ -246,7 +246,7 @@ adams({ nomCom: "tagadmin", reaction: "🛡️", nomFichier: __filename }, async
   }
 });
 
-adams({ nomCom: "resetlink", reaction: "🔄", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "resetlink",categorie: "Group", reaction: "🔄", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
     if (!verifAdmin) {
       return repondre("❌ You need admin privileges to reset invite link");
@@ -264,7 +264,7 @@ adams({ nomCom: "resetlink", reaction: "🔄", nomFichier: __filename }, async (
   }
 });
 
-adams({ nomCom: "poll", reaction: "📊", nomFichier: __filename }, async (chatId, zk, { repondre, arg, verifAdmin }) => {
+adams({ nomCom: "poll", categorie: "Group",reaction: "📊", nomFichier: __filename }, async (chatId, zk, { repondre, arg, verifAdmin }) => {
   try {
     if (!verifAdmin) {
       return repondre("❌ You need admin privileges to create polls");
@@ -290,7 +290,7 @@ adams({ nomCom: "poll", reaction: "📊", nomFichier: __filename }, async (chatI
   }
 });
 
-adams({ nomCom: "resetlink", reaction: "🔄", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "resetlink", categorie: "Group",reaction: "🔄", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
     if (!verifAdmin) {
       return repondre("❌ You need admin privileges to reset invite link");
@@ -308,7 +308,7 @@ adams({ nomCom: "resetlink", reaction: "🔄", nomFichier: __filename }, async (
   }
 });
 
-adams({ nomCom: "poll", reaction: "📊", nomFichier: __filename }, async (chatId, zk, { repondre, arg, verifAdmin }) => {
+adams({ nomCom: "poll",categorie: "Group", reaction: "📊", nomFichier: __filename }, async (chatId, zk, { repondre, arg, verifAdmin }) => {
   try {
     if (!verifAdmin) {
       return repondre("❌ You need admin privileges to create polls");
@@ -334,7 +334,7 @@ adams({ nomCom: "poll", reaction: "📊", nomFichier: __filename }, async (chatI
   }
 });
 
-adams({ nomCom: "setgrouppic", reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "setgrouppic", categorie: "Group",reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { ms, repondre } = commandeOptions;
   
   if (!ms.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage) {
@@ -350,7 +350,7 @@ adams({ nomCom: "setgrouppic", reaction: "🖼️", nomFichier: __filename }, as
   }
 });
 
-adams({ nomCom: "countries", reaction: "🌍", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
+adams({ nomCom: "countries",categorie: "Group", reaction: "🌍", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
   try {
     const metadata = await zk.groupMetadata(chatId);
     const members = metadata.participants;
@@ -379,7 +379,7 @@ adams({ nomCom: "countries", reaction: "🌍", nomFichier: __filename }, async (
   }
 });
 
-adams({ nomCom: "ephemeral", reaction: "⏳", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "ephemeral",categorie: "Group", reaction: "⏳", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre, arg } = commandeOptions;
   
   const durations = {
@@ -400,7 +400,7 @@ adams({ nomCom: "ephemeral", reaction: "⏳", nomFichier: __filename }, async (d
   }
 });
 
-adams({ nomCom: "del", reaction: "🗑️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "del", categorie: "Group",reaction: "🗑️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { ms, repondre } = commandeOptions;
   
   if (!ms.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
@@ -430,7 +430,7 @@ adams({ nomCom: "del", reaction: "🗑️", nomFichier: __filename }, async (des
   }
 });
 
-adams({ nomCom: "reject", reaction: "❌", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "reject", categorie: "Group",reaction: "❌", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
     if (!verifAdmin) {
       return repondre("❌ You need admin privileges to reject join requests");
@@ -452,7 +452,7 @@ adams({ nomCom: "reject", reaction: "❌", nomFichier: __filename }, async (chat
   }
 });
 
-adams({ nomCom: "approve", reaction: "✅", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "approve", categorie: "Group",reaction: "✅", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
     if (!verifAdmin) {
       return repondre("❌ You need admin privileges to approve join requests");
