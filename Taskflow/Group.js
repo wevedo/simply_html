@@ -1,7 +1,5 @@
 const { adams } = require("../Ibrahim/adams")
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
-const {ajouterOuMettreAJourJid,mettreAJourAction,verifierEtatJid} = require("../Ibrahim/antilien")
-const {atbajouterOuMettreAJourJid,atbverifierEtatJid} = require("../Ibrahim/antibot")
 const fs = require("fs-extra");
 const conf = require("../config");
 const { default: axios } = require('axios');
