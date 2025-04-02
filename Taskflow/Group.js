@@ -1,7 +1,34 @@
 const { adams } = require("../Ibrahim/adams");
 
 
-adams({ nomCom: "leave", reaction: "🚪", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => {
+adams({ nomCom: "add", reaction: "➕", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
+  try {
+    // Check permissions - either superUser or group admin
+    if (!superUser && !verifAdmin) {
+      return repondre("❌ You need admin privileges to use this command");
+    }
+
+    if (!arg || !arg[0]) {
+      return repondre("ℹ️ Usage: !add phone_number");
+    }
+
+    const phoneNumber = arg[0].replace(/[^0-9]/g, "");
+    const userJid = `${phoneNumber}@s.whatsapp.net`;
+    
+    // Verify valid phone number
+    if (phoneNumber.length < 10) {
+      return repondre("❌ Please provide a valid phone number (at least 10 digits)");
+    }
+
+    // Add user to group
+    await zk.groupParticipantsUpdate(chatId, [userJid], "add");
+    repondre(`✅ Added ${phoneNumber} to the group`);
+    
+  } catch (error) {
+    repondre(`❌ Failed to add user: ${error.message}`);
+  }
+});
+adams({ nomCom: "left", reaction: "🚪", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => {
   try {
     if (!superUser) {
       return repondre("❌ This command is reserved for the bot owner only");
@@ -23,7 +50,7 @@ adams({ nomCom: "kick", reaction: "👢", nomFichier: __filename }, async (chatI
     }
 
     if (!arg || !arg[0]) {
-      return repondre("ℹ️ Usage: !kick @user\nExample: !kick 1234567890");
+      return repondre("ℹ️ Usage: !kick @user");
     }
 
     const user = arg[0].replace(/[@+]/g, "") + "@s.whatsapp.net";
