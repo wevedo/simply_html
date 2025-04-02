@@ -1,6 +1,38 @@
 const { adams } = require("../Ibrahim/adams");
 
 
+adams({ nomCom: "link", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+  try {
+    // Only group admins can generate invite links
+    if (!verifAdmin) {
+      return repondre("❌ You need admin privileges to generate invite links");
+    }
+
+    const inviteCode = await zk.groupInviteCode(chatId);
+    const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
+    
+    repondre(`📩 *Group Invite Link*\n\n${inviteLink}\n\nShare this link to invite others`);
+    
+  } catch (error) {
+    repondre(`❌ Failed to generate invite link: ${error.message}`);
+  }
+});
+adams({ nomCom: "invite", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+  try {
+    // Only group admins can generate invite links
+    if (!verifAdmin) {
+      return repondre("❌ You need admin privileges to generate invite links");
+    }
+
+    const inviteCode = await zk.groupInviteCode(chatId);
+    const inviteLink = `https://chat.whatsapp.com/${inviteCode}`;
+    
+    repondre(`📩 *Group Invite Link*\n\n${inviteLink}\n\nShare this link to invite others`);
+    
+  } catch (error) {
+    repondre(`❌ Failed to generate invite link: ${error.message}`);
+  }
+});
 adams({ nomCom: "add", reaction: "➕", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
   try {
     // Check permissions - either superUser or group admin
