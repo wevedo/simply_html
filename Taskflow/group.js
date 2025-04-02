@@ -2,13 +2,13 @@ const { adams } = require("../Ibrahim/adams");
 const fs = require("fs-extra");
 const conf = require("../config");
 
-// Helper function to check if command is used in group
-function checkGroup(repondre, verifGroupe) {
-  if (!verifGroupe) {
-    repondre("This command is for groups only ❌");
-    return false;
-  }
-  return true;
+function checkGroup(repondre, message) {  
+    const isGroup = message.key.remoteJid.endsWith("@g.us");  
+    if (!isGroup) {  
+        repondre("This command is for groups only ❌");  
+        return false;  
+    }  
+    return true;  
 }
 
 // Kick command (works by replying to user)
