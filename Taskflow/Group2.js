@@ -1,5 +1,136 @@
 const { adams } = require("../Ibrahim/adams");
 
+// ======================
+// GLOBAL STATE STORE
+// ======================
+const groupState = new Map();
+
+function setGroupState(groupId, state) {
+  // Clear any existing timeout
+  const current = groupState.get(groupId);
+  if (current?.timeout) clearTimeout(current.timeout);
+  
+  // Set new state
+  groupState.set(groupId, {
+    ...state,
+    timeout: state.timeoutId ? setTimeout(state.action, state.duration) : null
+  });
+}
+
+function getGroupState(groupId) {
+  return groupState.get(groupId) || {};
+}
+
+// ======================
+// TIMED GROUP COMMANDS
+// ======================
+adams({ nomCom: "opentime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, { repondre, arg, verifAdmin }) => {
+  if (!verifAdmin) return repondre("❌ Admin only command");
+  
+  const duration = parseDuration(arg[0]);
+  if (!duration) return repondre("ℹ️ Usage: !opentime 5m (minutes) or !opentime 1h (hours)");
+
+  // Set closed state immediately
+  await zk.groupSettingUpdate(dest, "announcement");
+  
+  setGroupState(dest, {
+    action: async () => {
+      await zk.groupSettingUpdate(dest, "not_announcement");
+      zk.sendMessage(dest, { text: "🔓 Group automatically opened" });
+    },
+    duration: duration,
+    type: "scheduled_open",
+    expiresAt: Date.now() + duration
+  });
+
+  repondre(`⏱️ Group will auto-open in ${formatDuration(duration)}`);
+});
+
+adams({ nomCom: "closetime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, { repondre, arg, verifAdmin }) => {
+  if (!verifAdmin) return repondre("❌ Admin only command");
+  
+  const duration = parseDuration(arg[0]);
+  if (!duration) return repondre("ℹ️ Usage: !closetime 5m (minutes) or !closetime 1h (hours)");
+
+  // Set open state immediately
+  await zk.groupSettingUpdate(dest, "not_announcement");
+  
+  setGroupState(dest, {
+    action: async () => {
+      await zk.groupSettingUpdate(dest, "announcement");
+      zk.sendMessage(dest, { text: "🔒 Group automatically closed" });
+    },
+    duration: duration,
+    type: "scheduled_close", 
+    expiresAt: Date.now() + duration
+  });
+
+  repondre(`⏱️ Group will auto-close in ${formatDuration(duration)}`);
+});
+
+// ======================
+// DISAPPEARING MESSAGES
+// ======================
+adams({ nomCom: "disap", reaction: "⏳", nomFichier: __filename }, async (dest, zk, { repondre, verifAdmin }) => {
+  if (!verifAdmin) return repondre("❌ Admin only command");
+  
+  repondre([
+    "⏳ *Disappearing Messages*",
+    "Choose duration:",
+    "• `!disap1` - 1 day",
+    "• `!disap7` - 7 days", 
+    "• `!disap90` - 90 days",
+    "• `!disap-off` - Turn off"
+  ].join("\n"));
+});
+
+// Handler for all durations
+const setupDisappearing = (cmd, days) => {
+  adams({ nomCom: cmd, reaction: "⏳", nomFichier: __filename }, async (dest, zk, { repondre, verifAdmin }) => {
+    if (!verifAdmin) return repondre("❌ Admin only command");
+    
+    try {
+      await zk.groupSettingUpdate(dest, "ephemeral", days * 86400);
+      repondre(`✅ Messages will disappear after ${days} day${days !== 1 ? 's' : ''}`);
+    } catch (error) {
+      repondre(`❌ Failed: ${error.message}`);
+    }
+  });
+};
+
+setupDisappearing("disap1", 1);
+setupDisappearing("disap7", 7); 
+setupDisappearing("disap90", 90);
+
+// Turn off disappearing messages
+adams({ nomCom: "disap-off", reaction: "⏳", nomFichier: __filename }, async (dest, zk, { repondre, verifAdmin }) => {
+  if (!verifAdmin) return repondre("❌ Admin only command");
+  
+  try {
+    await zk.groupSettingUpdate(dest, "ephemeral", 0);
+    repondre("✅ Disappearing messages turned off");
+  } catch (error) {
+    repondre(`❌ Failed: ${error.message}`);
+  }
+});
+
+// ======================
+// HELPER FUNCTIONS
+// ======================
+function parseDuration(input) {
+  if (!input) return null;
+  const match = input.match(/^(\d+)([mh])$/i);
+  if (!match) return null;
+  
+  const val = parseInt(match[1]);
+  return match[2] === 'm' ? val * 60000 : val * 3600000;
+}
+
+function formatDuration(ms) {
+  const mins = Math.floor(ms / 60000);
+  return mins < 60 ? `${mins} minute${mins !== 1 ? 's' : ''}` : `${Math.floor(mins/60)} hour${mins >= 120 ? 's' : ''}`;
+}
+
 
 adams({ nomCom: "online", reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
@@ -43,81 +174,6 @@ adams({ nomCom: "online", reaction: "🟢", nomFichier: __filename }, async (des
   }
 });
 
-
-// Open group with duration
-adams({ nomCom: "opentime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
-  const { repondre, arg } = commandeOptions;
-  
-  if (!arg[0]) return repondre("ℹ️ Usage: !opentime 5m (minutes) or !opentime 2h (hours)");
-  
-  const duration = parseDuration(arg[0]);
-  if (!duration) return repondre("❌ Invalid duration. Use format like 30m or 2h");
-
-  await zk.groupSettingUpdate(dest, "not_announcement");
-  repondre(`🔓 Group opened for ${formatDuration(duration)}`);
-  
-  setTimeout(async () => {
-    await zk.groupSettingUpdate(dest, "announcement");
-    zk.sendMessage(dest, { text: "⏱️ Group auto-closed after duration" });
-  }, duration * 1000);
-});
-
-// Close group with duration
-adams({ nomCom: "closetime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
-  const { repondre, arg } = commandeOptions;
-  
-  if (!arg[0]) return repondre("ℹ️ Usage: !closetime 10m (minutes) or !closetime 1h (hours)");
-  
-  const duration = parseDuration(arg[0]);
-  if (!duration) return repondre("❌ Invalid duration. Use format like 30m or 2h");
-
-  await zk.groupSettingUpdate(dest, "announcement");
-  repondre(`🔒 Group closed for ${formatDuration(duration)}`);
-  
-  setTimeout(async () => {
-    await zk.groupSettingUpdate(dest, "not_announcement");
-    zk.sendMessage(dest, { text: "⏱️ Group auto-opened after duration" });
-  }, duration * 1000);
-});
-
-// Helper functions
-function parseDuration(input) {
-  const match = input.match(/^(\d+)([mh])$/i);
-  if (!match) return null;
-  
-  const value = parseInt(match[1]);
-  const unit = match[2].toLowerCase();
-  
-  return unit === 'm' ? value * 60 * 1000 : value * 60 * 60 * 1000;
-}
-
-function formatDuration(ms) {
-  const hours = Math.floor(ms / (60 * 60 * 1000));
-  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-  
-  return hours > 0 
-    ? `${hours} hour${hours > 1 ? 's' : ''}${minutes > 0 ? ` and ${minutes} minute${minutes > 1 ? 's' : ''}` : ''}`
-    : `${minutes} minute${minutes > 1 ? 's' : ''}`;
-}
-
-adams({ nomCom: "report", reaction: "🚨", nomFichier: __filename }, async (chatId, zk, { repondre, msgRepondu }) => {
-  try {
-    if (!msgRepondu) return repondre("ℹ️ Reply to message to report");
-    
-    const userJid = msgRepondu.key.participant;
-    const admins = (await zk.groupMetadata(chatId)).participants.filter(p => p.admin);
-    
-    await zk.sendMessage(chatId, {
-      text: `🚨 REPORTED MESSAGE\n\nReported by: @${zk.user.id.split('@')[0]}\n\nAdmins please review`,
-      mentions: admins.map(a => a.id)
-    }, { quoted: msgRepondu });
-    
-    repondre("✅ Reported to admins");
-    
-  } catch (error) {
-    repondre(`❌ Report failed: ${error.message}`);
-  }
-});
 
 adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, verifGroupe } = commandeOptions;
