@@ -12,6 +12,11 @@ module.exports = {
         const botJid = `${adams.user?.id.split('@')[0]}@s.whatsapp.net`;
         const businessLink = 'https://business.bwmxmd.online/';
         const infoLink = 'https://ibrahimadams.site/';
+        const whitelistedLinks = [
+            businessLink,
+            infoLink,
+            ...(config.WHITELISTED_LINKS || [])
+        ];
 
         // Only listen to messages (not group participant updates)
         adams.ev.on('messages.upsert', async (msg) => {
@@ -25,15 +30,20 @@ module.exports = {
                 const from = message.key.remoteJid;
                 const sender = message.key.participant || from;
                 
-                // Only process group messages and skip bot messages
-                if (!from?.endsWith('@g.us') || sender === botJid) return;
+                // Skip if: from bot, from me, or not a group
+                if (!from?.endsWith('@g.us') || 
+                    sender === botJid || 
+                    message.key.fromMe) {
+                    return;
+                }
 
-                // Get group metadata and check admin status
+                // Get group metadata and check admin/superuser status
                 const groupMetadata = await adams.groupMetadata(from);
-                const isAdmin = groupMetadata.participants.some(
-                    p => p.id === sender && p.admin
-                );
-                if (isAdmin) return;
+                const participant = groupMetadata.participants.find(p => p.id === sender);
+                const isAdmin = participant?.admin;
+                const isSuperUser = sender === config.OWNER_NUMBER + '@s.whatsapp.net';
+                
+                if (isAdmin || isSuperUser) return;
 
                 // Extract message text
                 const msgObj = message.message;
@@ -43,6 +53,12 @@ module.exports = {
 
                 // Only proceed if link is detected
                 if (!isAnyLink(body)) return;
+
+                // Check if link is whitelisted
+                const containsWhitelistedLink = whitelistedLinks.some(link => 
+                    body.includes(link)
+                );
+                if (containsWhitelistedLink) return;
 
                 // Create newsletter context
                 const context = createContext(sender, {
