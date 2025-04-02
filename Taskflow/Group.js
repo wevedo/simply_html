@@ -19,7 +19,7 @@ const EMOJI_THEME = {
   broadcast: "📡"
 };
 
-// Enhanced group verification
+// Enhanced group verification with metadata
 async function verifyGroup(zk, dest, repondre) {
   try {
     const metadata = await zk.groupMetadata(dest);
@@ -41,17 +41,28 @@ async function verifyGroup(zk, dest, repondre) {
   }
 }
 
+// Helper to get sender info safely
+function getSenderInfo(commandeOptions) {
+  return {
+    groupName: commandeOptions.nomGroupe || commandeOptions.infosGroupe?.subject || "Unknown Group",
+    senderName: commandeOptions.nomAuteurMessage || "Admin",
+    isAdmin: commandeOptions.verifAdmin || false,
+    isSuperUser: commandeOptions.superUser || false
+  };
+}
+
 // Premium tagall command with newsletter styling
 adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg, nomGroupe, infosGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
+  const { ms, repondre, arg } = commandeOptions;
   
   const { isGroup, metadata } = await verifyGroup(zk, dest, repondre);
   if (!isGroup) return;
 
+  const { groupName, senderName, isAdmin, isSuperUser } = getSenderInfo(commandeOptions);
   const message = arg?.join(' ') || 'Notification from admin';
   const members = metadata.participants;
   
-  if (!verifAdmin && !superUser) {
+  if (!isAdmin && !isSuperUser) {
     const context = createContext(dest, {
       title: "Admin Privileges Required",
       body: "Tagall command restricted"
@@ -66,16 +77,16 @@ adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, z
   const tagMessage = `
 🟣 *${BOT_NAME} Group Mention* 🟣
 
-📌 *Group:* ${nomGroupe}
-👤 *From:* ${nomAuteurMessage}
+📌 *Group:* ${groupName}
+👤 *From:* ${senderName}
 📝 *Message:* ${message}
 
-${members.map(m => `◎ @${m.id.split('@')[0]}`).join('\n')}
+${members.map((m, i) => `${i % 2 === 0 ? '🔹' : '🔸'} @${m.id.split('@')[0]}`).join('\n')}
   `;
 
   const context = createContext(dest, {
     title: "Group Mention Alert",
-    body: `New mention in ${nomGroupe}`
+    body: `New mention in ${groupName}`
   });
 
   await zk.sendMessage(dest, {
@@ -87,12 +98,14 @@ ${members.map(m => `◎ @${m.id.split('@')[0]}`).join('\n')}
 
 // Stealth hidetag command
 adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg, nomGroupe, infosGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
+  const { ms, repondre, arg } = commandeOptions;
   
   const { isGroup, metadata } = await verifyGroup(zk, dest, repondre);
   if (!isGroup) return;
 
-  if (!verifAdmin && !superUser) {
+  const { groupName, senderName, isAdmin, isSuperUser } = getSenderInfo(commandeOptions);
+  
+  if (!isAdmin && !isSuperUser) {
     const context = createContext(dest, {
       title: "Admin Privileges Required",
       body: "Hidetag command restricted"
@@ -110,11 +123,11 @@ adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, 
 
   const context = createContext(dest, {
     title: "Stealth Notification",
-    body: `Silent alert in ${nomGroupe}`
+    body: `Silent alert in ${groupName}`
   });
 
   await zk.sendMessage(dest, {
-    text: `🔇 *${BOT_NAME} Silent Alert*\n\n${message}\n${hiddenMentions}`,
+    text: `🔇 *${BOT_NAME} Silent Alert*\n\n📌 *Group:* ${groupName}\n👤 *From:* ${senderName}\n📝 *Message:* ${message}\n${hiddenMentions}`,
     mentions: members.map(m => m.id),
     ...context
   }, { quoted: ms });
@@ -122,12 +135,14 @@ adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, 
 
 // Premium DM broadcast command
 adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre, arg, nomGroupe, infosGroupe, nomAuteurMessage, verifAdmin, superUser } = commandeOptions;
+  const { ms, repondre, arg } = commandeOptions;
   
   const { isGroup, metadata } = await verifyGroup(zk, dest, repondre);
   if (!isGroup) return;
 
-  if (!verifAdmin && !superUser) {
+  const { groupName, senderName, isAdmin, isSuperUser } = getSenderInfo(commandeOptions);
+  
+  if (!isAdmin && !isSuperUser) {
     const context = createContext(dest, {
       title: "Admin Privileges Required",
       body: "Broadcast command restricted"
@@ -168,10 +183,10 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
   for (const member of members) {
     try {
       await zk.sendMessage(member.id, {
-        text: `✉️ *Message from ${nomAuteurMessage}*\n\n${message}\n\n_${BOT_TAGLINE}_`,
+        text: `✉️ *Message from ${senderName}*\n\n📌 *Group:* ${groupName}\n📝 *Message:* ${message}\n\n_${BOT_TAGLINE}_`,
         ...createContext(member.id, {
-          title: `Message from ${nomGroupe}`,
-          body: nomAuteurMessage
+          title: `Message from ${groupName}`,
+          body: senderName
         })
       });
       success++;
@@ -183,6 +198,7 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
   const resultText = [
     `${EMOJI_THEME.success} *Broadcast Complete*`,
     `✅ Success: ${success}`,
+    `📌 Group: ${groupName}`,
     failed.length ? `❌ Failed: ${failed.length}\n${failed.slice(0, 5).join(', ')}${failed.length > 5 ? '...' : ''}` : ''
   ].filter(Boolean).join('\n');
 
