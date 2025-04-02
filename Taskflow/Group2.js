@@ -86,24 +86,26 @@ adams({ nomCom: "report", reaction: "🚨", nomFichier: __filename }, async (cha
   }
 });
 
-adams({ nomCom: "info", reaction: "📄", nomFichier: __filename }, async (chatId, zk, { repondre, msgRepondu }) => {
-  try {
-    if (!msgRepondu) return repondre("ℹ️ Reply to a user's message");
-    
-    const userJid = msgRepondu.key.participant || msgRepondu.key.remoteJid;
-    const userInfo = await zk.fetchStatus(userJid);
-    
-    const message = `📄 *User Info*\n\n` +
-                   `Number: ${userJid.split('@')[0]}\n` +
-                   `Status: ${userInfo.status || "None"}\n` +
-                   `Last Seen: ${userInfo.lastSeen || "Unknown"}`;
-    
-    repondre(message);
-    
-  } catch (error) {
-    repondre(`❌ Failed to get user info: ${error.message}`);
-  }
-});
+adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, verifGroupe } = commandeOptions;
+  if (!verifGroupe) { repondre("order reserved for the group only"); return };
+
+ try { ppgroup = await zk.profilePictureUrl(dest ,'image') ; } catch { ppgroup = conf.IMAGE_MENU}
+
+    const info = await zk.groupMetadata(dest)
+
+    /*console.log(metadata.id + ", title: " + metadata.subject + ", description: " + metadata.desc)*/
+
+
+    let mess = {
+      image: { url: ppgroup },
+      caption:  `*━━━━『Group Info』━━━━*\n\n*🎐Name:* ${info.subject}\n\n*🔩Group's ID:* ${dest}\n\n*🔍Desc:* \n\n${info.desc}`
+    }
+
+
+    zk.sendMessage(dest, mess, { quoted: ms })
+  });
+
 
 adams({ nomCom: "lockdown", reaction: "🚫", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
   try {
