@@ -364,7 +364,7 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
     const ms = messages[0];
     if (!ms?.message) return;
 
-    console.log(`📩 New message from: ${ms.key.remoteJid}`);
+   // console.log(`📩 New message from: ${ms.key.remoteJid}`);
 
     const senderJid = ms.key.participant || ms.key.remoteJid;
     const superUser = SUDO_NUMBERS.includes(senderJid) || senderJid === `${conf.NUMERO_OWNER}@s.whatsapp.net`;
