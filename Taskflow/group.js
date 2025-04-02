@@ -1,284 +1,300 @@
+
 const { adams } = require("../Ibrahim/adams");
 const fs = require("fs-extra");
-const conf = require("../config");
 
-function checkGroup(repondre, message) {  
-    const isGroup = message.key.remoteJid.endsWith("@g.us");  
-    if (!isGroup) {  
-        repondre("This command is for groups only ❌");  
-        return false;  
-    }  
-    return true;  
+// Improved group check function
+async function checkGroup(zk, dest, repondre) {
+  try {
+    const metadata = await zk.groupMetadata(dest).catch(() => null);
+    if (!metadata) {
+      repondre("❌ This command only works in groups");
+      return false;
+    }
+    return true;
+  } catch (error) {
+    repondre("❌ Error checking group status");
+    return false;
+  }
 }
 
-// Kick command (works by replying to user)
+// Kick command (works by replying)
 adams({ nomCom: "kick", categorie: 'Group', reaction: "👢" }, async (dest, zk, commandeOptions) => {
-  const { repondre, msgRepondu, auteurMsgRepondu, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, msgRepondu, auteurMsgRepondu, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights to use this command");
     return;
   }
   
   if (!msgRepondu) {
-    repondre("Reply to the user's message to kick them");
+    repondre("🔍 Reply to the user's message to kick them");
     return;
   }
   
   try {
     await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "remove");
-    repondre(`User @${auteurMsgRepondu.split("@")[0]} has been kicked from the group`, { mentions: [auteurMsgRepondu] });
+    repondre(`👢 User @${auteurMsgRepondu.split("@")[0]} has been kicked`, { mentions: [auteurMsgRepondu] });
   } catch (error) {
-    repondre("Failed to kick user: " + error.message);
+    repondre(`❌ Failed to kick: ${error.message}`);
   }
 });
 
-// Kickall command (kicks everyone except bot and command sender)
+// Kickall command (skips bot and sender)
 adams({ nomCom: "kickall", categorie: 'Group', reaction: "🔥" }, async (dest, zk, commandeOptions) => {
-  const { repondre, verifGroupe, superUser, auteurMessage, idBot } = commandeOptions;
+  const { repondre, auteurMessage, idBot, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!superUser) {
-    repondre("This command is reserved for bot owner only");
+    repondre("🚫 This command is for bot owner only");
     return;
   }
   
   try {
     const metadata = await zk.groupMetadata(dest);
-    const participants = metadata.participants
-      .filter(p => p.id !== auteurMessage && p.id !== idBot)
+    const toKick = metadata.participants
+      .filter(p => !p.admin && p.id !== auteurMessage && p.id !== idBot)
       .map(p => p.id);
     
-    if (participants.length === 0) {
-      repondre("No users to kick");
+    if (toKick.length === 0) {
+      repondre("ℹ️ No members to kick");
       return;
     }
     
-    await zk.groupParticipantsUpdate(dest, participants, "remove");
-    repondre(`Kicked ${participants.length} members from the group`);
+    await zk.groupParticipantsUpdate(dest, toKick, "remove");
+    repondre(`🔥 Kicked ${toKick.length} members`);
   } catch (error) {
-    repondre("Failed to kick all users: " + error.message);
+    repondre(`❌ Failed to kick all: ${error.message}`);
   }
 });
 
 // Group settings commands
 adams({ nomCom: "opengroup", categorie: 'Group', reaction: "🔓" }, async (dest, zk, commandeOptions) => {
-  const { repondre, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
   try {
     await zk.groupSettingUpdate(dest, "not_announcement");
-    repondre("Group is now open - all members can send messages");
+    repondre("🔓 Group is now open to all members");
   } catch (error) {
-    repondre("Failed to open group: " + error.message);
+    repondre(`❌ Failed to open group: ${error.message}`);
   }
 });
 
 adams({ nomCom: "closegroup", categorie: 'Group', reaction: "🔒" }, async (dest, zk, commandeOptions) => {
-  const { repondre, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
   try {
     await zk.groupSettingUpdate(dest, "announcement");
-    repondre("Group is now closed - only admins can send messages");
+    repondre("🔒 Group is now admin-only");
   } catch (error) {
-    repondre("Failed to close group: " + error.message);
+    repondre(`❌ Failed to close group: ${error.message}`);
   }
 });
 
-// Timed group settings
+// Timed group close
 adams({ nomCom: "timedclose", categorie: 'Group', reaction: "⏱️" }, async (dest, zk, commandeOptions) => {
-  const { repondre, verifGroupe, verifAdmin, superUser, arg } = commandeOptions;
+  const { repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
-  if (!arg || !arg[0]) {
-    repondre("Please specify time in minutes (e.g., timedclose 30)");
-    return;
-  }
-  
-  const minutes = parseInt(arg[0]);
-  if (isNaN(minutes) || minutes <= 0) {
-    repondre("Please provide a valid number of minutes");
+  const minutes = parseInt(arg[0]) || 30;
+  if (isNaN(minutes) || minutes < 1) {
+    repondre("⏱️ Usage: timedclose [minutes] (default: 30)");
     return;
   }
   
   try {
     await zk.groupSettingUpdate(dest, "announcement");
-    repondre(`Group will be closed for ${minutes} minutes`);
+    repondre(`⏱️ Group closed for ${minutes} minutes`);
     
     setTimeout(async () => {
       await zk.groupSettingUpdate(dest, "not_announcement");
-      zk.sendMessage(dest, { text: "Group has been automatically reopened" });
-    }, minutes * 60 * 1000);
+      zk.sendMessage(dest, { text: "⏱️ Group auto-reopened" });
+    }, minutes * 60000);
   } catch (error) {
-    repondre("Failed to schedule group closing: " + error.message);
+    repondre(`❌ Failed to timed close: ${error.message}`);
   }
 });
 
-// Promote/demote commands (works by replying)
+// Promote/demote commands
 adams({ nomCom: "promote", categorie: 'Group', reaction: "⬆️" }, async (dest, zk, commandeOptions) => {
-  const { repondre, msgRepondu, auteurMsgRepondu, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, msgRepondu, auteurMsgRepondu, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
   if (!msgRepondu) {
-    repondre("Reply to the user's message to promote them");
+    repondre("🔍 Reply to promote a user");
     return;
   }
   
   try {
     await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "promote");
-    repondre(`@${auteurMsgRepondu.split("@")[0]} has been promoted to admin`, { mentions: [auteurMsgRepondu] });
+    repondre(`⬆️ Promoted @${auteurMsgRepondu.split("@")[0]}`, { mentions: [auteurMsgRepondu] });
   } catch (error) {
-    repondre("Failed to promote user: " + error.message);
+    repondre(`❌ Failed to promote: ${error.message}`);
   }
 });
 
 adams({ nomCom: "demote", categorie: 'Group', reaction: "⬇️" }, async (dest, zk, commandeOptions) => {
-  const { repondre, msgRepondu, auteurMsgRepondu, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, msgRepondu, auteurMsgRepondu, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
   if (!msgRepondu) {
-    repondre("Reply to the user's message to demote them");
+    repondre("🔍 Reply to demote a user");
     return;
   }
   
   try {
     await zk.groupParticipantsUpdate(dest, [auteurMsgRepondu], "demote");
-    repondre(`@${auteurMsgRepondu.split("@")[0]} has been demoted from admin`, { mentions: [auteurMsgRepondu] });
+    repondre(`⬇️ Demoted @${auteurMsgRepondu.split("@")[0]}`, { mentions: [auteurMsgRepondu] });
   } catch (error) {
-    repondre("Failed to demote user: " + error.message);
+    repondre(`❌ Failed to demote: ${error.message}`);
   }
 });
 
 // Group profile picture
 adams({ nomCom: "gpp", categorie: 'Group', reaction: "🖼️" }, async (dest, zk, commandeOptions) => {
-  const { repondre, msgRepondu, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, msgRepondu, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
-  if (!msgRepondu || !msgRepondu.imageMessage) {
-    repondre("Reply to an image message to set it as group pfp");
+  if (!msgRepondu?.imageMessage) {
+    repondre("🖼️ Reply to an image");
     return;
   }
   
   try {
     const buffer = await zk.downloadMediaMessage(msgRepondu.imageMessage);
     await zk.updateProfilePicture(dest, buffer);
-    repondre("Group profile picture updated successfully");
+    repondre("✅ Group picture updated");
   } catch (error) {
-    repondre("Failed to update group pfp: " + error.message);
+    repondre(`❌ Failed to update: ${error.message}`);
   }
 });
 
-// Group name and description
+// Group name/description
 adams({ nomCom: "gname", categorie: 'Group', reaction: "✏️" }, async (dest, zk, commandeOptions) => {
-  const { repondre, arg, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
-  if (!arg || !arg[0]) {
-    repondre("Please provide the new group name");
+  if (!arg[0]) {
+    repondre("✏️ Usage: gname [new name]");
     return;
   }
   
-  const newName = arg.join(" ");
   try {
-    await zk.groupUpdateSubject(dest, newName);
-    repondre(`Group name changed to: ${newName}`);
+    await zk.groupUpdateSubject(dest, arg.join(" "));
+    repondre("✅ Group name updated");
   } catch (error) {
-    repondre("Failed to change group name: " + error.message);
+    repondre(`❌ Failed to update: ${error.message}`);
   }
 });
 
 adams({ nomCom: "gdesc", categorie: 'Group', reaction: "📝" }, async (dest, zk, commandeOptions) => {
-  const { repondre, arg, verifGroupe, verifAdmin, superUser } = commandeOptions;
+  const { repondre, arg, verifAdmin, superUser } = commandeOptions;
   
-  if (!checkGroup(repondre, verifGroupe)) return;
+  const isGroup = await checkGroup(zk, dest, repondre);
+  if (!isGroup) return;
+  
   if (!verifAdmin && !superUser) {
-    repondre("You need admin rights to use this command");
+    repondre("🚫 You need admin rights");
     return;
   }
   
-  if (!arg || !arg[0]) {
-    repondre("Please provide the new group description");
+  if (!arg[0]) {
+    repondre("📝 Usage: gdesc [new description]");
     return;
   }
   
-  const newDesc = arg.join(" ");
   try {
-    await zk.groupUpdateDescription(dest, newDesc);
-    repondre(`Group description updated`);
+    await zk.groupUpdateDescription(dest, arg.join(" "));
+    repondre("✅ Group description updated");
   } catch (error) {
-    repondre("Failed to update group description: " + error.message);
+    repondre(`❌ Failed to update: ${error.message}`);
   }
 });
 
-// Broadcast message to all groups
+// Broadcast to all groups
 adams({ nomCom: "broadcast", categorie: 'Owner', reaction: "📡" }, async (dest, zk, commandeOptions) => {
   const { repondre, arg, superUser } = commandeOptions;
   
   if (!superUser) {
-    repondre("This command is reserved for bot owner only");
+    repondre("🚫 Owner only command");
     return;
   }
   
-  if (!arg || !arg[0]) {
-    repondre("Please provide a message to broadcast");
+  if (!arg[0]) {
+    repondre("📡 Usage: broadcast [message]");
     return;
   }
   
-  const message = arg.join(" ");
   try {
     const groups = await zk.groupFetchAllParticipating();
-    const groupIds = groups.map(g => g.id);
-    
+    const message = arg.join(" ");
     let success = 0;
-    let failed = 0;
     
-    for (const groupId of groupIds) {
+    for (const group of groups) {
       try {
-        await zk.sendMessage(groupId, { text: message });
+        await zk.sendMessage(group.id, { text: message });
         success++;
-      } catch (error) {
-        failed++;
+      } catch (e) {
+        console.error(`Failed to send to ${group.id}:`, e);
       }
     }
     
-    repondre(`Broadcast completed:\nSuccess: ${success}\nFailed: ${failed}`);
+    repondre(`📡 Sent to ${success}/${groups.length} groups`);
   } catch (error) {
     repondre("Failed to broadcast: " + error.message);
   }
