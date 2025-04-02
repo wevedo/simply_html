@@ -1,7 +1,7 @@
 const { adams } = require("../Ibrahim/adams");
 
 
-adams({ nomCom: "link", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
+adams({ nomCom: "link", categorie: 'Group', reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
   try {
     // Only group admins can generate invite links
     if (!superUser) {
@@ -17,7 +17,7 @@ adams({ nomCom: "link", reaction: "📩", nomFichier: __filename }, async (chatI
     repondre(`❌ Failed to generate invite link: ${error.message}`);
   }
 });
-adams({ nomCom: "invite", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
+adams({ nomCom: "invite", categorie: 'Group',reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
   try {
     // Only group admins can generate invite links
     if (!superUser) {
@@ -33,7 +33,7 @@ adams({ nomCom: "invite", reaction: "📩", nomFichier: __filename }, async (cha
     repondre(`❌ Failed to generate invite link: ${error.message}`);
   }
 });
-adams({ nomCom: "add", reaction: "➕", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
+adams({ nomCom: "add", categorie: 'Group',reaction: "➕", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
   try {
     // Check permissions - either superUser or group admin
     if (!superUser && !verifAdmin) {
@@ -60,7 +60,7 @@ adams({ nomCom: "add", reaction: "➕", nomFichier: __filename }, async (chatId,
     repondre(`❌ Failed to add user: ${error.message}`);
   }
 });
-adams({ nomCom: "left", reaction: "🚪", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => {
+adams({ nomCom: "left", categorie: 'Group',reaction: "🚪", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => {
   try {
     if (!superUser) {
       return repondre("❌ This command is reserved for the bot owner only");
@@ -74,7 +74,7 @@ adams({ nomCom: "left", reaction: "🚪", nomFichier: __filename }, async (chatI
   }
 });
 
-adams({ nomCom: "kick", reaction: "👢", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
+adams({ nomCom: "kick",categorie: 'Group', reaction: "👢", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser, verifAdmin }) => {
   try {
     // Check permissions - either superUser or group admin
     if (!superUser && !verifAdmin) {
@@ -108,7 +108,7 @@ adams({ nomCom: "kick", reaction: "👢", nomFichier: __filename }, async (chatI
   }
 });
 // Kick all non-admin members except superUser and bot
-adams({ nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, auteurMessage }) => { 
+adams({ nomCom: "kickall",categorie: 'Group', reaction: "🔥", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, auteurMessage }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
@@ -149,7 +149,7 @@ adams({ nomCom: "kickall", reaction: "🔥", nomFichier: __filename }, async (ch
 });
 
 // Enhanced member list with tagging
-adams({ nomCom: "tagall", reaction: "👥", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
+adams({ nomCom: "tagall", categorie: 'Group',reaction: "👥", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
   try {
     const metadata = await zk.groupMetadata(chatId);
     const allMembers = metadata.participants;
@@ -175,7 +175,7 @@ adams({ nomCom: "tagall", reaction: "👥", nomFichier: __filename }, async (cha
 });
 
 // Open group settings (owner only)
-adams({ nomCom: "opengroup", reaction: "🔓", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => { 
+adams({ nomCom: "opengroup", categorie: 'Group',reaction: "🔓", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
@@ -189,7 +189,7 @@ adams({ nomCom: "opengroup", reaction: "🔓", nomFichier: __filename }, async (
 });
 
 // Close group settings (owner only)
-adams({ nomCom: "closegroup", reaction: "🔒", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => { 
+adams({ nomCom: "closegroup", categorie: 'Group',reaction: "🔒", nomFichier: __filename }, async (chatId, zk, { repondre, superUser }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
@@ -203,7 +203,7 @@ adams({ nomCom: "closegroup", reaction: "🔒", nomFichier: __filename }, async 
 });
 
 // Tag all members
-adams({ nomCom: "hidetag", reaction: "📢", nomFichier: __filename }, async (chatId, zk, { repondre, arg }) => { 
+adams({ nomCom: "hidetag", categorie: 'Group',reaction: "📢", nomFichier: __filename }, async (chatId, zk, { repondre, arg }) => { 
   try {
     const metadata = await zk.groupMetadata(chatId);
     const mentions = metadata.participants.map(p => p.id);
@@ -219,7 +219,7 @@ adams({ nomCom: "hidetag", reaction: "📢", nomFichier: __filename }, async (ch
 });
 
 // Promote member (owner only)
-adams({ nomCom: "promote", reaction: "⬆️", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
+adams({ nomCom: "promote", categorie: 'Group',reaction: "⬆️", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
@@ -238,7 +238,7 @@ adams({ nomCom: "promote", reaction: "⬆️", nomFichier: __filename }, async (
 });
 
 // Demote member (owner only)
-adams({ nomCom: "demote", reaction: "⬇️", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
+adams({ nomCom: "demote",categorie: 'Group', reaction: "⬇️", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
@@ -257,7 +257,7 @@ adams({ nomCom: "demote", reaction: "⬇️", nomFichier: __filename }, async (c
 });
 
 // Change group name (owner only)
-adams({ nomCom: "groupn", reaction: "✏️", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
+adams({ nomCom: "groupn", categorie: 'Group',reaction: "✏️", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
@@ -276,7 +276,7 @@ adams({ nomCom: "groupn", reaction: "✏️", nomFichier: __filename }, async (c
 });
 
 // Change group description (owner only)
-adams({ nomCom: "groupd", reaction: "📝", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
+adams({ nomCom: "groupd",categorie: 'Group', reaction: "📝", nomFichier: __filename }, async (chatId, zk, { repondre, arg, superUser }) => { 
   if (!superUser) {
     return repondre("❌ This command is reserved for the bot owner only");
   }
