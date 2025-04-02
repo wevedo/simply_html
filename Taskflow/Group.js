@@ -1,10 +1,10 @@
 const { adams } = require("../Ibrahim/adams");
 
 
-adams({ nomCom: "link", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "link", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
   try {
     // Only group admins can generate invite links
-    if (!verifAdmin) {
+    if (!superUser) {
       return repondre("❌ You need admin privileges to generate invite links");
     }
 
@@ -17,10 +17,10 @@ adams({ nomCom: "link", reaction: "📩", nomFichier: __filename }, async (chatI
     repondre(`❌ Failed to generate invite link: ${error.message}`);
   }
 });
-adams({ nomCom: "invite", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, verifAdmin }) => {
+adams({ nomCom: "invite", reaction: "📩", nomFichier: __filename }, async (chatId, zk, { repondre, superUser, verifAdmin }) => {
   try {
     // Only group admins can generate invite links
-    if (!verifAdmin) {
+    if (!superUser) {
       return repondre("❌ You need admin privileges to generate invite links");
     }
 
