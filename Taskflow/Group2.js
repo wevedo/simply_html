@@ -1,70 +1,103 @@
 const { adams } = require("../Ibrahim/adams");
 
 
-adams({ nomCom: "online", reaction: "🟢", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
+adams({ nomCom: "online", reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+  const { repondre } = commandeOptions;
+  
   try {
-    // Get group metadata and participants
-    const metadata = await zk.groupMetadata(chatId);
-    const participants = metadata.participants;
-    
-    // Array to store online members
+    const metadata = await zk.groupMetadata(dest);
     const onlineMembers = [];
     
     // Check presence for each member
-    await Promise.all(participants.map(async (member) => {
+    await Promise.all(metadata.participants.map(async (member) => {
       try {
         const presence = await zk.presenceSubscribe(member.id);
-        if (presence.lastSeen === null || presence.lastSeen > Date.now() - 300000) { // 5 minutes threshold
+        if (presence.lastSeen === null || Date.now() - presence.lastSeen < 300000) { // 5 min threshold
           onlineMembers.push({
             id: member.id,
+            name: member.id.split('@')[0],
             lastSeen: presence.lastSeen,
-            isOnline: presence.lastSeen === null
+            status: presence.lastSeen === null ? "Online Now" : "Recently Active"
           });
         }
       } catch (error) {
-        console.error(`Error checking presence for ${member.id}:`, error);
+        console.error(`Presence check failed for ${member.id}:`, error);
       }
     }));
     
-    // Sort by online status (currently online first)
-    onlineMembers.sort((a, b) => {
-      if (a.isOnline && !b.isOnline) return -1;
-      if (!a.isOnline && b.isOnline) return 1;
-      return b.lastSeen - a.lastSeen; // Most recent first
-    });
-    
-    // Format the message
+    // Format message
     let message = "🟢 *Online Members* 🟢\n\n";
-    message += `Total Online/Recent: ${onlineMembers.length}/${participants.length}\n\n`;
+    message += `Total: ${onlineMembers.length}/${metadata.participants.length}\n\n`;
     
     onlineMembers.forEach((member, index) => {
-      const phoneNumber = member.id.split('@')[0];
-      const status = member.isOnline 
-        ? "🟢 Currently Online" 
-        : `🕒 Last seen: ${formatTimeAgo(member.lastSeen)}`;
-      message += `${index + 1}. @${phoneNumber} - ${status}\n`;
+      message += `${index+1}. @${member.name} - ${member.status}\n`;
     });
     
-    // Send the message with mentions
-    await zk.sendMessage(chatId, {
+    await zk.sendMessage(dest, {
       text: message,
       mentions: onlineMembers.map(m => m.id)
     });
     
   } catch (error) {
-    repondre(`❌ Failed to check online members: ${error.message}`);
+    repondre(`❌ Failed to check online status: ${error.message}`);
   }
 });
 
-// Helper function to format time
-function formatTimeAgo(timestamp) {
-  if (!timestamp) return "Unknown";
-  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+// Open group with duration
+adams({ nomCom: "opentime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
   
-  if (seconds < 60) return "Just now";
-  if (seconds < 3600) return `${Math.floor(seconds/60)} minutes ago`;
-  if (seconds < 86400) return `${Math.floor(seconds/3600)} hours ago`;
-  return `${Math.floor(seconds/86400)} days ago`;
+  if (!arg[0]) return repondre("ℹ️ Usage: !opentime 5m (minutes) or !opentime 2h (hours)");
+  
+  const duration = parseDuration(arg[0]);
+  if (!duration) return repondre("❌ Invalid duration. Use format like 30m or 2h");
+
+  await zk.groupSettingUpdate(dest, "not_announcement");
+  repondre(`🔓 Group opened for ${formatDuration(duration)}`);
+  
+  setTimeout(async () => {
+    await zk.groupSettingUpdate(dest, "announcement");
+    zk.sendMessage(dest, { text: "⏱️ Group auto-closed after duration" });
+  }, duration * 1000);
+});
+
+// Close group with duration
+adams({ nomCom: "closetime", reaction: "⏱️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
+  
+  if (!arg[0]) return repondre("ℹ️ Usage: !closetime 10m (minutes) or !closetime 1h (hours)");
+  
+  const duration = parseDuration(arg[0]);
+  if (!duration) return repondre("❌ Invalid duration. Use format like 30m or 2h");
+
+  await zk.groupSettingUpdate(dest, "announcement");
+  repondre(`🔒 Group closed for ${formatDuration(duration)}`);
+  
+  setTimeout(async () => {
+    await zk.groupSettingUpdate(dest, "not_announcement");
+    zk.sendMessage(dest, { text: "⏱️ Group auto-opened after duration" });
+  }, duration * 1000);
+});
+
+// Helper functions
+function parseDuration(input) {
+  const match = input.match(/^(\d+)([mh])$/i);
+  if (!match) return null;
+  
+  const value = parseInt(match[1]);
+  const unit = match[2].toLowerCase();
+  
+  return unit === 'm' ? value * 60 * 1000 : value * 60 * 60 * 1000;
+}
+
+function formatDuration(ms) {
+  const hours = Math.floor(ms / (60 * 60 * 1000));
+  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  
+  return hours > 0 
+    ? `${hours} hour${hours > 1 ? 's' : ''}${minutes > 0 ? ` and ${minutes} minute${minutes > 1 ? 's' : ''}` : ''}`
+    : `${minutes} minute${minutes > 1 ? 's' : ''}`;
 }
 
 adams({ nomCom: "report", reaction: "🚨", nomFichier: __filename }, async (chatId, zk, { repondre, msgRepondu }) => {
@@ -228,25 +261,19 @@ adams({ nomCom: "poll", reaction: "📊", nomFichier: __filename }, async (chatI
   }
 });
 
-adams({ nomCom: "setgroupphoto", reaction: "🖼️", nomFichier: __filename }, async (chatId, zk, { repondre, msgRepondu, verifAdmin }) => {
+adams({ nomCom: "setgrouppic", reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre } = commandeOptions;
+  
+  if (!ms.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage) {
+    return repondre("ℹ️ Reply to an image message to set as group picture");
+  }
+
   try {
-    if (!verifAdmin) {
-      return repondre("❌ You need admin privileges to change group photo");
-    }
-
-    if (!msgRepondu?.imageMessage) {
-      return repondre("ℹ️ Please reply to an image message to set as group photo");
-    }
-
-    // Download the image
-    const buffer = await zk.downloadMediaMessage(msgRepondu.imageMessage);
-    
-    // Set as group picture
-    await zk.updateProfilePicture(chatId, buffer);
-    repondre("✅ Group photo updated successfully");
-    
+    const buffer = await zk.downloadMediaMessage(ms.message.extendedTextMessage.contextInfo.quotedMessage);
+    await zk.updateProfilePicture(dest, buffer);
+    repondre("✅ Group picture updated successfully");
   } catch (error) {
-    repondre(`❌ Failed to update group photo: ${error.message}`);
+    repondre(`❌ Failed to update: ${error.message}`);
   }
 });
 
@@ -279,62 +306,54 @@ adams({ nomCom: "countries", reaction: "🌍", nomFichier: __filename }, async (
   }
 });
 
-adams({ nomCom: "ephemeral", reaction: "⏳", nomFichier: __filename }, async (chatId, zk, { repondre, arg, verifAdmin }) => {
+adams({ nomCom: "ephemeral", reaction: "⏳", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+  const { repondre, arg } = commandeOptions;
+  
+  const durations = {
+    '1h': 3600,
+    '24h': 86400,
+    '7d': 604800
+  };
+  
+  if (!arg[0] || !durations[arg[0]]) {
+    return repondre("ℹ️ Usage: !ephemeral 1h/24h/7d\nDisappears after: 1 hour, 24 hours, or 7 days");
+  }
+  
   try {
-    if (!verifAdmin) {
-      return repondre("❌ You need admin privileges to change message settings");
-    }
-
-    const durations = {
-      '24h': 86400,
-      '7d': 604800,
-      '90d': 7776000
-    };
-
-    const duration = arg[0]?.toLowerCase();
-    
-    if (!duration || !durations[duration]) {
-      return repondre("ℹ️ Usage: !ephemeral 24h/7d/90d\nExample: !ephemeral 24h");
-    }
-
-    await zk.groupSettingUpdate(chatId, "ephemeral", durations[duration]);
-    repondre(`✅ Messages will now disappear after ${duration}`);
-    
+    await zk.groupSettingUpdate(dest, "ephemeral", durations[arg[0]]);
+    repondre(`✅ Messages will now disappear after ${arg[0]}`);
   } catch (error) {
-    repondre(`❌ Failed to set disappearing messages: ${error.message}`);
+    repondre(`❌ Failed to set: ${error.message}`);
   }
 });
 
-adams({ nomCom: "del", reaction: "🗑️", nomFichier: __filename }, async (chatId, zk, { repondre, msgRepondu, verifAdmin }) => {
+adams({ nomCom: "del", reaction: "🗑️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre } = commandeOptions;
+  
+  if (!ms.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+    return repondre("ℹ️ Reply to a message to delete it");
+  }
+
   try {
-    if (!verifAdmin) {
-      return repondre("❌ You need admin privileges to delete messages");
-    }
-
-    if (!msgRepondu) {
-      return repondre("ℹ️ Reply to a message to delete it");
-    }
-
-    // Delete the quoted message
-    const deleteKey = {
-      remoteJid: chatId,
-      fromMe: msgRepondu.key.fromMe,
-      id: msgRepondu.key.id,
-      participant: msgRepondu.key.participant
+    const key = {
+      remoteJid: dest,
+      fromMe: ms.message.extendedTextMessage.contextInfo.participant === zk.user.id,
+      id: ms.message.extendedTextMessage.contextInfo.stanzaId,
+      participant: ms.message.extendedTextMessage.contextInfo.participant
     };
     
-    await zk.sendMessage(chatId, { delete: deleteKey });
-    repondre("✅ Message deleted");
+    await zk.sendMessage(dest, { delete: key });
+    const confirmation = await repondre("✅ Message deleted");
     
-    // Auto-delete the confirmation after 5 seconds
+    // Auto-delete confirmation after 5 seconds
     setTimeout(async () => {
       try {
-        await zk.sendMessage(chatId, { delete: repondre.key });
+        await zk.sendMessage(dest, { delete: confirmation.key });
       } catch (e) {}
     }, 5000);
     
   } catch (error) {
-    repondre(`❌ Failed to delete message: ${error.message}`);
+    repondre(`❌ Failed to delete: ${error.message}`);
   }
 });
 
