@@ -41,14 +41,16 @@ adams({
         }, { quoted: ms });
     }
 
-    // Determine media type
-    let mediaType, fileExtension;
+    // Determine media type and properties
+    let mediaType, fileExtension, downloadType;
     if (msgRepondu.imageMessage) {
         mediaType = 'image';
+        downloadType = 'image';
         fileExtension = mediaMessage.mimetype?.split('/')[1] || 'jpg';
     } 
     else if (msgRepondu.videoMessage) {
         mediaType = 'video';
+        downloadType = 'video';
         fileExtension = mediaMessage.mimetype?.split('/')[1] || 'mp4';
         
         // Check video size (50MB limit)
@@ -64,14 +66,17 @@ adams({
     }
     else if (msgRepondu.audioMessage) {
         mediaType = 'audio';
+        downloadType = 'audio';
         fileExtension = 'mp3'; // Will convert to MP3
     }
     else if (msgRepondu.stickerMessage) {
         mediaType = 'sticker';
-        fileExtension = mediaMessage.isAnimated ? 'webp' : 'webp';
+        downloadType = msgRepondu.stickerMessage.isAnimated ? 'video' : 'image';
+        fileExtension = msgRepondu.stickerMessage.isAnimated ? 'webm' : 'webp';
     }
     else if (msgRepondu.documentMessage) {
         mediaType = 'document';
+        downloadType = 'document';
         fileExtension = mediaMessage.fileName?.split('.').pop() || 'bin';
     }
 
@@ -83,7 +88,7 @@ adams({
         const filePath = path.join(tempDir, fileName);
 
         // Download media
-        const stream = await downloadContentFromMessage(mediaMessage, mediaType);
+        const stream = await downloadContentFromMessage(mediaMessage, downloadType);
         const buffer = await streamToBuffer(stream);
         await fs.writeFile(filePath, buffer);
 
@@ -94,23 +99,39 @@ adams({
             await convertToMp3(filePath, mp3Path);
             await fs.unlink(filePath);
             finalPath = mp3Path;
+            fileExtension = 'mp3';
         }
 
-        // Send with rich context
-        const context = createContext(origineMessage, {
-            title: `Downloaded ${mediaType}`,
-            body: `Saved as ${path.basename(finalPath)}`,
-            thumbnail: mediaType === 'image' ? finalPath : undefined
-        });
-
-        await zk.sendMessage(origineMessage, {
-            [mediaType]: { url: finalPath },
-            mimetype: mediaMessage.mimetype,
+        // Prepare message based on media type
+        let messagePayload = {
             caption: `⬇️ *${mediaType.toUpperCase()} DOWNLOAD*\n` +
                      `📁 ${path.basename(finalPath)}\n` +
                      `🕒 ${new Date().toLocaleTimeString()}`,
-            ...context
-        }, { quoted: ms });
+            ...createContext(origineMessage, {
+                title: `Downloaded ${mediaType}`,
+                body: `Saved as ${path.basename(finalPath)}`,
+                thumbnail: mediaType === 'image' ? finalPath : undefined
+            })
+        };
+
+        // Set correct media property based on type
+        if (mediaType === 'image' || (mediaType === 'sticker' && !msgRepondu.stickerMessage.isAnimated)) {
+            messagePayload.image = { url: finalPath };
+        } 
+        else if (mediaType === 'video' || (mediaType === 'sticker' && msgRepondu.stickerMessage.isAnimated)) {
+            messagePayload.video = { url: finalPath };
+        }
+        else if (mediaType === 'audio') {
+            messagePayload.audio = { url: finalPath };
+            messagePayload.mimetype = 'audio/mpeg';
+        }
+        else if (mediaType === 'document') {
+            messagePayload.document = { url: finalPath };
+            messagePayload.mimetype = mediaMessage.mimetype;
+            messagePayload.fileName = mediaMessage.fileName || `download.${fileExtension}`;
+        }
+
+        await zk.sendMessage(origineMessage, messagePayload, { quoted: ms });
 
         // Clean up
         await fs.unlink(finalPath);
