@@ -43,6 +43,24 @@ async function uploadToCatbox(filePath) {
     }
 }
 
+// Convert non-MP3 audio to MP3 (if needed)
+async function convertToMp3(filePath) {
+    const mp3Path = filePath.replace(/\.\w+$/, ".mp3");
+    
+    if (filePath.endsWith(".mp3")) {
+        return filePath; // Already MP3
+    }
+
+    try {
+        const audioBuffer = await fs.readFile(filePath);
+        await fs.writeFile(mp3Path, audioBuffer);
+        fs.unlinkSync(filePath); // Remove original
+        return mp3Path;
+    } catch (error) {
+        throw new Error("Failed to convert audio to MP3");
+    }
+}
+
 // Command logic
 adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
@@ -71,6 +89,9 @@ adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineM
         } else if (msgRepondu.audioMessage) {
             mediaPath = await downloadMedia(msgRepondu.audioMessage, "audio");
             mediaType = "audio";
+            
+            // Convert audio to MP3
+            mediaPath = await convertToMp3(mediaPath);
 
         } else if (msgRepondu.documentMessage) {
             mediaPath = await downloadMedia(msgRepondu.documentMessage, "document");
@@ -94,7 +115,7 @@ adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineM
                 repondre(`🎥 Video URL:\n${catboxUrl}`);
                 break;
             case "audio":
-                repondre(`🔊 Audio URL:\n${catboxUrl}`);
+                repondre(`🔊 Audio URL (MP3):\n${catboxUrl}`);
                 break;
             case "document":
                 repondre(`📄 Document URL:\n${catboxUrl}`);
