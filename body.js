@@ -375,14 +375,16 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         senderJid === botJid;
 
     // Group checks
-    const isGroup = ms.key.remoteJid.endsWith('@g.us');
+    const isGroup = typeof ms.key.remoteJid === 'string' && ms.key.remoteJid.endsWith('@g.us');
     let verifAdmin = false;
     let botIsAdmin = false;
 
     if (isGroup) {
         try {
             const groupData = await adams.groupMetadata(ms.key.remoteJid);
-            const admins = groupData.participants.filter(p => p.admin).map(p => p.id);
+            const admins = Array.isArray(groupData.participants) 
+                ? groupData.participants.filter(p => p?.admin).map(p => p?.id)
+                : [];
             
             verifAdmin = admins.includes(senderJid);
             botIsAdmin = admins.includes(botJid);
@@ -391,59 +393,95 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
         }
     }
 
-    // Message processing
-    const texte = ms?.message?.conversation || ms?.message?.extendedTextMessage?.text || "";
-    const arg = texte ? texte.trim().split(/\s+/).slice(1) : [];
-    const verifCom = texte.startsWith(PREFIX);
+    // Safely extract message text
+    const getMessageText = () => {
+        try {
+            if (ms.message?.conversation && typeof ms.message.conversation === 'string') {
+                return ms.message.conversation;
+            }
+            if (ms.message?.extendedTextMessage?.text && typeof ms.message.extendedTextMessage.text === 'string') {
+                return ms.message.extendedTextMessage.text;
+            }
+            return "";
+        } catch (e) {
+            return "";
+        }
+    };
+
+    const texte = getMessageText();
+    const arg = typeof texte === 'string' ? texte.trim().split(/\s+/).slice(1) : [];
+    const verifCom = typeof texte === 'string' && texte.startsWith(PREFIX);
     const com = verifCom ? texte.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase() : null;
 
-    if (verifCom && com) {
-        const cmd = evt.cm.find((c) => c.nomCom === com || (c.aliases && c.aliases.includes(com)));
+    if (verifCom && com && typeof com === 'string') {
+        const cmd = Array.isArray(evt.cm) 
+            ? evt.cm.find((c) => 
+                c?.nomCom === com || 
+                (Array.isArray(c?.aliases) && c.aliases.includes(com))
+              )
+            : null;
 
         if (cmd) {
             try {
                 // SUPER USERS bypass all restrictions
                 if (!superUser) {
                     // Normal user restrictions
-                    if (conf.MODE.toLowerCase() !== "yes") {
+                    if (typeof conf.MODE === 'string' && conf.MODE.toLowerCase() !== "yes") {
                         console.log(`⛔ Command blocked: ${senderJid} not authorized`);
                         return;
                     }
-
-                    // Optional: Add group-specific restrictions here
-                    // if (cmd.groupOnly && !isGroup) return;
                 }
 
-                // Reply function
+                // Safe reply function
                 const repondre = async (text) => {
-                    await adams.sendMessage(ms.key.remoteJid, { text });
+                    if (typeof text !== 'string') return;
+                    try {
+                        await adams.sendMessage(ms.key.remoteJid, { text });
+                    } catch (err) {
+                        console.log("⚠️ Reply failed:", err.message);
+                    }
                 };
 
-                // Add reaction
-                try {
-                    await adams.sendMessage(ms.key.remoteJid, {
-                        react: { key: ms.key, text: cmd.reaction || "⚡" }
-                    });
-                } catch (err) {
-                    console.log("⚠️ Reaction failed:", err.message);
+                // Add reaction safely
+                if (typeof cmd.reaction === 'string' || typeof cmd.reaction === 'undefined') {
+                    try {
+                        await adams.sendMessage(ms.key.remoteJid, {
+                            react: { 
+                                key: ms.key, 
+                                text: typeof cmd.reaction === 'string' ? cmd.reaction : "⚡" 
+                            }
+                        });
+                    } catch (err) {
+                        console.log("⚠️ Reaction failed:", err.message);
+                    }
                 }
 
                 // Execute command with full context
-                await cmd.fonction(ms.key.remoteJid, adams, { 
-                    ms, 
-                    arg, 
-                    repondre,
-                    superUser,     // Full control flag
-                    verifAdmin,    // Group admin status
-                    botIsAdmin,   // Bot's admin status
-                    isGroup       // Group chat flag
-                });
+                if (typeof cmd.fonction === 'function') {
+                    await cmd.fonction(ms.key.remoteJid, adams, { 
+                        ms, 
+                        arg, 
+                        repondre,
+                        superUser,
+                        verifAdmin,
+                        botIsAdmin,
+                        isGroup
+                    });
+                }
 
             } catch (error) {
-                console.error(`❌ Command [${com}] error:`, error.message);
-                await adams.sendMessage(ms.key.remoteJid, { 
-                    text: `🚨 Command failed: ${error.message}` 
-                });
+                const errorMsg = error?.message || 'Unknown error';
+                console.error(`❌ Command [${com}] error:`, errorMsg);
+                
+                if (typeof errorMsg === 'string') {
+                    try {
+                        await adams.sendMessage(ms.key.remoteJid, { 
+                            text: `🚨 Command failed: ${errorMsg}` 
+                        });
+                    } catch (sendErr) {
+                        console.log("⚠️ Failed to send error message:", sendErr.message);
+                    }
+                }
             }
         }
     }
