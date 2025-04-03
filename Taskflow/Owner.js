@@ -7,59 +7,34 @@ const path = require('path');
 const { createContext } = require('../utils/helper');
 
 const catbox = new Catbox();
+const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
 
-// Create temp directory if it doesn't exist
-const tempDir = path.join(__dirname, 'temp_media');
-fs.ensureDirSync(tempDir);
-
-// Enhanced audio processor
-async function processAudio(audioMessage) {
-    try {
-        // Download original audio
-        const stream = await downloadContentFromMessage(audioMessage, 'audio');
-        const buffer = await streamToBuffer(stream);
-        const oggPath = path.join(tempDir, `audio_${Date.now()}.ogg`);
-        await fs.writeFile(oggPath, buffer);
-
-        // Convert to MP3
-        const mp3Path = path.join(tempDir, `audio_${Date.now()}.mp3`);
-        await new Promise((resolve, reject) => {
-            ffmpeg(oggPath)
-                .audioCodec('libmp3lame')
-                .audioBitrate(128)
-                .outputOptions('-ar', '44100') // Sample rate
-                .on('end', () => {
-                    fs.unlinkSync(oggPath); // Clean up OGG
-                    resolve();
-                })
-                .on('error', reject)
-                .save(mp3Path);
-        });
-
-        return mp3Path;
-    } catch (error) {
-        console.error('Audio processing failed:', error);
-        throw new Error('Failed to process audio');
+// Enhanced media download with proper type handling
+async function downloadMedia(mediaMessage) {
+    let mediaType;
+    if (mediaMessage.mimetype) {
+        if (mediaMessage.mimetype.includes('image')) mediaType = 'image';
+        else if (mediaMessage.mimetype.includes('video')) mediaType = 'video';
+        else if (mediaMessage.mimetype.includes('audio')) mediaType = 'audio';
     }
+    mediaType = mediaType || 'document';
+
+    const stream = await downloadContentFromMessage(mediaMessage, mediaType);
+    const buffer = await streamToBuffer(stream);
+    
+    // Generate appropriate file extension
+    let extension = 'bin';
+    if (mediaMessage.mimetype) {
+        extension = mediaMessage.mimetype.split('/')[1] || 
+                   (mediaMessage.mimetype.includes('audio') ? 'mp3' : 'bin');
+    }
+    
+    const filePath = path.join(__dirname, `temp_${Date.now()}.${extension}`);
+    await fs.writeFile(filePath, buffer);
+    return { filePath, mediaType };
 }
 
-// Universal media downloader
-async function downloadMedia(mediaMessage, type) {
-    try {
-        const stream = await downloadContentFromMessage(mediaMessage, type);
-        const buffer = await streamToBuffer(stream);
-        const ext = type === 'audio' ? 'ogg' : mediaMessage.mimetype.split('/')[1];
-        const filePath = path.join(tempDir, `${type}_${Date.now()}.${ext}`);
-        await fs.writeFile(filePath, buffer);
-        return filePath;
-    } catch (error) {
-        console.error('Download failed:', error);
-        throw new Error(`Failed to download ${type}`);
-    }
-}
-
-// Helper function
-function streamToBuffer(stream) {
+async function streamToBuffer(stream) {
     return new Promise((resolve, reject) => {
         const chunks = [];
         stream.on('data', (chunk) => chunks.push(chunk));
@@ -68,27 +43,33 @@ function streamToBuffer(stream) {
     });
 }
 
-// Upload handler with retries
-async function uploadToCatbox(filePath, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            if (!fs.existsSync(filePath)) {
-                throw new Error("File not found");
-            }
-            return await catbox.uploadFile({ path: filePath });
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-        }
+async function uploadToCatbox(filePath) {
+    if (!fs.existsSync(filePath)) {
+        throw new Error("File does not exist");
+    }
+
+    try {
+        const response = await catbox.uploadFile({ path: filePath });
+        return response;
+    } catch (err) {
+        throw new Error(`Upload failed: ${err.message}`);
     }
 }
 
-adams({ 
-    nomCom: "url", 
-    categorie: "General", 
-    reaction: "🔗",
-    description: "Get shareable URL for any media"
-}, async (origineMessage, zk, commandeOptions) => {
+// Enhanced audio conversion with proper encoding
+async function convertAudio(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .audioCodec('libmp3lame')
+            .audioBitrate(128)
+            .toFormat('mp3')
+            .on('error', reject)
+            .on('end', resolve)
+            .save(outputPath);
+    });
+}
+
+adams({ nomCom: "url", categorie: "General", reaction: "🔗" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
@@ -96,76 +77,82 @@ adams({
             text: "❌ Please reply to a media message",
             ...createContext(origineMessage, {
                 title: "Usage Error",
-                body: "Reply to an image/video/audio"
+                body: "Reply to image/video/audio/document"
             })
         });
     }
 
-    let mediaPath, mediaType;
+    // Detect media type
+    const mediaMessage = msgRepondu.imageMessage || msgRepondu.videoMessage || 
+                        msgRepondu.audioMessage || msgRepondu.documentMessage;
+    if (!mediaMessage) {
+        return repondre({
+            text: "❌ Unsupported media type",
+            ...createContext(origineMessage, {
+                title: "Media Error",
+                body: "Only images/videos/audio/documents"
+            })
+        });
+    }
+
+    let mediaPath, mediaType, finalPath;
 
     try {
-        // Handle different media types
-        if (msgRepondu.videoMessage) {
-            if (msgRepondu.videoMessage.fileLength > 50 * 1024 * 1024) {
-                return repondre({
-                    text: "❌ Video exceeds 50MB limit",
-                    ...createContext(origineMessage, {
-                        title: "Size Limit",
-                        body: "Maximum 50MB videos"
-                    })
-                });
-            }
-            mediaPath = await downloadMedia(msgRepondu.videoMessage, 'video');
-            mediaType = 'video';
-        } 
-        else if (msgRepondu.imageMessage) {
-            mediaPath = await downloadMedia(msgRepondu.imageMessage, 'image');
-            mediaType = 'image';
-        } 
-        else if (msgRepondu.audioMessage) {
-            mediaPath = await processAudio(msgRepondu.audioMessage);
-            mediaType = 'audio';
-        } 
-        else {
-            return repondre({
-                text: "❌ Unsupported media type",
-                ...createContext(origineMessage, {
-                    title: "Media Error",
-                    body: "Only images/videos/audio"
-                })
-            });
+        // Download the media
+        const downloadResult = await downloadMedia(mediaMessage);
+        mediaPath = downloadResult.filePath;
+        mediaType = downloadResult.mediaType;
+
+        // Special handling for audio
+        if (mediaType === 'audio') {
+            finalPath = `${mediaPath}.mp3`;
+            await convertAudio(mediaPath, finalPath);
+            fs.unlinkSync(mediaPath); // Remove original
+        } else {
+            finalPath = mediaPath;
         }
 
-        // Upload with retry logic
-        const catboxUrl = await uploadToCatbox(mediaPath);
-        
-        // Success response
+        // Upload to Catbox
+        const catboxUrl = await uploadToCatbox(finalPath);
+
+        // Prepare response based on media type
+        let responseText;
+        switch (mediaType) {
+            case 'image':
+                responseText = `🖼️ Image URL:\n${catboxUrl}`;
+                break;
+            case 'video':
+                responseText = `🎥 Video URL:\n${catboxUrl}`;
+                break;
+            case 'audio':
+                responseText = `🔊 Audio URL (MP3):\n${catboxUrl}`;
+                break;
+            default:
+                responseText = `📄 Document URL:\n${catboxUrl}`;
+        }
+
         await repondre({
-            text: `🔗 ${mediaType.toUpperCase()} URL:\n${catboxUrl}`,
+            text: responseText,
             ...createContext(origineMessage, {
-                title: "Media URL Ready",
-                body: `Click to download ${mediaType}`,
-                thumbnail: mediaType === 'image' ? catboxUrl : undefined
+                title: "Media URL Generated",
+                body: "Link will expire after some time"
             })
         });
 
     } catch (error) {
-        console.error('URL command failed:', error);
+        console.error('URL command error:', error);
         await repondre({
             text: `❌ Error: ${error.message}`,
             ...createContext(origineMessage, {
                 title: "Processing Failed",
-                body: "Please try again later"
+                body: "Please try again"
             })
         });
     } finally {
-        // Safe cleanup
-        try {
-            if (mediaPath && fs.existsSync(mediaPath)) {
-                fs.unlinkSync(mediaPath);
-            }
-        } catch (cleanupError) {
-            console.error('Cleanup failed:', cleanupError);
+        // Cleanup temporary files
+        if (mediaPath && fs.existsSync(mediaPath)) fs.unlinkSync(mediaPath);
+        if (finalPath && finalPath !== mediaPath && fs.existsSync(finalPath)) {
+            fs.unlinkSync(finalPath);
         }
     }
 });
