@@ -335,19 +335,34 @@ adams({ nomCom: "poll",categorie: "Group", reaction: "📊", nomFichier: __filen
   }
 });
 
-adams({ nomCom: "setgrouppic", categorie: "Group",reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+//const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
+adams({ nomCom: "setgrouppic", categorie: "Group", reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { ms, repondre } = commandeOptions;
   
+  // Check if the message is a quoted image
   if (!ms.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage) {
-    return repondre("ℹ️ Reply to an image message to set as group picture");
+    return repondre("ℹ️ Please reply to an image message to set as group picture");
   }
 
   try {
-    const buffer = await zk.downloadMediaMessage(ms.message.extendedTextMessage.contextInfo.quotedMessage);
-    await zk.updateProfilePicture(dest, buffer);
+    // Download the media using the imported function
+    const buffer = await downloadMediaMessage(
+      ms.message.extendedTextMessage.contextInfo.quotedMessage,
+      "buffer",
+      {},
+      {
+        logger: console,
+        reuploadRequest: zk.updateMediaMessage
+      }
+    );
+
+    // Update group picture
+    await zk.groupUpdatePicture(dest, buffer);
     repondre("✅ Group picture updated successfully");
   } catch (error) {
-    repondre(`❌ Failed to update: ${error.message}`);
+    console.error("Error updating group picture:", error);
+    repondre(`❌ Failed to update group picture: ${error.message}`);
   }
 });
 
