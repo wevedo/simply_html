@@ -1,26 +1,17 @@
 const { adams } = require('../Ibrahim/adams');
-const axios = require("axios");
+const axios = require("axios")
 let { Sticker, createSticker, StickerTypes } = require('wa-sticker-formatter');
-const sleep = (ms) => {
-  return new Promise((resolve) => { setTimeout(resolve, ms) });
-};
+
+const sleep =  (ms) =>{
+  return new Promise((resolve) =>{ setTimeout (resolve, ms)})
+  
+  } ;
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const fs = require("fs-extra");
 const ffmpeg = require("fluent-ffmpeg");
 const { Catbox } = require('node-catbox');
-const { createContext } = require("../utils/helper");
 
 const catbox = new Catbox();
-
-// Constants for consistent messaging
-const BOT_NAME = "BWM_XMD";
-const BOT_TAGLINE = "Next-Gen WhatsApp Automation";
-const EMOJI_THEME = {
-  success: "⚡",
-  error: "💢",
-  info: "ℹ️",
-  processing: "🔄"
-};
 
 async function uploadToCatbox(Path) {
     if (!fs.existsSync(Path)) {
@@ -29,11 +20,11 @@ async function uploadToCatbox(Path) {
 
     try {
         const response = await catbox.uploadFile({
-            path: Path
+            path: Path // Provide the path to the file
         });
 
         if (response) {
-            return response;
+            return response; // returns the uploaded file URL
         } else {
             throw new Error("Error retrieving the file link");
         }
@@ -56,14 +47,8 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        const context = createContext(origineMessage, {
-            title: "Media URL Generator",
-            body: "Reply to media to get URL"
-        });
-        return repondre({
-            text: `${EMOJI_THEME.error} *Usage*\nPlease reply to an image, video, or audio file.`,
-            ...context
-        });
+        repondre('Please reply to an image, video, or audio file.');
+        return;
     }
 
     let mediaPath, mediaType;
@@ -72,169 +57,108 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
         const videoSize = msgRepondu.videoMessage.fileLength;
 
         if (videoSize > 50 * 1024 * 1024) {
-            const context = createContext(origineMessage, {
-                title: "File Size Limit",
-                body: "Maximum 50MB allowed"
-            });
-            return repondre({
-                text: `${EMOJI_THEME.error} *File Too Large*\nThe video exceeds 50MB limit.`,
-                ...context
-            });
+            repondre('The video is too long. Please send a smaller video.');
+            return;
         }
 
-        mediaPath = await downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
         mediaType = 'video';
     } else if (msgRepondu.imageMessage) {
-        mediaPath = await downloadAndSaveMediaMessage(msgRepondu.imageMessage);
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
         mediaType = 'image';
     } else if (msgRepondu.audioMessage) {
-        mediaPath = await downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        mediaPath = await zk.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
         mediaType = 'audio';
 
         const outputPath = `${mediaPath}.mp3`;
 
         try {
+            // Convert audio to MP3 format
             await convertToMp3(mediaPath, outputPath);
-            fs.unlinkSync(mediaPath);
-            mediaPath = outputPath;
+            fs.unlinkSync(mediaPath); // Remove the original audio file
+            mediaPath = outputPath; // Update the path to the converted MP3 file
         } catch (error) {
-            console.error("Conversion error:", error);
-            const context = createContext(origineMessage, {
-                title: "Conversion Failed",
-                body: "Audio processing error"
-            });
-            return repondre({
-                text: `${EMOJI_THEME.error} Failed to process the audio file.`,
-                ...context
-            });
+            console.error("Error converting audio to MP3:", error);
+            repondre('Failed to process the audio file.');
+            return;
         }
     } else {
-        const context = createContext(origineMessage, {
-            title: "Unsupported Media",
-            body: "Supported: Image/Video/Audio"
-        });
-        return repondre({
-            text: `${EMOJI_THEME.error} *Unsupported Media*\nReply with an image, video, or audio file.`,
-            ...context
-        });
+        repondre('Unsupported media type. Reply with an image, video, or audio file.');
+        return;
     }
 
     try {
-        const processingContext = createContext(origineMessage, {
-            title: "Uploading Media",
-            body: "Please wait..."
-        });
-        await repondre({
-            text: `${EMOJI_THEME.processing} Uploading your ${mediaType}...`,
-            ...processingContext
-        });
-
         const catboxUrl = await uploadToCatbox(mediaPath);
-        fs.unlinkSync(mediaPath);
+        fs.unlinkSync(mediaPath); // Remove the local file after uploading
 
-        const resultContext = createContext(origineMessage, {
-            title: `${mediaType.toUpperCase()} URL Generated`,
-            body: "Your media is ready"
-        });
-
-        const mediaLabels = {
-            'image': 'Image URL',
-            'video': 'Video URL',
-            'audio': 'Audio URL (MP3)'
-        };
-
-        await repondre({
-            text: `${EMOJI_THEME.success} *${mediaLabels[mediaType]}*\n\n${catboxUrl}\n\n_${BOT_TAGLINE}_`,
-            ...resultContext
-        });
-
+        // Respond with the URL based on media type
+        switch (mediaType) {
+            case 'image':
+                repondre(`Here is your image URL:\n${catboxUrl}`);
+                break;
+            case 'video':
+                repondre(`Here is your video URL:\n${catboxUrl}`);
+                break;
+            case 'audio':
+                repondre(`Here is your audio URL (MP3):\n${catboxUrl}`);
+                break;
+            default:
+                repondre('An unknown error occurred.');
+                break;
+        }
     } catch (error) {
-        console.error('Upload error:', error);
-        const errorContext = createContext(origineMessage, {
-            title: "Upload Failed",
-            body: "Try again later"
-        });
-        repondre({
-            text: `${EMOJI_THEME.error} *Upload Failed*\n${error.message}`,
-            ...errorContext
-        });
+        console.error('Error while creating your URL:', error);
+        repondre('Oops, an error occurred.');
     }
 });
+
+
+
+async function convertToMp3(inputPath, outputPath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg(inputPath)
+            .toFormat("mp3")
+            .on("error", (err) => reject(err))
+            .on("end", () => resolve(outputPath))
+            .save(outputPath);
+    });
+}
 
 adams({ nomCom: "tomp3", categorie: "General", reaction: "🎵" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre, from } = commandeOptions;
 
     if (!msgRepondu || !msgRepondu.videoMessage) {
-        const context = createContext(origineMessage, {
-            title: "Video to MP3",
-            body: "Reply to a video"
-        });
-        return repondre({
-            text: `${EMOJI_THEME.error} *Usage*\nReply to a video to convert it to audio.`,
-            ...context
-        });
+        repondre('Please reply to a video to convert it to audio.');
+        return;
     }
 
     const videoSize = msgRepondu.videoMessage.fileLength;
     if (videoSize > 50 * 1024 * 1024) {
-        const context = createContext(origineMessage, {
-            title: "File Size Limit",
-            body: "Maximum 50MB allowed"
-        });
-        return repondre({
-            text: `${EMOJI_THEME.error} *File Too Large*\nThe video exceeds 50MB limit.`,
-            ...context
-        });
+        repondre('The video is too large. Please send a smaller video.');
+        return;
     }
 
     try {
-        const processingContext = createContext(origineMessage, {
-            title: "Conversion in Progress",
-            body: "Video to MP3"
-        });
-        await repondre({
-            text: `${EMOJI_THEME.processing} Converting video to audio, please wait...`,
-            ...processingContext
-        });
-
+        // Download the video
         let media = await zk.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
         const audioPath = `${media}.mp3`;
 
+        repondre("Processing video to audio, please wait...");
+
+        // Convert to MP3
         await convertToMp3(media, audioPath);
-        fs.unlinkSync(media);
+        fs.unlinkSync(media); // Delete the original video
 
-        const successContext = createContext(origineMessage, {
-            title: "Conversion Complete",
-            body: "Your MP3 is ready"
-        });
-
-        await zk.sendMessage(from, {
+        // Send the MP3 file back to the **same conversation**
+        let msg = {
             audio: { url: audioPath },
-            mimetype: 'audio/mpeg',
-            contextInfo: {
-                externalAdReply: {
-                    title: "Video to MP3",
-                    body: BOT_TAGLINE,
-                    thumbnailUrl: "https://files.catbox.moe/sd49da.jpg"
-                }
-            }
-        }, { quoted: origineMessage });
+            mimetype: 'audio/mp4',
+        };
 
-        await repondre({
-            text: `${EMOJI_THEME.success} *Conversion Successful*\nHere's your audio file!`,
-            ...successContext
-        });
-
-        fs.unlinkSync(audioPath);
+        await zk.sendMessage(from, msg, { quoted: origineMessage });
+        fs.unlinkSync(audioPath); // Delete MP3 after sending
     } catch (error) {
-        console.error("Conversion error:", error);
-        const errorContext = createContext(origineMessage, {
-            title: "Conversion Failed",
-            body: "Try again later"
-        });
-        repondre({
-            text: `${EMOJI_THEME.error} *Failed to Process*\n${error.message}`,
-            ...errorContext
-        });
+        console.error("Error converting video to audio:", error);
+        repondre('Failed to process the video.');
     }
 });
