@@ -27,7 +27,54 @@ async function streamToBuffer(stream) {
 
 // Download1 - Recover in conversation
 adams({ 
-    nomCom: "download1", 
+    nomCom: "vv", 
+    categorie: "Media", 
+    reaction: "💾",
+    description: "Recover media in current conversation"
+}, async (origineMessage, zk, commandeOptions) => {
+    const { ms, repondre, msgRepondu } = commandeOptions;
+    
+    if (!msgRepondu) {
+        return repondre({
+            text: "❌ Please reply to a media message",
+            ...createContext(origineMessage, {
+                title: "Usage Error",
+                body: "Reply to media with !download1"
+            })
+        }, { quoted: ms });
+    }
+
+    const mediaMessage = getMediaMessage(msgRepondu);
+    if (!mediaMessage) {
+        return repondre({
+            text: "❌ Unsupported media type",
+            ...createContext(origineMessage, {
+                title: "Media Error",
+                body: "Images/videos/audio/documents only"
+            })
+        }, { quoted: ms });
+    }
+
+    try {
+        const { mediaType, mimeType } = detectMediaType(msgRepondu);
+        const buffer = await downloadMedia(mediaMessage, mediaType);
+        
+        await sendMedia(zk, origineMessage, buffer, mediaType, mimeType, ms);
+
+    } catch (error) {
+        console.error('Download1 error:', error);
+        repondre({
+            text: `❌ Recovery failed: ${error.message}`,
+            ...createContext(origineMessage, {
+                title: "Error",
+                body: "Try again later"
+            })
+        }, { quoted: ms });
+    }
+});
+
+adams({ 
+    nomCom: "sent", 
     categorie: "Media", 
     reaction: "💾",
     description: "Recover media in current conversation"
@@ -75,7 +122,7 @@ adams({
 
 // Download2 - Send in DM
 adams({ 
-    nomCom: "download2", 
+    nomCom: "vv2", 
     categorie: "Media", 
     reaction: "📩",
     description: "Send media to your DM"
@@ -132,7 +179,64 @@ adams({
         }, { quoted: ms });
     }
 });
+adams({ 
+    nomCom: "save", 
+    categorie: "Media", 
+    reaction: "📩",
+    description: "Send media to your DM"
+}, async (origineMessage, zk, commandeOptions) => {
+    const { ms, repondre, msgRepondu, auteurMessage } = commandeOptions;
+    
+    if (!msgRepondu) {
+        return repondre({
+            text: "❌ Please reply to a media message",
+            ...createContext(origineMessage, {
+                title: "Usage Error",
+                body: "Reply to media with !download2"
+            })
+        }, { quoted: ms });
+    }
 
+    const mediaMessage = getMediaMessage(msgRepondu);
+    if (!mediaMessage) {
+        return repondre({
+            text: "❌ Unsupported media type",
+            ...createContext(origineMessage, {
+                title: "Media Error",
+                body: "Images/videos/audio/documents only"
+            })
+        }, { quoted: ms });
+    }
+
+    try {
+        const { mediaType, mimeType } = detectMediaType(msgRepondu);
+        const buffer = await downloadMedia(mediaMessage, mediaType);
+        
+        // Send to user's DM
+        await sendMedia(zk, auteurMessage, buffer, mediaType, mimeType, ms);
+        
+        // Confirm in group
+        if (origineMessage.endsWith('@g.us')) {
+            await repondre({
+                text: "✅ Media sent to your DM",
+                ...createContext(origineMessage, {
+                    title: "Check Your Inbox",
+                    body: "Media delivered privately"
+                })
+            }, { quoted: ms });
+        }
+
+    } catch (error) {
+        console.error('Download2 error:', error);
+        repondre({
+            text: `❌ DM send failed: ${error.message}`,
+            ...createContext(origineMessage, {
+                title: "Error",
+                body: "Try again later"
+            })
+        }, { quoted: ms });
+    }
+});
 // Helper functions
 function getMediaMessage(msg) {
     return msg.imageMessage || msg.videoMessage || 
