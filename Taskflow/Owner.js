@@ -82,13 +82,13 @@ adams({ nomCom: "url", categorie: "General", reaction: "👨🏿‍💻" }, asyn
             });
         }
 
-        mediaPath = await adams.downloadAndSaveMediaMessage(msgRepondu.videoMessage);
+        mediaPath = await downloadAndSaveMediaMessage(msgRepondu.videoMessage);
         mediaType = 'video';
     } else if (msgRepondu.imageMessage) {
-        mediaPath = await adams.downloadAndSaveMediaMessage(msgRepondu.imageMessage);
+        mediaPath = await downloadAndSaveMediaMessage(msgRepondu.imageMessage);
         mediaType = 'image';
     } else if (msgRepondu.audioMessage) {
-        mediaPath = await adams.downloadAndSaveMediaMessage(msgRepondu.audioMessage);
+        mediaPath = await downloadAndSaveMediaMessage(msgRepondu.audioMessage);
         mediaType = 'audio';
 
         const outputPath = `${mediaPath}.mp3`;
