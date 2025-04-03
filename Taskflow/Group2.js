@@ -1,5 +1,5 @@
 const { adams } = require("../Ibrahim/adams");
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { downloadAndSaveMediaMessage } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 
   // Global store for timed operations
