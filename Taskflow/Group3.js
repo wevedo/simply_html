@@ -61,7 +61,7 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
         await zk.sendMessage(member.id, {
           text: `✉️ *Message from ${senderName}*\n\n${message}\n\n_${BOT_TAGLINE}_`,
           ...createContext(member.id, {
-            title: `Message from ${metadata.subject || "Group"}`,
+            title: `GROUP NAME ${metadata.subject || "Group"}`,
             body: senderName
           })
         });
@@ -180,3 +180,85 @@ adams({ nomCom: "vcf", categorie: 'Group', reaction: "📇" }, async (dest, zk, 
     });
   }
 });
+
+
+adams({ nomCom: "vcard", categorie: 'Group', reaction: "📇" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre } = commandeOptions;
+
+  try {
+    // Check if in group
+    if (!dest.endsWith("@g.us")) {
+      return repondre({
+        text: "❌ This command only works in groups.\n\n🚀 BWM XMD by Ibrahim Adams",
+        ...createContext(dest, {
+          title: "Group Command Only",
+          body: "VCF export requires group chat"
+        })
+      });
+    }
+
+    // Notify processing start
+    await repondre({
+      text: "⌛ Generating contact file for all group members...",
+      ...createContext(dest, {
+        title: "Processing Request",
+        body: "Creating VCF file"
+      })
+    });
+
+    // Get group data
+    const groupData = await zk.groupMetadata(dest);
+    const participants = groupData.participants;
+    const fileName = `BWM_Contacts_${groupData.subject.replace(/[^\w]/g, '_')}.vcf`;
+    const filePath = `./${fileName}`;
+
+    // Create VCF file
+    const fileStream = fs.createWriteStream(filePath);
+    
+    // Special numbers mapping
+    const specialNumbers = {
+      "254727716045": "Sir Ibrahim Adams",
+      "254106727593": "Sir Ibrahim Adams", 
+      "254710772666": "Sir Ibrahim Adams"
+    };
+
+    participants.forEach((member) => {
+      const number = member.id.split('@')[0];
+      const name = specialNumbers[number] || `BWM Contact ${number}`;
+      
+      fileStream.write(
+        `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;type=VOICE;waid=${number}:+${number}\nEND:VCARD\n\n`
+      );
+    });
+
+    fileStream.end();
+
+    // Wait for file completion
+    await new Promise((resolve) => fileStream.on('finish', resolve));
+
+    // Send VCF file
+    await zk.sendMessage(dest, {
+      document: { url: filePath },
+      mimetype: 'text/vcard',
+      fileName: fileName,
+      caption: `📇 *Group Contacts Export*\n\n✅ Contains ${participants.length} members\n🔗 ${groupData.subject}\n\n🚀 BWM XMD by Ibrahim Adams`,
+      ...createContext(dest, {
+        title: "VCF File Ready",
+        body: "Group contacts export"
+      })
+    }, { quoted: ms });
+
+    // Clean up
+    fs.unlinkSync(filePath);
+
+  } catch (error) {
+    repondre({
+      text: `❌ Error generating contacts: ${error.message}\n\n🚀 BWM XMD by Ibrahim Adams`,
+      ...createContext(dest, {
+        title: "Export Failed",
+        body: "VCF generation error"
+      })
+    });
+  }
+});
+
