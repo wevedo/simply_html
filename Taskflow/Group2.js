@@ -1,6 +1,6 @@
 const { adams } = require("../Ibrahim/adams");
-const { downloadAndSaveMediaMessage } = require('@whiskeysockets/baileys');
-const fs = require('fs');
+//const { downloadAndSaveMediaMessage } = require('@whiskeysockets/baileys');
+//const fs = require('fs');
 
   // Global store for timed operations
 const groupTimers = new Map();
@@ -334,7 +334,7 @@ adams({ nomCom: "poll",categorie: "Group", reaction: "📊", nomFichier: __filen
     repondre(`❌ Failed to create poll: ${error.message}`);
   }
 });
-
+/*
 //const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 adams({ nomCom: "setgrouppic", categorie: "Group", reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
@@ -370,7 +370,7 @@ adams({ nomCom: "setgrouppic", categorie: "Group", reaction: "🖼️", nomFichi
     }
   }
 });
-
+*/
 adams({ nomCom: "countries",categorie: "Group", reaction: "🌍", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
   try {
     const metadata = await zk.groupMetadata(chatId);
