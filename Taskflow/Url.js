@@ -4,22 +4,23 @@ const { downloadContentFromMessage } = require("@whiskeysockets/baileys");
 const fs = require("fs-extra");
 const { Catbox } = require("node-catbox");
 const path = require("path");
+const fluentFfmpeg = require("fluent-ffmpeg");
 
 const catbox = new Catbox();
 
-// Utility function to download media
+// Utility: Download media from message
 async function downloadMedia(mediaMessage, mediaType) {
     const stream = await downloadContentFromMessage(mediaMessage, mediaType);
     const buffer = await streamToBuffer(stream);
-    
+
     const extension = mediaMessage.mimetype.split("/")[1] || "bin";
     const filePath = path.join(__dirname, `temp_${Date.now()}.${extension}`);
-    
+
     await fs.writeFile(filePath, buffer);
     return filePath;
 }
 
-// Convert stream to buffer
+// Utility: Convert stream to buffer
 async function streamToBuffer(stream) {
     return new Promise((resolve, reject) => {
         const chunks = [];
@@ -29,7 +30,7 @@ async function streamToBuffer(stream) {
     });
 }
 
-// Upload file to Catbox
+// Utility: Upload file to Catbox
 async function uploadToCatbox(filePath) {
     if (!fs.existsSync(filePath)) {
         throw new Error("File does not exist");
@@ -43,30 +44,32 @@ async function uploadToCatbox(filePath) {
     }
 }
 
-// Convert non-MP3 audio to MP3 (if needed)
-async function convertToMp3(filePath) {
-    const mp3Path = filePath.replace(/\.\w+$/, ".mp3");
-    
-    if (filePath.endsWith(".mp3")) {
-        return filePath; // Already MP3
+// Convert any audio format (including voice notes) to MP3
+async function convertToMp3(inputPath) {
+    const mp3Path = inputPath.replace(/\.\w+$/, ".mp3");
+
+    if (inputPath.endsWith(".mp3")) {
+        return inputPath; // Already MP3
     }
 
-    try {
-        const audioBuffer = await fs.readFile(filePath);
-        await fs.writeFile(mp3Path, audioBuffer);
-        fs.unlinkSync(filePath); // Remove original
-        return mp3Path;
-    } catch (error) {
-        throw new Error("Failed to convert audio to MP3");
-    }
+    return new Promise((resolve, reject) => {
+        fluentFfmpeg(inputPath)
+            .toFormat("mp3")
+            .on("error", (err) => reject(new Error("FFmpeg error: " + err.message)))
+            .on("end", () => {
+                fs.unlinkSync(inputPath); // Remove original file after conversion
+                resolve(mp3Path);
+            })
+            .save(mp3Path);
+    });
 }
 
-// Command logic
+// Command: Get URL for media
 adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
     if (!msgRepondu) {
-        repondre("📌 Reply to an image, video, audio, or document to get a URL.");
+        repondre("📌 Reply to an image, video, audio (including voice notes), or document to get a URL.");
         return;
     }
 
@@ -89,8 +92,8 @@ adams({ nomCom: "url", categorie: "General", reaction: "🌐" }, async (origineM
         } else if (msgRepondu.audioMessage) {
             mediaPath = await downloadMedia(msgRepondu.audioMessage, "audio");
             mediaType = "audio";
-            
-            // Convert audio to MP3
+
+            // Convert all audio types (including voice notes) to MP3
             mediaPath = await convertToMp3(mediaPath);
 
         } else if (msgRepondu.documentMessage) {
