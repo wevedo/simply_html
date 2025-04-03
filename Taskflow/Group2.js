@@ -1,6 +1,6 @@
 const { adams } = require("../Ibrahim/adams");
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-
+const fs = require('fs');
 
   // Global store for timed operations
 const groupTimers = new Map();
@@ -341,28 +341,33 @@ adams({ nomCom: "setgrouppic", categorie: "Group", reaction: "🖼️", nomFichi
   const { ms, repondre } = commandeOptions;
   
   // Check if the message is a quoted image
-  if (!ms.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage) {
+  const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  if (!quotedMsg?.imageMessage) {
     return repondre("ℹ️ Please reply to an image message to set as group picture");
   }
 
   try {
-    // Download the media using the imported function
-    const buffer = await downloadMediaMessage(
-      ms.message.extendedTextMessage.contextInfo.quotedMessage,
-      "buffer",
-      {},
-      {
-        logger: console,
-        reuploadRequest: zk.updateMediaMessage
-      }
-    );
-
+    // Download and save the media file
+    const mediaPath = await zk.downloadAndSaveMediaMessage(quotedMsg.imageMessage);
+    
+    // Read the file into buffer
+    const buffer = fs.readFileSync(mediaPath);
+    
     // Update group picture
     await zk.groupUpdatePicture(dest, buffer);
+    
+    // Delete the temporary file
+    fs.unlinkSync(mediaPath);
+    
     repondre("✅ Group picture updated successfully");
   } catch (error) {
     console.error("Error updating group picture:", error);
     repondre(`❌ Failed to update group picture: ${error.message}`);
+    
+    // Clean up if file exists but error occurred
+    if (mediaPath && fs.existsSync(mediaPath)) {
+      fs.unlinkSync(mediaPath);
+    }
   }
 });
 
