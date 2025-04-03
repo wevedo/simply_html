@@ -3,99 +3,131 @@ const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
 const fs = require('fs-extra');
 const path = require('path');
 const ffmpeg = require('fluent-ffmpeg');
+const { createContext } = require('../utils/helper');
 
 adams({ 
     nomCom: "download", 
     categorie: "Media", 
     reaction: "⬇️",
-    description: "Download any media file (images, videos, audio, stickers, documents)"
+    description: "Download any media file with context"
 }, async (origineMessage, zk, commandeOptions) => {
-    const { msgRepondu, repondre } = commandeOptions;
+    const { ms, repondre, msgRepondu } = commandeOptions;
 
-    if (!msgRepondu) {
-        return repondre("❌ Please reply to a media message (image, video, audio, sticker, or document)");
+    // Validate replied message
+    if (!msgRepondu || !ms?.key) {
+        return repondre({
+            text: "❌ Please reply to a media message",
+            ...createContext(origineMessage, {
+                title: "Usage Error",
+                body: "Reply to media with !download"
+            })
+        }, { quoted: ms });
     }
 
-    // Determine media type and prepare download
-    let mediaType, fileExtension, mediaMessage;
-    
+    // Safely extract media message
+    const mediaMessage = msgRepondu.imageMessage || 
+                        msgRepondu.videoMessage || 
+                        msgRepondu.audioMessage || 
+                        msgRepondu.stickerMessage || 
+                        msgRepondu.documentMessage;
+
+    if (!mediaMessage) {
+        return repondre({
+            text: "❌ No media found in replied message",
+            ...createContext(origineMessage, {
+                title: "Media Error",
+                body: "Only images/videos/audio supported"
+            })
+        }, { quoted: ms });
+    }
+
+    // Determine media type
+    let mediaType, fileExtension;
     if (msgRepondu.imageMessage) {
         mediaType = 'image';
-        mediaMessage = msgRepondu.imageMessage;
-        fileExtension = mediaMessage.mimetype.split('/')[1] || 'jpg';
+        fileExtension = mediaMessage.mimetype?.split('/')[1] || 'jpg';
     } 
     else if (msgRepondu.videoMessage) {
         mediaType = 'video';
-        mediaMessage = msgRepondu.videoMessage;
-        fileExtension = mediaMessage.mimetype.split('/')[1] || 'mp4';
+        fileExtension = mediaMessage.mimetype?.split('/')[1] || 'mp4';
         
-        // Check video size limit (50MB)
+        // Check video size (50MB limit)
         if (mediaMessage.fileLength > 50 * 1024 * 1024) {
-            return repondre("❌ Video is too large (max 50MB)");
+            return repondre({
+                text: "❌ Video exceeds 50MB limit",
+                ...createContext(origineMessage, {
+                    title: "Size Limit",
+                    body: "Maximum 50MB videos"
+                })
+            }, { quoted: ms });
         }
     }
     else if (msgRepondu.audioMessage) {
         mediaType = 'audio';
-        mediaMessage = msgRepondu.audioMessage;
-        fileExtension = 'mp3'; // We'll convert to MP3
+        fileExtension = 'mp3'; // Will convert to MP3
     }
     else if (msgRepondu.stickerMessage) {
         mediaType = 'sticker';
-        mediaMessage = msgRepondu.stickerMessage;
         fileExtension = mediaMessage.isAnimated ? 'webp' : 'webp';
     }
     else if (msgRepondu.documentMessage) {
         mediaType = 'document';
-        mediaMessage = msgRepondu.documentMessage;
-        fileExtension = mediaMessage.fileName.split('.').pop() || 'bin';
-    }
-    else {
-        return repondre("❌ Unsupported media type. Please reply to an image, video, audio, sticker, or document");
+        fileExtension = mediaMessage.fileName?.split('.').pop() || 'bin';
     }
 
     try {
-        // Create temp directory if it doesn't exist
-        const tempDir = path.join(__dirname, 'temp');
+        // Prepare download
+        const tempDir = path.join(__dirname, 'temp_downloads');
         await fs.ensureDir(tempDir);
-        
-        // Download the media
         const fileName = `${mediaType}_${Date.now()}.${fileExtension}`;
         const filePath = path.join(tempDir, fileName);
-        
+
+        // Download media
         const stream = await downloadContentFromMessage(mediaMessage, mediaType);
         const buffer = await streamToBuffer(stream);
         await fs.writeFile(filePath, buffer);
 
-        // Convert audio to MP3 if needed
+        // Convert audio if needed
         let finalPath = filePath;
         if (mediaType === 'audio') {
             const mp3Path = path.join(tempDir, `${mediaType}_${Date.now()}.mp3`);
             await convertToMp3(filePath, mp3Path);
-            await fs.unlink(filePath); // Remove original
+            await fs.unlink(filePath);
             finalPath = mp3Path;
         }
 
-        // Send the file back to user
-        await zk.sendMessage(origineMessage, { 
-            [mediaType === 'image' ? 'image' : 
-             mediaType === 'video' ? 'video' : 
-             mediaType === 'audio' ? 'audio' : 'document']: {
-                url: finalPath
-            },
+        // Send with rich context
+        const context = createContext(origineMessage, {
+            title: `Downloaded ${mediaType}`,
+            body: `Saved as ${path.basename(finalPath)}`,
+            thumbnail: mediaType === 'image' ? finalPath : undefined
+        });
+
+        await zk.sendMessage(origineMessage, {
+            [mediaType]: { url: finalPath },
             mimetype: mediaMessage.mimetype,
-            caption: `⬇️ Downloaded ${mediaType}\n📁 ${path.basename(finalPath)}`
-        }, { quoted: msgRepondu });
+            caption: `⬇️ *${mediaType.toUpperCase()} DOWNLOAD*\n` +
+                     `📁 ${path.basename(finalPath)}\n` +
+                     `🕒 ${new Date().toLocaleTimeString()}`,
+            ...context
+        }, { quoted: ms });
 
         // Clean up
         await fs.unlink(finalPath);
 
     } catch (error) {
         console.error('Download error:', error);
-        repondre(`❌ Failed to download media: ${error.message}`);
+        repondre({
+            text: `❌ Download failed: ${error.message}`,
+            ...createContext(origineMessage, {
+                title: "Error Occurred",
+                body: "Try again later"
+            })
+        }, { quoted: ms });
     }
 });
 
-// Helper function to convert stream to buffer
+// Helper functions
 async function streamToBuffer(stream) {
     return new Promise((resolve, reject) => {
         const chunks = [];
@@ -105,14 +137,13 @@ async function streamToBuffer(stream) {
     });
 }
 
-// Audio conversion function
 async function convertToMp3(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
         ffmpeg(inputPath)
             .audioCodec('libmp3lame')
             .toFormat('mp3')
-            .on('end', () => resolve(outputPath))
-            .on('error', (err) => reject(err))
+            .on('end', () => resolve())
+            .on('error', reject)
             .save(outputPath);
     });
 }
