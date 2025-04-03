@@ -53,6 +53,79 @@ async function verifyGroup(zk, dest, repondre, ms) {
   }
 }
 
+// Premium tagall command with fixed metadata
+adams({ nomCom: "tagall", categorie: 'Group', reaction: "📣" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
+  
+  // Get proper group metadata
+  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
+  if (!isGroup) return;
+
+  const message = arg?.join(' ') || 'Notification from admin';
+  const members = metadata.participants;
+  
+  if (!verifAdmin && !superUser) {
+    const context = createContext(dest, {
+      title: "Admin Privileges Required",
+      body: "Tagall command restricted"
+    });
+    
+    return repondre({
+      text: `${EMOJI_THEME.admin} *Access Denied*\nThis command requires admin privileges`,
+      ...context
+    });
+  }
+
+  const tagMessage = `
+🟣 *${BOT_NAME} GROUP TAG* 🟣
+
+📌 *Group:* ${groupName}
+👤 *From:* ${senderName}
+📝 *Message:* ${message}
+
+${members.map(m => `◎ @${m.id.split('@')[0]}`).join('\n')}
+  `;
+
+  const context = createContext(dest, {
+    title: "Group Mention Alert",
+    body: `New mention in ${groupName}`
+  });
+
+  await zk.sendMessage(dest, {
+    text: tagMessage,
+    mentions: members.map(m => m.id),
+    ...context
+  }, { quoted: ms });
+});
+
+adams({ nomCom: "hidetag", categorie: 'Group', reaction: "👻" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
+  
+  const { isGroup, metadata } = await verifyGroup(zk, dest, repondre, ms);
+  if (!isGroup) return;
+
+  if (!verifAdmin && !superUser) {
+    const context = createContext(dest, {
+      title: "Admin Privileges Required",
+      body: "Hidetag command restricted"
+    });
+    
+    return repondre({
+      text: `${EMOJI_THEME.admin} *Access Denied*\nStealth mentions require admin privileges`,
+      ...context
+    });
+  }
+
+  const message = arg?.join(' ') || 'Important silent notification';
+  const members = metadata.participants;
+  const hiddenMentions = Array(members.length).fill('‎').join('\n'); // Zero-width spaces
+
+  // Only quote the original message without sending new text
+  await zk.sendMessage(dest, {
+    mentions: members.map(m => m.id)
+  }, { quoted: ms });
+});
+
 // Fixed senttoall command with proper names
 adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest, zk, commandeOptions) => {
   const { ms, repondre, arg, verifAdmin, superUser } = commandeOptions;
@@ -129,5 +202,181 @@ adams({ nomCom: "senttoall", categorie: 'Group', reaction: "📨" }, async (dest
 
   if (progressMsg?.key) {
     await zk.sendMessage(dest, { delete: progressMsg.key });
+  }
+});
+
+
+/////////////!!////!/!////////!/!!/!!!!///!/!///////!!!!/!!!!!
+
+
+adams({ nomCom: "promote", categorie: 'Group', reaction: "⬆️" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, msgRepondu, verifAdmin, superUser } = commandeOptions;
+  
+  // Verify group status using the improved function
+  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
+  if (!isGroup) return;
+
+  if (!verifAdmin && !superUser) {
+    const context = createContext(dest, {
+      title: "Admin Privileges Required",
+      body: "Promote command restricted"
+    });
+    return repondre({
+      text: `${EMOJI_THEME.admin} *Access Denied*\nYou need admin rights to use this command`,
+      ...context
+    });
+  }
+
+  if (!msgRepondu) {
+    const context = createContext(dest, {
+      title: "Usage Instructions",
+      body: "How to use promote"
+    });
+    return repondre({
+      text: `${EMOJI_THEME.info} *Command Usage*\nReply to a user's message to promote them`,
+      ...context
+    });
+  }
+
+  const targetUser = msgRepondu.key.participant || msgRepondu.key.remoteJid;
+  const targetUsername = msgRepondu.pushName || "User";
+
+  try {
+    // Check if bot is admin
+    const botAdmin = metadata.participants.find(p => p.id === zk.user.id)?.admin;
+    if (!botAdmin) {
+      const context = createContext(dest, {
+        title: "Bot Privileges Required",
+        body: "Bot needs admin rights"
+      });
+      return repondre({
+        text: `${EMOJI_THEME.error} *Bot Not Admin*\nI need admin rights to perform this action`,
+        ...context
+      });
+    }
+
+    // Check if user is already admin
+    const isAlreadyAdmin = metadata.participants.find(p => p.id === targetUser)?.admin;
+    if (isAlreadyAdmin) {
+      const context = createContext(dest, {
+        title: "Already Admin",
+        body: "User is already admin"
+      });
+      return repondre({
+        text: `${EMOJI_THEME.warning} @${targetUser.split('@')[0]} is already an admin`,
+        mentions: [targetUser],
+        ...context
+      });
+    }
+
+    // Promote the user
+    await zk.groupParticipantsUpdate(dest, [targetUser], "promote");
+    
+    const context = createContext(dest, {
+      title: "Admin Promotion",
+      body: `${targetUsername} promoted in ${groupName}`
+    });
+    
+    await zk.sendMessage(dest, {
+      text: `${EMOJI_THEME.success} *Admin Promotion*\n\n@${targetUser.split('@')[0]} has been promoted to admin by ${senderName}`,
+      mentions: [targetUser],
+      ...context
+    }, { quoted: ms });
+
+  } catch (error) {
+    const context = createContext(dest, {
+      title: "Promotion Failed",
+      body: "Error promoting user"
+    });
+    repondre({
+      text: `${EMOJI_THEME.error} *Promotion Failed*\n${error.message}`,
+      ...context
+    });
+  }
+});
+
+adams({ nomCom: "demote", categorie: 'Group', reaction: "⬇️" }, async (dest, zk, commandeOptions) => {
+  const { ms, repondre, msgRepondu, verifAdmin, superUser } = commandeOptions;
+  
+  // Verify group status using the improved function
+  const { isGroup, metadata, groupName, senderName } = await verifyGroup(zk, dest, repondre, ms);
+  if (!isGroup) return;
+
+  if (!verifAdmin && !superUser) {
+    const context = createContext(dest, {
+      title: "Admin Privileges Required",
+      body: "Demote command restricted"
+    });
+    return repondre({
+      text: `${EMOJI_THEME.admin} *Access Denied*\nYou need admin rights to use this command`,
+      ...context
+    });
+  }
+
+  if (!msgRepondu) {
+    const context = createContext(dest, {
+      title: "Usage Instructions",
+      body: "How to use demote"
+    });
+    return repondre({
+      text: `${EMOJI_THEME.info} *Command Usage*\nReply to a user's message to demote them`,
+      ...context
+    });
+  }
+
+  const targetUser = msgRepondu.key.participant || msgRepondu.key.remoteJid;
+  const targetUsername = msgRepondu.pushName || "User";
+
+  try {
+    // Check if bot is admin
+    const botAdmin = metadata.participants.find(p => p.id === zk.user.id)?.admin;
+    if (!botAdmin) {
+      const context = createContext(dest, {
+        title: "Bot Privileges Required",
+        body: "Bot needs admin rights"
+      });
+      return repondre({
+        text: `${EMOJI_THEME.error} *Bot Not Admin*\nI need admin rights to perform this action`,
+        ...context
+      });
+    }
+
+    // Check if user is actually admin
+    const isAdmin = metadata.participants.find(p => p.id === targetUser)?.admin;
+    if (!isAdmin) {
+      const context = createContext(dest, {
+        title: "Not an Admin",
+        body: "User is not admin"
+      });
+      return repondre({
+        text: `${EMOJI_THEME.warning} @${targetUser.split('@')[0]} is not an admin`,
+        mentions: [targetUser],
+        ...context
+      });
+    }
+
+    // Demote the user
+    await zk.groupParticipantsUpdate(dest, [targetUser], "demote");
+    
+    const context = createContext(dest, {
+      title: "Admin Demotion",
+      body: `${targetUsername} demoted in ${groupName}`
+    });
+    
+    await zk.sendMessage(dest, {
+      text: `${EMOJI_THEME.success} *Admin Demotion*\n\n@${targetUser.split('@')[0]} has been demoted by ${senderName}`,
+      mentions: [targetUser],
+      ...context
+    }, { quoted: ms });
+
+  } catch (error) {
+    const context = createContext(dest, {
+      title: "Demotion Failed",
+      body: "Error demoting user"
+    });
+    repondre({
+      text: `${EMOJI_THEME.error} *Demotion Failed*\n${error.message}`,
+      ...context
+    });
   }
 });
