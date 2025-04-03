@@ -15,7 +15,7 @@ ______     __     __     __    __        __  __     __    __     _____
 const { default: makeWASocket, isJidGroup, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
-const { createContext } = require("../utils/helper");
+const { createContext } = require("./utils/helper");
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
 const conf = require("./config");
