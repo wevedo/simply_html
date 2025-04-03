@@ -8,52 +8,58 @@ const { createContext } = require('../utils/helper');
 
 const catbox = new Catbox();
 
-// Enhanced audio download and conversion
+// Create temp directory if it doesn't exist
+const tempDir = path.join(__dirname, 'temp_media');
+fs.ensureDirSync(tempDir);
+
+// Enhanced audio processor
 async function processAudio(audioMessage) {
     try {
-        // Download audio
-        const audioPath = await downloadMedia(audioMessage);
-        const mp3Path = `${audioPath}.mp3`;
-        
-        // Convert to MP3 with better settings
+        // Download original audio
+        const stream = await downloadContentFromMessage(audioMessage, 'audio');
+        const buffer = await streamToBuffer(stream);
+        const oggPath = path.join(tempDir, `audio_${Date.now()}.ogg`);
+        await fs.writeFile(oggPath, buffer);
+
+        // Convert to MP3
+        const mp3Path = path.join(tempDir, `audio_${Date.now()}.mp3`);
         await new Promise((resolve, reject) => {
-            ffmpeg(audioPath)
+            ffmpeg(oggPath)
                 .audioCodec('libmp3lame')
                 .audioBitrate(128)
-                .toFormat('mp3')
-                .on('end', resolve)
+                .outputOptions('-ar', '44100') // Sample rate
+                .on('end', () => {
+                    fs.unlinkSync(oggPath); // Clean up OGG
+                    resolve();
+                })
                 .on('error', reject)
                 .save(mp3Path);
         });
-        
-        fs.unlinkSync(audioPath); // Remove original
+
         return mp3Path;
     } catch (error) {
-        console.error('Audio processing error:', error);
+        console.error('Audio processing failed:', error);
         throw new Error('Failed to process audio');
     }
 }
 
-// Improved media download function
-async function downloadMedia(mediaMessage) {
-    const type = mediaMessage.mimetype.includes('image') ? 'image' : 
-                mediaMessage.mimetype.includes('video') ? 'video' : 'audio';
-    
-    const stream = await downloadContentFromMessage(mediaMessage, type);
-    const buffer = await streamToBuffer(stream);
-    
-    // Create temp directory if not exists
-    const tempDir = path.join(__dirname, 'temp_media');
-    await fs.ensureDir(tempDir);
-    
-    const ext = type === 'audio' ? 'ogg' : mediaMessage.mimetype.split('/')[1];
-    const filePath = path.join(tempDir, `media_${Date.now()}.${ext}`);
-    
-    await fs.writeFile(filePath, buffer);
-    return filePath;
+// Universal media downloader
+async function downloadMedia(mediaMessage, type) {
+    try {
+        const stream = await downloadContentFromMessage(mediaMessage, type);
+        const buffer = await streamToBuffer(stream);
+        const ext = type === 'audio' ? 'ogg' : mediaMessage.mimetype.split('/')[1];
+        const filePath = path.join(tempDir, `${type}_${Date.now()}.${ext}`);
+        await fs.writeFile(filePath, buffer);
+        return filePath;
+    } catch (error) {
+        console.error('Download failed:', error);
+        throw new Error(`Failed to download ${type}`);
+    }
 }
 
-async function streamToBuffer(stream) {
+// Helper function
+function streamToBuffer(stream) {
     return new Promise((resolve, reject) => {
         const chunks = [];
         stream.on('data', (chunk) => chunks.push(chunk));
@@ -62,17 +68,18 @@ async function streamToBuffer(stream) {
     });
 }
 
-async function uploadToCatbox(filePath) {
-    if (!fs.existsSync(filePath)) {
-        throw new Error("File does not exist");
-    }
-
-    try {
-        const response = await catbox.uploadFile({ path: filePath });
-        return response;
-    } catch (err) {
-        console.error('Catbox upload error:', err);
-        throw new Error("Failed to upload file");
+// Upload handler with retries
+async function uploadToCatbox(filePath, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            if (!fs.existsSync(filePath)) {
+                throw new Error("File not found");
+            }
+            return await catbox.uploadFile({ path: filePath });
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
     }
 }
 
@@ -80,7 +87,7 @@ adams({
     nomCom: "url", 
     categorie: "General", 
     reaction: "🔗",
-    description: "Get shareable URL for media files"
+    description: "Get shareable URL for any media"
 }, async (origineMessage, zk, commandeOptions) => {
     const { msgRepondu, repondre } = commandeOptions;
 
@@ -108,11 +115,11 @@ adams({
                     })
                 });
             }
-            mediaPath = await downloadMedia(msgRepondu.videoMessage);
+            mediaPath = await downloadMedia(msgRepondu.videoMessage, 'video');
             mediaType = 'video';
         } 
         else if (msgRepondu.imageMessage) {
-            mediaPath = await downloadMedia(msgRepondu.imageMessage);
+            mediaPath = await downloadMedia(msgRepondu.imageMessage, 'image');
             mediaType = 'image';
         } 
         else if (msgRepondu.audioMessage) {
@@ -129,32 +136,36 @@ adams({
             });
         }
 
-        // Upload to Catbox
+        // Upload with retry logic
         const catboxUrl = await uploadToCatbox(mediaPath);
         
-        // Send response with context
+        // Success response
         await repondre({
             text: `🔗 ${mediaType.toUpperCase()} URL:\n${catboxUrl}`,
             ...createContext(origineMessage, {
                 title: "Media URL Ready",
-                body: `Shared ${mediaType} file`,
+                body: `Click to download ${mediaType}`,
                 thumbnail: mediaType === 'image' ? catboxUrl : undefined
             })
         });
 
     } catch (error) {
-        console.error('URL command error:', error);
-        repondre({
+        console.error('URL command failed:', error);
+        await repondre({
             text: `❌ Error: ${error.message}`,
             ...createContext(origineMessage, {
                 title: "Processing Failed",
-                body: "Please try again"
+                body: "Please try again later"
             })
         });
     } finally {
-        // Cleanup temp files
-        if (mediaPath && fs.existsSync(mediaPath)) {
-            fs.unlinkSync(mediaPath).catch(() => {});
+        // Safe cleanup
+        try {
+            if (mediaPath && fs.existsSync(mediaPath)) {
+                fs.unlinkSync(mediaPath);
+            }
+        } catch (cleanupError) {
+            console.error('Cleanup failed:', cleanupError);
         }
     }
 });
