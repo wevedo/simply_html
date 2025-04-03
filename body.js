@@ -445,36 +445,120 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                 // Permission check
                 if (!superUser && conf.MODE?.toLowerCase() !== "yes") {
                     console.log(`Command blocked for ${auteurMessage}`);
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const ms = messages[0];
+    if (!ms?.message || !ms?.key) return;
+
+    // Helper function to safely decode JID
+    function decodeJid(jid) {
+        if (!jid) return '';
+        return typeof jid.decodeJid === 'function' ? jid.decodeJid() : String(jid);
+    }
+
+    // Media download function
+    async function downloadMedia(mediaMessage) {
+        try {
+            const buffer = await adams.downloadMediaMessage(mediaMessage);
+            if (!buffer) throw new Error("Download failed");
+            return buffer;
+        } catch (error) {
+            console.error("Media download error:", error);
+            throw error;
+        }
+    }
+
+    // Extract core message information
+    const origineMessage = ms.key.remoteJid || '';
+    const idBot = decodeJid(adams.user?.id || '');
+    const verifGroupe = typeof origineMessage === 'string' && origineMessage.endsWith("@g.us");
+    
+    // Group metadata handling
+    let infosGroupe = null;
+    let nomGroupe = '';
+    try {
+        infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage).catch(() => null) : null;
+        nomGroupe = infosGroupe?.subject || '';
+    } catch (err) {
+        console.error("Group metadata error:", err);
+    }
+
+    // Message author determination
+    let auteurMessage = verifGroupe 
+        ? (ms.key.participant || ms.participant || origineMessage)
+        : origineMessage;
+    if (ms.key.fromMe) auteurMessage = idBot;
+
+    // Permission flags
+    const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
+    const superUser = 
+        SUDO_NUMBERS.includes(auteurMessage) || 
+        auteurMessage === `${conf.OWNER_NUMBER}@s.whatsapp.net` || 
+        auteurMessage === botJid;
+
+    let verifAdmin = false;
+    let botIsAdmin = false;
+    if (verifGroupe && infosGroupe) {
+        const admins = infosGroupe.participants.filter(p => p.admin).map(p => p.id);
+        verifAdmin = admins.includes(auteurMessage);
+        botIsAdmin = admins.includes(botJid);
+    }
+
+    // Message content processing
+    const texte = ms.message?.conversation || 
+                 ms.message?.extendedTextMessage?.text || 
+                 ms.message?.imageMessage?.caption || 
+                 '';
+    const arg = typeof texte === 'string' ? texte.trim().split(/\s+/).slice(1) : [];
+    const verifCom = typeof texte === 'string' && texte.startsWith(PREFIX);
+    const com = verifCom ? texte.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase() : null;
+
+    if (verifCom && com) {
+        const cmd = Array.isArray(evt.cm) 
+            ? evt.cm.find((c) => c?.nomCom === com || (Array.isArray(c?.aliases) && c.aliases.includes(com)))
+            : null;
+
+        if (cmd) {
+            try {
+                // Permission check
+                if (!superUser && conf.MODE?.toLowerCase() !== "yes") {
+                    console.log(`Command blocked for ${auteurMessage}`);
                     return;
                 }
 
-                // Reply function with context
-                const repondre = async (text, options = {}) => {
-                    if (typeof text !== 'string') return;
+                // Enhanced reply function with media support
+                const repondre = async (content, options = {}) => {
                     try {
-                        await adams.sendMessage(origineMessage, { 
-                            text,
-                            ...createContext(auteurMessage, {
-                                title: options.title || nomGroupe || "BWM-XMD",
-                                body: options.body || ""
-                            })
-                        }, { quoted: ms });
+                        if (typeof content === 'string') {
+                            await adams.sendMessage(origineMessage, { 
+                                text: content,
+                                ...createContext(auteurMessage, options)
+                            }, { quoted: ms });
+                        } else if (content?.url || content?.buffer) {
+                            await adams.sendMessage(origineMessage, content, { quoted: ms });
+                        }
                     } catch (err) {
                         console.error("Reply error:", err);
                     }
                 };
 
-                // Add reaction
+                // Add reaction if available
                 if (cmd.reaction) {
                     try {
                         await adams.sendMessage(origineMessage, {
-                            react: { 
-                                key: ms.key, 
-                                text: cmd.reaction 
-                            }
+                            react: { key: ms.key, text: cmd.reaction }
                         });
                     } catch (err) {
                         console.error("Reaction error:", err);
+                    }
+                }
+
+                // Prepare media buffer if message contains media
+                let mediaBuffer = null;
+                if (ms.message?.imageMessage || ms.message?.videoMessage) {
+                    try {
+                        mediaBuffer = await downloadMedia(ms.message);
+                    } catch (error) {
+                        console.error("Failed to download media:", error);
                     }
                 }
 
@@ -490,11 +574,13 @@ adams.ev.on("messages.upsert", async ({ messages }) => {
                     infosGroupe,
                     nomGroupe,
                     auteurMessage,
-                    utilisateur,
-                    membreGroupe,
                     origineMessage,
-                    msgRepondu,
-                    auteurMsgRepondu
+                    downloadMedia: async () => {
+                        if (!mediaBuffer) {
+                            mediaBuffer = await downloadMedia(ms.message);
+                        }
+                        return mediaBuffer;
+                    }
                 });
 
             } catch (error) {
