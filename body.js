@@ -100,6 +100,9 @@ async function setupSession() {
 }
 
 // Enhanced connection handler
+const store = makeInMemoryStore({ logger });
+let repliedContacts = new Set();
+
 async function startBwmXmd() {
     const sessionDir = await setupSession();
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
@@ -132,53 +135,55 @@ async function startBwmXmd() {
         connectTimeoutMs: 30_000
     });
 
-         // Initialize store before setting up event listeners
-        store.bind(adams.ev);
+    store.bind(adams.ev);
 
-        // Setup event listeners
-        setupEventHandlers(adams, saveCreds);
-
-        return adams;
-    } catch (error) {
-        console.error('Error during initialization:', error);
-        throw error;
-    }
-}
-
-function setupEventHandlers(adams, saveCreds) {
-    if (!adams || !adams.ev) {
-        console.error('Adams socket not properly initialized');
-        return;
-    }
-    socket.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, isNewLogin, qr } = update;
-        console.log('Connection Update:', connection);
-
+    adams.ev.on('creds.update', saveCreds);
+    
+    adams.ev.on('connection.update', (update) => {
+        const { connection, lastDisconnect } = update;
+        
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== 401;
-            console.log(`Connection closed, ${shouldReconnect ? 'reconnecting' : 'not reconnecting'}`);
-            if (shouldReconnect) {
-                setTimeout(connectToWhatsApp, 5000);
-            }
-        } 
-        else if (connection === 'open') {
-            console.log('✅ Connected to WhatsApp');
-            await socket.sendPresenceUpdate('available');
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log('Connection closed, reconnecting...');
             
-            // Test functionality
-            setTimeout(() => {
-                testConnection(socket).catch(console.error);
-            }, 2000);
-        }
-
-        if (qr) {
-            console.log('QR Code generated - scan to authenticate');
+            if (shouldReconnect) {
+                setTimeout(startBwmXmd, 5000);
+            }
+        } else if (connection === 'open') {
+            console.log(chalk.green.bold('Connected to WhatsApp as ' + adams.user.id.split(':')[0]));
         }
     });
 
-    socket.ev.on('creds.update', saveCreds);
-    return socket;
+    adams.ev.on('messages.upsert', async ({ messages, type }) => {
+        if (type !== 'notify') return;
+        
+        const msg = messages[0];
+        if (!msg.message) return;
+        
+        const msgType = getContentType(msg.message);
+        const sender = msg.key.remoteJid;
+        const isGroup = isJidGroup(sender);
+        const user = isGroup ? msg.key.participant : sender;
+        
+        if (repliedContacts.has(user)) return;
+        repliedContacts.add(user);
+        setTimeout(() => repliedContacts.delete(user), 5000);
+        
+        // Message processing logic here
+    });
+
+    return adams;
 }
+
+startBwmXmd();
+
+process.on('SIGINT', () => {
+    console.log('Shutting down...');
+    if (adams) {
+        adams.end();
+    }
+    process.exit();
+});
 
 // Enhanced message handler
 function setupMessageHandler(socket) {
