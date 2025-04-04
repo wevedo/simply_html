@@ -17,8 +17,8 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const orange = chalk.hex("#FFA500").bold;
-const lime = chalk.hex("#32CD32").bold;
+//const orange = chalk.hex("#FFA500").bold;
+//const lime = chalk.hex("#32CD32").bold;
 const PORT = process.env.PORT || 3000;
 const app = express();
 const msgRetryCounterCache = new NodeCache();
