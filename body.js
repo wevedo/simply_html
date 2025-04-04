@@ -713,7 +713,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
 }); */
 
     // Connection Handler
-    socket.ev.on("connection.update", async (update) => {
+    adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         
         if (connection === "connecting") {
