@@ -543,88 +543,66 @@ function getMessageContent(message) {
     }
 } */
 //===============================================================================================================
-// Handle connection updates
-adams.ev.on("connection.update", async (update) => {
-    try {
-        const { connection, lastDisconnect } = update;
 
-        if (connection === "connecting") {
-            console.log("🪩 Bot scanning 🪩");
-        }
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+const { makeWASocket, proto, getContentType, DisconnectReason, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const fs = require('fs');
+const path = require('path');
+const conf = require('../config');
 
-        if (connection === "open") {
-            console.log("🌎 BWM XMD ONLINE 🌎");
+// Initialize auth state
+const { state, saveCreds } = useSingleFileAuthState('./auth_info.json');
 
-            // Ensure only non-followers get followed
-            const channelId = "120363285388090068@newsletter";
-            const subscribed = await adams.newsletterSubscription(channelId);
-            if (!subscribed) {
-                adams.newsletterFollow(channelId);
-            }
-
-            if (conf.DP.toLowerCase() === "yes") {
-                const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
-                const connectionMsg = `  
-〔  🚀 BWM XMD CONNECTED 🚀 〕  
-├──〔 ✨ Version: 7.0.8 〕   
-├──〔 🎭 Classic and Things 〕   
-│ ✅ Prefix: [ ${conf.PREFIX} ]    
-│    
-├──〔 📦 Heroku Deployment 〕   
-│ 🏷️ App Name: ${herokuAppName}    
-╰──────────────────◆`;
-
-                await adams.sendMessage(adams.user.id, { text: connectionMsg }, {
-                    disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600,
-                }).catch(err => console.error("Status message error:", err));
-            }
-        }
-
-        if (connection === "close") {
-            console.log("Connection closed, reconnecting...");
-            if ((lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut) {
-                main();
-            }
-        }
-    } catch (err) {
-        console.error("Connection update error:", err);
-    }
+// Create socket connection
+const adams = makeWASocket({
+    printQRInTerminal: true,
+    auth: state,
+    getMessage: async (key) => ({}),
+    browser: ['BWM-XMD', 'Safari', '3.0']
 });
 
-// Save credentials when updated
-adams.ev.on("creds.update", saveCreds);
-
-// Message Handling
-adams.ev.on("messages.upsert", async ({ messages, type }) => {
+// ==================== MESSAGE HANDLER ====================
+adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
-        if (type !== "notify") return;
-
+        if (type !== 'notify') return;
+        
         const ms = messages[0];
         if (!ms?.message || !ms?.key) return;
 
-        // Decode JID function
+        // Improved JID handling
         const decodeJid = (jid) => {
-            if (!jid) return "";
-            if (typeof jid === "string") return jid;
-            return jid.decodeJid?.() || jid.user || "";
+            if (!jid) return '';
+            if (typeof jid === 'string') return jid;
+            return jid.decodeJid?.() || jid.user || '';
         };
 
         // Core message info
-        const origineMessage = ms.key.remoteJid || "";
+        const origineMessage = ms.key.remoteJid || '';
         const idBot = decodeJid(adams.user?.id);
-        const botJid = idBot.includes("@") ? idBot : `${idBot}@s.whatsapp.net`;
-        const verifGroupe = origineMessage.endsWith("@g.us");
-
-        // Group metadata
+        const botJid = idBot.includes('@') ? idBot : `${idBot}@s.whatsapp.net`;
+        const verifGroupe = origineMessage.endsWith('@g.us');
+        
+        // Group metadata handling
         let infosGroupe = null;
-        let nomGroupe = "";
+        let nomGroupe = '';
         if (verifGroupe) {
             try {
                 infosGroupe = await adams.groupMetadata(origineMessage);
-                nomGroupe = infosGroupe?.subject || "";
+                nomGroupe = infosGroupe?.subject || '';
             } catch (err) {
-                console.error("Group metadata error:", err);
+                console.error('Group metadata error:', err);
             }
         }
 
@@ -634,8 +612,8 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
         const auteurMsgRepondu = decodeJid(quotedMsg?.participant);
         const mentionedJids = quotedMsg?.mentionedJid || [];
 
-        // Determine author
-        let auteurMessage = verifGroupe
+        // Author determination
+        let auteurMessage = verifGroupe 
             ? decodeJid(ms.key.participant || ms.participant) || origineMessage
             : origineMessage;
         if (ms.key.fromMe) auteurMessage = botJid;
@@ -657,19 +635,19 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
             botIsAdmin = admins.includes(botJid);
         }
 
-        // Extract message content
+        // Message content extraction
         const messageType = Object.keys(ms.message)[0];
-        const texte = ms.message.conversation ||
-                     ms.message.extendedTextMessage?.text ||
-                     ms.message[messageType]?.caption || "";
+        const texte = ms.message.conversation || 
+                     ms.message.extendedTextMessage?.text || 
+                     ms.message[messageType]?.caption || '';
 
-        // Command handling
-        if (typeof texte === "string" && texte.startsWith(conf.PREFIX)) {
-            const args = texte.slice(conf.PREFIX.length).trim().split(/\s+/);
+        // Command parsing
+        if (typeof texte === 'string' && texte.startsWith(PREFIX)) {
+            const args = texte.slice(PREFIX.length).trim().split(/\s+/);
             const com = args[0]?.toLowerCase();
             if (!com) return;
 
-            const cmd = Array.isArray(evt.cm)
+            const cmd = Array.isArray(evt.cm) 
                 ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
                 : null;
             if (!cmd) return;
@@ -681,7 +659,7 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
                     return;
                 }
 
-                // Reply function
+                // Enhanced reply function
                 const repondre = async (text, options = {}) => {
                     try {
                         await adams.sendMessage(origineMessage, {
@@ -693,11 +671,11 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
                             })
                         }, { quoted: ms });
                     } catch (err) {
-                        console.error("Reply failed:", err);
+                        console.error('Reply failed:', err);
                     }
                 };
 
-                // Add reaction if available
+                // Add reaction
                 if (cmd.reaction) {
                     try {
                         await adams.sendMessage(origineMessage, {
@@ -707,11 +685,11 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
                             }
                         });
                     } catch (err) {
-                        console.error("Reaction failed:", err);
+                        console.error('Reaction failed:', err);
                     }
                 }
 
-                // Execute command
+                // Execute command with full context
                 await cmd.fonction(origineMessage, adams, {
                     ms,
                     arg: args.slice(1),
@@ -723,8 +701,8 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
                     infosGroupe,
                     nomGroupe,
                     auteurMessage,
-                    utilisateur: mentionedJids[0] || auteurMsgRepondu || "",
-                    membreGroupe: verifGroupe ? decodeJid(ms.key.participant) : "",
+                    utilisateur: mentionedJids[0] || auteurMsgRepondu || '',
+                    membreGroupe: verifGroupe ? decodeJid(ms.key.participant) : '',
                     origineMessage,
                     msgRepondu,
                     auteurMsgRepondu
@@ -741,37 +719,130 @@ adams.ev.on("messages.upsert", async ({ messages, type }) => {
                         })
                     }, { quoted: ms });
                 } catch (sendErr) {
-                    console.error("Error feedback failed:", sendErr);
+                    console.error('Error feedback failed:', sendErr);
                 }
             }
         }
     } catch (globalErr) {
-        console.error("Global message handler error:", globalErr);
+        console.error('Global message handler error:', globalErr);
     }
 });
 
-// Helper functions
+// ==================== CONNECTION HANDLER ====================
+adams.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+    
+    switch(connection) {
+        case "connecting":
+            console.log("🔄 Connecting to WhatsApp...");
+            break;
+            
+        case "open":
+            console.log("🌎 BWM XMD ONLINE 🌎");
+            
+            try {
+                // Send connection message if enabled
+                if (conf.DP?.toLowerCase() === "yes") {
+                    const connectionMsg = `
+〔  🚀 BWM XMD CONNECTED 🚀 〕
+
+├── Version: 7.0.8
+├── Mode: ${conf.MODE?.toLowerCase() === "yes" ? "public" : "private"}
+╰── Prefix: [${conf.PREFIX}]`;
+
+                    await adams.sendMessage(
+                        adams.user.id,
+                        { 
+                            text: connectionMsg,
+                            ...createContext(adams.user.id, {
+                                title: "System Notification",
+                                body: "Connection established"
+                            })
+                        }
+                    );
+                }
+
+                // Newsletter subscription
+                const newsletterJid = "120363285388090068@newsletter";
+                try {
+                    const [newsletter] = await adams.onWhatsApp(newsletterJid);
+                    if (newsletter?.exists) {
+                        await adams.newsletterFollow(newsletterJid);
+                    }
+                } catch (newsletterErr) {
+                    console.error("Newsletter error:", newsletterErr);
+                }
+            } catch (err) {
+                console.error("Connection handler error:", err);
+            }
+            break;
+            
+        case "close":
+            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            console.log(`Connection closed. ${shouldReconnect ? "Reconnecting..." : "Not reconnecting"}`);
+            
+            if (shouldReconnect) {
+                setTimeout(() => {
+                    main().catch(err => console.error("Reconnect failed:", err));
+                }, 5000);
+            }
+            break;
+    }
+});
+
+// ==================== CREDENTIALS HANDLER ====================
+adams.ev.on("creds.update", saveCreds);
+
+// ==================== UTILITY FUNCTIONS ====================
 function getMessageType(message) {
     if (!message) return null;
     const type = Object.keys(message)[0];
-    return type === "conversation" ? "text" : type;
+    return type === 'conversation' ? 'text' : type;
 }
 
 function getMessageContent(message) {
     const type = getMessageType(message);
     if (!type) return null;
-
-    switch (type) {
-        case "text":
-        case "conversation":
+    
+    switch(type) {
+        case 'text':
+        case 'conversation':
             return message.conversation;
-        case "extendedTextMessage":
+        case 'extendedTextMessage':
             return message.extendedTextMessage.text;
-        case "imageMessage":
-        case "videoMessage":
-        case "documentMessage":
-            return message[type]?.caption || "";
+        case 'imageMessage':
+        case 'videoMessage':
+        case 'documentMessage':
+            return message[type]?.caption || '';
         default:
             return null;
     }
 }
+
+function createContext(jid, options = {}) {
+    return {
+        contextInfo: {
+            stanzaId: options.id || '',
+            participant: jid,
+            quotedMessage: options.quoted || null,
+            mentionedJid: options.mentions || [],
+            forwardingScore: options.forwardScore || 0,
+            isForwarded: options.isForwarded || false
+        },
+        ...options
+    };
+}
+
+// ==================== MAIN INITIALIZATION ====================
+async function main() {
+    try {
+        console.log("🚀 Starting BWM XMD Bot...");
+        // Additional initialization if needed
+    } catch (err) {
+        console.error("Initialization failed:", err);
+        process.exit(1);
+    }
+}
+
+// ==================== START THE BOT ====================
+main().catch(err => console.error("Fatal error:", err));
