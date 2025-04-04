@@ -122,7 +122,7 @@ async function connectToWhatsApp() {
         connectTimeoutMs: 30_000,
         keepAliveIntervalMs: 10_000
     });
-
+     store.bind(adams.ev);
     // Connection event handling
     socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, isNewLogin, qr } = update;
