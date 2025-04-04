@@ -583,7 +583,7 @@ adams.ev.on("connection.update", async (update) => {
         if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
         if (connection === "open") {
             console.log("🌎 BWM XMD ONLINE 🌎");
-            adams.newsletterFollow("120363285388090068@newsletter");
+            //adams.newsletterFollow("120363285388090068@newsletter");
         }
         if (connection === "close") {
             const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
