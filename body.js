@@ -67,6 +67,7 @@ app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting on port ${PORT}`));
 
+
 // Session Handling
 async function setupSession() {
     const sessionDir = path.join(__dirname, "Session");
@@ -99,12 +100,12 @@ async function setupSession() {
 }
 
 // Enhanced connection handler
-async function connectToWhatsApp() {
+async function startBwmXmd() {
     const sessionDir = await setupSession();
     const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     const { version } = await fetchLatestBaileysVersion();
 
-    const socket = makeWASocket({
+    adams = makeWASocket({
         version,
         logger,
         printQRInTerminal: true,
@@ -114,15 +115,24 @@ async function connectToWhatsApp() {
         },
         browser: ['BWM XMD', "safari", "1.0.0"],
         markOnlineOnConnect: true,
-        syncFullHistory: false,
+        syncFullHistory: true,
+        fireInitQueries: false,
+        shouldSyncHistoryMessage: true,
+        downloadHistory: true,
+        generateHighQualityLinkPreview: true,
+        keepAliveIntervalMs: 30000,
         getMessage: async (key) => {
-            return { conversation: 'Message not stored' };
+            if (store) {
+                const msg = await store.loadMessage(key.remoteJid, key.id);
+                return msg.message || undefined;
+            }
+            return { conversation: "HERE" };
         },
         shouldIgnoreJid: jid => isJidGroup(jid),
-        connectTimeoutMs: 30_000,
-        keepAliveIntervalMs: 10_000
+        connectTimeoutMs: 30_000
     });
-     store.bind(socket.ev);
+
+    store.bind(adams.ev);
     // Connection event handling
     socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, isNewLogin, qr } = update;
@@ -713,7 +723,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
 }); */
 
     // Connection Handler
-    socket.ev.on("connection.update", async (update) => {
+    adams.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
         
         if (connection === "connecting") {
