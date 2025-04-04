@@ -53,7 +53,7 @@ const logger = MAIN_LOGGER.child({});
 logger.level = "silent";
 
 // Store setup
-const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
+//const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
 
 // Authentication functions
 async function authentification() {
