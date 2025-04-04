@@ -67,8 +67,6 @@ app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting on port ${PORT}`));
 
-const zlib = require('zlib');
-
 async function authentification() {
     try {
         if (!fs.existsSync(__dirname + "/Session/creds.json")) {
