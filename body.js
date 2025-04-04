@@ -93,16 +93,17 @@ async function authentification() {
 module.exports = { authentification };
 authentification();
 let zk;
+// Create the store
 const store = makeInMemoryStore({ logger: pino({ level: "silent" }) });
 
-//===============================================================================//
 async function main() {
-  const { saveCreds, state } = await useMultiFileAuthState("Session");
-  const adams = main({
+  const { state, saveCreds } = await useMultiFileAuthState("Session");
+
+  const adams = makeWASocket({
     logger: pino({ level: "silent" }),
     printQRInTerminal: true,
     version: [2, 3000, 1015901307],
-    browser: ["Bwm-xmd", "Safari", "3.0"],
+    browser: ["BWM-XMD", "Safari", "3.0"],
     fireInitQueries: false,
     shouldSyncHistoryMessage: true,
     downloadHistory: true,
@@ -114,13 +115,18 @@ async function main() {
     getMessage: async (key) => {
       if (store) {
         const msg = await store.loadMessage(key.remoteJid, key.id);
-        return msg.message || undefined;
+        return msg?.message || undefined;
       }
       return { conversation: "HERE" };
     },
   });
- 
-store.bind(adams.ev);
+
+  // Bind the store to the socket events
+  store.bind(adams.ev);
+
+  // Save creds when updated
+  adams.ev.on("creds.update", saveCreds);
+
     // Silent Rate Limiting
     function isRateLimited(jid) {
         const now = Date.now();
