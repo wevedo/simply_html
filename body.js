@@ -7,7 +7,7 @@ ______     __     __     __    __        __  __     __    __     _____
                                                                            
 /‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį/*/
 
-const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, proto, getContentType } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, fetchMessagesFromWA, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, proto, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const { createContext } = require("./utils/helper");
