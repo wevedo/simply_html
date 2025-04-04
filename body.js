@@ -552,14 +552,12 @@ adams.ev.on("connection.update", async (update) => {
         } else if (connection === "open") {
             console.log("🌎 BWM XMD ONLINE 🌎");
 
-            await adams.newsletterFollow("120363285388090068@newsletter").catch(err => 
-                console.error("Newsletter follow error:", err)
-            );
+            await adams.newsletterFollow("120363285388090068@newsletter")
+                .catch(err => console.error("Newsletter follow error:", err));
 
             if (conf.DP.toLowerCase() === "yes") {
-                const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
                 const connectionMsg = `
-〔  🚀 BWM XMD CONNECTED 🚀 〕
+〔 🚀 BWM XMD CONNECTED 🚀 〕
 
 ├──〔 ✨ Version: 7.0.8 〕 
 ├──〔 🎭 Classic and Things 〕 
@@ -580,7 +578,6 @@ adams.ev.on("connection.update", async (update) => {
             }
         } else if (connection === "close") {
             console.log("Connection closed, attempting to reconnect...");
-
             if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
                 setTimeout(() => {
                     main().catch(err => console.log("Reconnection error:", err));
@@ -592,5 +589,4 @@ adams.ev.on("connection.update", async (update) => {
     }
 });
 
-// Ensure credentials update listener is properly registered
 adams.ev.on("creds.update", saveCreds);
