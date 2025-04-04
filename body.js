@@ -1,4 +1,5 @@
 
+
 /*/▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱//
 ______     __     __     __    __        __  __     __    __     _____    
 /\  == \   /\ \  _ \ \   /\ "-./  \      /\_\_\_\   /\ "-./  \   /\  __-.  
@@ -14,6 +15,7 @@ ______     __     __     __    __        __  __     __    __     _____
                    
 const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, superUser, imageMessage, CommandSystem, repondre,  verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, proto, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
+const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const { createContext } = require("./utils/helper");
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
@@ -41,6 +43,7 @@ const PORT = process.env.PORT || 3000;
 const app = express();
 let adams;
 require("dotenv").config({ path: "./config.env" });
+logger.level = "silent";
 app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}ms🚀`));
@@ -93,39 +96,37 @@ async function authentification() {
 module.exports = { authentification };
 authentification();
 let zk;
-// Create the store
-const store = makeInMemoryStore({ logger: pino({ level: "silent" }) });
+
+//===============================================================================//
+
+const store = makeInMemoryStore({
+    logger: pino().child({ level: "silent", stream: "store" })
+});
 
 async function main() {
-  const { state, saveCreds } = await useMultiFileAuthState("Session");
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
+    
+    const sockOptions = {
+        version,
+        logger: pino({ level: "silent" }),
+        browser: ['BWM XMD', "safari", "1.0.0"],
+        printQRInTerminal: true,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, logger)
+        },
+        getMessage: async (key) => {
+            if (store) {
+                const msg = await store.loadMessage(key.remoteJid, key.id);
+                return msg.message || undefined;
+            }
+            return { conversation: 'Error occurred' };
+        }
+    };
 
-  const adams = makeWASocket({
-    logger: pino({ level: "silent" }),
-    printQRInTerminal: true,
-    version: [2, 3000, 1015901307],
-    browser: ["BWM-XMD", "Safari", "3.0"],
-    fireInitQueries: false,
-    shouldSyncHistoryMessage: true,
-    downloadHistory: true,
-    syncFullHistory: true,
-    generateHighQualityLinkPreview: true,
-    markOnlineOnConnect: true,
-    keepAliveIntervalMs: 30000,
-    auth: state,
-    getMessage: async (key) => {
-      if (store) {
-        const msg = await store.loadMessage(key.remoteJid, key.id);
-        return msg?.message || undefined;
-      }
-      return { conversation: "HERE" };
-    },
-  });
-
-  // Bind the store to the socket events
-  store.bind(adams.ev);
-
-  // Save creds when updated
-  adams.ev.on("creds.update", saveCreds);
+    adams = makeWASocket(sockOptions);
+    store.bind(adams.ev);
 
     // Silent Rate Limiting
     function isRateLimited(jid) {
