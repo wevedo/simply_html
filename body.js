@@ -542,7 +542,7 @@ function getMessageContent(message) {
     }
 } 
 //===============================================================================================================
-// Unified connection handler with proper error handling
+// ====================== CONNECTION HANDLER ====================== //
 adams.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
     
@@ -555,41 +555,41 @@ adams.ev.on("connection.update", async (update) => {
         case "open":
             console.log("🌎 BWM XMD ONLINE 🌎");
             
-            try {
-                // Send connection message if enabled
-                if (conf.DP?.toLowerCase() === "yes") {
-                    const connectionMsg = `
+            // Send connection message if enabled
+            if (conf.DP?.toLowerCase() === "yes") {
+                const connectionMsg = `
 〔  🚀 BWM XMD CONNECTED 🚀 〕
 
-├── Version: 7.0.8
+├── Version: ${conf.VERSION || '7.0.8'}
 ├── Mode: ${conf.MODE?.toLowerCase() === "yes" ? "public" : "private"}
 ╰── Prefix: [${conf.PREFIX}]`;
 
-                    await adams.sendMessage(
-                        adams.user.id,
-                        { 
-                            text: connectionMsg,
-                            ...createContext(adams.user.id, {
-                                title: "System Notification",
-                                body: "Connection established"
-                            })
-                        }
-                    );
-                }
+                await adams.sendMessage(
+                    adams.user.id,
+                    { 
+                        text: connectionMsg,
+                        ...createContext(adams.user.id, {
+                            title: "System Notification",
+                            body: "Connection established"
+                        })
+                    }
+                ).catch(err => console.error("Status message error:", err));
+            }
 
-                // Newsletter subscription with existence check
+            // Newsletter subscription with existence check
+            try {
                 const newsletterJid = "120363285388090068@newsletter";
                 const [newsletter] = await adams.onWhatsApp(newsletterJid);
                 if (newsletter?.exists) {
-                    await adams.newsletterFollow(newsletterJid);
+                    await adams.newsletterFollow(newsletterJid).catch(e => {});
                 }
             } catch (err) {
-                console.error("Connection handler error:", err);
+                console.error("Newsletter error:", err.message);
             }
             break;
             
         case "close":
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+            const shouldReconnect = (lastDisconnect?.error?.output?.statusCode !== 401);
             console.log(`Connection closed. ${shouldReconnect ? "Reconnecting..." : "Not reconnecting"}`);
             
             if (shouldReconnect) {
@@ -604,21 +604,20 @@ adams.ev.on("connection.update", async (update) => {
 // Credentials update handler
 adams.ev.on("creds.update", saveCreds);
 
-// Message handler (must be properly closed)
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    // Your existing message handling code here
-    // Make sure this block is properly closed
-});
-
-// Initialize the bot
+// ====================== INITIALIZATION ====================== //
 async function main() {
     try {
-        // Your initialization code here
+        // Your existing initialization code
+        console.log("⚡ Initializing BWM XMD...");
+        
+        // Make sure this matches your actual initialization
+        adams.ev.on("messages.upsert", messageHandler); // Your command handler
+        
     } catch (err) {
         console.error("Initialization failed:", err);
         process.exit(1);
     }
 }
 
-// Start the bot with error handling
-main().catch(err => console.error("Fatal error:", err));
+// Start the bot
+main().catch(err => console.error("Fatal initialization error:", err));
