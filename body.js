@@ -7,117 +7,49 @@ ______     __     __     __    __        __  __     __    __     _____
                                                                            
 /‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį/*/
 
-const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, fetchMessagesFromWA, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, proto, getContentType } = require("@whiskeysockets/baileys");
-const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
-const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
-const { createContext } = require("./utils/helper");
-const pino = require("pino");
-const { Boom } = require("@hapi/boom");
-const conf = require("./config");
-const axios = require("axios");
-const moment = require("moment-timezone");
-const fs = require("fs-extra");
-const path = require("path");
-const FileType = require("file-type");
-const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
-const { getSettings } = require("./utils/settings");
-const evt = require("./Ibrahim/adams");
-const rateLimit = new Map();
-const chalk = require("chalk");
-const express = require("express");
-const { exec } = require("child_process");
-const http = require("http");
-const zlib = require('zlib');
-const PREFIX = conf.PREFIX;
-const more = String.fromCharCode(8206);
-const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
-const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`;
-const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
-const PORT = process.env.PORT || 3000;
-const app = express();
-let adams;
-require("dotenv").config({ path: "./config.env" });
-logger.level = "silent";
-app.use(express.static("public"));
-app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
-app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}msūüöÄ`));
+const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, fetchMessagesFromWA, superUser, imageMessage, CommandSystem, repondre, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, proto, getContentType } = require("@fizzxydev/baileys"); const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net"); const Pino = require("pino"); const logger = Pino({ level: "silent" }); const { createContext } = require("./utils/helper"); const { Boom } = require("@hapi/boom"); const conf = require("./config"); const axios = require("axios"); const moment = require("moment-timezone"); const fs = require("fs-extra"); const path = require("path"); const FileType = require("file-type"); const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter"); const { getSettings } = require("./utils/settings"); const evt = require("./Ibrahim/adams"); const rateLimit = new Map(); const chalk = require("chalk"); const express = require("express"); const { exec } = require("child_process"); const http = require("http"); const zlib = require('zlib'); const PREFIX = conf.PREFIX; const more = String.fromCharCode(8206); const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name"; const herokuAppLink = process.env.HEROKU_APP_LINK || 'https://dashboard.heroku.com/apps/${herokuAppName}'; const botOwner = process.env.NUMERO_OWNER || "Unknown Owner"; const PORT = process.env.PORT || 3000; const app = express(); let adams; require("dotenv").config({ path: "./config.env" });
 
-//============================================================================//
+app.use(express.static("public")); app.get("/", (req, res) => res.sendFile(__dirname + "/index.html")); app.listen(PORT, () => console.log(Bwm xmd is starting on port ${PORT}));
 
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Your verified by Sir Ibrahim Adams', jid);
-        return false;
-    }
-    console.log('Welcome to bwm xmd', jid);
-    return true;
-}
+async function authentification() { try { if (!fs.existsSync(__dirname + "/Session/creds.json")) { console.log("Bwm xmd session connected"); const [header, b64data] = conf.session.split(';;;');
 
-async function authentification() {
-    try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Bwm xmd session connected ‚úÖ");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
-            }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
-            }
+if (header === "BWM-XMD" && b64data) {
+            let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
+            let decompressedData = zlib.gunzipSync(compressedData);
+            fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
+        } else {
+            throw new Error("Invalid session format");
         }
-    } catch (e) {
-        console.log("Session Invalid: " + e.message);
-        return;
     }
+} catch (e) {
+    console.log("Session Invalid: " + e.message);
+    return;
 }
-module.exports = { authentification };
-authentification();
-let zk;
 
-//===============================================================================//
+} module.exports = { authentification }; authentification();
 
-const store = makeInMemoryStore({
-    logger: pino().child({ level: "silent", stream: "store" })
+const store = makeInMemoryStore({ logger: Pino().child({ level: "silent", stream: "store" }) });
+
+async function main() { const { version, isLatest } = await fetchLatestBaileysVersion(); const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
+
+adams = makeWASocket({
+    version,
+    logger,
+    browser: ['BWM XMD', "safari", "1.0.0"],
+    printQRInTerminal: true,
+    auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, logger)
+    },
+    getMessage: async (key) => {
+        if (store) {
+            const msg = await store.loadMessage(key.remoteJid, key.id);
+            return msg.message || undefined;
+        }
+        return { conversation: 'Error occurred' };
+    }
 });
-
-async function main() {
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
-    
-    const sockOptions = {
-        version,
-        logger: pino({ level: "silent" }),
-        browser: ['BWM XMD', "safari", "1.0.0"],
-        printQRInTerminal: true,
-        auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, logger)
-        },
-        getMessage: async (key) => {
-            if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id);
-                return msg.message || undefined;
-            }
-            return { conversation: 'Error occurred' };
-        }
-    };
-
-    adams = makeWASocket(sockOptions);
-    store.bind(adams.ev);
-
+store.bind(adams.ev)                     
     function isRateLimited(jid) {
         const now = Date.now();
         if (!rateLimit.has(jid)) {
