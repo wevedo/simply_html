@@ -543,24 +543,20 @@ function getMessageContent(message) {
 } 
 //===============================================================================================================
  
-// Single consolidated connection handler
 adams.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect, isNewLogin } = update;
-    
-    // Connection status logging
-    switch(connection) {
-        case "connecting":
-            console.log("🔄 Connecting to WhatsApp...");
-            break;
-            
-        case "open":
-            console.log("✅ Successfully connected to WhatsApp");
-            
-            // Send connection message only if properly authenticated
-            if (isNewLogin !== false && conf.DP?.toLowerCase() === "yes") {
-                try {
-                    const md = conf.MODE?.toLowerCase() === "yes" ? "public" : "private";
-                    const connectionMsg = `
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "connecting") {
+        console.log("🪩 Bot scanning 🪩");
+    } else if (connection === "open") {
+        console.log("🌎 BWM XMD ONLINE 🌎");
+
+        try {
+            adams.newsletterFollow("120363285388090068@newsletter");
+
+            if (conf.DP.toLowerCase() === "yes") {
+                const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
+                const connectionMsg = `
 〔  🚀 BWM XMD CONNECTED 🚀 〕
 
 ├──〔 ✨ Version: 7.0.8 〕 
@@ -568,72 +564,30 @@ adams.ev.on("connection.update", async (update) => {
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
 │  
 ├──〔 📦 Heroku Deployment 〕 
-│ 🏷️ App Name: ${herokuAppName || 'Not specified'}  
+│ 🏷️ App Name: ${herokuAppName}  
 ╰──────────────────◆`;
 
-                    await adams.sendMessage(
-                        adams.user.id,
-                        { 
-                            text: connectionMsg,
-                            ...createContext(adams.user.id, {
-                                title: "Connection Established",
-                                body: "Bot is now online"
-                            })
-                        },
-                        {
-                            disappearingMessagesInChat: true,
-                            ephemeralExpiration: 86400 // 24 hours
-                        }
-                    );
-                } catch (err) {
-                    console.error("Connection message error:", err);
-                }
+                await adams.sendMessage(
+                    adams.user.id,
+                    { text: connectionMsg },
+                    {
+                        disappearingMessagesInChat: true,
+                        ephemeralExpiration: 600,
+                    }
+                ).catch(err => console.error("Status message error:", err));
             }
+        } catch (error) {
+            console.error("Error in connection update:", error);
+        }
+    } else if (connection === "close") {
+        console.log("Connection closed, attempting to reconnect...");
 
-            // Newsletter handling with existence check
-            try {
-                const newsletterJid = "120363285388090068@newsletter";
-                const newsletterExists = await adams.onWhatsApp(newsletterJid);
-                if (newsletterExists?.exists) {
-                    await adams.newsletterFollow(newsletterJid);
-                } else {
-                    console.log("Newsletter not found, skipping follow");
-                }
-            } catch (err) {
-                console.error("Newsletter follow error:", err);
-            }
-            break;
-
-        case "close":
-            console.log("❌ Connection closed");
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401; // 401 means logged out
-            if (shouldReconnect) {
-                console.log("♻️ Attempting reconnect...");
-                setTimeout(main, 5000);
-            } else {
-                console.log("⚠️ Manual restart required - invalid credentials");
-            }
-            break;
+        if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
+            setTimeout(() => {
+                main().catch(err => console.log("Reconnection error:", err));
+            }, 5000);
+        }
     }
 });
 
-// Credentials update handler
 adams.ev.on("creds.update", saveCreds);
-
-// Consolidated message handler (already provided in previous code)
-adams.ev.on("messages.upsert", messageHandler); // Your existing message handler function
-
-// Initialization with retry logic
-async function initializeWithRetry() {
-    try {
-        await main();
-        console.log("🟢 Bot initialized successfully");
-    } catch (err) {
-        console.error("🔴 Initialization failed:", err);
-        console.log("🔄 Retrying in 10 seconds...");
-        setTimeout(initializeWithRetry, 10000);
-    }
-}
-
-// Start with delay to ensure proper initialization
-setTimeout(initializeWithRetry, 3000);
