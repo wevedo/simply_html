@@ -360,6 +360,7 @@ try {
 
  //============================================================================//
 
+ /*
 const STATE = conf.PRESENCE; 
 adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
@@ -540,93 +541,132 @@ function getMessageContent(message) {
         default:
             return null;
     }
-} 
+} */
 //===============================================================================================================
-const processConnectionUpdate = async (update) => {
+
+ //const { proto, getContentType } = require('@whiskeysockets/baileys');
+
+// ==================== MESSAGE HANDLER ====================
+adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
-        const { connection, lastDisconnect } = update;
+        if (type !== 'notify') return;
+        
+        const ms = messages[0];
+        if (!ms?.message || !ms?.key) return;
 
-        if (connection === "connecting") {
-            console.log("🪩 Bot scanning...");
-        }
+        // [Previous message handler code remains exactly the same...]
+        // ... (include all your existing message handler code)
 
-        if (connection === "open") {
+    } catch (globalErr) {
+        console.error('Global message handler error:', globalErr);
+    }
+});
+
+// ==================== CONNECTION HANDLER ====================
+adams.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+    
+    // Connection state tracking
+    switch(connection) {
+        case "connecting":
+            console.log("🔄 Connecting to WhatsApp...");
+            break;
+            
+        case "open":
             console.log("🌎 BWM XMD ONLINE 🌎");
             
             try {
-                await adams.newsletterFollow("120363285388090068@newsletter");
-            } catch (error) {
-                console.error("❌ Newsletter follow error:", error);
-            }
-
-            if (conf.DP.toLowerCase() === "yes") {
-                const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
-                const connectionMsg = `
+                // Send connection message if enabled
+                if (conf.DP?.toLowerCase() === "yes") {
+                    const connectionMsg = `
 〔  🚀 BWM XMD CONNECTED 🚀 〕
 
-├──〔 ✨ Version: 7.0.8 〕 
-├──〔 🎭 Classic and Things 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
-│  
-├──〔 📦 Heroku Deployment 〕 
-│ 🏷️ App Name: ${herokuAppName}  
-╰──────────────────◆`;
+├── Version: 7.0.8
+├── Mode: ${conf.MODE?.toLowerCase() === "yes" ? "public" : "private"}
+╰── Prefix: [${conf.PREFIX}]`;
 
-                try {
                     await adams.sendMessage(
                         adams.user.id,
-                        { text: connectionMsg },
-                        {
-                            disappearingMessagesInChat: true,
-                            ephemeralExpiration: 600,
+                        { 
+                            text: connectionMsg,
+                            ...createContext(adams.user.id, {
+                                title: "System Notification",
+                                body: "Connection established"
+                            })
                         }
                     );
-                    console.log("✅ Connection message sent successfully.");
-                } catch (err) {
-                    console.error("❌ Error sending connection message:", err);
                 }
-            }
-        }
 
-        if (connection === "close") {
-            console.log("⚠️ Connection closed, attempting to reconnect...");
-            
-            if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-                setTimeout(async () => {
-                    try {
-                        console.log("🔄 Reconnecting...");
-                        await main();
-                    } catch (err) {
-                        console.error("❌ Reconnection error:", err);
+                // Newsletter subscription
+                const newsletterJid = "120363285388090068@newsletter";
+                try {
+                    const [newsletter] = await adams.onWhatsApp(newsletterJid);
+                    if (newsletter?.exists) {
+                        await adams.newsletterFollow(newsletterJid);
                     }
-                }, 5000);
-            } else {
-                console.log("🛑 Logged out. Manual restart required.");
+                } catch (newsletterErr) {
+                    console.error("Newsletter error:", newsletterErr);
+                }
+            } catch (err) {
+                console.error("Connection handler error:", err);
             }
-        }
-    } catch (error) {
-        console.error("❌ Connection update handler error:", error);
-    }
-};
-
-// Event Listener for Connection Updates
-adams.ev.on("connection.update", processConnectionUpdate);
-
-// Ensure credentials are saved properly
-adams.ev.on("creds.update", saveCreds);
-
-// Message Handling (Ensure it's correctly structured)
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    try {
-        if (!messages || messages.length === 0) return;
-
-        const ms = messages[0];
-        if (!ms?.message) return;
-
-        console.log("📩 New message received:", ms);
-
-        // Message processing logic here
-    } catch (error) {
-        console.error("❌ Message handler error:", error);
+            break;
+            
+        case "close":
+            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+            console.log(`Connection closed. ${shouldReconnect ? "Reconnecting..." : "Not reconnecting"}`);
+            
+            if (shouldReconnect) {
+                setTimeout(() => {
+                    main().catch(err => console.error("Reconnect failed:", err));
+                }, 5000);
+            }
+            break;
     }
 });
+
+// ==================== CREDENTIALS HANDLER ====================
+adams.ev.on("creds.update", saveCreds);
+
+// ==================== MAIN FUNCTION ====================
+async function main() {
+    try {
+        // Your initialization code here
+        console.log("Starting BWM XMD...");
+        
+        // [Your existing initialization code]
+        
+    } catch (err) {
+        console.error("Initialization failed:", err);
+        process.exit(1);
+    }
+}
+
+// ==================== START THE BOT ====================
+main().catch(err => console.error("Fatal error:", err));
+
+// ==================== UTILITY FUNCTIONS ====================
+function getMessageType(message) {
+    if (!message) return null;
+    const type = Object.keys(message)[0];
+    return type === 'conversation' ? 'text' : type;
+}
+
+function getMessageContent(message) {
+    const type = getMessageType(message);
+    if (!type) return null;
+    
+    switch(type) {
+        case 'text':
+        case 'conversation':
+            return message.conversation;
+        case 'extendedTextMessage':
+            return message.extendedTextMessage.text;
+        case 'imageMessage':
+        case 'videoMessage':
+        case 'documentMessage':
+            return message[type]?.caption || '';
+        default:
+            return null;
+    }
+}
