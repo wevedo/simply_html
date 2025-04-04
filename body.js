@@ -361,7 +361,7 @@ async function main() {
                     console.error(`Command [${com}] error:`, error);
                     try {
                         await adams.sendMessage(origineMessage, {
-                            text: `ūüö® Error: ${error.message}`,
+                            text: `Error: ${error.message}`,
                             ...createContext(auteurMessage, {
                                 title: "Command Failed",
                                 body: "Please try again"
@@ -382,22 +382,21 @@ async function main() {
         const { connection, lastDisconnect } = update;
         
         if (connection === "connecting") {
-            console.log("ūüĒĄ Connecting to WhatsApp...");
+            console.log("Connecting to WhatsApp...");
             return;
         }
 
         if (connection === "open") {
-            console.log("‚úÖ Successfully connected to WhatsApp");
+            console.log("‚ Successfully connected to WhatsApp");
             
             if (conf.DP?.toLowerCase() === "yes") {
                 try {
                     const statusMsg = `
-„ÄĒ  ūüöÄ BWM XMD CONNECTED ūüöÄ „Äē
-
-‚Ēú‚ĒÄ‚ĒÄ„ÄĒ ‚ú® Version: 7.0.8 „Äē 
-‚Ēú‚ĒÄ‚ĒÄ„ÄĒ ūüé≠ Classic and Things „Äē 
-‚Ēā ‚úÖ Prefix: [ ${conf.PREFIX} ]  
-‚ēį‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚ĒÄ‚óÜ`;
+╭─❖ 「 *BWM XMD* 」  
+│ ✅ *Status:* Connected  
+│ 📌 *Version:* 8.3Q  
+│ 🔑 *Prefix:* [ ${conf.PREFIX} ]  
+╰──────────────❖ `;
 
                     await adams.sendMessage(
                         adams.user.id,
@@ -415,7 +414,7 @@ async function main() {
                 
                 if (newsletterExists?.exists) {
                     await adams.newsletterFollow(newsletterJid);
-                    console.log("ūüďį Subscribed to newsletter");
+                    console.log(" Subscribed to newsletter");
                 }
             } catch (err) {
                 console.error("Newsletter error:", err);
@@ -424,7 +423,7 @@ async function main() {
         }
 
         if (connection === "close") {
-            console.log("‚ĚĆ Connection closed");
+            console.log("‚ Connection closed");
             const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
             
             if (shouldReconnect) {
