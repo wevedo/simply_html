@@ -304,7 +304,7 @@ function setupMessageHandler(socket) {
 async function startBot() {
     try {
         console.log('🚀 Starting BWM XMD...');
-        adams = await connectToWhatsApp();
+        adams = await startBwmXmd();
         
         setupMessageHandler(adams);
         
