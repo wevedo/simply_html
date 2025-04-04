@@ -122,10 +122,10 @@ async function main() {
             
             // Load commands
             console.log("Loading Bwm xmd Commands ...\n");
-            fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
+            fs.readdirSync(__dirname + "/Taskflow").forEach((fichier) => {
                 if (path.extname(fichier).toLowerCase() === ".js") {
                     try {
-                        require(__dirname + "/scs/" + fichier);
+                        require(__dirname + "/Taskflow/" + fichier);
                         console.log(fichier + " Installed Successfully✔️");
                     } catch (e) {
                         console.log(`${fichier} could not be installed due to : ${e}`);
