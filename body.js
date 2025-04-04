@@ -544,15 +544,17 @@ function getMessageContent(message) {
 //===============================================================================================================
  
 adams.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
+    try {
+        const { connection, lastDisconnect } = update;
 
-    if (connection === "connecting") {
-        console.log("🪩 Bot scanning 🪩");
-    } else if (connection === "open") {
-        console.log("🌎 BWM XMD ONLINE 🌎");
+        if (connection === "connecting") {
+            console.log("🪩 Bot scanning 🪩");
+        } else if (connection === "open") {
+            console.log("🌎 BWM XMD ONLINE 🌎");
 
-        try {
-            adams.newsletterFollow("120363285388090068@newsletter");
+            await adams.newsletterFollow("120363285388090068@newsletter").catch(err => 
+                console.error("Newsletter follow error:", err)
+            );
 
             if (conf.DP.toLowerCase() === "yes") {
                 const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
@@ -576,18 +578,19 @@ adams.ev.on("connection.update", async (update) => {
                     }
                 ).catch(err => console.error("Status message error:", err));
             }
-        } catch (error) {
-            console.error("Error in connection update:", error);
-        }
-    } else if (connection === "close") {
-        console.log("Connection closed, attempting to reconnect...");
+        } else if (connection === "close") {
+            console.log("Connection closed, attempting to reconnect...");
 
-        if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-            setTimeout(() => {
-                main().catch(err => console.log("Reconnection error:", err));
-            }, 5000);
+            if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
+                setTimeout(() => {
+                    main().catch(err => console.log("Reconnection error:", err));
+                }, 5000);
+            }
         }
+    } catch (error) {
+        console.error("Error in connection update handler:", error);
     }
 });
 
+// Ensure credentials update listener is properly registered
 adams.ev.on("creds.update", saveCreds);
