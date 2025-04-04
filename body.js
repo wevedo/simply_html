@@ -93,6 +93,7 @@ async function authentification() {
 module.exports = { authentification };
 authentification();
 let zk;
+const store = makeInMemoryStore({ logger: pino({ level: "silent" }) });
 
 //===============================================================================//
 async function main() {
