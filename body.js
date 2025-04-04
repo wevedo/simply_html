@@ -543,129 +543,234 @@ function getMessageContent(message) {
     }
 } */
 //===============================================================================================================
-
- //const { proto, getContentType } = require('@whiskeysockets/baileys');
-
-// ==================== MESSAGE HANDLER ====================
-adams.ev.on('messages.upsert', async ({ messages, type }) => {
+// Handle connection updates
+adams.ev.on("connection.update", async (update) => {
     try {
-        if (type !== 'notify') return;
-        
+        const { connection, lastDisconnect } = update;
+
+        if (connection === "connecting") {
+            console.log("🪩 Bot scanning 🪩");
+        }
+
+        if (connection === "open") {
+            console.log("🌎 BWM XMD ONLINE 🌎");
+
+            // Ensure only non-followers get followed
+            const channelId = "120363285388090068@newsletter";
+            const subscribed = await adams.newsletterSubscription(channelId);
+            if (!subscribed) {
+                adams.newsletterFollow(channelId);
+            }
+
+            if (conf.DP.toLowerCase() === "yes") {
+                const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
+                const connectionMsg = `  
+〔  🚀 BWM XMD CONNECTED 🚀 〕  
+├──〔 ✨ Version: 7.0.8 〕   
+├──〔 🎭 Classic and Things 〕   
+│ ✅ Prefix: [ ${conf.PREFIX} ]    
+│    
+├──〔 📦 Heroku Deployment 〕   
+│ 🏷️ App Name: ${herokuAppName}    
+╰──────────────────◆`;
+
+                await adams.sendMessage(adams.user.id, { text: connectionMsg }, {
+                    disappearingMessagesInChat: true,
+                    ephemeralExpiration: 600,
+                }).catch(err => console.error("Status message error:", err));
+            }
+        }
+
+        if (connection === "close") {
+            console.log("Connection closed, reconnecting...");
+            if ((lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut) {
+                main();
+            }
+        }
+    } catch (err) {
+        console.error("Connection update error:", err);
+    }
+});
+
+// Save credentials when updated
+adams.ev.on("creds.update", saveCreds);
+
+// Message Handling
+adams.ev.on("messages.upsert", async ({ messages, type }) => {
+    try {
+        if (type !== "notify") return;
+
         const ms = messages[0];
         if (!ms?.message || !ms?.key) return;
 
-        // [Previous message handler code remains exactly the same...]
-        // ... (include all your existing message handler code)
+        // Decode JID function
+        const decodeJid = (jid) => {
+            if (!jid) return "";
+            if (typeof jid === "string") return jid;
+            return jid.decodeJid?.() || jid.user || "";
+        };
 
-    } catch (globalErr) {
-        console.error('Global message handler error:', globalErr);
-    }
-});
+        // Core message info
+        const origineMessage = ms.key.remoteJid || "";
+        const idBot = decodeJid(adams.user?.id);
+        const botJid = idBot.includes("@") ? idBot : `${idBot}@s.whatsapp.net`;
+        const verifGroupe = origineMessage.endsWith("@g.us");
 
-// ==================== CONNECTION HANDLER ====================
-adams.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
-    
-    // Connection state tracking
-    switch(connection) {
-        case "connecting":
-            console.log("🔄 Connecting to WhatsApp...");
-            break;
-            
-        case "open":
-            console.log("🌎 BWM XMD ONLINE 🌎");
-            
+        // Group metadata
+        let infosGroupe = null;
+        let nomGroupe = "";
+        if (verifGroupe) {
             try {
-                // Send connection message if enabled
-                if (conf.DP?.toLowerCase() === "yes") {
-                    const connectionMsg = `
-〔  🚀 BWM XMD CONNECTED 🚀 〕
-
-├── Version: 7.0.8
-├── Mode: ${conf.MODE?.toLowerCase() === "yes" ? "public" : "private"}
-╰── Prefix: [${conf.PREFIX}]`;
-
-                    await adams.sendMessage(
-                        adams.user.id,
-                        { 
-                            text: connectionMsg,
-                            ...createContext(adams.user.id, {
-                                title: "System Notification",
-                                body: "Connection established"
-                            })
-                        }
-                    );
-                }
-
-                // Newsletter subscription
-                const newsletterJid = "120363285388090068@newsletter";
-                try {
-                    const [newsletter] = await adams.onWhatsApp(newsletterJid);
-                    if (newsletter?.exists) {
-                        await adams.newsletterFollow(newsletterJid);
-                    }
-                } catch (newsletterErr) {
-                    console.error("Newsletter error:", newsletterErr);
-                }
+                infosGroupe = await adams.groupMetadata(origineMessage);
+                nomGroupe = infosGroupe?.subject || "";
             } catch (err) {
-                console.error("Connection handler error:", err);
+                console.error("Group metadata error:", err);
             }
-            break;
-            
-        case "close":
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
-            console.log(`Connection closed. ${shouldReconnect ? "Reconnecting..." : "Not reconnecting"}`);
-            
-            if (shouldReconnect) {
-                setTimeout(() => {
-                    main().catch(err => console.error("Reconnect failed:", err));
-                }, 5000);
+        }
+
+        // Quoted message handling
+        const quotedMsg = ms.message?.extendedTextMessage?.contextInfo;
+        const msgRepondu = quotedMsg?.quotedMessage || null;
+        const auteurMsgRepondu = decodeJid(quotedMsg?.participant);
+        const mentionedJids = quotedMsg?.mentionedJid || [];
+
+        // Determine author
+        let auteurMessage = verifGroupe
+            ? decodeJid(ms.key.participant || ms.participant) || origineMessage
+            : origineMessage;
+        if (ms.key.fromMe) auteurMessage = botJid;
+
+        // Permission system
+        const superUser = [
+            `${conf.OWNER_NUMBER}@s.whatsapp.net`,
+            botJid,
+            ...(SUDO_NUMBERS || [])
+        ].includes(auteurMessage);
+
+        let verifAdmin = false;
+        let botIsAdmin = false;
+        if (verifGroupe && infosGroupe?.participants) {
+            const admins = infosGroupe.participants
+                .filter(p => p?.admin)
+                .map(p => decodeJid(p.id));
+            verifAdmin = admins.includes(auteurMessage);
+            botIsAdmin = admins.includes(botJid);
+        }
+
+        // Extract message content
+        const messageType = Object.keys(ms.message)[0];
+        const texte = ms.message.conversation ||
+                     ms.message.extendedTextMessage?.text ||
+                     ms.message[messageType]?.caption || "";
+
+        // Command handling
+        if (typeof texte === "string" && texte.startsWith(conf.PREFIX)) {
+            const args = texte.slice(conf.PREFIX.length).trim().split(/\s+/);
+            const com = args[0]?.toLowerCase();
+            if (!com) return;
+
+            const cmd = Array.isArray(evt.cm)
+                ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
+                : null;
+            if (!cmd) return;
+
+            try {
+                // Permission check
+                if (!superUser && conf.MODE?.toLowerCase() !== "yes") {
+                    console.log(`Command blocked: ${auteurMessage}`);
+                    return;
+                }
+
+                // Reply function
+                const repondre = async (text, options = {}) => {
+                    try {
+                        await adams.sendMessage(origineMessage, {
+                            text: String(text),
+                            ...createContext(auteurMessage, {
+                                title: options.title || nomGroupe || "BWM-XMD",
+                                body: options.body || "",
+                                thumbnail: options.thumbnail
+                            })
+                        }, { quoted: ms });
+                    } catch (err) {
+                        console.error("Reply failed:", err);
+                    }
+                };
+
+                // Add reaction if available
+                if (cmd.reaction) {
+                    try {
+                        await adams.sendMessage(origineMessage, {
+                            react: {
+                                key: ms.key,
+                                text: cmd.reaction
+                            }
+                        });
+                    } catch (err) {
+                        console.error("Reaction failed:", err);
+                    }
+                }
+
+                // Execute command
+                await cmd.fonction(origineMessage, adams, {
+                    ms,
+                    arg: args.slice(1),
+                    repondre,
+                    superUser,
+                    verifAdmin,
+                    botIsAdmin,
+                    verifGroupe,
+                    infosGroupe,
+                    nomGroupe,
+                    auteurMessage,
+                    utilisateur: mentionedJids[0] || auteurMsgRepondu || "",
+                    membreGroupe: verifGroupe ? decodeJid(ms.key.participant) : "",
+                    origineMessage,
+                    msgRepondu,
+                    auteurMsgRepondu
+                });
+
+            } catch (error) {
+                console.error(`Command [${com}] error:`, error);
+                try {
+                    await adams.sendMessage(origineMessage, {
+                        text: `🚨 Error: ${error.message}`,
+                        ...createContext(auteurMessage, {
+                            title: "Command Failed",
+                            body: "Please try again"
+                        })
+                    }, { quoted: ms });
+                } catch (sendErr) {
+                    console.error("Error feedback failed:", sendErr);
+                }
             }
-            break;
+        }
+    } catch (globalErr) {
+        console.error("Global message handler error:", globalErr);
     }
 });
 
-// ==================== CREDENTIALS HANDLER ====================
-adams.ev.on("creds.update", saveCreds);
-
-// ==================== MAIN FUNCTION ====================
-async function main() {
-    try {
-        // Your initialization code here
-        console.log("Starting BWM XMD...");
-        
-        // [Your existing initialization code]
-        
-    } catch (err) {
-        console.error("Initialization failed:", err);
-        process.exit(1);
-    }
-}
-
-// ==================== START THE BOT ====================
-main().catch(err => console.error("Fatal error:", err));
-
-// ==================== UTILITY FUNCTIONS ====================
+// Helper functions
 function getMessageType(message) {
     if (!message) return null;
     const type = Object.keys(message)[0];
-    return type === 'conversation' ? 'text' : type;
+    return type === "conversation" ? "text" : type;
 }
 
 function getMessageContent(message) {
     const type = getMessageType(message);
     if (!type) return null;
-    
-    switch(type) {
-        case 'text':
-        case 'conversation':
+
+    switch (type) {
+        case "text":
+        case "conversation":
             return message.conversation;
-        case 'extendedTextMessage':
+        case "extendedTextMessage":
             return message.extendedTextMessage.text;
-        case 'imageMessage':
-        case 'videoMessage':
-        case 'documentMessage':
-            return message[type]?.caption || '';
+        case "imageMessage":
+        case "videoMessage":
+        case "documentMessage":
+            return message[type]?.caption || "";
         default:
             return null;
     }
