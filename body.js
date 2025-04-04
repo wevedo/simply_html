@@ -14,6 +14,22 @@ const FileType = require('file-type');
 const { Sticker, StickerTypes } = require('wa-sticker-formatter');
 const zlib = require('zlib');
 const dotenv = require('dotenv');
+// At the top with other requires:
+const { loadListeners, store, setupMessageLogger } = require('./Loader');
+
+// After creating your socket:
+const zk = makeWASocket({
+    // your socket options
+});
+
+// Bind the store
+store.bind(zk.ev);
+
+// Load all listeners and setup logging
+loadListeners(zk);
+setupMessageLogger(zk);
+
+// Your existing code continues...
 
 dotenv.config();
 
