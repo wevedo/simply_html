@@ -367,7 +367,7 @@ async function testConnection(socket) {
             return null;
         }
     }
-
+/*
     // Listener Manager Class
     class ListenerManager {
         constructor() {
@@ -434,7 +434,7 @@ async function testConnection(socket) {
             delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', filename))];
             listenerManager.loadListeners(adams, store, commandRegistry);
         }
-    });
+    });*/
 
     // Load commands
     console.log("Loading Bwm xmd Commands...\n");
