@@ -132,8 +132,24 @@ async function startBwmXmd() {
         connectTimeoutMs: 30_000
     });
 
-    store.bind(adams.ev);
-    // Connection event handling
+         // Initialize store before setting up event listeners
+        store.bind(adams.ev);
+
+        // Setup event listeners
+        setupEventHandlers(adams, saveCreds);
+
+        return adams;
+    } catch (error) {
+        console.error('Error during initialization:', error);
+        throw error;
+    }
+}
+
+function setupEventHandlers(adams, saveCreds) {
+    if (!adams || !adams.ev) {
+        console.error('Adams socket not properly initialized');
+        return;
+    }
     socket.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, isNewLogin, qr } = update;
         console.log('Connection Update:', connection);
