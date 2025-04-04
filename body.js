@@ -307,7 +307,7 @@ class CommandSystem {
 
     loadCommands() {
         console.log("Loading commands ♻️");
-        const cmdDir = path.join(__dirname, "commands");
+        const cmdDir = path.join(__dirname, "Taskflow");
         
         fs.readdirSync(cmdDir).forEach(file => {
             if (!file.endsWith(".js")) return;
