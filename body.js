@@ -1,5 +1,5 @@
 "use strict";
-const { makeWASocket, Browsers, fetchLatestBaileysVersion, DisconnectReason, useMultiFileAuthState, makeInMemoryStore, jidDecode, delay, downloadContentFromMessage, getContentType } = require('@whiskeysockets/baileys');
+const { makeWASocket, Browsers, fetchLatestBaileysVersion, DisconnectReason, useMultiFileAuthState, makeInMemoryStore, jidDecode, delay, downloadContentFromMessage, makeCacheableSignalKeyStore, getContentType } = require('@whiskeysockets/baileys');
 const fs = require('fs-extra');
 const path = require('path');
 const pino = require('pino');
