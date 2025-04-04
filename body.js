@@ -142,6 +142,7 @@ async function main() {
         // Credentials update handler
         adams.ev.on('creds.update', saveCreds);
     }
+} 
 
  //============================================================================//
    adams.ev.on("messages.upsert", async (m) => {
