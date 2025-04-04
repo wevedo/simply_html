@@ -1,11 +1,12 @@
-/*/‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ//
+/*/▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱//
 ______     __     __     __    __        __  __     __    __     _____    
 /\  == \   /\ \  _ \ \   /\ "-./  \      /\_\_\_\   /\ "-./  \   /\  __-.  
 \ \  __<   \ \ \/ ".\ \  \ \ \-./\ \     \/_/\_\/_  \ \ \-./\ \  \ \ \/\ \ 
  \ \_____\  \ \__/".~\_\  \ \_\ \ \_\      /\_\/\_\  \ \_\ \ \_\  \ \____- 
   \/_____/   \/_/   \/_/   \/_/  \/_/      \/_/\/_/   \/_/  \/_/   \/____/ 
                                                                            
-/‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį‚ĖĪ‚Ėį/*/
+/▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰▱▰/*/
+
 
 const { 
     default: makeWASocket, 
@@ -51,7 +52,6 @@ const express = require("express");
 const { exec } = require("child_process");
 const http = require("http");
 const zlib = require('zlib');
-
 const PREFIX = conf.PREFIX;
 const more = String.fromCharCode(8206);
 const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
@@ -238,14 +238,14 @@ async function main() {
             if (path.extname(fichier).toLowerCase() === ".js") {
                 try {
                     require(path.join(taskflowPath, fichier));
-                    console.log(`‚úĒÔłŹ ${fichier} installed successfully.`);
+                    console.log(`‚🚀 ${fichier} installed successfully.`);
                 } catch (e) {
-                    console.error(`‚ĚĆ Failed to load ${fichier}: ${e.message}`);
+                    console.error(`‚😭 Failed to load ${fichier}: ${e.message}`);
                 }
             }
         });
     } catch (error) {
-        console.error("‚ĚĆ Error reading Taskflow folder:", error.message);
+        console.error("‚😭 Error reading Taskflow folder:", error.message);
     }
 
     const STATE = conf.PRESENCE; 
