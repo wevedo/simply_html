@@ -543,66 +543,72 @@ function getMessageContent(message) {
 } 
 //===============================================================================================================
  
-// Handle connection updates
-adams.ev.on("connection.update", ({ connection }) => {
+// Single consolidated connection handler
+adams.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+    
+    if (connection === "connecting") {
+        console.log("🪩 Bot scanning 🪩");
+    }
+    
     if (connection === "open") {
-        console.log("Connected to WhatsApp");
-
-        if (conf.DP.toLowerCase() === "yes") {
-            const md = conf.MODE.toLowerCase() === "yes" ? "public" : "private";
+        console.log("🌎 BWM XMD ONLINE 🌎");
+        
+        // Connection message
+        if (conf.DP?.toLowerCase() === "yes") {
+            const md = conf.MODE?.toLowerCase() === "yes" ? "public" : "private";
             const connectionMsg = `
 〔  🚀 BWM XMD CONNECTED 🚀 〕
 
 ├──〔 ✨ Version: 7.0.8 〕 
-├──〔 🎭 Classic and Things 〕 
+├──〔 🎭 ${md} Mode 〕 
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
-│  
-├──〔 📦 Heroku Deployment 〕 
-│ 🏷️ App Name: ${herokuAppName}  
 ╰──────────────────◆`;
-
+            
             adams.sendMessage(
                 adams.user.id,
-                { text: connectionMsg },
-                {
+                { 
+                    text: connectionMsg,
                     disappearingMessagesInChat: true,
-                    ephemeralExpiration: 600,
+                    ephemeralExpiration: 600 
                 }
             ).catch(err => console.error("Status message error:", err));
+        }
+        
+        // Newsletter follow
+        try {
+            await adams.newsletterFollow("120363285388090068@newsletter");
+        } catch (newsletterErr) {
+            console.error("Newsletter follow error:", newsletterErr);
+        }
+    }
+    
+    if (connection === "close") {
+        const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== DisconnectReason.loggedOut;
+        console.log(shouldReconnect ? "Connection closed, reconnecting..." : "Logged out, not reconnecting");
+        if (shouldReconnect) {
+            setTimeout(() => main().catch(err => console.log("Reconnect error:", err)), 5000);
         }
     }
 });
 
+// Credentials handler
+adams.ev.on("creds.update", saveCreds);
 
-        
-//===============================================================================================================//
+// Message handler
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    const ms = messages[0];
+    if (!ms?.message) return;
+    
+    // Your existing message processing logic
+});
 
-// Event Handlers
-adams.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
-        if (connection === "connecting") console.log("🪩 Bot scanning 🪩");
-        if (connection === "open") {
-            console.log("🌎 BWM XMD ONLINE 🌎");
-            adams.newsletterFollow("120363285388090068@newsletter");
-        }
-        if (connection === "close") {
-            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== DisconnectReason.loggedOut;
-            console.log("Connection closed, reconnecting...");
-            if (shouldReconnect) main();
-        }
-    });
-
-    adams.ev.on("creds.update", saveCreds);
-
-    // Message Handling
-    adams.ev.on("messages.upsert", async ({ messages }) => {
-        const ms = messages[0];
-        if (!ms.message) return;
-        
-        // Message processing logic here
-    });
+// Initialize
+function main() {
+    // Your initialization code
 }
 
+// Start with delay
 setTimeout(() => {
     main().catch(err => console.log("Initialization error:", err));
 }, 5000);
