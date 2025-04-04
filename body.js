@@ -236,161 +236,188 @@ async function main() {
 
     const STATE = conf.PRESENCE; 
     
-                            // Message handler
-    adams.ev.on('messages.upsert', async ({ messages, type }) => {
-        try {
-            if (type !== 'notify') return;
-            
-            const ms = messages[0];
-            if (!ms?.message || !ms?.key) return;
+// Debug mode configuration
+const DEBUG_MODE = true;
+function debugLog(...args) {
+    if (DEBUG_MODE) console.log('[DEBUG]', ...args);
+}
 
-            // Improved JID handling
-            const decodeJid = (jid) => {
-                if (!jid) return '';
-                if (typeof jid === 'string') return jid;
-                return jid.decodeJid?.() || jid.user || '';
-            };
+adams.ev.on('connection.update', (update) => {
+    debugLog('Connection update:', update);
+    const { connection, lastDisconnect } = update;
+    
+    if (connection === 'close') {
+        const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== 401;
+        debugLog('Connection closed, reconnecting:', shouldReconnect);
+        if (shouldReconnect) {
+            setTimeout(() => startBot(), 5000);
+        }
+    } else if (connection === 'open') {
+        debugLog('Connected to WhatsApp successfully');
+        // Send test ping to verify functionality
+        setTimeout(() => testBotFunctionality(), 3000);
+    }
+});
 
-            // Core message info
-            const origineMessage = ms.key.remoteJid || '';
-            const idBot = decodeJid(adams.user?.id);
-            const botJid = idBot.includes('@') ? idBot : `${idBot}@s.whatsapp.net`;
-            const verifGroupe = origineMessage.endsWith('@g.us');
+async function testBotFunctionality() {
+    try {
+        debugLog('Running functionality test...');
+        await adams.sendMessage(adams.user.id, { text: '🔄 Bot connection test - Checking commands...' });
+        
+        // Test basic command handling
+        const testMessage = {
+            key: { remoteJid: adams.user.id, fromMe: true },
+            message: { conversation: `${PREFIX}ping` }
+        };
+        
+        adams.ev.emit('messages.upsert', {
+            messages: [testMessage],
+            type: 'notify'
+        });
+        
+        debugLog('Test ping command sent');
+    } catch (error) {
+        console.error('Functionality test failed:', error);
+    }
+}
+
+adams.ev.on('messages.upsert', async ({ messages, type }) => {
+    try {
+        debugLog('New message received, type:', type);
+        
+        if (type !== 'notify') {
+            debugLog('Non-notify message ignored');
+            return;
+        }
+        
+        const ms = messages[0];
+        if (!ms?.message || !ms?.key) {
+            debugLog('Invalid message structure');
+            return;
+        }
+
+        // Extract core message info
+        const origineMessage = ms.key.remoteJid || '';
+        const isGroup = origineMessage.endsWith('@g.us');
+        const sender = ms.key.participant || ms.key.remoteJid;
+        
+        debugLog(`Processing message from ${sender} in ${isGroup ? 'group' : 'DM'}`);
+
+        // Get message content
+        const messageType = getContentType(ms.message);
+        let texte = '';
+        
+        if (messageType === 'conversation') {
+            texte = ms.message.conversation;
+        } else if (messageType === 'extendedTextMessage') {
+            texte = ms.message.extendedTextMessage.text;
+        } else if (['imageMessage', 'videoMessage', 'documentMessage'].includes(messageType)) {
+            texte = ms.message[messageType]?.caption || '';
+        }
+        
+        debugLog('Message content:', texte);
+
+        // Command processing
+        if (texte && texte.startsWith(PREFIX)) {
+            const args = texte.slice(PREFIX.length).trim().split(/\s+/);
+            const com = args[0]?.toLowerCase();
             
-            // Group metadata handling
-            let infosGroupe = null;
-            let nomGroupe = '';
-            if (verifGroupe) {
-                try {
-                    infosGroupe = await adams.groupMetadata(origineMessage);
-                    nomGroupe = infosGroupe?.subject || '';
-                } catch (err) {
-                    console.error('Group metadata error:', err);
+            debugLog('Command detected:', com, 'Arguments:', args.slice(1));
+            
+            if (!com) {
+                debugLog('Empty command after prefix');
+                return;
+            }
+
+            // Find command
+            const cmd = Array.isArray(evt.cm) 
+                ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
+                : null;
+                
+            if (!cmd) {
+                debugLog('Command not found:', com);
+                return;
+            }
+
+            debugLog('Executing command:', cmd.nomCom);
+            
+            try {
+                // Check if bot is public or private
+                const isPublic = conf.MODE?.toLowerCase() === 'yes';
+                const isOwner = sender === `${conf.OWNER_NUMBER}@s.whatsapp.net`;
+                const isSudo = SUDO_NUMBERS?.includes(sender);
+                const isBot = sender === adams.user.id;
+                
+                if (!isPublic && !isOwner && !isSudo && !isBot) {
+                    debugLog('Command blocked - private mode');
+                    return;
                 }
-            }
 
-            // Quoted message handling
-            const quotedMsg = ms.message?.extendedTextMessage?.contextInfo;
-            const msgRepondu = quotedMsg?.quotedMessage || null;
-            const auteurMsgRepondu = decodeJid(quotedMsg?.participant);
-            const mentionedJids = quotedMsg?.mentionedJid || [];
-
-            // Author determination
-            let auteurMessage = verifGroupe 
-                ? decodeJid(ms.key.participant || ms.participant) || origineMessage
-                : origineMessage;
-            if (ms.key.fromMe) auteurMessage = botJid;
-
-            // Permission system - MODE check first
-            const isPublicMode = conf.MODE?.toLowerCase() === 'yes';
-            const isSuperUser = [
-                `${conf.OWNER_NUMBER}@s.whatsapp.net`,
-                botJid,
-                ...(SUDO_NUMBERS || [])
-            ].includes(auteurMessage);
-
-            let verifAdmin = false;
-            let botIsAdmin = false;
-            if (verifGroupe && infosGroupe?.participants) {
-                const admins = infosGroupe.participants
-                    .filter(p => p?.admin)
-                    .map(p => decodeJid(p.id));
-                verifAdmin = admins.includes(auteurMessage);
-                botIsAdmin = admins.includes(botJid);
-            }
-
-            // Message content extraction
-            const messageType = getContentType(ms.message);
-            const texte = ms.message.conversation || 
-                         ms.message.extendedTextMessage?.text || 
-                         ms.message[messageType]?.caption || '';
-
-            // Command processing
-            if (typeof texte === 'string' && texte.startsWith(PREFIX)) {
-                const args = texte.slice(PREFIX.length).trim().split(/\s+/);
-                const com = args[0]?.toLowerCase();
-                if (!com) return;
-
-                const cmd = Array.isArray(evt.cm) 
-                    ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
-                    : null;
-                if (!cmd) return;
-
-                try {
-                    // Permission check - MODE takes priority
-                    if (!isPublicMode && !isSuperUser) {
-                        console.log(`Command blocked for ${auteurMessage} (private mode)`);
-                        return;
+                // Add reaction if available
+                if (cmd.reaction) {
+                    try {
+                        await adams.sendMessage(origineMessage, {
+                            react: {
+                                key: ms.key,
+                                text: cmd.reaction
+                            }
+                        });
+                        debugLog('Reaction sent:', cmd.reaction);
+                    } catch (err) {
+                        debugLog('Failed to send reaction:', err);
                     }
+                }
 
-                    // Enhanced reply function
-                    const repondre = async (text, options = {}) => {
+                // Execute command
+                await cmd.fonction(origineMessage, adams, {
+                    ms,
+                    arg: args.slice(1),
+                    repondre: async (text, options = {}) => {
                         try {
                             await adams.sendMessage(origineMessage, {
                                 text: String(text),
-                                ...createContext(auteurMessage, {
-                                    title: options.title || nomGroupe || "BWM-XMD",
+                                ...createContext(sender, {
+                                    title: options.title || "BWM-XMD",
                                     body: options.body || "",
                                     thumbnail: options.thumbnail
                                 })
                             }, { quoted: ms });
+                            debugLog('Command reply sent');
                         } catch (err) {
-                            console.error('Reply failed:', err);
+                            debugLog('Failed to send reply:', err);
                         }
-                    };
+                    },
+                    superUser: isOwner || isSudo || isBot,
+                    verifAdmin: false, // Will be set in group commands
+                    botIsAdmin: false, // Will be set in group commands
+                    verifGroupe: isGroup,
+                    infosGroupe: isGroup ? await adams.groupMetadata(origineMessage).catch(() => null) : null,
+                    auteurMessage: sender,
+                    origineMessage
+                });
 
-                    // Add reaction
-                    if (cmd.reaction) {
-                        try {
-                            await adams.sendMessage(origineMessage, {
-                                react: {
-                                    key: ms.key,
-                                    text: cmd.reaction
-                                }
-                            });
-                        } catch (err) {
-                            console.error('Reaction failed:', err);
-                        }
-                    }
-
-                    // Execute command with full context
-                    await cmd.fonction(origineMessage, adams, {
-                        ms,
-                        arg: args.slice(1),
-                        repondre,
-                        superUser: isSuperUser,
-                        verifAdmin,
-                        botIsAdmin,
-                        verifGroupe,
-                        infosGroupe,
-                        nomGroupe,
-                        auteurMessage,
-                        utilisateur: mentionedJids[0] || auteurMsgRepondu || '',
-                        membreGroupe: verifGroupe ? decodeJid(ms.key.participant) : '',
-                        origineMessage,
-                        msgRepondu,
-                        auteurMsgRepondu
-                    });
-
-                } catch (error) {
-                    console.error(`Command [${com}] error:`, error);
-                    try {
-                        await adams.sendMessage(origineMessage, {
-                            text: `🚨 Error: ${error.message}`,
-                            ...createContext(auteurMessage, {
-                                title: "Command Failed",
-                                body: "Please try again"
-                            })
-                        }, { quoted: ms });
-                    } catch (sendErr) {
-                        console.error('Error feedback failed:', sendErr);
-                    }
+                debugLog('Command executed successfully');
+                
+            } catch (error) {
+                console.error(`Command [${com}] error:`, error);
+                try {
+                    await adams.sendMessage(origineMessage, {
+                        text: `⚠️ Command error: ${error.message}`,
+                        ...createContext(sender, {
+                            title: "Command Failed",
+                            body: "Please try again"
+                        })
+                    }, { quoted: ms });
+                } catch (sendErr) {
+                    console.error('Failed to send error message:', sendErr);
                 }
             }
-        } catch (globalErr) {
-            console.error('Global message handler error:', globalErr);
         }
-    });
+    } catch (globalErr) {
+        console.error('Global message handler error:', globalErr);
+    }
+});
+
 
   
 
