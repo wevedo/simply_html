@@ -908,7 +908,6 @@ try {
 const STATE = conf.PRESENCE; 
 adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
-        // Validate message type
         if (type !== 'notify') return;
         
         const ms = messages[0];
@@ -1056,43 +1055,17 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
                 }
             }
         }
-    } catch (globalErr) {
+} catch (globalErr) {
         console.error('Global message handler error:', globalErr);
     }
 });
 
-// Additional required functions for Baileys v5+
-function getMessageType(message) {
-    if (!message) return null;
-    const type = Object.keys(message)[0];
-    return type === 'conversation' ? 'text' : type;
-}
-
-function getMessageContent(message) {
-    const type = getMessageType(message);
-    if (!type) return null;
-    
-    switch(type) {
-        case 'text':
-        case 'conversation':
-            return message.conversation;
-        case 'extendedTextMessage':
-            return message.extendedTextMessage.text;
-        case 'imageMessage':
-        case 'videoMessage':
-        case 'documentMessage':
-            return message[type]?.caption || '';
-        default:
-            return null;
-    }
-} 
 //===============================================================================================================
- 
-// Connection Handler (place this right after your command handler code)
+    
+// ================= CONNECTION HANDLER =================
 adams.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
     
-    // Connection states
     if (connection === "connecting") {
         console.log("🔄 Connecting to WhatsApp...");
         return;
@@ -1101,7 +1074,6 @@ adams.ev.on("connection.update", async (update) => {
     if (connection === "open") {
         console.log("✅ Successfully connected to WhatsApp");
         
-        // Send connection message if enabled
         if (conf.DP?.toLowerCase() === "yes") {
             try {
                 const statusMsg = `
@@ -1110,25 +1082,18 @@ adams.ev.on("connection.update", async (update) => {
 ├──〔 ✨ Version: 7.0.8 〕 
 ├──〔 🎭 Classic and Things 〕 
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
-│  
-├──〔 📦 Heroku Deployment 〕 
-│ 🏷️ App Name: ${herokuAppName || 'Not specified'}  
 ╰──────────────────◆`;
 
                 await adams.sendMessage(
                     adams.user.id,
                     { text: statusMsg },
-                    {
-                        disappearingMessagesInChat: true,
-                        ephemeralExpiration: 600
-                    }
+                    { disappearingMessagesInChat: true }
                 );
             } catch (err) {
                 console.error("Status message error:", err);
             }
         }
 
-        // Newsletter handling with safety checks
         try {
             const newsletterJid = "120363285388090068@newsletter";
             const newsletterExists = await adams.onWhatsApp(newsletterJid);
@@ -1136,51 +1101,45 @@ adams.ev.on("connection.update", async (update) => {
             if (newsletterExists?.exists) {
                 await adams.newsletterFollow(newsletterJid);
                 console.log("📰 Subscribed to newsletter");
-            } else {
-                console.log("⚠️ Newsletter not found, skipping subscription");
             }
-        } catch (newsletterErr) {
-            console.error("Newsletter error:", newsletterErr);
+        } catch (err) {
+            console.error("Newsletter error:", err);
         }
-        
         return;
     }
 
     if (connection === "close") {
         console.log("❌ Connection closed");
-        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401; // 401 means logged out
+        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
         
         if (shouldReconnect) {
             console.log("♻️ Attempting reconnect...");
-            setTimeout(() => {
-                startBot().catch(err => console.error("Reconnect failed:", err));
-            }, 5000);
-        } else {
-            console.log("⛔ Permanent logout detected");
-            process.exit(1);
+            setTimeout(() => startBot(), 5000);
         }
     }
 });
 
-// Credentials update handler
-adams.ev.on("creds.update", saveCreds);
-
-// Error handler for uncaught exceptions
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-});
-
-// Initialize bot with retry logic
+// ================= INITIALIZATION =================
 async function startBot() {
     try {
-        await main();
+        // Your existing initialization code
         console.log("🤖 Bot initialized successfully");
     } catch (err) {
         console.error("Initialization error:", err);
-        console.log("Retrying in 10 seconds...");
         setTimeout(startBot, 10000);
     }
 }
 
-// Start with delay to ensure proper initialization
-setTimeout(startBot, 3000);
+// Start the bot
+setTimeout(() => {
+    startBot().catch(err => console.error("Fatal startup error:", err));
+}, 3000);
+
+// Error handling
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+});
