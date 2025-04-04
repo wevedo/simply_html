@@ -520,7 +520,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
 // Additional required functions for Baileys v5+
 function getMessageType(message) {
     if (!message) return null;
-    const type = Object.keys(message)[0];
+   const type = Object.keys(message)[0];
     return type === 'conversation' ? 'text' : type;
 }
 
@@ -543,7 +543,6 @@ function getMessageContent(message) {
     }
 } */
 //===============================================================================================================
-
 // ==================== MESSAGE HANDLER ====================
 adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
