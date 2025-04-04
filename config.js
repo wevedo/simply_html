@@ -15,8 +15,8 @@ module.exports = {
     MODE: (process.env.PUBLIC_MODE || "yes").toLowerCase(),
     
     //═══════[ 𝙊𝙒𝙉𝙀𝙍 𝘿𝙀𝙏𝘼𝙄𝙇𝙎 ]═══════✧//
-    OWNER_NAME: process.env.OWNER_NAME || "🚀 BWM-XMD",
-    OWNER_NUMBER: process.env.OWNER_NUMBER || "254106727593",
+    OWNER_NAME: process.env.OWNER_NAME || "Ibrahim Adams",
+    OWNER_NUMBER: process.env.OWNER_NUMBER || "254106727593,254727716045,254710772666",
     
     //═══════[ 𝘽𝙊𝙏 𝙋𝙍𝙊𝙁𝙄𝙇𝙀 ]═══════✧//
     BOT: process.env.BOT_NAME || '⚡ BWM-XMD',
