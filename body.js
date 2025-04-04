@@ -290,6 +290,24 @@ function setupMessageHandler(socket) {
     });
 }
 
+// Initialize the bot
+async function startBot() {
+    try {
+        console.log('🚀 Starting BWM XMD...');
+        adams = await connectToWhatsApp();
+        
+        setupMessageHandler(adams);
+        
+        console.log('🤖 BWM XMD is ready');
+    } catch (error) {
+        console.error('Startup failed:', error);
+        process.exit(1);
+    }
+}
+
+// Start the bot
+startBot().catch(console.error);
+
 // Connection test
 async function testConnection(socket) {
     console.log('Running connection tests...');
