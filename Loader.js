@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const pino = require('pino');
 const { makeInMemoryStore } = require('@whiskeysockets/baileys');
 
 // Initialize store
