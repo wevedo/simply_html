@@ -2,7 +2,7 @@
   "name": "BWM-XMD",
   "description": "Best WhatsApp bot developed by Ibrahim Adams",
   "keywords": ["bot", "node", "baileys", "whatsapp"],
-  "logo": "https://telegra.ph/file/0c225f7da5616cdcbec80.jpg",
+  "logo": "https://files.catbox.moe/h2ydge.jpg",
   "repository": "https://github.com/ekitale/maths-project",
   "success_url": "/",
   "stack": "heroku-24",
@@ -49,7 +49,7 @@
     },
     "BOT_IMAGE": {
       "description": "Image URL for your bot menu",
-      "value": "https://telegra.ph/file/0c225f7da5616cdcbec80.jpg",
+      "value": "https://files.catbox.moe/h2ydge.jpg",
       "required": false
     },
     "PUBLIC_MODE": {
