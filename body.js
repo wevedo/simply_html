@@ -236,203 +236,261 @@ async function main() {
 
     const STATE = conf.PRESENCE; 
     
-// Debug mode configuration
+
+// Debug configuration
 const DEBUG_MODE = true;
+const TEST_ON_CONNECT = true;
+
 function debugLog(...args) {
-    if (DEBUG_MODE) console.log("[DEBUG]", ...args);
+    if (DEBUG_MODE) console.log('[DEBUG]', new Date().toISOString(), ...args);
 }
 
-// Connection update handling
-adams.ev.on("connection.update", (update) => {
-    debugLog("⚡ Connection update:", update);
-    const { connection, lastDisconnect } = update;
-
-    if (connection === "open") {
-        debugLog("✅ Connected to WhatsApp!");
-        registerEventListeners(); // Ensure events are registered after connection
-        setTimeout(() => testBotFunctionality(), 3000);
-    } else if (connection === "close") {
-        const shouldReconnect = (lastDisconnect?.error)?.output?.statusCode !== 401;
-        debugLog("❌ Connection closed, reconnecting:", shouldReconnect);
+// Connection handler
+adams.ev.on('connection.update', async (update) => {
+    debugLog('Connection update:', JSON.stringify(update, null, 2));
+    
+    const { connection, isNewLogin, qr } = update;
+    
+    if (connection === 'close') {
+        const shouldReconnect = (update.lastDisconnect.error)?.output?.statusCode !== 401;
+        debugLog(`Connection closed. Should reconnect: ${shouldReconnect}`);
         if (shouldReconnect) {
             setTimeout(() => startBot(), 5000);
         }
+    } 
+    else if (connection === 'open') {
+        debugLog('Connection established successfully');
+        
+        // Update presence to ensure proper connection
+        await adams.sendPresenceUpdate('available');
+        debugLog('Presence updated to "available"');
+        
+        if (TEST_ON_CONNECT) {
+            setTimeout(() => testBotFunctionality(), 3000);
+        }
+    }
+    
+    if (qr) {
+        debugLog('QR code generated');
+    }
+    
+    if (isNewLogin) {
+        debugLog('New login detected - resetting session');
     }
 });
 
-// Register event listeners after connection
-function registerEventListeners() {
-    debugLog("🛠 Registering event listeners...");
-
-    // Debug: Log all incoming messages
-    adams.ev.on("messages.upsert", async (data) => {
-        console.log("🔥 EVENT TRIGGERED: messages.upsert");
-        console.log(JSON.stringify(data, null, 2));
-        processIncomingMessage(data);
-    });
-
-    // Alternative event listener in case messages.upsert fails
-    adams.ev.on("messages.relay", async (data) => {
-        console.log("📩 MESSAGE RELAY TRIGGERED:", JSON.stringify(data, null, 2));
-        processIncomingMessage(data);
-    });
-}
-
-// Function to process messages
-async function processIncomingMessage({ messages, type }) {
+// Enhanced functionality test
+async function testBotFunctionality() {
     try {
-        debugLog("📩 New message received, type:", type);
-        if (type !== "notify") return debugLog("❌ Ignoring non-notify message");
-
-        const ms = messages[0];
-        if (!ms?.message || !ms?.key) return debugLog("❌ Invalid message structure");
-
-        const origineMessage = ms.key.remoteJid || "";
-        const isGroup = origineMessage.endsWith("@g.us");
-        const sender = ms.key.participant || ms.key.remoteJid;
-        debugLog(`📨 Processing message from ${sender} in ${isGroup ? "group" : "DM"}`);
-
-        // Extract message content
-        const messageType = getContentType(ms.message);
-        let texte = "";
-
-        if (messageType === "conversation") texte = ms.message.conversation;
-        else if (messageType === "extendedTextMessage") texte = ms.message.extendedTextMessage.text;
-        else if (["imageMessage", "videoMessage", "documentMessage"].includes(messageType))
-            texte = ms.message[messageType]?.caption || "";
-
-        debugLog("📝 Extracted Message Content:", texte);
-
-        // Command processing
-        if (texte && texte.startsWith(PREFIX)) {
-            const args = texte.slice(PREFIX.length).trim().split(/\s+/);
-            const com = args[0]?.toLowerCase();
-
-            debugLog("✅ Command detected:", com, "Arguments:", args.slice(1));
-            if (!com) return debugLog("❌ Empty command after prefix");
-
-            // Find command
-            const cmd = Array.isArray(evt.cm)
-                ? evt.cm.find((c) => c?.nomCom === com || c?.aliases?.includes(com))
-                : null;
-
-            if (!cmd) return debugLog("❌ Command not found:", com);
-
-            debugLog("🚀 Executing command:", cmd.nomCom);
-            await executeCommand(cmd, origineMessage, sender, ms, args);
-        }
-    } catch (globalErr) {
-        console.error("❌ Global message handler error:", globalErr);
+        debugLog('Starting comprehensive functionality test...');
+        
+        // 1. Test basic message sending
+        await adams.sendMessage(adams.user.id, { 
+            text: '🔍 Bot connection test initiated...' 
+        });
+        debugLog('Test message sent to self');
+        
+        // 2. Test command processing
+        const testCmd = {
+            key: { 
+                remoteJid: adams.user.id, 
+                fromMe: true,
+                id: 'test-cmd-' + Date.now()
+            },
+            message: { conversation: `${PREFIX}ping` },
+            pushName: 'Test Bot'
+        };
+        
+        debugLog('Emulating test command:', testCmd);
+        await adams.ev.emit('messages.upsert', { 
+            messages: [testCmd], 
+            type: 'notify' 
+        });
+        
+        // 3. Verify event listeners
+        await delay(2000);
+        debugLog('Functionality test completed');
+        
+    } catch (error) {
+        console.error('Comprehensive test failed:', error);
     }
 }
 
-// Execute a command
-async function executeCommand(cmd, origineMessage, sender, ms, args) {
+// Enhanced message handler
+adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
-        const isPublic = conf.MODE?.toLowerCase() === "yes";
-        const isOwner = sender === `${conf.OWNER_NUMBER}@s.whatsapp.net`;
-        const isSudo = SUDO_NUMBERS?.includes(sender);
-        const isBot = sender === adams.user.id;
-
-        if (!isPublic && !isOwner && !isSudo && !isBot) {
-            debugLog("❌ Command blocked - private mode");
+        debugLog(`New message batch (type: ${type})`);
+        
+        if (type !== 'notify') {
+            debugLog('Non-notify message batch ignored');
             return;
         }
 
-        // Send reaction if available
-        if (cmd.reaction) {
+        for (const ms of messages) {
             try {
-                await adams.sendMessage(origineMessage, {
-                    react: { key: ms.key, text: cmd.reaction },
-                });
-                debugLog("✅ Reaction sent:", cmd.reaction);
-            } catch (err) {
-                debugLog("❌ Failed to send reaction:", err);
+                if (!ms?.message || !ms?.key) {
+                    debugLog('Invalid message structure:', ms);
+                    continue;
+                }
+
+                const origineMessage = ms.key.remoteJid || '';
+                const isGroup = isJidGroup(origineMessage);
+                const sender = ms.key.participant || ms.key.remoteJid || '';
+                
+                debugLog(`Processing message from ${sender} in ${isGroup ? 'group' : 'DM'}`);
+                debugLog('Full message key:', JSON.stringify(ms.key, null, 2));
+
+                // Enhanced message content extraction
+                const messageType = getContentType(ms.message);
+                let texte = '';
+                
+                if (messageType === 'conversation') {
+                    texte = ms.message.conversation;
+                } 
+                else if (messageType === 'extendedTextMessage') {
+                    texte = ms.message.extendedTextMessage?.text || '';
+                } 
+                else if (['imageMessage', 'videoMessage', 'documentMessage'].includes(messageType)) {
+                    texte = ms.message[messageType]?.caption || '';
+                }
+                
+                debugLog('Extracted text:', texte);
+
+                // Command processing
+                if (texte && texte.startsWith(PREFIX)) {
+                    const args = texte.slice(PREFIX.length).trim().split(/\s+/);
+                    const com = args[0]?.toLowerCase();
+                    
+                    debugLog('Potential command detected:', {
+                        command: com,
+                        args: args.slice(1),
+                        sender: sender
+                    });
+
+                    if (!com) {
+                        debugLog('Empty command after prefix');
+                        continue;
+                    }
+
+                    // Find command in registry
+                    const cmd = Array.isArray(evt.cm) 
+                        ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
+                        : null;
+                        
+                    if (!cmd) {
+                        debugLog('Command not found in registry:', com);
+                        continue;
+                    }
+
+                    debugLog('Executing command:', cmd.nomCom);
+                    
+                    // Permission system
+                    const isOwner = sender === `${conf.OWNER_NUMBER}@s.whatsapp.net`;
+                    const isSudo = SUDO_NUMBERS?.includes(sender);
+                    const isBot = sender === adams.user.id;
+                    const isPublic = conf.MODE?.toLowerCase() === 'yes';
+                    const allowed = isPublic || isOwner || isSudo || isBot;
+                    
+                    debugLog('Permission check:', {
+                        isOwner,
+                        isSudo,
+                        isBot,
+                        isPublic,
+                        allowed
+                    });
+
+                    if (!allowed) {
+                        debugLog('Command execution denied - insufficient permissions');
+                        continue;
+                    }
+
+                    // Execute command with full context
+                    try {
+                        // Prepare group info if needed
+                        let groupInfo = null;
+                        if (isGroup) {
+                            groupInfo = await adams.groupMetadata(origineMessage).catch(err => {
+                                debugLog('Failed to fetch group metadata:', err);
+                                return null;
+                            });
+                        }
+
+                        // Create reply function with enhanced error handling
+                        const repondre = async (text, options = {}) => {
+                            try {
+                                await adams.sendMessage(origineMessage, {
+                                    text: String(text),
+                                    ...createContext(sender, {
+                                        title: options.title || (groupInfo?.subject || "BWM-XMD"),
+                                        body: options.body || "",
+                                        thumbnail: options.thumbnail
+                                    })
+                                }, { quoted: ms });
+                                debugLog('Reply sent successfully');
+                            } catch (err) {
+                                debugLog('Failed to send reply:', err);
+                            }
+                        };
+
+                        // Add reaction if specified
+                        if (cmd.reaction) {
+                            try {
+                                await adams.sendMessage(origineMessage, {
+                                    react: {
+                                        key: ms.key,
+                                        text: cmd.reaction
+                                    }
+                                });
+                                debugLog('Reaction added:', cmd.reaction);
+                            } catch (err) {
+                                debugLog('Failed to add reaction:', err);
+                            }
+                        }
+
+                        // Execute command
+                        await cmd.fonction(origineMessage, adams, {
+                            ms,
+                            arg: args.slice(1),
+                            repondre,
+                            superUser: isOwner || isSudo || isBot,
+                            verifAdmin: isGroup && groupInfo?.participants?.some(
+                                p => p.id === sender && p.admin
+                            ),
+                            botIsAdmin: isGroup && groupInfo?.participants?.some(
+                                p => p.id === adams.user.id && p.admin
+                            ),
+                            verifGroupe: isGroup,
+                            infosGroupe: groupInfo,
+                            nomGroupe: groupInfo?.subject || '',
+                            auteurMessage: sender,
+                            origineMessage
+                        });
+
+                        debugLog('Command executed successfully');
+                        
+                    } catch (cmdError) {
+                        console.error(`Command execution error [${cmd.nomCom}]:`, cmdError);
+                        try {
+                            await adams.sendMessage(origineMessage, {
+                                text: `⚠️ Command error: ${cmdError.message}`,
+                                ...createContext(sender, {
+                                    title: "Command Failed",
+                                    body: "Please try again"
+                                })
+                            }, { quoted: ms });
+                        } catch (sendErr) {
+                            console.error('Failed to send error message:', sendErr);
+                        }
+                    }
+                }
+            } catch (msgError) {
+                console.error('Message processing error:', msgError);
             }
         }
-
-        // Execute command function
-        await cmd.fonction(origineMessage, adams, {
-            ms,
-            arg: args.slice(1),
-            repondre: async (text, options = {}) => {
-                try {
-                    await adams.sendMessage(
-                        origineMessage,
-                        {
-                            text: String(text),
-                            ...createContext(sender, {
-                                title: options.title || "BWM-XMD",
-                                body: options.body || "",
-                                thumbnail: options.thumbnail,
-                            }),
-                        },
-                        { quoted: ms }
-                    );
-                    debugLog("✅ Command reply sent");
-                } catch (err) {
-                    debugLog("❌ Failed to send reply:", err);
-                }
-            },
-            superUser: isOwner || isSudo || isBot,
-            verifAdmin: false,
-            botIsAdmin: false,
-            verifGroupe: origineMessage.endsWith("@g.us"),
-            infosGroupe: isGroup ? await adams.groupMetadata(origineMessage).catch(() => null) : null,
-            auteurMessage: sender,
-            origineMessage,
-        });
-
-        debugLog("✅ Command executed successfully");
-    } catch (error) {
-        console.error(`❌ Command [${cmd.nomCom}] error:`, error);
-        try {
-            await adams.sendMessage(
-                origineMessage,
-                {
-                    text: `⚠️ Command error: ${error.message}`,
-                    ...createContext(sender, { title: "Command Failed", body: "Please try again" }),
-                },
-                { quoted: ms }
-            );
-        } catch (sendErr) {
-            console.error("❌ Failed to send error message:", sendErr);
-        }
+    } catch (batchError) {
+        console.error('Message batch processing error:', batchError);
     }
-}
-
-// Function to manually fetch messages if listeners fail
-setTimeout(async () => {
-    try {
-        console.log("🔍 Fetching messages manually...");
-        const messages = await adams.fetchMessagesFromWA(adams.user.id, 10);
-        console.log("📩 Fetched messages:", JSON.stringify(messages, null, 2));
-    } catch (error) {
-        console.error("❌ Failed to fetch messages:", error);
-    }
-}, 10000);
-
-// Bot self-test after startup
-async function testBotFunctionality() {
-    try {
-        debugLog("🏗 Running functionality test...");
-        await adams.sendMessage(adams.user.id, { text: "🔄 Bot connection test - Checking commands..." });
-
-        // Test basic command handling
-        const testMessage = {
-            key: { remoteJid: adams.user.id, fromMe: true },
-            message: { conversation: `${PREFIX}ping` },
-        };
-
-        adams.ev.emit("messages.upsert", { messages: [testMessage], type: "notify" });
-        debugLog("✅ Test ping command sent");
-    } catch (error) {
-        console.error("❌ Functionality test failed:", error);
-    }
-}
-
-
-  
+}); 
 
     // Connection Handler
     adams.ev.on("connection.update", async (update) => {
