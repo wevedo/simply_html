@@ -247,16 +247,38 @@ async function main() {
         const abu2 = '254710772666';
         const abu3 = "254710772666";
         const abu4 = '254710772666';
-        const sudo = await getAllSudoNumbers();
-        const superUserNumbers = [servBot, abu1, abu2, abu3, abu4, conf.NUMERO_OWNER].map((s) => s.replace(/[^0-9]/g) + "@s.whatsapp.net");
-        const allAllowedNumbers = superUserNumbers.concat(sudo);
-        const superUser = allAllowedNumbers.includes(auteurMessage);
-        const dev = [abu1, abu2, abu3, abu4].map((t) => t.replace(/[^0-9]/g) + "@s.whatsapp.net").includes(auteurMessage);
-        
-        function repondre(mes) { 
-            zk.sendMessage(origineMessage, { text: mes }, { quoted: ms }); 
-        }
-        
+        // Get sudo numbers from DB or wherever they're stored
+const sudo = await getAllSudoNumbers();
+
+// Optional debug: check what's missing
+console.log("servBot:", servBot);
+console.log("abu1:", abu1);
+console.log("abu2:", abu2);
+console.log("abu3:", abu3);
+console.log("abu4:", abu4);
+console.log("conf.NUMERO_OWNER:", conf?.NUMERO_OWNER);
+
+// Safely create the list of super user numbers
+const superUserNumbers = [servBot, abu1, abu2, abu3, abu4, conf?.NUMERO_OWNER]
+    .filter(Boolean) // remove undefined/null values
+    .map((s) => s.replace(/[^0-9]/g, "") + "@s.whatsapp.net");
+
+// Combine static super users with dynamic sudo list
+const allAllowedNumbers = superUserNumbers.concat(sudo);
+
+// Check if message author is a super user
+const superUser = allAllowedNumbers.includes(auteurMessage);
+
+// Check if user is a developer (abu1 to abu4)
+const dev = [abu1, abu2, abu3, abu4]
+    .filter(Boolean)
+    .map((t) => t.replace(/[^0-9]/g, "") + "@s.whatsapp.net")
+    .includes(auteurMessage);
+
+// Helper function to send a message
+function repondre(mes) {
+    zk.sendMessage(origineMessage, { text: mes }, { quoted: ms });
+}
         console.log("\tCONSOLE MESSAGES");
         console.log("=========== NEW CONVERSATION ===========");
         if (verifGroupe) {
