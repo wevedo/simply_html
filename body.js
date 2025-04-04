@@ -12,7 +12,7 @@ ______     __     __     __    __        __  __     __    __     _____
 
 
                    
-const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, superUser, imageMessage, CommandSystem, repondre,  verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, getContentType } = require("@whiskeysockets/baileys");
+const { default: makeWASocket, isJidGroup, downloadAndSaveMediaMessage, superUser, imageMessage, CommandSystem, repondre,  verifierEtatJid, recupererActionJid, DisconnectReason, getMessageText, commandRegistry, delay, makeCacheableSignalKeyStore, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, jidDecode, proto, getContentType } = require("@whiskeysockets/baileys");
 const SUDO_NUMBERS = ["254727716045","254710772666"].map(num => num + "@s.whatsapp.net");
 const logger = require("@whiskeysockets/baileys/lib/Utils/logger").default.child({});
 const { createContext } = require("./utils/helper");
@@ -361,130 +361,125 @@ try {
  //============================================================================//
 
 const STATE = conf.PRESENCE; 
-
-
-
- adams.ev.on("messages.upsert", async ({ messages }) => {
-    const ms = messages[0];
-    if (!ms?.message || !ms?.key) return;
-
-    // Helper function to safely decode JID
-    function decodeJid(jid) {
-        if (!jid) return '';
-        return typeof jid.decodeJid === 'function' ? jid.decodeJid() : String(jid);
-    }
-
-    // Extract core message information
-    const origineMessage = ms.key.remoteJid || '';
-    const idBot = decodeJid(adams.user?.id || '');
-    const servBot = idBot.split('@')[0] || '';
-    const verifGroupe = typeof origineMessage === 'string' && origineMessage.endsWith("@g.us");
-    
-    // Group metadata handling
-    let infosGroupe = null;
-    let nomGroupe = '';
+adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
-        infosGroupe = verifGroupe ? await adams.groupMetadata(origineMessage).catch(() => null) : null;
-        nomGroupe = infosGroupe?.subject || '';
-    } catch (err) {
-        console.error("Group metadata error:", err);
-    }
+        // Validate message type
+        if (type !== 'notify') return;
+        
+        const ms = messages[0];
+        if (!ms?.message || !ms?.key) return;
 
-    // Quoted message handling
-    const msgRepondu = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage || null;
-    const auteurMsgRepondu = decodeJid(ms.message?.extendedTextMessage?.contextInfo?.participant || '');
-    const mentionedJids = Array.isArray(ms.message?.extendedTextMessage?.contextInfo?.mentionedJid) 
-        ? ms.message.extendedTextMessage.contextInfo.mentionedJid 
-        : [];
+        // Improved JID handling
+        const decodeJid = (jid) => {
+            if (!jid) return '';
+            if (typeof jid === 'string') return jid;
+            return jid.decodeJid?.() || jid.user || '';
+        };
 
-    // Author determination
-    let auteurMessage = verifGroupe 
-        ? (ms.key.participant || ms.participant || origineMessage)
-        : origineMessage;
-    if (ms.key.fromMe) auteurMessage = idBot;
-
-    // Group member info
-    const membreGroupe = verifGroupe ? ms.key.participant || '' : '';
-    const utilisateur = mentionedJids.length > 0 
-        ? mentionedJids[0] 
-        : msgRepondu 
-            ? auteurMsgRepondu 
-            : '';
-
-    // Permission flags
-    const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
-    const superUser = 
-        SUDO_NUMBERS.includes(auteurMessage) || 
-        auteurMessage === `${conf.OWNER_NUMBER}@s.whatsapp.net` || 
-        auteurMessage === botJid;
-
-    let verifAdmin = false;
-    let botIsAdmin = false;
-    if (verifGroupe && infosGroupe) {
-        const admins = infosGroupe.participants.filter(p => p.admin).map(p => p.id);
-        verifAdmin = admins.includes(auteurMessage);
-        botIsAdmin = admins.includes(botJid);
-    }
-
-    // Message content processing
-    const texte = ms.message?.conversation || 
-                 ms.message?.extendedTextMessage?.text || 
-                 ms.message?.imageMessage?.caption || 
-                 '';
-    const arg = typeof texte === 'string' ? texte.trim().split(/\s+/).slice(1) : [];
-    const verifCom = typeof texte === 'string' && texte.startsWith(PREFIX);
-    const com = verifCom ? texte.slice(PREFIX.length).trim().split(/\s+/)[0]?.toLowerCase() : null;
-
-    if (verifCom && com) {
-        const cmd = Array.isArray(evt.cm) 
-            ? evt.cm.find((c) => 
-                c?.nomCom === com || 
-                (Array.isArray(c?.aliases) && c.aliases.includes(com))
-              )
-            : null;
-
-        if (cmd) {
+        // Core message info with null checks
+        const origineMessage = ms.key.remoteJid || '';
+        const idBot = decodeJid(adams.user?.id);
+        const botJid = idBot.includes('@') ? idBot : `${idBot}@s.whatsapp.net`;
+        const verifGroupe = origineMessage.endsWith('@g.us');
+        
+        // Enhanced group metadata handling
+        let infosGroupe = null;
+        let nomGroupe = '';
+        if (verifGroupe) {
             try {
-                // Permission check
+                infosGroupe = await adams.groupMetadata(origineMessage);
+                nomGroupe = infosGroupe?.subject || '';
+            } catch (err) {
+                console.error('Group metadata error:', err);
+            }
+        }
+
+        // Quoted message handling
+        const quotedMsg = ms.message?.extendedTextMessage?.contextInfo;
+        const msgRepondu = quotedMsg?.quotedMessage || null;
+        const auteurMsgRepondu = decodeJid(quotedMsg?.participant);
+        const mentionedJids = quotedMsg?.mentionedJid || [];
+
+        // Author determination with fallbacks
+        let auteurMessage = verifGroupe 
+            ? decodeJid(ms.key.participant || ms.participant) || origineMessage
+            : origineMessage;
+        if (ms.key.fromMe) auteurMessage = botJid;
+
+        // Permission system
+        const superUser = [
+            `${conf.OWNER_NUMBER}@s.whatsapp.net`,
+            botJid,
+            ...(SUDO_NUMBERS || [])
+        ].includes(auteurMessage);
+
+        let verifAdmin = false;
+        let botIsAdmin = false;
+        if (verifGroupe && infosGroupe?.participants) {
+            const admins = infosGroupe.participants
+                .filter(p => p?.admin)
+                .map(p => decodeJid(p.id));
+            verifAdmin = admins.includes(auteurMessage);
+            botIsAdmin = admins.includes(botJid);
+        }
+
+        // Message content extraction
+        const messageType = Object.keys(ms.message)[0];
+        const texte = ms.message.conversation || 
+                     ms.message.extendedTextMessage?.text || 
+                     ms.message[messageType]?.caption || '';
+
+        // Command processing
+        if (typeof texte === 'string' && texte.startsWith(PREFIX)) {
+            const com = texte.slice(PREFIX.length).trim().split(/\s+)[0]?.toLowerCase();
+            if (!com) return;
+
+            const cmd = Array.isArray(evt.cm) 
+                ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
+                : null;
+            if (!cmd) return;
+
+            try {
+                // Enhanced permission check
                 if (!superUser && conf.MODE?.toLowerCase() !== "yes") {
-                    console.log(`Command blocked for ${auteurMessage}`);
+                    console.log(`Command blocked: ${auteurMessage}`);
                     return;
                 }
 
-                // Reply function with context
+                // Improved reply function
                 const repondre = async (text, options = {}) => {
-                    if (typeof text !== 'string') return;
                     try {
-                        await adams.sendMessage(origineMessage, { 
-                            text,
+                        await adams.sendMessage(origineMessage, {
+                            text: String(text),
                             ...createContext(auteurMessage, {
                                 title: options.title || nomGroupe || "BWM-XMD",
-                                body: options.body || ""
+                                body: options.body || "",
+                                thumbnail: options.thumbnail
                             })
                         }, { quoted: ms });
                     } catch (err) {
-                        console.error("Reply error:", err);
+                        console.error('Reply failed:', err);
                     }
                 };
 
-                // Add reaction
+                // Reaction handling
                 if (cmd.reaction) {
                     try {
                         await adams.sendMessage(origineMessage, {
-                            react: { 
-                                key: ms.key, 
-                                text: cmd.reaction 
+                            react: {
+                                key: ms.key,
+                                text: cmd.reaction
                             }
                         });
                     } catch (err) {
-                        console.error("Reaction error:", err);
+                        console.error('Reaction failed:', err);
                     }
                 }
 
                 // Execute command with full context
                 await cmd.fonction(origineMessage, adams, {
                     ms,
-                    arg,
+                    arg: texte.trim().split(/\s+/).slice(1),
                     repondre,
                     superUser,
                     verifAdmin,
@@ -493,28 +488,30 @@ const STATE = conf.PRESENCE;
                     infosGroupe,
                     nomGroupe,
                     auteurMessage,
-                    utilisateur,
-                    membreGroupe,
+                    utilisateur: mentionedJids[0] || auteurMsgRepondu || '',
+                    membreGroupe: verifGroupe ? decodeJid(ms.key.participant) : '',
                     origineMessage,
                     msgRepondu,
                     auteurMsgRepondu
                 });
 
             } catch (error) {
-                console.error(`Command error [${com}]:`, error);
+                console.error(`Command [${com}] error:`, error);
                 try {
                     await adams.sendMessage(origineMessage, {
-                        text: `🚨 Command failed: ${error.message}`,
+                        text: `🚨 Error: ${error.message}`,
                         ...createContext(auteurMessage, {
-                            title: "Error",
-                            body: "Command execution failed"
+                            title: "Command Failed",
+                            body: "Please try again"
                         })
                     }, { quoted: ms });
                 } catch (sendErr) {
-                    console.error("Error sending error message:", sendErr);
+                    console.error('Error feedback failed:', sendErr);
                 }
             }
         }
+    } catch (globalErr) {
+        console.error('Global message handler error:', globalErr);
     }
 });
  
