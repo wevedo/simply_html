@@ -7,7 +7,7 @@ const path = require('path');
 // Default configuration values
 const config = {
     // Basic settings
-    session: '', // Session ID for WhatsApp connection
+    SESSION_ID: '', // Session ID for WhatsApp connection
     PREFIX: ".", // Command prefix
     OWNER_NAME: "Ibrahim Adams", // Bot owner's name
     OWNER_NUMBER: "254106727593", // Bot owner's number
@@ -78,7 +78,7 @@ module.exports = {
     // Aliases for compatibility
     ETAT: config.PRESENCE, // PRESENCE is now the main variable
     CHATBOT1: config.AUDIO_CHATBOT, // AUDIO_CHATBOT is now the main variable
-    ANTIDELETE1: config.ANTIDELETE // ANTIDELETE is now the main variable
+    session: config.SESSION_ID // ANTIDELETE is now the main variable
 };
 
 // File watcher for hot reloading
