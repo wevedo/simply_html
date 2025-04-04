@@ -544,35 +544,6 @@ function getMessageContent(message) {
 } */
 //===============================================================================================================
 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-const { makeWASocket, proto, getContentType, DisconnectReason, useSingleFileAuthState } = require('@whiskeysockets/baileys');
-const fs = require('fs');
-const path = require('path');
-const conf = require('../config');
-
-// Initialize auth state
-const { state, saveCreds } = useSingleFileAuthState('./auth_info.json');
-
-// Create socket connection
-const adams = makeWASocket({
-    printQRInTerminal: true,
-    auth: state,
-    getMessage: async (key) => ({}),
-    browser: ['BWM-XMD', 'Safari', '3.0']
-});
-
 // ==================== MESSAGE HANDLER ====================
 adams.ev.on('messages.upsert', async ({ messages, type }) => {
     try {
