@@ -143,8 +143,8 @@ async function main() {
         adams.ev.on('creds.update', saveCreds);
     }
 
-
- adams.ev.on("messages.upsert", async (m) => {
+ //============================================================================//
+   adams.ev.on("messages.upsert", async (m) => {
     try {
         const { messages } = m;
         if (!messages || messages.length === 0) return;
