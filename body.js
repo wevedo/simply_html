@@ -776,6 +776,6 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
     process.on('unhandledRejection', (err) => {
         console.error('Unhandled Rejection:', err);
     });
-}
+
 
 main().catch(err => console.error("Initialization error:", err));
