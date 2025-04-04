@@ -2,60 +2,90 @@
 
 const fs = require('fs-extra');
 const { Sequelize } = require('sequelize');
-if (fs.existsSync('config.env'))
-    require('dotenv').config({ path: __dirname + '/config.env' });
-const path = require("path");
-const databasePath = path.join(__dirname, './database.db');
-const DATABASE_URL = process.env.DATABASE_URL === undefined
-    ? databasePath
-    : process.env.DATABASE_URL;
-module.exports = { session: process.env.SESSION_ID || '',
-    PREFIX: process.env.PREFIX || ".",
-    OWNER_NAME: process.env.OWNER_NAME || "Ibrahim Adams",
-    OWNER_NUMBER : process.env.OWNER_NUMBER || "254106727593",              
-    AUTO_READ_STATUS: process.env.AUTO_READ_STATUS || "yes",
-    AUTO_DOWNLOAD_STATUS: process.env.AUTO_DOWNLOAD_STATUS || 'no',
-    BOT : process.env.BOT_NAME || 'BMW_MD',
-    URL : process.env.BOT_MENU_LINKS || 'https://files.catbox.moe/h2ydge.jpg',
-    BWM_XMD: 'https://ibrahimadams.site/bwmxmd',               
-    MODE: process.env.PUBLIC_MODE || "yes",
-    PM_PERMIT: process.env.PM_PERMIT || 'yes',
-    HEROKU_APP_NAME : process.env.HEROKU_APP_NAME,
-    HEROKU_APY_KEY : process.env.HEROKU_APY_KEY ,
-    WARN_COUNT : process.env.WARN_COUNT || '3' ,
-    ETAT : process.env.PRESENCE || '2',
-    CHATBOT : process.env.CHATBOT || 'yes',
-    CHATBOT1 : process.env.AUDIO_CHATBOT || 'yes',
-    DP : process.env.STARTING_BOT_MESSAGE || "yes",
-    ANTIDELETE1 : process.env.ANTIDELETE_MESSAGES || 'yes',
-    ANTIDELETE2 : process.env.ANTIDELETE_TWO || 'yes',
-    MENUTYPE : process.env.MENUTYPE || '',
-    ANTICALL : process.env.ANTICALL || 'yes',
-                  STATUS_REACT_EMOJIS : process.env.STATUS_REACT_EMOJIS || "🚀,🌎",
-                  GROUP_ANTILINK : process.env.GROUP_ANTILINK || 'yes',
-                  GOODBYE_MESSAGE : process.env.GOODBYE_MESSAGE || 'yes',
-                  WELCOME_MESSAGE : process.env.WELCOME_MESSAGE || 'yes',
-                  AUTO_REACT : process.env.AUTO_REACT || 'yes',
-                  AUTO_REACT_STATUS : process.env.AUTO_REACT_STATUS || 'yes',
-                  AUTO_REPLY : process.env.AUTO_REPLY || 'no',
-                  AUTO_READ : process.env.AUTO_READ || 'yes',
-                  AUTO_SAVE_CONTACTS : process.env.AUTO_SAVE_CONTACTS || 'yes',
-                  AUTO_REJECT_CALL : process.env.AUTO_REJECT_CALL || 'yes',
-                  AUTO_BIO : process.env.AUTO_BIO || 'yes',
-                  AUDIO_REPLY : process.env.AUDIO_REPLY || 'no',
-    DATABASE_URL,
-    DATABASE: DATABASE_URL === databasePath
-        ? "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway" : "postgresql://postgres:bKlIqoOUWFIHOAhKxRWQtGfKfhGKgmRX@viaduct.proxy.rlwy.net:47738/railway",
-   
+const path = require('path');
+
+// Default configuration values
+const config = {
+    // Basic settings
+    session: '', // Session ID for WhatsApp connection
+    PREFIX: ".", // Command prefix
+    OWNER_NAME: "Ibrahim Adams", // Bot owner's name
+    OWNER_NUMBER: "254106727593", // Bot owner's number
+    BOT: 'BMW_MD', // Bot name
+    URL: 'https://files.catbox.moe/h2ydge.jpg', // Bot image URL
+    BWM_XMD: 'https://ibrahimadams.site/bwmxmd', // Additional URL
+    
+    // Status settings
+    AUTO_READ_STATUS: "yes", // Auto read status updates
+    AUTO_DOWNLOAD_STATUS: 'no', // Auto download status updates
+    PRESENCE: 'online', // Presence status (online, offline, etc.)
+    
+    // Mode settings
+    MODE: "yes", // Public/private mode
+    PM_PERMIT: 'yes', // PM permission control
+    
+    // Group settings
+    GROUP_ANTILINK: 'yes', // Anti-link in groups
+    GROUP_ANTILINK2: 'no', // Secondary anti-link control
+    WELCOME_MESSAGE: 'yes', // Welcome message in groups
+    GOODBYE_MESSAGE: 'yes', // Goodbye message in groups
+    
+    // Chatbot settings
+    CHATBOT: 'yes', // Enable text chatbot
+    AUDIO_CHATBOT: 'yes', // Enable voice chatbot
+    AUTO_REPLY: 'no', // Auto reply to messages
+    
+    // Message handling
+    ANTIDELETE: 'yes', // Anti-delete messages
+    ANTIDELETE2: 'yes', // Secondary anti-delete control
+    AUTO_READ: 'yes', // Auto read incoming messages
+    
+    // Reaction settings
+    AUTO_REACT: 'yes', // Auto react to messages
+    AUTO_REACT_STATUS: 'yes', // Auto react to status
+    STATUS_REACT_EMOJIS: "🚀,🌎", // Emojis for reactions
+    
+    // Call settings
+    ANTICALL: 'yes', // Block unwanted calls
+    AUTO_REJECT_CALL: 'yes', // Auto reject calls
+    
+    // Other features
+    AUTO_BIO: 'yes', // Auto update bio
+    AUTO_SAVE_CONTACTS: 'yes', // Auto save new contacts
+    DP: "yes", // Display picture settings
+    MENUTYPE: '', // Menu type configuration
+    
+    // Warning system
+    WARN_COUNT: '3', // Warning limit
+    
+    // Heroku settings (empty by default)
+    HEROKU_APP_NAME: '',
+    HEROKU_API_KEY: ''
 };
-let fichier = require.resolve(__filename);
-fs.watchFile(fichier, () => {
-    fs.unwatchFile(fichier);
-    console.log(`mise à jour ${__filename}`);
-    delete require.cache[fichier];
-    require(fichier);
+
+// Database configuration - using SQLite locally
+const databasePath = path.join(__dirname, './database.db');
+const DATABASE = new Sequelize({
+    dialect: 'sqlite',
+    storage: databasePath,
+    logging: false
 });
 
+module.exports = {
+    ...config,
+    DATABASE,
+    DATABASE_URL: databasePath, // For backward compatibility
+    // Aliases for compatibility
+    ETAT: config.PRESENCE, // PRESENCE is now the main variable
+    CHATBOT1: config.AUDIO_CHATBOT, // AUDIO_CHATBOT is now the main variable
+    ANTIDELETE1: config.ANTIDELETE // ANTIDELETE is now the main variable
+};
 
-
-
+// File watcher for hot reloading
+let file = require.resolve(__filename);
+fs.watchFile(file, () => {
+    fs.unwatchFile(file);
+    console.log(`Updated ${__filename}`);
+    delete require.cache[file];
+    require(file);
+});
