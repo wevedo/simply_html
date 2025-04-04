@@ -235,6 +235,8 @@ async function main() {
     }
 
     const STATE = conf.PRESENCE; 
+    
+                            // Message handler
     adams.ev.on('messages.upsert', async ({ messages, type }) => {
         try {
             if (type !== 'notify') return;
@@ -242,17 +244,20 @@ async function main() {
             const ms = messages[0];
             if (!ms?.message || !ms?.key) return;
 
+            // Improved JID handling
             const decodeJid = (jid) => {
                 if (!jid) return '';
                 if (typeof jid === 'string') return jid;
                 return jid.decodeJid?.() || jid.user || '';
             };
 
+            // Core message info
             const origineMessage = ms.key.remoteJid || '';
             const idBot = decodeJid(adams.user?.id);
             const botJid = idBot.includes('@') ? idBot : `${idBot}@s.whatsapp.net`;
             const verifGroupe = origineMessage.endsWith('@g.us');
             
+            // Group metadata handling
             let infosGroupe = null;
             let nomGroupe = '';
             if (verifGroupe) {
@@ -264,17 +269,21 @@ async function main() {
                 }
             }
 
+            // Quoted message handling
             const quotedMsg = ms.message?.extendedTextMessage?.contextInfo;
             const msgRepondu = quotedMsg?.quotedMessage || null;
             const auteurMsgRepondu = decodeJid(quotedMsg?.participant);
             const mentionedJids = quotedMsg?.mentionedJid || [];
 
+            // Author determination
             let auteurMessage = verifGroupe 
                 ? decodeJid(ms.key.participant || ms.participant) || origineMessage
                 : origineMessage;
             if (ms.key.fromMe) auteurMessage = botJid;
 
-            const superUser = [
+            // Permission system - MODE check first
+            const isPublicMode = conf.MODE?.toLowerCase() === 'yes';
+            const isSuperUser = [
                 `${conf.OWNER_NUMBER}@s.whatsapp.net`,
                 botJid,
                 ...(SUDO_NUMBERS || [])
@@ -290,11 +299,13 @@ async function main() {
                 botIsAdmin = admins.includes(botJid);
             }
 
-            const messageType = Object.keys(ms.message)[0];
+            // Message content extraction
+            const messageType = getContentType(ms.message);
             const texte = ms.message.conversation || 
                          ms.message.extendedTextMessage?.text || 
                          ms.message[messageType]?.caption || '';
 
+            // Command processing
             if (typeof texte === 'string' && texte.startsWith(PREFIX)) {
                 const args = texte.slice(PREFIX.length).trim().split(/\s+/);
                 const com = args[0]?.toLowerCase();
@@ -306,11 +317,13 @@ async function main() {
                 if (!cmd) return;
 
                 try {
-                    if (!superUser && conf.MODE?.toLowerCase() !== "yes") {
-                        console.log(`Command blocked: ${auteurMessage}`);
+                    // Permission check - MODE takes priority
+                    if (!isPublicMode && !isSuperUser) {
+                        console.log(`Command blocked for ${auteurMessage} (private mode)`);
                         return;
                     }
 
+                    // Enhanced reply function
                     const repondre = async (text, options = {}) => {
                         try {
                             await adams.sendMessage(origineMessage, {
@@ -326,6 +339,7 @@ async function main() {
                         }
                     };
 
+                    // Add reaction
                     if (cmd.reaction) {
                         try {
                             await adams.sendMessage(origineMessage, {
@@ -339,11 +353,12 @@ async function main() {
                         }
                     }
 
+                    // Execute command with full context
                     await cmd.fonction(origineMessage, adams, {
                         ms,
                         arg: args.slice(1),
                         repondre,
-                        superUser,
+                        superUser: isSuperUser,
                         verifAdmin,
                         botIsAdmin,
                         verifGroupe,
@@ -361,7 +376,7 @@ async function main() {
                     console.error(`Command [${com}] error:`, error);
                     try {
                         await adams.sendMessage(origineMessage, {
-                            text: `Error: ${error.message}`,
+                            text: `🚨 Error: ${error.message}`,
                             ...createContext(auteurMessage, {
                                 title: "Command Failed",
                                 body: "Please try again"
@@ -376,6 +391,8 @@ async function main() {
             console.error('Global message handler error:', globalErr);
         }
     });
+
+  
 
     // Connection Handler
     adams.ev.on("connection.update", async (update) => {
