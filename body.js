@@ -67,71 +67,259 @@ app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting on port ${PORT}`));
 
-async function authentification() {
-    try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Session connected...");
-            // Split the session string into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            // Validate the session format
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
-            } else {
-                throw new Error("Invalid session format");
-            }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
+// Session Handling
+async function setupSession() {
+    const sessionDir = path.join(__dirname, "Session");
+    
+    // Create session directory if it doesn't exist
+    await fs.ensureDir(sessionDir);
+    
+    // Check for existing session or initialize from config
+    if (!fs.existsSync(path.join(sessionDir, "creds.json"))) {
+        console.log("Initializing new session...");
+        
+        if (conf.session) {
+            try {
+                const [header, b64data] = conf.session.split(';;;');
+                
+                if (header === "BWM-XMD" && b64data) {
+                    const compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
+                    const decompressedData = zlib.gunzipSync(compressedData);
+                    await fs.writeFile(path.join(sessionDir, "creds.json"), decompressedData);
+                    console.log("Session restored from config");
+                }
+            } catch (e) {
+                console.log("Session restore failed:", e.message);
+                await fs.remove(path.join(sessionDir, "creds.json"));
             }
         }
-    } catch (e) {
-        console.log("Session Invalid: " + e.message);
-        return;
     }
+    
+    return sessionDir;
 }
-module.exports = { authentification };
-authentification();
 
-const store = makeInMemoryStore({ 
-    logger: Pino().child({ 
-        level: "silent", 
-        stream: "store" 
-    }) 
-});
+// Enhanced connection handler
+async function connectToWhatsApp() {
+    const sessionDir = await setupSession();
+    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    const { version } = await fetchLatestBaileysVersion();
 
-async function main() {
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
-
-    adams = makeWASocket({
+    const socket = makeWASocket({
         version,
         logger,
-        browser: ['BWM XMD', "safari", "1.0.0"],
         printQRInTerminal: true,
         auth: {
             creds: state.creds,
             keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
+        browser: ['BWM XMD', "safari", "1.0.0"],
+        markOnlineOnConnect: true,
+        syncFullHistory: false,
         getMessage: async (key) => {
-            if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id);
-                return msg.message || undefined;
+            return { conversation: 'Message not stored' };
+        },
+        shouldIgnoreJid: jid => isJidGroup(jid),
+        connectTimeoutMs: 30_000,
+        keepAliveIntervalMs: 10_000
+    });
+
+    // Connection event handling
+    socket.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect, isNewLogin, qr } = update;
+        console.log('Connection Update:', connection);
+
+        if (connection === 'close') {
+            const shouldReconnect = (lastDisconnect.error)?.output?.statusCode !== 401;
+            console.log(`Connection closed, ${shouldReconnect ? 'reconnecting' : 'not reconnecting'}`);
+            if (shouldReconnect) {
+                setTimeout(connectToWhatsApp, 5000);
             }
-            return { conversation: 'Error occurred' };
+        } 
+        else if (connection === 'open') {
+            console.log('✅ Connected to WhatsApp');
+            await socket.sendPresenceUpdate('available');
+            
+            // Test functionality
+            setTimeout(() => {
+                testConnection(socket).catch(console.error);
+            }, 2000);
+        }
+
+        if (qr) {
+            console.log('QR Code generated - scan to authenticate');
         }
     });
+
+    socket.ev.on('creds.update', saveCreds);
+    return socket;
+}
+
+// Enhanced message handler
+function setupMessageHandler(socket) {
+    socket.ev.on('messages.upsert', async ({ messages, type }) => {
+        try {
+            console.log('New message batch received');
+            
+            if (type !== 'notify') {
+                console.log('Ignoring non-notify message');
+                return;
+            }
+
+            for (const ms of messages) {
+                try {
+                    if (!ms?.message || !ms?.key) {
+                        console.log('Invalid message structure');
+                        continue;
+                    }
+
+                    const origineMessage = ms.key.remoteJid || '';
+                    const isGroup = isJidGroup(origineMessage);
+                    const sender = ms.key.participant || ms.key.remoteJid || '';
+                    
+                    console.log(`Processing message from ${sender}`);
+
+                    // Extract message content
+                    const messageType = getContentType(ms.message);
+                    let texte = '';
+                    
+                    if (messageType === 'conversation') {
+                        texte = ms.message.conversation;
+                    } 
+                    else if (messageType === 'extendedTextMessage') {
+                        texte = ms.message.extendedTextMessage?.text || '';
+                    } 
+                    else if (['imageMessage', 'videoMessage', 'documentMessage'].includes(messageType)) {
+                        texte = ms.message[messageType]?.caption || '';
+                    }
+                    
+                    console.log('Message content:', texte);
+
+                    // Command processing
+                    if (texte && texte.startsWith(PREFIX)) {
+                        const args = texte.slice(PREFIX.length).trim().split(/\s+/);
+                        const com = args[0]?.toLowerCase();
+                        
+                        console.log('Command detected:', com);
+
+                        const cmd = Array.isArray(evt.cm) 
+                            ? evt.cm.find(c => c?.nomCom === com || c?.aliases?.includes(com))
+                            : null;
+                            
+                        if (!cmd) {
+                            console.log('Command not found');
+                            continue;
+                        }
+
+                        // Permission check
+                        const isOwner = sender === `${conf.OWNER_NUMBER}@s.whatsapp.net`;
+                        const isSudo = SUDO_NUMBERS.includes(sender);
+                        const isBot = sender === socket.user.id;
+                        const isPublic = conf.MODE?.toLowerCase() === 'yes';
+                        
+                        if (!isPublic && !isOwner && !isSudo && !isBot) {
+                            console.log('Command blocked - private mode');
+                            continue;
+                        }
+
+                        // Execute command
+                        try {
+                            // Add reaction
+                            if (cmd.reaction) {
+                                await socket.sendMessage(origineMessage, {
+                                    react: {
+                                        text: cmd.reaction,
+                                        key: ms.key
+                                    }
+                                });
+                            }
+
+                            // Prepare group info
+                            let groupInfo = null;
+                            if (isGroup) {
+                                groupInfo = await socket.groupMetadata(origineMessage).catch(console.error);
+                            }
+
+                            // Execute command
+                            await cmd.fonction(origineMessage, socket, {
+                                ms,
+                                arg: args.slice(1),
+                                repondre: async (text, options = {}) => {
+                                    await socket.sendMessage(origineMessage, {
+                                        text: String(text),
+                                        ...createContext(sender, {
+                                            title: options.title || (groupInfo?.subject || "BWM-XMD"),
+                                            body: options.body || "",
+                                            thumbnail: options.thumbnail
+                                        })
+                                    }, { quoted: ms });
+                                },
+                                superUser: isOwner || isSudo || isBot,
+                                verifAdmin: isGroup && groupInfo?.participants?.some(
+                                    p => p.id === sender && p.admin
+                                ),
+                                botIsAdmin: isGroup && groupInfo?.participants?.some(
+                                    p => p.id === socket.user.id && p.admin
+                                ),
+                                verifGroupe: isGroup,
+                                infosGroupe: groupInfo,
+                                nomGroupe: groupInfo?.subject || '',
+                                auteurMessage: sender,
+                                origineMessage
+                            });
+
+                            console.log('✅ Command executed');
+                            
+                        } catch (cmdError) {
+                            console.error('Command failed:', cmdError);
+                            await socket.sendMessage(origineMessage, {
+                                text: `⚠️ Error: ${cmdError.message}`,
+                                ...createContext(sender, {
+                                    title: "Command Failed",
+                                    body: "Please try again"
+                                })
+                            }, { quoted: ms });
+                        }
+                    }
+                } catch (msgError) {
+                    console.error('Message processing failed:', msgError);
+                }
+            }
+        } catch (batchError) {
+            console.error('Message batch processing failed:', batchError);
+        }
+    });
+}
+
+// Connection test
+async function testConnection(socket) {
+    console.log('Running connection tests...');
     
-    store.bind(adams.ev);
+    // Test 1: Send self message
+    await socket.sendMessage(socket.user.id, { text: '🔍 Connection test' });
+    
+    // Test 2: Emulate command
+    const testMsg = {
+        key: { 
+            remoteJid: socket.user.id, 
+            fromMe: true,
+            id: 'test-' + Date.now()
+        },
+        message: { conversation: `${PREFIX}ping` }
+    };
+    
+    socket.ev.emit('messages.upsert', {
+        messages: [testMsg],
+        type: 'notify'
+    });
+    
+    console.log('Connection tests completed');
+}
+
+
+
+
+
+
     function isRateLimited(jid) {
         const now = Date.now();
         if (!rateLimit.has(jid)) {
@@ -250,7 +438,7 @@ async function main() {
 
     const STATE = conf.PRESENCE; 
     
-
+/*
 // Debug configuration
 const DEBUG_MODE = true;
 const TEST_ON_CONNECT = true;
@@ -504,7 +692,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
     } catch (batchError) {
         console.error('Message batch processing error:', batchError);
     }
-}); 
+}); */
 
     // Connection Handler
     adams.ev.on("connection.update", async (update) => {
