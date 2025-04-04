@@ -542,78 +542,83 @@ function getMessageContent(message) {
     }
 } 
 //===============================================================================================================
- // Single connection.update handler to avoid conflicts
+// Unified connection handler with proper error handling
 adams.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;
-    const statusMessages = {
-        connecting: "🔄 Connecting to WhatsApp...",
-        open: "✅ Successfully connected",
-        close: "❌ Connection closed",
-        connecting: "🔄 Reconnecting..."
-    };
-
-    // Log connection status
-    if (statusMessages[connection]) {
-        console.log(statusMessages[connection]);
-    }
-
-    // Handle successful connection
-    if (connection === "open") {
-        console.log("🌎 BWM XMD ONLINE 🌎");
-        
-        try {
-            // Send connection message if enabled
-            if (conf.DP?.toLowerCase() === "yes") {
-                const md = conf.MODE?.toLowerCase() === "yes" ? "public" : "private";
-                const connectionMsg = `
+    
+    // Connection state tracking
+    switch(connection) {
+        case "connecting":
+            console.log("🔄 Connecting to WhatsApp...");
+            break;
+            
+        case "open":
+            console.log("🌎 BWM XMD ONLINE 🌎");
+            
+            try {
+                // Send connection message if enabled
+                if (conf.DP?.toLowerCase() === "yes") {
+                    const connectionMsg = `
 〔  🚀 BWM XMD CONNECTED 🚀 〕
 
-├──〔 ✨ Version: 7.0.8 〕 
-├──〔 🎭 Mode: ${md} 〕 
-│ ✅ Prefix: [ ${conf.PREFIX} ]  
-│  
-├──〔 📦 Deployment 〕 
-╰──────────────────◆`;
+├── Version: 7.0.8
+├── Mode: ${conf.MODE?.toLowerCase() === "yes" ? "public" : "private"}
+╰── Prefix: [${conf.PREFIX}]`;
 
-                await adams.sendMessage(
-                    adams.user.id,
-                    { 
-                        text: connectionMsg,
-                        ...createContext(adams.user.id, {
-                            title: "System Notification",
-                            body: "Connection established"
-                        })
-                    }
-                ).catch(err => console.error("Status message error:", err));
-            }
+                    await adams.sendMessage(
+                        adams.user.id,
+                        { 
+                            text: connectionMsg,
+                            ...createContext(adams.user.id, {
+                                title: "System Notification",
+                                body: "Connection established"
+                            })
+                        }
+                    );
+                }
 
-            // Newsletter handling with existence check
-            const newsletterJid = "120363285388090068@newsletter";
-            try {
+                // Newsletter subscription with existence check
+                const newsletterJid = "120363285388090068@newsletter";
                 const [newsletter] = await adams.onWhatsApp(newsletterJid);
                 if (newsletter?.exists) {
                     await adams.newsletterFollow(newsletterJid);
                 }
-            } catch (newsletterErr) {
-                console.error("Newsletter error:", newsletterErr);
+            } catch (err) {
+                console.error("Connection handler error:", err);
             }
-        } catch (err) {
-            console.error("Connection open handler error:", err);
-        }
-    }
-
-    // Handle disconnection
-    if (connection === "close") {
-        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401; // 401 means logged out
-        console.log(`Connection closed, ${shouldReconnect ? "reconnecting..." : "not reconnecting"}`);
-        
-        if (shouldReconnect) {
-            setTimeout(() => {
-                main().catch(err => console.log("Reconnection error:", err));
-            }, 5000); // 5 second delay before reconnecting
-        }
+            break;
+            
+        case "close":
+            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401;
+            console.log(`Connection closed. ${shouldReconnect ? "Reconnecting..." : "Not reconnecting"}`);
+            
+            if (shouldReconnect) {
+                setTimeout(() => {
+                    main().catch(err => console.error("Reconnect failed:", err));
+                }, 5000);
+            }
+            break;
     }
 });
 
 // Credentials update handler
 adams.ev.on("creds.update", saveCreds);
+
+// Message handler (must be properly closed)
+adams.ev.on("messages.upsert", async ({ messages }) => {
+    // Your existing message handling code here
+    // Make sure this block is properly closed
+});
+
+// Initialize the bot
+async function main() {
+    try {
+        // Your initialization code here
+    } catch (err) {
+        console.error("Initialization failed:", err);
+        process.exit(1);
+    }
+}
+
+// Start the bot with error handling
+main().catch(err => console.error("Fatal error:", err));
