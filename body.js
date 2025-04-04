@@ -347,7 +347,7 @@ function repondre(mes) {
                     }
                     
                     // Execute command
-                    require('./Ibrahim/app').reagir(origineMessage, zk, ms, cd.reaction);
+                    require('./Ibrahim/adams').reagir(origineMessage, zk, ms, cd.reaction);
                     cd.fonction(origineMessage, zk, {
                         superUser, dev,
                         verifGroupe,
