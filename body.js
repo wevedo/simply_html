@@ -4,7 +4,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const pino = require('pino');
 const express = require('express');
-const chalk = require('chalk');
+const chalk = require('chalk').default;
 const moment = require('moment-timezone');
 const axios = require('axios');
 const conf = require('./config');
@@ -17,8 +17,8 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-const orange = chalk.bold.hex("#FFA500");
-const lime = chalk.bold.hex("#32CD32");
+const orange = chalk.hex("#FFA500").bold;
+const lime = chalk.hex("#32CD32").bold;
 const PORT = process.env.PORT || 3000;
 const app = express();
 const msgRetryCounterCache = new NodeCache();
