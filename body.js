@@ -1035,7 +1035,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
                     auteurMessage,
                     utilisateur: mentionedJids[0] || auteurMsgRepondu || '',
                     membreGroupe: verifGroupe ? decodeJid(ms.key.participant) : '',
-                    origineMessage,
+                                        origineMessage,
                     msgRepondu,
                     auteurMsgRepondu
                 });
@@ -1044,7 +1044,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
                 console.error(`Command [${com}] error:`, error);
                 try {
                     await adams.sendMessage(origineMessage, {
-                        text: `🚨 Error: ${error.message}`,
+                        text: `ūüö® Error: ${error.message}`,
                         ...createContext(auteurMessage, {
                             title: "Command Failed",
                             body: "Please try again"
@@ -1055,11 +1055,10 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
                 }
             }
         }
-} catch (globalErr) {
+    } catch (globalErr) {
         console.error('Global message handler error:', globalErr);
     }
 });
-
 //===============================================================================================================
     
 // ================= CONNECTION HANDLER =================
