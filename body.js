@@ -376,13 +376,13 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
             return jid.decodeJid?.() || jid.user || '';
         };
 
-        // Core message info with null checks
+        // Core message info
         const origineMessage = ms.key.remoteJid || '';
         const idBot = decodeJid(adams.user?.id);
         const botJid = idBot.includes('@') ? idBot : `${idBot}@s.whatsapp.net`;
         const verifGroupe = origineMessage.endsWith('@g.us');
         
-        // Enhanced group metadata handling
+        // Group metadata handling
         let infosGroupe = null;
         let nomGroupe = '';
         if (verifGroupe) {
@@ -400,7 +400,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
         const auteurMsgRepondu = decodeJid(quotedMsg?.participant);
         const mentionedJids = quotedMsg?.mentionedJid || [];
 
-        // Author determination with fallbacks
+        // Author determination
         let auteurMessage = verifGroupe 
             ? decodeJid(ms.key.participant || ms.participant) || origineMessage
             : origineMessage;
@@ -423,15 +423,16 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
             botIsAdmin = admins.includes(botJid);
         }
 
-        // Message content extraction
+        // Message content extraction (fixed regex)
         const messageType = Object.keys(ms.message)[0];
         const texte = ms.message.conversation || 
                      ms.message.extendedTextMessage?.text || 
                      ms.message[messageType]?.caption || '';
 
-        // Command processing
+        // Fixed command parsing (regex fix)
         if (typeof texte === 'string' && texte.startsWith(PREFIX)) {
-            const com = texte.slice(PREFIX.length).trim().split(/\s+)[0]?.toLowerCase();
+            const args = texte.slice(PREFIX.length).trim().split(/\s+/);
+            const com = args[0]?.toLowerCase();
             if (!com) return;
 
             const cmd = Array.isArray(evt.cm) 
@@ -440,13 +441,13 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
             if (!cmd) return;
 
             try {
-                // Enhanced permission check
+                // Permission check
                 if (!superUser && conf.MODE?.toLowerCase() !== "yes") {
                     console.log(`Command blocked: ${auteurMessage}`);
                     return;
                 }
 
-                // Improved reply function
+                // Enhanced reply function
                 const repondre = async (text, options = {}) => {
                     try {
                         await adams.sendMessage(origineMessage, {
@@ -462,7 +463,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
                     }
                 };
 
-                // Reaction handling
+                // Add reaction
                 if (cmd.reaction) {
                     try {
                         await adams.sendMessage(origineMessage, {
@@ -479,7 +480,7 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
                 // Execute command with full context
                 await cmd.fonction(origineMessage, adams, {
                     ms,
-                    arg: texte.trim().split(/\s+/).slice(1),
+                    arg: args.slice(1),
                     repondre,
                     superUser,
                     verifAdmin,
@@ -514,7 +515,32 @@ adams.ev.on('messages.upsert', async ({ messages, type }) => {
         console.error('Global message handler error:', globalErr);
     }
 });
- 
+
+// Additional required functions for Baileys v5+
+function getMessageType(message) {
+    if (!message) return null;
+    const type = Object.keys(message)[0];
+    return type === 'conversation' ? 'text' : type;
+}
+
+function getMessageContent(message) {
+    const type = getMessageType(message);
+    if (!type) return null;
+    
+    switch(type) {
+        case 'text':
+        case 'conversation':
+            return message.conversation;
+        case 'extendedTextMessage':
+            return message.extendedTextMessage.text;
+        case 'imageMessage':
+        case 'videoMessage':
+        case 'documentMessage':
+            return message[type]?.caption || '';
+        default:
+            return null;
+    }
+} 
 //===============================================================================================================
  
 // Handle connection updates
