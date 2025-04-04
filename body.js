@@ -543,23 +543,24 @@ function getMessageContent(message) {
 } 
 //===============================================================================================================
  
-// Handle connection updates
+// Single consolidated connection handler
 adams.ev.on("connection.update", async (update) => {
-    const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect, isNewLogin } = update;
     
-    // Connection states
-    if (connection === "connecting") {
-        console.log("🔄 Connecting to WhatsApp...");
-    }
-    
-    if (connection === "open") {
-        console.log("✅ Successfully connected to WhatsApp");
-        
-        // Send connection message if enabled
-        if (conf.DP?.toLowerCase() === "yes") {
-            try {
-                const md = conf.MODE?.toLowerCase() === "yes" ? "public" : "private";
-                const connectionMsg = `
+    // Connection status logging
+    switch(connection) {
+        case "connecting":
+            console.log("🔄 Connecting to WhatsApp...");
+            break;
+            
+        case "open":
+            console.log("✅ Successfully connected to WhatsApp");
+            
+            // Send connection message only if properly authenticated
+            if (isNewLogin !== false && conf.DP?.toLowerCase() === "yes") {
+                try {
+                    const md = conf.MODE?.toLowerCase() === "yes" ? "public" : "private";
+                    const connectionMsg = `
 〔  🚀 BWM XMD CONNECTED 🚀 〕
 
 ├──〔 ✨ Version: 7.0.8 〕 
@@ -567,82 +568,72 @@ adams.ev.on("connection.update", async (update) => {
 │ ✅ Prefix: [ ${conf.PREFIX} ]  
 │  
 ├──〔 📦 Heroku Deployment 〕 
-│ 🏷️ App Name: ${herokuAppName}  
+│ 🏷️ App Name: ${herokuAppName || 'Not specified'}  
 ╰──────────────────◆`;
 
-                await adams.sendMessage(
-                    adams.user.id,
-                    { text: connectionMsg },
-                    {
-                        disappearingMessagesInChat: true,
-                        ephemeralExpiration: 600,
-                    }
-                );
-            } catch (err) {
-                console.error("Status message error:", err);
-            }
-        }
-
-        // Newsletter following with skip logic
-        try {
-            const newsletterJid = "120363285388090068@newsletter";
-            const newsletterMetadata = await adams.groupMetadata(newsletterJid).catch(() => null);
-            
-            if (newsletterMetadata) {
-                const isParticipant = newsletterMetadata.participants.some(
-                    p => p.id === adams.user.id
-                );
-                
-                if (!isParticipant) {
-                    await adams.newsletterFollow(newsletterJid);
-                    console.log("📰 Following newsletter channel");
-                } else {
-                    console.log("📰 Already in newsletter channel");
+                    await adams.sendMessage(
+                        adams.user.id,
+                        { 
+                            text: connectionMsg,
+                            ...createContext(adams.user.id, {
+                                title: "Connection Established",
+                                body: "Bot is now online"
+                            })
+                        },
+                        {
+                            disappearingMessagesInChat: true,
+                            ephemeralExpiration: 86400 // 24 hours
+                        }
+                    );
+                } catch (err) {
+                    console.error("Connection message error:", err);
                 }
             }
-        } catch (err) {
-            console.error("Newsletter follow error:", err);
-        }
-    }
 
-    // Reconnection logic
-    if (connection === "close") {
-        const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401; // 401 = logged out
-        console.log("Connection closed, reconnecting...", shouldReconnect ? "Yes" : "No");
-        if (shouldReconnect) {
-            setTimeout(main, 5000); // Reconnect after 5 seconds
-        }
+            // Newsletter handling with existence check
+            try {
+                const newsletterJid = "120363285388090068@newsletter";
+                const newsletterExists = await adams.onWhatsApp(newsletterJid);
+                if (newsletterExists?.exists) {
+                    await adams.newsletterFollow(newsletterJid);
+                } else {
+                    console.log("Newsletter not found, skipping follow");
+                }
+            } catch (err) {
+                console.error("Newsletter follow error:", err);
+            }
+            break;
+
+        case "close":
+            console.log("❌ Connection closed");
+            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== 401; // 401 means logged out
+            if (shouldReconnect) {
+                console.log("♻️ Attempting reconnect...");
+                setTimeout(main, 5000);
+            } else {
+                console.log("⚠️ Manual restart required - invalid credentials");
+            }
+            break;
     }
 });
 
 // Credentials update handler
 adams.ev.on("creds.update", saveCreds);
 
-// Message handler with command processing
-adams.ev.on("messages.upsert", async ({ messages, type }) => {
-    try {
-        if (type !== "notify") return;
-        
-        const ms = messages[0];
-        if (!ms?.message || !ms?.key) return;
+// Consolidated message handler (already provided in previous code)
+adams.ev.on("messages.upsert", messageHandler); // Your existing message handler function
 
-        // Your command processing logic here
-        // Make sure to include proper command detection and execution
-        
-    } catch (err) {
-        console.error("Message processing error:", err);
-    }
-});
-
-// Initialize with retry logic
-async function initialize() {
+// Initialization with retry logic
+async function initializeWithRetry() {
     try {
         await main();
+        console.log("🟢 Bot initialized successfully");
     } catch (err) {
-        console.error("Initialization error:", err);
-        setTimeout(initialize, 10000); // Retry after 10 seconds
+        console.error("🔴 Initialization failed:", err);
+        console.log("🔄 Retrying in 10 seconds...");
+        setTimeout(initializeWithRetry, 10000);
     }
 }
 
-// Start with delay
-setTimeout(initialize, 3000);
+// Start with delay to ensure proper initialization
+setTimeout(initializeWithRetry, 3000);
