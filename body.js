@@ -307,7 +307,7 @@ function repondre(mes) {
         const verifZokouAdmin = verifGroupe ? admins.includes(idBot) : false;
         
         const arg = texte ? texte.trim().split(/ +/).slice(1) : null;
-        const verifCom = texte ? texte.startsWith(conf.PREFIXE) : false;
+        const verifCom = texte ? texte.startsWith(conf.PREFI) : false;
         const com = verifCom ? texte.slice(1).trim().split(/ +/).shift().toLowerCase() : false;
         
         // Command execution
