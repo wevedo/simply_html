@@ -3,90 +3,69 @@ const conf = require(__dirname + "/../config");
 const PREFIX = conf.PREFIX;
 
 adams({ 
-    nomCom: "btest", 
+    nomCom: "mtest", 
     categorie: "Test",
-    reaction: "🔘",
+    reaction: "📱",
     nomFichier: __filename 
 }, async (dest, zk, { ms, repondre }) => {
     try {
-        console.log("=== STARTING BUTTON TEST ===");
-        
-        // Test 1: Verify basic message delivery
-        console.log("[TEST 1] Sending regular text message...");
-        const testMsg = await zk.sendMessage(dest, { 
-            text: "🔍 PHASE 1: Can you see this text message?" 
+        // 1. First verify basic message delivery
+        await zk.sendMessage(dest, { 
+            text: "📲 *BWM-XMD MOBILE TEST* 📲\n\nThis text should appear first..." 
         }, { quoted: ms });
-        console.log("✅ Regular message sent with ID:", testMsg.key.id);
 
-        // Test 2: Attempt template buttons (mobile-friendly)
-        console.log("[TEST 2] Trying templateButtons format...");
-        const templateMsg = {
-            text: "📲 PHASE 2: TemplateButtons Test",
-            footer: "Should show two buttons below",
-            templateButtons: [
-                {
-                    index: 1,
-                    quickReplyButton: { displayText: "TEMPLATE OPTION 1", id: "t1" }
-                },
-                {
-                    index: 2,
-                    quickReplyButton: { displayText: "TEMPLATE OPTION 2", id: "t2" }
-                }
-            ]
+        // 2. Send SIMPLE interactive buttons (mobile-optimized)
+        const buttonMsg = {
+            text: "Please select an option:",
+            footer: "Mobile interactive test",
+            buttons: [
+                { buttonId: `${PREFIX}m1`, buttonText: { displayText: "MOBILE BUTTON 1" }, type: 1 },
+                { buttonId: `${PREFIX}m2`, buttonText: { displayText: "MOBILE BUTTON 2" }, type: 1 }
+            ],
+            headerType: 1, // CRUCIAL FOR MOBILE
+            viewOnce: true // Helps with rendering
         };
-        const sentTemplate = await zk.sendMessage(dest, templateMsg, { quoted: ms });
-        console.log("ℹ️ TemplateButtons message payload:", JSON.stringify(templateMsg, null, 2));
-        console.log("✅ Template message sent with ID:", sentTemplate.key.id);
 
-        // Test 3: Attempt list message (fallback)
-        console.log("[TEST 3] Trying list message format...");
-        const listMsg = {
-            text: "📋 PHASE 3: List Message Test",
-            footer: "Should show selectable options",
-            title: "TEST OPTIONS",
-            buttonText: "CHOOSE",
-            sections: [{
-                title: "MAIN SECTION",
-                rows: [
-                    { title: "List Option 1", rowId: "l1" },
-                    { title: "List Option 2", rowId: "l2" }
-                ]
-            }]
-        };
-        const sentList = await zk.sendMessage(dest, listMsg, { quoted: ms });
-        console.log("✅ List message sent with ID:", sentList.key.id);
+        console.log("Sending mobile-optimized buttons:", JSON.stringify(buttonMsg, null, 2));
+        const sentMsg = await zk.sendMessage(dest, buttonMsg, { quoted: ms });
 
-        // Debug response handling
+        // 3. Fallback: List message if buttons fail
+        setTimeout(async () => {
+            const listMsg = {
+                text: "Alternative menu:",
+                footer: "Select from list",
+                title: "MOBILE OPTIONS",
+                buttonText: "OPEN MENU",
+                sections: [{ 
+                    title: "MAIN", 
+                    rows: [
+                        { title: "Option A", rowId: `${PREFIX}optA` },
+                        { title: "Option B", rowId: `${PREFIX}optB` }
+                    ] 
+                }]
+            };
+            await zk.sendMessage(dest, listMsg, { quoted: ms });
+        }, 5000);
+
+        // Debug incoming messages
         zk.ev.on("messages.upsert", ({ messages }) => {
             const msg = messages[0];
-            console.log("\n=== INCOMING MESSAGE UPDATE ===");
-            console.log("Message ID:", msg.key.id);
-            console.log("Message Type:", Object.keys(msg.message)[0]);
             
-            if (msg.key.id === sentTemplate.key.id) {
-                console.log("🔔 This is our template button message");
-                console.log("Current state:", msg.message?.templateMessage ? "RENDERED" : "NOT RENDERED");
-            }
-
-            if (msg.message?.templateButtonReplyMessage) {
-                console.log("🎉 Template button click detected!");
-                repondre(`Template button pressed: ${msg.message.templateButtonReplyMessage.selectedId}`);
+            // Button response
+            if (msg?.message?.buttonsResponseMessage) {
+                console.log("BUTTON WORKED! Selected:", msg.message.buttonsResponseMessage.selectedButtonId);
+                repondre(`🎉 You pressed: ${msg.message.buttonsResponseMessage.selectedButtonId}`);
             }
             
-            if (msg.message?.listResponseMessage) {
-                console.log("🎉 List selection detected!");
-                repondre(`List option chosen: ${msg.message.listResponseMessage.singleSelectReply.selectedRowId}`);
+            // List response
+            if (msg?.message?.listResponseMessage) {
+                console.log("LIST WORKED! Selected:", msg.message.listResponseMessage.singleSelectReply.selectedRowId);
+                repondre(`📋 You chose: ${msg.message.listResponseMessage.singleSelectReply.selectedRowId}`);
             }
         });
 
-        console.log("\n=== TEST SUMMARY ===");
-        console.log("1. Regular text - Should appear");
-        console.log("2. TemplateButtons - Mobile-friendly buttons");
-        console.log("3. ListMessage - Fallback interactive menu");
-        console.log("Waiting for interactions...");
-
     } catch (error) {
-        console.error("‼️ CRITICAL TEST FAILURE:", error);
-        repondre("❌ Button test crashed: " + error.message);
+        console.error("Mobile Test Error:", error);
+        repondre("❌ Mobile test failed - Check logs");
     }
 });
