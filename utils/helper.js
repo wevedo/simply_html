@@ -26,7 +26,7 @@ const createContext = (userJid, options = {}) => ({
             mediaUrl: options.mediaUrl || undefined,
             sourceUrl: options.sourceUrl || "https://wa.me/254728782591", // link to bot or business
             showAdAttribution: true,
-            renderLargerThumbnail: true
+            renderLargerThumbnail: false 
         }
     }
 });
