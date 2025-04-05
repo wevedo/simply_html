@@ -2,52 +2,28 @@ const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const yts = require('yt-search');
 const conf = require(__dirname + "/../config");
-const PREFIX = conf.PREFIX;
+
 adams({ 
-    nomCom: "playtest", 
-    categorie: "Download",
-    reaction: "🎵",
+    nomCom: "buttontest", 
+    categorie: "Test",
+    reaction: "🔘",
     nomFichier: __filename 
-}, async (dest, zk, { ms, repondre, arg }) => {
+}, async (dest, zk, { ms, repondre }) => {
     try {
-        // Check if search query exists
-        if (!arg || arg.length === 0) {
-            return repondre("```[ 🌴 ] Please enter a search query\nExample: .playtest never gonna give you up```");
-        }
-
-        const searchText = arg.join(' ');
-        const searchResults = await yts(searchText);
-
-        if (!searchResults.all || searchResults.all.length === 0) {
-            return repondre("No results found for your search");
-        }
-
-        const video = searchResults.all[0];
-        const caption = `
-╭─❖ YouTube Search ❖─╮
-│
-│ ≡ Title: ${video.title}
-│ ≡ Views: ${video.views}
-│ ≡ Duration: ${video.timestamp}
-│ ≡ Uploaded: ${video.ago}
-│ ≡ URL: ${video.url}
-│
-╰──────────────────╯
-Choose download option:`;
-
-        // Send interactive message
+        // Immediate response with test buttons
         await zk.sendMessage(dest, {
-            image: { url: video.thumbnail },
-            caption: caption,
-            footer: "BWM-XMD Test",
+            text: "🛠️ *BWM-XMD BUTTON TEST* 🛠️\n\nSelect an option:",
+            footer: "Testing button functionality",
             buttons: [
                 {
-                    buttonId: `${PREFIX}ytmp3 ${video.url}`,
-                    buttonText: { displayText: "🎵 Audio" }
+                    buttonId: `${PREFIX}test1`,
+                    buttonText: { displayText: "🔊 Test Button 1" },
+                    type: 1
                 },
                 {
-                    buttonId: `${PREFIX}ytmp4 ${video.url}`,
-                    buttonText: { displayText: "🎥 Video" }
+                    buttonId: `${PREFIX}test2`,
+                    buttonText: { displayText: "📸 Test Button 2" },
+                    type: 1
                 }
             ],
             contextInfo: {
@@ -57,8 +33,17 @@ Choose download option:`;
             }
         }, { quoted: ms });
 
+        // Button click handler
+        zk.ev.once("messages.upsert", ({ messages }) => {
+            const msg = messages[0];
+            if (msg?.message?.buttonsResponseMessage) {
+                const selected = msg.message.buttonsResponseMessage.selectedButtonId;
+                repondre(`✅ You clicked: ${selected.replace(PREFIX, "")}`);
+            }
+        });
+
     } catch (error) {
-        console.error("Playtest Error:", error);
-        repondre(`❌ Error: ${error.message}`);
+        console.error("Button Test Error:", error);
+        repondre("❌ Button test failed");
     }
 });
