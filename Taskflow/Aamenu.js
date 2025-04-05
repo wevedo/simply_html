@@ -1,86 +1,85 @@
 const { adams } = require("../Ibrahim/adams");
 const { PREFIX } = require(__dirname + "/../config");
+const fs = require("fs");
 
-adams(
-  { nomCom: "cartmenu", categorie: "General" },
-  async (dest, zk, commandeOptions) => {
-    const { ms } = commandeOptions;
+adams({ nomCom: "swipemenu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+    const { ms, nomAuteurMessage } = commandeOptions;
 
-    // Define command menu sections
-    const sections = [
-      {
-        title: "📁 COMMAND CATEGORIES",
-        rows: [
-          {
-            title: "DOWNLOADER TOOLS",
-            description: "Media download commands",
-            rowId: "cartmenu_downloader"
-          },
-          {
-            title: "GROUP TOOLS",
-            description: "Group management commands",
-            rowId: "cartmenu_group"
-          },
-          {
-            title: "AI COMMANDS",
-            description: "Artificial intelligence features",
-            rowId: "cartmenu_ai"
-          }
-        ]
-      }
-    ];
+    // Unique swipe-based menu
+    const menuMsg = await zk.sendMessage(dest, {
+        text: `🔄 *BWM-XMD SWIPE MENU* 🔄
+        
+╔══════❰ SWIPE ❱══════╗
+║                      ║
+║   ⇦ *LEFT*: Media   ║
+║   ⇨ *RIGHT*: Group  ║
+║   ⇧ *UP*: Tools     ║
+║   ⇩ *DOWN*: Fun     ║
+║                      ║
+╚══════════════════════╝
 
-    // Send WhatsApp list message
-    await zk.sendMessage(dest, {
-      text: `BWM-XMD COMMAND MENU (${PREFIX})`,
-      footer: "Select a category to view commands",
-      title: "COMMAND STORE",
-      buttonText: "View Categories",
-      sections
-    }, { quoted: ms });
-  }
-);
+Reply with:
+• "L" ⇦ Media Tools
+• "R" ⇨ Group Tools
+• "U" ⇧ Utilities
+• "D" ⇩ Fun Commands`,
+        footer: `${nomAuteurMessage}'s Secret Navigation`
+    });
 
-// Handle selection from menu (using your own zk.ev)
-zk.ev.on("messages.upsert", async (update) => {
-  const msg = update.messages[0];
-  if (!msg.message || !msg.message.listResponseMessage) return;
+    // Create reaction tracker
+    const swipeHandler = async (reply) => {
+        const direction = reply.message?.conversation?.toUpperCase();
+        let commands = "";
 
-  const rowId = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
-  const from = msg.key.remoteJid;
+        switch(direction) {
+            case "L": // Media
+                commands = `🎬 *Media Tools*\n` +
+                          `${PREFIX}ytdl\n${PREFIX}igdl\n` +
+                          `${PREFIX}sticker\n${PREFIX}tiktok`;
+                break;
+                
+            case "R": // Group
+                commands = `👥 *Group Tools*\n` +
+                          `${PREFIX}add\n${PREFIX}kick\n` +
+                          `${PREFIX}promote\n${PREFIX}demote`;
+                break;
+                
+            case "U": // Tools
+                commands = `🛠 *Utilities*\n` +
+                          `${PREFIX}calc\n${PREFIX}trt\n` +
+                          `${PREFIX}tts\n${PREFIX}tempmail`;
+                break;
+                
+            case "D": // Fun
+                commands = `🎉 *Fun Commands*\n` +
+                          `${PREFIX}joke\n${PREFIX}meme\n` +
+                          `${PREFIX}quote\n${PREFIX}fact`;
+                break;
+        }
 
-  let reply = "";
+        if (commands) {
+            await zk.sendMessage(dest, {
+                text: commands,
+                footer: "Reply 'B' to go back"
+            }, { quoted: reply });
 
-  switch (rowId) {
-    case "cartmenu_downloader":
-      reply = `╭─❖ DOWNLOADER ❖─╮
-┃✰ ${PREFIX}ytmp3
-┃✰ ${PREFIX}ytmp4
-┃✰ ${PREFIX}tiktok
-┃✰ ${PREFIX}facebook
-╰──────────────╯`;
-      break;
+            // Set up back navigation
+            zk.ev.once("messages.upsert", backNav);
+        }
+    };
 
-    case "cartmenu_group":
-      reply = `╭─❖ GROUP ❖─╮
-┃✰ ${PREFIX}add
-┃✰ ${PREFIX}kick
-┃✰ ${PREFIX}promote
-┃✰ ${PREFIX}demote
-╰────────────╯`;
-      break;
+    const backNav = async (update) => {
+        const msg = update.messages[0];
+        if (msg.key.remoteJid === dest && 
+            msg.message?.conversation?.toUpperCase() === "B") {
+            await zk.sendMessage(dest, {
+                text: "🔄 Returning to main menu...",
+                footer: "Swipe again to continue"
+            }, { quoted: ms });
+            zk.ev.once("messages.upsert", swipeHandler);
+        }
+    };
 
-    case "cartmenu_ai":
-      reply = `╭─❖ AI ❖─╮
-┃✰ ${PREFIX}gpt
-┃✰ ${PREFIX}dalle
-┃✰ ${PREFIX}gemini
-┃✰ ${PREFIX}remini
-╰──────────╯`;
-      break;
-  }
-
-  if (reply) {
-    await zk.sendMessage(from, { text: reply }, { quoted: msg });
-  }
+    // Initial trigger
+    zk.ev.once("messages.upsert", swipeHandler);
 });
