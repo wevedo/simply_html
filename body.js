@@ -259,8 +259,7 @@ function initializeBot(bot) {
         return false;
     }
 
-    // Group Metadata Handling
-    const groupMetadataCache = new Map();
+
     async function getGroupMetadata(groupId) {
         if (groupMetadataCache.has(groupId)) {
             return groupMetadataCache.get(groupId);
