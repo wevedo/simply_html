@@ -26,7 +26,6 @@ const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
 const { getSettings } = require("./utils/settings");
 const evt = require("./Ibrahim/adams");
-const rateLimit = new Map();
 const chalk = require("chalk");
 const express = require("express");
 const { exec } = require("child_process");
@@ -61,7 +60,6 @@ require('events').EventEmitter.defaultMaxListeners = 50;
 const MAX_STORE_SIZE = 50000; // Max messages to store in memory
 const CLEANUP_INTERVAL = 3600000; // Cleanup every hour
 
-// Rate limiting
 const rateLimit = new Map();
 const groupMetadataCache = new Map();
 
