@@ -94,34 +94,53 @@ let zk;
 
 //===============================================================================//
 
-const store = makeInMemoryStore({
+const store = makeInMemoryStore({ 
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
+// Main function
 async function main() {
-    const { version, isLatest } = await fetchLatestBaileysVersion();
-    const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
-    
-    const sockOptions = {
-        version,
-        logger: pino({ level: "silent" }),
-        browser: ['BWM XMD', "safari", "1.0.0"],
-        printQRInTerminal: true,
-        auth: {
-            creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, logger)
-        },
-        getMessage: async (key) => {
-            if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id);
-                return msg.message || undefined;
-            }
-            return { conversation: 'Error occurred' };
-        }
-    };
+    try {
+        // Get latest WhatsApp version
+        const { version } = await fetchLatestBaileysVersion();
+        
+        // Initialize auth state
+        const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, "Session"));
+        
+        // Create logger
+        const logger = pino({ level: "silent" });
+        
+        // Socket configuration - keeping your original parameters
+        const sockOptions = {
+            version,
+            logger: logger,
+            browser: ['BWM XMD', "safari", "1.0.0"],
+            printQRInTerminal: true,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, logger)
+            },
+            getMessage: async (key) => {
+                if (store) {
+                    const msg = await store.loadMessage(key.remoteJid, key.id);
+                    return msg?.message || undefined;
+                }
+                return { conversation: 'Message not found' };
+            },
+            // Additional recommended options
+            shouldSyncHistoryMessage: () => true,
+            syncFullHistory: false,
+            linkPreviewImageThumbnailWidth: 192
+        };
 
-    adams = makeWASocket(sockOptions);
-    store.bind(adams.ev);
+        // Initialize socket as 'adams'
+        const adams = makeWASocket(sockOptions);
+        
+        // Bind store to socket events
+        store.bind(adams.ev);
+        
+        // Credentials update handler
+        adams.ev.on('creds.update', saveCreds);
 
     // Silent Rate Limiting
     function isRateLimited(jid) {
