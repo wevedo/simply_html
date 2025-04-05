@@ -92,7 +92,6 @@ adams({
   }
 });
 
-
 adams(
   {
     nomCom: "online",
@@ -107,34 +106,36 @@ adams(
       let online = [];
       let offline = [];
 
-      for (const participant of participants) {
-        const id = participant.id;
+      for (const p of participants) {
+        const jid = p.id;
         try {
-          await zk.presenceSubscribe(id);
-          const presence = zk.presence[id];
+          await zk.presenceSubscribe(jid);
+          await new Promise((r) => setTimeout(r, 100)); // wait a moment
 
-          if (presence?.lastKnownPresence === "available") {
-            online.push(id.split("@")[0]);
+          const presence = zk.presence[jid];
+
+          if (presence?.isOnline) {
+            online.push(jid.split("@")[0]);
           } else {
-            offline.push(id.split("@")[0]);
+            offline.push(jid.split("@")[0]);
           }
-        } catch (err) {
-          offline.push(id.split("@")[0]); // Fallback
+        } catch (e) {
+          offline.push(jid.split("@")[0]); // fallback
         }
       }
 
-      const msg =
-        `*📶 Status Check for ${groupMetadata.subject}*\n\n` +
+      const message =
+        `*📶 Status Check in ${groupMetadata.subject}*\n\n` +
         `🟢 *Online (${online.length}):*\n` +
-        `${online.map((num) => `• +${num}`).join("\n") || "_None_"}\n\n` +
-        `🔴 *Offline (${offline.length}):*\n` +
-        `${offline.map((num) => `• +${num}`).join("\n") || "_None_"}\n\n` +
-        `👥 *Total Members:* ${participants.length}`;
+        (online.length ? online.map((n) => `• +${n}`).join("\n") : "_None_") +
+        `\n\n🔴 *Offline (${offline.length}):*\n` +
+        (offline.length ? offline.map((n) => `• +${n}`).join("\n") : "_None_") +
+        `\n\n👥 *Total:* ${participants.length}`;
 
-      await repondre(msg);
-    } catch (e) {
-      console.error(e);
-      await repondre("❌ Failed to check member statuses.");
+      await repondre(message);
+    } catch (err) {
+      console.error(err);
+      await repondre("❌ Couldn't fetch member statuses.");
     }
   }
 );
