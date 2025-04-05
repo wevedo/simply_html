@@ -132,47 +132,12 @@ async function main() {
             syncFullHistory: false,
             linkPreviewImageThumbnailWidth: 192
         };
-
-        // Initialize socket as 'adams'
-        const adams = makeWASocket(sockOptions);
-        
-        // Bind store to socket events
+        const adams = makeWASocket(sockOptions);        
         store.bind(adams.ev);
-        
-        // Credentials update handler
         adams.ev.on('creds.update', saveCreds);
-
-    // Silent Rate Limiting
-    function isRateLimited(jid) {
-        const now = Date.now();
-        if (!rateLimit.has(jid)) {
-            rateLimit.set(jid, now);
-            return false;
-        }
-        const lastRequestTime = rateLimit.get(jid);
-        if (now - lastRequestTime < 3000) return true;
-        rateLimit.set(jid, now);
-        return false;
     }
+}
 
-    // Group Metadata Handling
-    const groupMetadataCache = new Map();
-    async function getGroupMetadata(groupId) {
-        if (groupMetadataCache.has(groupId)) {
-            return groupMetadataCache.get(groupId);
-        }
-        try {
-            const metadata = await zk.groupMetadata(groupId);
-            groupMetadataCache.set(groupId, metadata);
-            setTimeout(() => groupMetadataCache.delete(groupId), 60000);
-            return metadata;
-        } catch (error) {
-            if (error.message.includes("rate-overlimit")) {
-                await new Promise(res => setTimeout(res, 5000));
-            }
-            return null;
-        }
-    }
  //============================================================================//
             
                          
