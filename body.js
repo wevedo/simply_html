@@ -93,7 +93,11 @@ let zk;
 
 //===============================================================================//
 
-async function main() {
+const store = makeInMemoryStore({ 
+    logger: pino().child({ level: "silent", stream: "store" })
+});
+
+async function connectToWhatsApp() {
     try {
         // Get latest WhatsApp version
         const { version } = await fetchLatestBaileysVersion();
@@ -102,12 +106,12 @@ async function main() {
         const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, "Session"));
         
         // Create logger
-        const logger = pino({ level: "silent" });
+        const logger = pino({ level: "debug" }); // Changed to debug for troubleshooting
         
         // Socket configuration
         const sockOptions = {
             version,
-            logger: logger,
+            logger,
             browser: ['BWM XMD', "safari", "1.0.0"],
             printQRInTerminal: true,
             auth: {
@@ -120,58 +124,63 @@ async function main() {
                     return msg?.message || undefined;
                 }
                 return { conversation: 'Message not found' };
-            },
-            shouldSyncHistoryMessage: () => true,
-            syncFullHistory: false,
-            linkPreviewImageThumbnailWidth: 192
+            }
         };
 
-        // Initialize socket
+        // Create socket instance
         const adams = makeWASocket(sockOptions);
         
-        // Verify socket is created before attaching listeners
-        if (!adams || !adams.ev) {
-            throw new Error('Failed to initialize WhatsApp socket');
+        // Verify socket creation
+        if (!adams?.ev) {
+            throw new Error('Socket initialization failed');
         }
 
-        // Bind store and events
+        // Bind store to events
         store.bind(adams.ev);
+        
+        // Handle credentials update
         adams.ev.on('creds.update', saveCreds);
         
-        // Modified connection.update handler with your listener management
-        adams.ev.on('connection.update', ({ connection }) => {
+        // Handle connection updates
+        adams.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect } = update;
+            
             if (connection === 'open') {
-                console.log('✅ Successfully connected to WhatsApp!');
-                // Load listeners when connected
-                listenerManager.loadListeners(adams, store, commandRegistry)
-                    .then(() => console.log('All listeners initialized'))
-                    .catch(console.error);
+                console.log('✅ Connected to WhatsApp!');
+                // Initialize your listeners here
+                if (listenerManager) {
+                    listenerManager.loadListeners(adams, store, commandRegistry)
+                        .then(() => console.log('Listeners loaded'))
+                        .catch(console.error);
+                }
             }
             
             if (connection === 'close') {
-                console.log('Connection closed');
-                // Cleanup listeners on disconnect
-                listenerManager.cleanupListeners();
+                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+                console.log(`Connection closed. Reconnecting: ${shouldReconnect}`);
                 
-                // Reconnect logic
-                const shouldReconnect = true; // Add your disconnect reason check here
                 if (shouldReconnect) {
-                    setTimeout(main, 5000);
+                    setTimeout(connectToWhatsApp, 5000);
+                }
+                
+                // Cleanup listeners
+                if (listenerManager) {
+                    listenerManager.cleanupListeners();
                 }
             }
         });
 
-        // Message handler
-        adams.ev.on('messages.upsert', async ({ messages }) => {
-            console.log('Received new message:', messages[0]?.message?.conversation);
+        // Message handling
+        adams.ev.on('messages.upsert', ({ messages }) => {
+            console.log('New message:', messages[0]?.message?.conversation);
         });
 
         return adams;
         
     } catch (error) {
-        console.error('⚠️ Error in main function:', error);
-        setTimeout(main, 10000); 
-        return null; // Important: Return null on error
+        console.error('Connection error:', error);
+        setTimeout(connectToWhatsApp, 10000);
+        return null;
     }
 }
 
