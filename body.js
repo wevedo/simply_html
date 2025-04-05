@@ -50,63 +50,20 @@ app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}m
 //============================================================================//
 
 
-function atbverifierEtatJid(jid) {
-    if (!jid.endsWith('@s.whatsapp.net')) {
-        console.error('Your verified by Sir Ibrahim Adams', jid);
-        return false;
-    }
-    console.log('Welcome to bwm xmd', jid);
-    return true;
-}
-
-async function authentification() {
-    try {
-        if (!fs.existsSync(__dirname + "/Session/creds.json")) {
-            console.log("Bwm xmd session connected ✅");
-            // Split the session strihhhhng into header and Base64 data
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            // Validate the session format
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64'); // Decode and truncate
-                let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
-            } else {
-            throw new Error("Invalid session format");
-            }
-        } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
-            console.log("Updating existing session...");
-            const [header, b64data] = conf.session.split(';;;'); 
-
-            if (header === "BWM-XMD" && b64data) {
-                let compressedData = Buffer.from(b64data.replace('...', ''), 'base64');
-                let decompressedData = zlib.gunzipSync(compressedData);
-                fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8");
-            } else {
-                throw new Error("Invalid session format");
-            }
-        }
-    } catch (e) {
-        console.log("Session Invalid: " + e.message);
-        return;
-    }
-}
-module.exports = { authentification };
-authentification();
-let zk;
-
-//===============================================================================//
-
 const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
-// Increase EventEmitter limit to handle more messages
+// Increase default max listeners to prevent warnings
 require('events').EventEmitter.defaultMaxListeners = 50;
 
-// Enhanced memory management
-const MAX_STORE_SIZE = 100000; // Max messages to store in memory
-const CLEANUP_INTERVAL = 600000; // Cleanup every minute
+// Memory management
+const MAX_STORE_SIZE = 50000; // Max messages to store in memory
+const CLEANUP_INTERVAL = 3600000; // Cleanup every hour
+
+// Rate limiting
+const rateLimit = new Map();
+const groupMetadataCache = new Map();
 
 async function main() {
     const { version, isLatest } = await fetchLatestBaileysVersion();
@@ -124,131 +81,125 @@ async function main() {
         getMessage: async (key) => {
             if (store) {
                 const msg = await store.loadMessage(key.remoteJid, key.id);
-                return msg.message || undefined;
+                return msg?.message || undefined;
             }
             return { conversation: 'Error occurred' };
         },
-        // Optimized for high message volume
-        maxMsgRetryCount: 5,
-        msgRetryCounterCache: new NodeCache({ stdTTL: 60 * 60 }), // 1 hour TTL
+        // Optimize for high volume
+        markOnlineOnConnect: false,
+        syncFullHistory: false,
         transactionOpts: {
-            maxRetries: 5,
-            delayBetweenTriesMs: 3000
+            maxCommitRetries: 2,
+            delayBetweenTriesMs: 1000
         }
     };
 
+    // Initialize adams properly
     const adams = makeWASocket(sockOptions);
-    
-    // Bind store with enhanced cleanup
-    store.bind(adams.ev, {
-        cleanupIntervalMs: CLEANUP_INTERVAL,
-        maxMessages: MAX_STORE_SIZE
-    });
+    if (!adams.ev) {
+        throw new Error("Failed to initialize adams.ev property");
+    }
+    store.bind(adams.ev);
 
-    // Rate limiting with enhanced capacity
-    const rateLimit = new Map();
-    const RATE_LIMIT_WINDOW = 3000; // 3 seconds
-    
+    // Store cleanup mechanism
+    setInterval(() => {
+        if (store.messages.size > MAX_STORE_SIZE) {
+            const keys = Array.from(store.messages.keys());
+            // Remove oldest 20% when limit reached
+            const toRemove = Math.floor(MAX_STORE_SIZE * 0.2);
+            for (let i = 0; i < toRemove; i++) {
+                store.messages.delete(keys[i]);
+            }
+        }
+        // Clear group metadata cache periodically
+        groupMetadataCache.clear();
+    }, CLEANUP_INTERVAL);
+
+    // Enhanced rate limiting with dynamic adjustment
     function isRateLimited(jid) {
         const now = Date.now();
         if (!rateLimit.has(jid)) {
-            rateLimit.set(jid, { count: 1, lastRequestTime: now });
+            rateLimit.set(jid, { 
+                timestamp: now, 
+                count: 1,
+                lastWarning: 0
+            });
             return false;
         }
         
-        const jidData = rateLimit.get(jid);
-        if (now - jidData.lastRequestTime > RATE_LIMIT_WINDOW) {
-            jidData.count = 1;
-            jidData.lastRequestTime = now;
-            return false;
+        const data = rateLimit.get(jid);
+        const timeDiff = now - data.timestamp;
+        
+        if (timeDiff < 3000) {
+            data.count++;
+            // Dynamic rate limiting based on frequency
+            if (data.count > 5 && now - data.lastWarning > 60000) {
+                data.lastWarning = now;
+                logger.warn(`High frequency from ${jid} - ${data.count} requests in ${timeDiff}ms`);
+            }
+            return true;
         }
         
-        jidData.count++;
-        jidData.lastRequestTime = now;
-        
-        // Allow more requests from groups than individual chats
-        const isGroup = jid.endsWith('@g.us');
-        return jidData.count > (isGroup ? 15 : 5);
+        // Reset if time window passed
+        data.timestamp = now;
+        data.count = 1;
+        return false;
     }
 
-    // Enhanced group metadata handling with cache
-    const groupMetadataCache = new Map();
-    const CACHE_TTL = 60000; // 1 minute
-    
+    // Optimized group metadata handling
     async function getGroupMetadata(groupId) {
         if (groupMetadataCache.has(groupId)) {
             return groupMetadataCache.get(groupId);
         }
-        
         try {
             const metadata = await adams.groupMetadata(groupId);
             groupMetadataCache.set(groupId, metadata);
-            
-            // Auto-clean cache
-            setTimeout(() => {
-                groupMetadataCache.delete(groupId);
-            }, CACHE_TTL);
-            
+            // Cache for 5 minutes instead of 1 to reduce API calls
+            setTimeout(() => groupMetadataCache.delete(groupId), 300000);
             return metadata;
         } catch (error) {
             if (error.message.includes("rate-overlimit")) {
-                await new Promise(res => setTimeout(res, 5000));
+                const delay = Math.min(10000, 1000 * Math.pow(2, groupMetadataCache.size));
+                await new Promise(res => setTimeout(res, delay));
                 return getGroupMetadata(groupId); // Retry
             }
-            console.error('Group metadata error:', error);
             return null;
         }
     }
 
-    // Storage management - auto cleanup when memory is high
-    setInterval(() => {
-        const memoryUsage = process.memoryUsage();
-        if (memoryUsage.rss > 500 * 1024 * 1024) { // 500MB threshold
-            console.log('High memory usage detected, cleaning up...');
-            
-            // Clean oldest messages from store
-            if (store.messages && store.messages.size > MAX_STORE_SIZE / 2) {
-                const keys = Array.from(store.messages.keys());
-                for (let i = 0; i < Math.floor(keys.length / 4); i++) {
-                    store.messages.delete(keys[i]);
+    // Connection handling - using adams.ev with proper checks
+    if (adams.ev) {
+        adams.ev.on('connection.update', ({ connection }) => {
+            if (connection === 'close') {
+                main().catch(err => logger.error(err));
+            }
+        });
+
+        // Message handling with bulk processing
+        adams.ev.on('messages.upsert', async ({ messages }) => {
+            try {
+                // Process messages in batches to prevent memory spikes
+                const batchSize = 100;
+                for (let i = 0; i < messages.length; i += batchSize) {
+                    const batch = messages.slice(i, i + batchSize);
+                    await Promise.all(batch.map(processMessage));
                 }
+            } catch (error) {
+                logger.error(error, 'Message processing error');
             }
-            
-            // Clear some cache
-            groupMetadataCache.clear();
-            
-            // Force garbage collection if available
-            if (global.gc) {
-                global.gc();
-            }
-        }
-    }, CLEANUP_INTERVAL);
+        });
 
-    // Handle connection updates
-    adams.ev.on('connection.update', (update) => {
-        if (update.connection === 'close') {
-            // Implement reconnection logic if needed
-        }
-    });
+        // Credential saving
+        adams.ev.on('creds.update', saveCreds);
+    } else {
+        logger.error("adams.ev is not available - event listeners cannot be attached");
+    }
 
-    // Message handling with high capacity
-    adams.ev.on('messages.upsert', async ({ messages }) => {
-        if (messages.length > 100) {
-            // Process in batches to avoid memory spikes
-            for (let i = 0; i < messages.length; i += 50) {
-                const batch = messages.slice(i, i + 50);
-                await processMessageBatch(batch);
-            }
-        } else {
-            await processMessageBatch(messages);
-        }
-    });
-
-    async function processMessageBatch(messages) {
+    async function processMessage(message) {
         // Your message processing logic here
-        // This helps handle large volumes without overwhelming memory
     }
 }
+
 
 
  //============================================================================//
