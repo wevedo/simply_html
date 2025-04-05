@@ -11,7 +11,7 @@ const BWM_NEWSLETTER = {
 };
 
 const COMMON_CONTEXT = {
-    mentionedJid: [s.NUMERO_OWNER],
+    mentionedJid: [s.OWNER_NUMBER],
     forwardingScore: 999,
     isForwarded: true,
     forwardedNewsletterMessageInfo: {
