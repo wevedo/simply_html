@@ -22,21 +22,10 @@ const menuImages = [
     "https://files.catbox.moe/xx6ags.jpeg",
 ];
 const randomImage = () => menuImages[Math.floor(Math.random() * menuImages.length)];
-const footer = "\n\n🌀 𝗦𝗶𝗿 𝗜𝗯𝗿𝗮𝗵𝗶𝗺 𝗔𝗱𝗮𝗺𝘀\n\nᴛᴀᴘ ᴏɴ ᴛʜᴇ ʟɪɴᴋ ʙᴇʟᴏᴡ ᴛᴏ ғᴏʟʟᴏᴡ ᴏᴜʀ ᴄʜᴀɴɴᴇʟ\nhttps://shorturl.at/z3b8v\n\n⚡ 𝟮𝟬𝟮𝟱 𝗕𝗪𝗠 𝗫𝗠𝗗 𝗣𝗿𝗼𝗷𝗲𝗰𝘁";
-
-// Newsletter context
-const newsletterContext = {
-    contextInfo: {
-        mentionedJid: ["120363285388090068@newsletter"],
-        forwardingScore: 999,
-        isForwarded: true,
-        forwardedNewsletterMessageInfo: {
-            newsletterJid: "120363285388090068@newsletter",
-            newsletterName: "BWM-XMD",
-            serverMessageId: Math.floor(100000 + Math.random() * 900000),
-        }
-    }
-};
+const footer = `\n\n╭─❖ 𓆩 ⚡ 𓆪 ❖─╮
+       © 𝕾𝖎𝖗 𝕴𝖇𝖗𝖆𝖍𝖎𝖒 𝕬𝖉𝖆𝖒𝖘    
+╰─❖ 𓆩 ⚡ 𓆪 ❖─╯  
+🔗 https://shorturl.at/z3b8v\n\n®𝟮𝟬𝟮𝟱 𝗕𝗪𝗠 𝗫𝗠𝗗 𝗩𝟲.𝟬.𝟯 🔥`;
 
 // GitHub repo stats
 const fetchGitHubStats = async () => {
@@ -56,7 +45,7 @@ const fetchGitHubStats = async () => {
 const commandList = {};
 let commandsStored = false;
 
-adams({ nomCom: "btest", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
 
@@ -78,97 +67,132 @@ adams({ nomCom: "btest", categorie: "General" }, async (dest, zk, commandeOption
 
     // Dynamic Greeting
     const hour = moment().hour();
-    let greeting = "🌙 *𝗚𝗼𝗼𝗱 𝗡𝗶𝗴𝗵𝘁! 𝗦𝗹𝗲𝗲𝗽 𝘄𝗲𝗹𝗹!*";
-    if (hour >= 5 && hour < 12) greeting = "🌅 *𝗚𝗼𝗼𝗱 𝗠𝗼𝗿𝗻𝗶𝗻𝗴! 𝗛𝗮𝘃𝗲 𝗮 𝗴𝗿𝗲𝗮𝘁 𝗱𝗮𝘆!*";
-    else if (hour >= 12 && hour < 18) greeting = "☀️ *𝗚𝗼𝗼𝗱 𝗔𝗳𝘁𝗲𝗿𝗻𝗼𝗼𝗻! 𝗦𝘁𝗮𝘆 𝗽𝗿𝗼𝗱𝘂𝗰𝘁𝗶𝘃𝗲!*";
-    else if (hour >= 18 && hour < 22) greeting = "🌆 *𝗚𝗼𝗼𝗱 𝗘𝘃𝗲𝗻𝗶𝗻𝗴! 𝗧𝗶𝗺𝗲 𝘁𝗼 𝗿𝗲𝗹𝗮𝘅!*";
+    let greeting = "🌙 *ɢᴏᴏᴅ ɴɪɢʜᴛ! sʟᴇᴇᴘ ᴡᴇʟʟ!*";
+    if (hour >= 5 && hour < 12) greeting = "🌅 *ɢᴏᴏᴅ ᴍᴏʀɴɪɴɢ! ʜᴀᴠᴇ ᴀ ɢʀᴇᴀᴛ ᴅᴀʏ!*";
+    else if (hour >= 12 && hour < 18) greeting = "☀️ *ɢᴏᴏᴅ ᴀғᴛᴇʀɴᴏᴏɴ! sᴛᴀʏ ᴘʀᴏᴅᴜᴄᴛɪᴠᴇ!*";
+    else if (hour >= 18 && hour < 22) greeting = "🌆 *ɢᴏᴏᴅ ᴇᴠᴇɴɪɴɢ! ᴛɪᴍᴇ ᴛᴏ ʀᴇʟᴀx!*";
 
-    // Stylish Categories
+    // Category Groups with new emojis
     const categoryGroups = {
-        "🤖 𝗔𝗜 𝗠𝗘𝗡𝗨": ["ABU"],
-        "🎵 𝗔𝗨𝗗𝗜𝗢 𝗠𝗘𝗡𝗨": ["AUDIO-EDIT"],
-        "📥 𝗗𝗢𝗪𝗡𝗟𝗢𝗔𝗗 𝗠𝗘𝗡𝗨": ["BMW PICS", "SEARCH", "DOWNLOAD"],
-        "🛠️ 𝗖𝗢𝗡𝗧𝗥𝗢𝗟 𝗠𝗘𝗡𝗨": ["CONTROL", "STICKCMD", "TOOLS"],
-        "💬 𝗖𝗛𝗔𝗧 𝗠𝗘𝗡𝗨": ["CONVERSION", "MPESA"],
-        "😂 𝗙𝗨𝗡 𝗠𝗘𝗡𝗨": ["HENTAI", "FUN", "REACTION"],
-        "🎮 𝗚𝗔𝗠𝗘𝗦 𝗠𝗘𝗡𝗨": ["GAMES"],
-        "🌍 𝗚𝗘𝗡𝗘𝗥𝗔𝗟 𝗠𝗘𝗡𝗨": ["GENERAL"],
-        "👥 𝗚𝗥𝗢𝗨𝗣 𝗠𝗘𝗡𝗨": ["GROUP"],
-        "💻 𝗚𝗜𝗧𝗛𝗨𝗕 𝗠𝗘𝗡𝗨": ["GITHUB"],
-        "🖼️ 𝗜𝗠𝗔𝗚𝗘 𝗠𝗘𝗡𝗨": ["IMAGE-EDIT"],
-        "🔤 𝗟𝗢𝗚𝗢 𝗠𝗘𝗡𝗨": ["LOGO"],
-        "🛑 𝗠𝗢𝗗𝗦 𝗠𝗘𝗡𝗨": ["MODS"],
-        "📰 𝗡𝗘𝗪𝗦 𝗠𝗘𝗡𝗨": ["NEWS", "AI"],
-        "🔗 𝗖𝗢𝗡𝗡𝗘𝗖𝗧𝗢𝗥 𝗠𝗘𝗡𝗨": ["PAIR", "USER"],
-        "🔍 𝗦𝗘𝗔𝗥𝗖𝗛 𝗠𝗘𝗡𝗨": ["NEWS", "IA"],
-        "🗣️ 𝗧𝗧𝗦 𝗠𝗘𝗡𝗨": ["TTS"],
-        "⚙️ 𝗨𝗧𝗜𝗟𝗜𝗧𝗬 𝗠𝗘𝗡𝗨": ["UTILITY"],
-        "🎌 𝗔𝗡𝗜𝗠𝗘 𝗠𝗘𝗡𝗨": ["WEEB"],
+        "🤖 𝙰𝙸 𝙼𝙴𝙽𝚄": ["ABU"],
+        "🎵 𝙰𝚄𝚃𝙾 𝙴𝙳𝙸𝚃": ["AUDIO-EDIT"],
+        "📥 𝙳𝙾𝚆𝙽𝙻𝙾𝙰𝙳𝚂": ["BMW PICS", "SEARCH", "DOWNLOAD"],
+        "🛠️ 𝙲𝙾𝙽𝚃𝚁𝙾𝙻𝚂": ["CONTROL", "STICKCMD", "TOOLS"],
+        "💬 𝙲𝙷𝙰𝚃 𝚃𝙾𝙾𝙻𝚂": ["CONVERSION", "MPESA"],
+        "😂 𝙵𝚄𝙽 𝚃𝙸𝙼𝙴": ["HENTAI", "FUN", "REACTION"],
+        "🎮 𝙶𝙰𝙼𝙴𝚂": ["GAMES"],
+        "🌍 𝙶𝙴𝙽𝙴𝚁𝙰𝙻": ["GENERAL"],
+        "👥 𝙶𝚁𝙾𝚄𝙿 𝚃𝙾𝙾𝙻𝚂": ["GROUP"],
+        "💻 �𝙍𝙊𝙂𝚁𝙰𝙼𝙈𝙄𝙉𝙂": ["GITHUB"],
+        "🖼️ 𝙸𝙼𝙰𝙶𝙴 �𝙳𝙸𝚃": ["IMAGE-EDIT"],
+        "🔤 𝙻𝙾𝙶𝙾 𝙼𝙰𝙺𝙴𝚁": ["LOGO"],
+        "🛑 𝙼𝙾𝙳𝚂": ["MODS"],
+        "📰 𝙽𝙴𝚆𝚂": ["NEWS", "AI"],
+        "🔗 𝙲𝙾𝙽𝙽𝙴𝙲𝚃𝙾𝚁𝚂": ["PAIR", "USER"],
+        "🔍 𝚂𝙴𝙰𝚁𝙲𝙷": ["NEWS", "IA"],
+        "🗣️ 𝚃𝚃𝚂": ["TTS"],
+        "⚙️ 𝚄𝚃𝙸𝙻𝚂": ["UTILITY"],
+        "🎌 𝙰𝙽𝙸𝙼𝙴": ["WEEB"],
     };
 
-    // Main Menu
+    // Main Menu with Newsletter Context
     const BWM_XMD_TEXT = `
-╭─✦ 〘 𝗕𝗪𝗠 𝗫𝗠𝗗 〙 ✦─╮
-│
-│ 🕵️ 𝗨𝘀𝗲𝗿: ${nomAuteurMessage}
-│ 📅 𝗗𝗮𝘁𝗲: ${date}
-│ ⏰ 𝗧𝗶𝗺𝗲: ${time}
-│ 👥 𝗨𝘀𝗲𝗿𝘀: 1${totalUsers}
-│
-╰─✦───────✦─╯
+╭─❖ 𓆩 ⚡ 𓆪 ❖─╮
+       𝗕𝗪𝗠 𝗫𝗠𝗗 𝗩𝟲    
+╰─❖ 𓆩 ⚡ 𓆪 ❖─╯  
+╭─❖
+┃👤 �sᴇʀ: ${nomAuteurMessage}
+┃📅 𝚍ᴀᴛᴇ: ${date}
+┃⏰ 𝚝ɪᴍᴇ: ${time}
+┃👥 𝚞sᴇʀs: 1${totalUsers}  
+╰─❖
 
 ${greeting}
 
-📜 𝗥𝗲𝗽𝗹𝘆 𝘄𝗶𝘁𝗵 𝗰𝗮𝘁𝗲𝗴𝗼𝗿𝘆 𝗻𝘂𝗺𝗯𝗲𝗿:
+📜 *𝚁𝙴𝙿𝙻𝚈 𝚆𝙸𝚃𝙷 𝙲𝙰𝚃𝙴𝙶𝙾𝚁𝚈 𝙽𝚄𝙼𝙱𝙴𝚁*  
 
-${Object.keys(categoryGroups).map((cat, index) => `│ ${index + 1}. ${cat}`).join("\n")}
-│
-╰─✦───────✦─╯
-${footer}`;
+${Object.keys(categoryGroups).map((cat, index) => `🔹 ${index + 1} ${cat}`).join("\n")}${footer}
+`;
 
-    // Send Main Menu
     const sentMessage = await zk.sendMessage(dest, {
         image: { url: image },
         caption: BWM_XMD_TEXT,
-        ...newsletterContext
+        contextInfo: {
+            mentionedJid: [nomAuteurMessage],
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363285388090068@newsletter",
+                newsletterName: "BWM-XMD UPDATES",
+                serverMessageId: Math.floor(100000 + Math.random() * 900000),
+            },
+        },
     }, { quoted: ms });
 
-    // Category Selection Handler
+    // Category Selection Listener
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
-        if (!message.message?.extendedTextMessage) return;
+        if (!message.message || !message.message.extendedTextMessage) return;
 
         const responseText = message.message.extendedTextMessage.text.trim();
-        if (message.message.extendedTextMessage.contextInfo?.stanzaId === sentMessage.key.id) {
+        if (
+            message.message.extendedTextMessage.contextInfo &&
+            message.message.extendedTextMessage.contextInfo.stanzaId === sentMessage.key.id
+        ) {
             const selectedIndex = parseInt(responseText);
             const categoryKeys = Object.keys(categoryGroups);
 
-            if (isNaN(selectedIndex) {
-                return repondre("❌ 𝗜𝗻𝘃𝗮𝗹𝗶𝗱 𝗶𝗻𝗽𝘂𝘁. 𝗣𝗹𝗲𝗮𝘀𝗲 𝘂𝘀𝗲 𝗮 𝗻𝘂𝗺𝗯𝗲𝗿.", newsletterContext);
-            }
-
-            if (selectedIndex < 1 || selectedIndex > categoryKeys.length) {
-                return repondre(`❌ 𝗣𝗹𝗲𝗮𝘀𝗲 𝘀𝗲𝗹𝗲𝗰𝘁 𝗯𝗲𝘁𝘄𝗲𝗲𝗻 𝟭-${categoryKeys.length}`, newsletterContext);
+            if (isNaN(selectedIndex) || selectedIndex < 1 || selectedIndex > categoryKeys.length) {
+                return await zk.sendMessage(dest, { 
+                    text: "*❌ 𝙸𝙽𝚅𝙰𝙻𝙸𝙳 𝚂𝙴𝙻𝙴𝙲𝚃𝙸𝙾𝙽! 𝙿𝙻𝙴𝙰𝚂𝙴 𝚁𝙴𝙿𝙻𝚈 𝚆𝙸𝚃𝙷 𝙰 𝙽𝚄𝙼𝙱𝙴𝚁*",
+                    contextInfo: {
+                        forwardingScore: 999,
+                        isForwarded: true,
+                        forwardedNewsletterMessageInfo: {
+                            newsletterJid: "120363285388090068@newsletter",
+                            newsletterName: "BWM-XMD UPDATES",
+                            serverMessageId: Math.floor(100000 + Math.random() * 900000),
+                        },
+                    }
+                }, { quoted: message });
             }
 
             const selectedCategory = categoryKeys[selectedIndex - 1];
             const combinedCommands = categoryGroups[selectedCategory].flatMap((cat) => commandList[cat] || []);
+            const categoryImage = randomImage();
 
             await zk.sendMessage(dest, {
-                image: { url: randomImage() },
+                image: { url: categoryImage },
                 caption: combinedCommands.length
-                    ? `📜 𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝘆: ${selectedCategory}\n\n${combinedCommands.join("\n")}\n${footer}`
-                    : `⚠️ 𝗡𝗼 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀 𝗳𝗼𝘂𝗻𝗱 𝗳𝗼𝗿 ${selectedCategory}`,
-                ...newsletterContext
+                    ? `📜 *${selectedCategory}*:\n\n${combinedCommands.join("\n")}\n\n${footer}`
+                    : `⚠️ *𝙽𝙾 𝙲𝙾𝙼𝙼𝙰𝙽𝙳𝚂 𝙵𝙾𝚄𝙽𝙳 �𝙾𝚁 ${selectedCategory}*`,
+                contextInfo: {
+                    forwardingScore: 999,
+                    isForwarded: true,
+                    forwardedNewsletterMessageInfo: {
+                        newsletterJid: "120363285388090068@newsletter",
+                        newsletterName: "BWM-XMD UPDATES",
+                        serverMessageId: Math.floor(100000 + Math.random() * 900000),
+                    },
+                },
             }, { quoted: message });
         }
     });
 
-    // Send Random Audio
+    // Send Random Audio with Newsletter Context
+    const audioUrl = `${githubRawBaseUrl}/${getRandomAudio()}`;
     await zk.sendMessage(dest, {
-        audio: { url: `${githubRawBaseUrl}/${getRandomAudio()}` },
+        audio: { url: audioUrl },
         mimetype: "audio/mpeg",
         ptt: true,
-        ...newsletterContext
+        contextInfo: {
+            forwardingScore: 999,
+            isForwarded: true,
+            forwardedNewsletterMessageInfo: {
+                newsletterJid: "120363285388090068@newsletter",
+                newsletterName: "BWM-XMD UPDATES",
+                serverMessageId: Math.floor(100000 + Math.random() * 900000),
+            },
+        },
     });
 });
