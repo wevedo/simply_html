@@ -97,19 +97,12 @@ const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
-// Main function
 async function main() {
     try {
-        // Get latest WhatsApp version
         const { version } = await fetchLatestBaileysVersion();
-        
-        // Initialize auth state
         const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, "Session"));
-        
-        // Create logger
         const logger = pino({ level: "silent" });
-        
-        // Socket configuration - keeping your original parameters
+
         const sockOptions = {
             version,
             logger: logger,
@@ -126,14 +119,24 @@ async function main() {
                 }
                 return { conversation: 'Message not found' };
             },
-            // Additional recommended options
             shouldSyncHistoryMessage: () => true,
             syncFullHistory: false,
             linkPreviewImageThumbnailWidth: 192
         };
-        const adams = makeWASocket(sockOptions);        
+
+        // Initialize socket
+        const adams = makeWASocket(sockOptions);
+
+        // Check if socket was created successfully
+        if (!adams || !adams.ev) {
+            throw new Error("Failed to initialize WhatsApp socket");
+        }
+
+        // Bind store and set up event listeners
         store.bind(adams.ev);
+        
         adams.ev.on('creds.update', saveCreds);
+        
         adams.ev.on('connection.update', (update) => {
             const { connection, lastDisconnect } = update;
             
@@ -141,12 +144,13 @@ async function main() {
                 const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
                 console.log(`Connection closed, reconnecting... (${shouldReconnect ? 'Yes' : 'No'})`);
                 if (shouldReconnect) {
-                    setTimeout(main, 5000); // Reconnect after 5 seconds
+                    setTimeout(main, 5000);
                 }
             } else if (connection === 'open') {
                 console.log('✅ Successfully connected to WhatsApp!');
             }
         });
+
         adams.ev.on('messages.upsert', async ({ messages }) => {
             console.log('Received new message:', messages[0]?.message?.conversation);
         });
@@ -158,7 +162,6 @@ async function main() {
         setTimeout(main, 10000); 
     }
 }
-
 
  //============================================================================//
             
