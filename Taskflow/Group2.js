@@ -7,8 +7,9 @@ const EMOJI_THEME = {
   info: "ℹ️",
   processing: "🔄"
 };
-//const { downloadAndSaveMediaMessage } = require('@whiskeysockets/baileys');
-//const fs = require('fs');
+const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+const fs = require('fs-extra');
+const path = require('path');
 
   // Global store for timed operations
 const groupTimers = new Map();
@@ -383,43 +384,55 @@ adams({ nomCom: "poll",categorie: "Group", reaction: "📊", nomFichier: __filen
     repondre(`❌ Failed to create poll: ${error.message}`);
   }
 });
-/*
-//const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+
 
 adams({ nomCom: "setgrouppic", categorie: "Group", reaction: "🖼️", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
-  const { ms, repondre } = commandeOptions;
+    const { ms, repondre } = commandeOptions;
   
-  // Check if the message is a quoted image
-  const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  if (!quotedMsg?.imageMessage) {
-    return repondre("ℹ️ Please reply to an image message to set as group picture");
-  }
-
-  try {
-    // Download and save the media file
-    const mediaPath = await zk.downloadAndSaveMediaMessage(quotedMsg.imageMessage);
-    
-    // Read the file into buffer
-    const buffer = fs.readFileSync(mediaPath);
-    
-    // Update group picture
-    await zk.groupUpdatePicture(dest, buffer);
-    
-    // Delete the temporary file
-    fs.unlinkSync(mediaPath);
-    
-    repondre("✅ Group picture updated successfully");
-  } catch (error) {
-    console.error("Error updating group picture:", error);
-    repondre(`❌ Failed to update group picture: ${error.message}`);
-    
-    // Clean up if file exists but error occurred
-    if (mediaPath && fs.existsSync(mediaPath)) {
-      fs.unlinkSync(mediaPath);
+    // Check if the message is a quoted image
+    const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    if (!quotedMsg?.imageMessage) {
+        return repondre("ℹ️ Please reply to an image message to set as group picture");
     }
-  }
+
+    let mediaPath;
+    
+    try {
+        // Download and save the media file (image)
+        const stream = await zk.downloadContentFromMessage(quotedMsg.imageMessage, 'image');
+        const buffer = await streamToBuffer(stream);
+
+        // Save image to a temporary file
+        const tempPath = path.join(__dirname, `temp_${Date.now()}.jpg`);
+        await fs.writeFile(tempPath, buffer);
+
+        // Update group profile picture with the downloaded image
+        await zk.groupUpdatePicture(dest, buffer);
+        
+        // Cleanup temporary file
+        fs.unlinkSync(tempPath);
+
+        repondre("✅ Group picture updated successfully");
+    } catch (error) {
+        console.error("Error updating group picture:", error);
+        repondre(`❌ Failed to update group picture: ${error.message}`);
+        
+        // Cleanup if an error occurs and the temporary file exists
+        if (mediaPath && fs.existsSync(mediaPath)) {
+            fs.unlinkSync(mediaPath);
+        }
+    }
 });
-*/
+
+// Utility function to convert stream to buffer
+async function streamToBuffer(stream) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on('data', (chunk) => chunks.push(chunk));
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
+        stream.on('error', reject);
+    });
+}
 adams({ nomCom: "countries",categorie: "Group", reaction: "🌍", nomFichier: __filename }, async (chatId, zk, { repondre }) => {
   try {
     const metadata = await zk.groupMetadata(chatId);
