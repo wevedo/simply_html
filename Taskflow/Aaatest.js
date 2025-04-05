@@ -2,32 +2,23 @@ const { adams } = require('../Ibrahim/adams');
 const conf = require(__dirname + "/../config");
 const PREFIX = conf.PREFIX;
 
-adams({ 
-    nomCom: "menu", 
-    categorie: "General",
-    reaction: "📱",
-    nomFichier: __filename 
-}, async (dest, zk, { ms, repondre }) => {
-    try {
-        // SIMPLE BUTTON THAT DEFINITELY WORKS
-        await zk.sendMessage(dest, {
-            text: "Tap a button below:",
-            buttons: [
-                {
-                    buttonId: `${PREFIX}test`,
-                    buttonText: { displayText: "👉 CLICK ME" },
-                    type: 1
-                }
-            ]
-        }, { quoted: ms });
-
-    } catch (error) {
-        console.error("Button Error:", error);
-        await repondre("❌ Failed to send button");
-    }
-});
-
-// HANDLER FOR THE BUTTON
-adams({ nomCom: "test" }, async (dest, zk, { repondre }) => {
-    await repondre("✅ Button worked! You clicked me!");
+// Switch to list message if buttons fail
+adams({
+    nomCom: "listtest",
+    categorie: "General"
+}, async (dest, zk, { repondre }) => {
+    await zk.sendMessage(dest, {
+        text: "Select an option",
+        footer: "Menu",
+        title: "Options",
+        buttonText: "OPEN MENU",
+        sections: [
+            {
+                title: "Test Section",
+                rows: [
+                    { title: "Test Option", rowId: "option1" }
+                ]
+            }
+        ]
+    });
 });
