@@ -1,4 +1,12 @@
 const { adams } = require("../Ibrahim/adams");
+const BOT_NAME = "BWM_XMD";
+const BOT_TAGLINE = "Next-Gen WhatsApp Automation";
+const EMOJI_THEME = {
+  success: "⚡",
+  error: "💢",
+  info: "ℹ️",
+  processing: "🔄"
+};
 //const { downloadAndSaveMediaMessage } = require('@whiskeysockets/baileys');
 //const fs = require('fs');
 
