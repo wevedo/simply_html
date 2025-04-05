@@ -1,71 +1,97 @@
 const { adams } = require("../Ibrahim/adams");
+const { PREFIX } = require(__dirname + "/../config");
+
+// Command categories with images
+const categories = {
+    media: {
+        title: "🎬 Media Commands",
+        commands: [
+            `${PREFIX}ytdl - Download YouTube videos`,
+            `${PREFIX}igdl - Instagram downloader`,
+            `${PREFIX}sticker - Create stickers`,
+            `${PREFIX}tiktok - TikTok downloader`
+        ],
+        thumbnail: "https://example.com/media.jpg"
+    },
+    group: {
+        title: "👥 Group Tools",
+        commands: [
+            `${PREFIX}add - Add users`,
+            `${PREFIX}kick - Remove users`,
+            `${PREFIX}promote - Make admin`,
+            `${PREFIX}lock - Lock group`
+        ],
+        thumbnail: "https://example.com/group.jpg"
+    },
+    tools: {
+        title: "🛠 Utilities",
+        commands: [
+            `${PREFIX}calc - Calculator`,
+            `${PREFIX}trt - Translator`,
+            `${PREFIX}tts - Text to speech`,
+            `${PREFIX}tempmail - Temp email`
+        ],
+        thumbnail: "https://example.com/tools.jpg"
+    }
+};
 
 adams({ 
     nomCom: "pollmenu", 
     categorie: "General",
     reaction: "📊",
     nomFichier: __filename 
-}, async (chatId, zk, { repondre }) => {
+}, async (dest, zk, { repondre, verifAdmin }) => {
     try {
-        // Simple poll with command categories
-        await zk.sendMessage(chatId, {
+        // Create poll with categories
+        await zk.sendMessage(dest, {
             poll: {
-                name: "BWM-XMD Command Menu",
-                values: [
-                    "Media Downloaders",
-                    "Group Tools", 
-                    "Utilities",
-                    "AI Features"
-                ],
+                name: "📊 BWM-XMD Command Navigator",
+                values: Object.keys(categories).map(key => categories[key].title),
                 selectableCount: 1
             }
         });
+
+        // Store active polls
+        const activePoll = {
+            chatId: dest,
+            timestamp: Date.now()
+        };
 
         // Handle poll responses
         zk.ev.on("messages.update", async (update) => {
             const pollUpdate = update.messages[0];
             if (!pollUpdate?.message?.pollUpdateMessage) return;
             
-            // Get selected option
-            const selected = pollUpdate.message.pollUpdateMessage.vote.selectedOptions[0];
-            let commands = "";
+            // Verify it's our poll
+            if (pollUpdate.key.remoteJid !== activePoll.chatId) return;
             
-            // Command lists
-            switch(selected) {
-                case 0: // Media
-                    commands = `🎬 *Media Commands*\n\n` +
-                              `• ytdl - YouTube downloader\n` +
-                              `• igdl - Instagram downloader\n` +
-                              `• tiktok - TikTok downloader`;
-                    break;
-                    
-                case 1: // Group
-                    commands = `👥 *Group Commands*\n\n` +
-                              `• add - Add members\n` +
-                              `• kick - Remove members\n` +
-                              `• promote - Make admin`;
-                    break;
-                    
-                case 2: // Tools
-                    commands = `🛠 *Utilities*\n\n` +
-                              `• calc - Calculator\n` +
-                              `• trt - Translator\n` +
-                              `• tts - Text-to-speech`;
-                    break;
-                    
-                case 3: // AI
-                    commands = `🤖 *AI Commands*\n\n` +
-                              `• gpt - ChatGPT\n` +
-                              `• dalle - Image generator\n` +
-                              `• gemini - Google AI`;
-                    break;
-            }
-            
-            if (commands) {
-                await repondre(`${commands}\n\n_Reply "menu" to return_`);
-            }
+            const selectedIndex = pollUpdate.message.pollUpdateMessage.vote.selectedOptions[0];
+            const categoryKey = Object.keys(categories)[selectedIndex];
+            const category = categories[categoryKey];
+
+            // Send category commands
+            await zk.sendMessage(dest, {
+                image: { url: category.thumbnail },
+                caption: `*${category.title}*\n\n${category.commands.join('\n')}\n\nReply "menu" to return`
+            });
+
+            // Handle menu return
+            zk.ev.once("messages.upsert", async ({ messages }) => {
+                const msg = messages[0];
+                if (msg?.message?.conversation?.toLowerCase() === "menu") {
+                    await repondre("Returning to main menu...");
+                    // Resend poll
+                    await zk.sendMessage(dest, {
+                        poll: {
+                            name: "📊 BWM-XMD Command Navigator",
+                            values: Object.keys(categories).map(key => categories[key].title),
+                            selectableCount: 1
+                        }
+                    });
+                }
+            });
         });
-        
+
     } catch (error) {
         repondre(`❌ Error: ${error.message}`);
     }
