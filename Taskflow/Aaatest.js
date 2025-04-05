@@ -3,69 +3,85 @@ const conf = require(__dirname + "/../config");
 const PREFIX = conf.PREFIX;
 
 adams({ 
-    nomCom: "mtest", 
-    categorie: "Test",
+    nomCom: "mobilemenu", 
+    categorie: "General",
     reaction: "📱",
     nomFichier: __filename 
 }, async (dest, zk, { ms, repondre }) => {
     try {
-        // 1. First verify basic message delivery
-        await zk.sendMessage(dest, { 
-            text: "📲 *BWM-XMD MOBILE TEST* 📲\n\nThis text should appear first..." 
+        // Main menu message
+        await zk.sendMessage(dest, {
+            text: `📱 *BWM-XMD MOBILE MENU* 📱
+            
+1. 🎵 Media Commands
+2. 👥 Group Tools
+3. 🛠️ Utilities
+4. 🤖 AI Features
+            
+Reply with the *number* of your choice`,
+            footer: "Works on all devices",
+            contextInfo: {
+                mentionedJid: [ms.key.participant || ms.key.remoteJid],
+                forwardingScore: 999,
+                isForwarded: true
+            }
         }, { quoted: ms });
 
-        // 2. Send SIMPLE interactive buttons (mobile-optimized)
-        const buttonMsg = {
-            text: "Please select an option:",
-            footer: "Mobile interactive test",
-            buttons: [
-                { buttonId: `${PREFIX}m1`, buttonText: { displayText: "MOBILE BUTTON 1" }, type: 1 },
-                { buttonId: `${PREFIX}m2`, buttonText: { displayText: "MOBILE BUTTON 2" }, type: 1 }
-            ],
-            headerType: 1, // CRUCIAL FOR MOBILE
-            viewOnce: true // Helps with rendering
-        };
-
-        console.log("Sending mobile-optimized buttons:", JSON.stringify(buttonMsg, null, 2));
-        const sentMsg = await zk.sendMessage(dest, buttonMsg, { quoted: ms });
-
-        // 3. Fallback: List message if buttons fail
-        setTimeout(async () => {
-            const listMsg = {
-                text: "Alternative menu:",
-                footer: "Select from list",
-                title: "MOBILE OPTIONS",
-                buttonText: "OPEN MENU",
-                sections: [{ 
-                    title: "MAIN", 
-                    rows: [
-                        { title: "Option A", rowId: `${PREFIX}optA` },
-                        { title: "Option B", rowId: `${PREFIX}optB` }
-                    ] 
-                }]
-            };
-            await zk.sendMessage(dest, listMsg, { quoted: ms });
-        }, 5000);
-
-        // Debug incoming messages
-        zk.ev.on("messages.upsert", ({ messages }) => {
+        // Command handler
+        zk.ev.once("messages.upsert", async ({ messages }) => {
             const msg = messages[0];
+            if (!msg || msg.key.remoteJid !== dest) return;
             
-            // Button response
-            if (msg?.message?.buttonsResponseMessage) {
-                console.log("BUTTON WORKED! Selected:", msg.message.buttonsResponseMessage.selectedButtonId);
-                repondre(`🎉 You pressed: ${msg.message.buttonsResponseMessage.selectedButtonId}`);
+            const choice = msg.message?.conversation?.trim();
+            let response = "";
+            
+            switch(choice) {
+                case "1":
+                    response = `🎵 *Media Commands*\n\n` +
+                              `${PREFIX}play - Search music\n` +
+                              `${PREFIX}ytdl - Download videos\n` +
+                              `${PREFIX}igdl - Instagram downloader`;
+                    break;
+                    
+                case "2":
+                    response = `👥 *Group Tools*\n\n` +
+                              `${PREFIX}add - Add members\n` +
+                              `${PREFIX}kick - Remove members\n` +
+                              `${PREFIX}promote - Make admin`;
+                    break;
+                    
+                case "3":
+                    response = `🛠️ *Utilities*\n\n` +
+                              `${PREFIX}calc - Calculator\n` +
+                              `${PREFIX}trt - Translator\n` +
+                              `${PREFIX}tts - Text-to-speech`;
+                    break;
+                    
+                case "4":
+                    response = `🤖 *AI Features*\n\n` +
+                              `${PREFIX}gpt - ChatGPT\n` +
+                              `${PREFIX}dalle - Image generator\n` +
+                              `${PREFIX}gemini - Google AI`;
+                    break;
+                    
+                default:
+                    return; // Ignore other messages
             }
             
-            // List response
-            if (msg?.message?.listResponseMessage) {
-                console.log("LIST WORKED! Selected:", msg.message.listResponseMessage.singleSelectReply.selectedRowId);
-                repondre(`📋 You chose: ${msg.message.listResponseMessage.singleSelectReply.selectedRowId}`);
-            }
+            await repondre(response);
+            
+            // Reset menu after selection
+            zk.ev.once("messages.upsert", async ({ messages }) => {
+                if (messages[0]?.message?.conversation?.toLowerCase() === "menu") {
+                    await zk.sendMessage(dest, { 
+                        text: "Returning to main menu...\nType *.mobilemenu* again" 
+                    });
+                }
+            });
         });
 
     } catch (error) {
-        console.error("Mobile Test Error:", error);
-        repondre("❌ Mobile test failed - Check logs");
+        console.error("Mobile Menu Error:", error);
+        repondre("❌ Menu system error. Please try again.");
     }
 });
