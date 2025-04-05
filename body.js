@@ -25,7 +25,6 @@ const fs = require("fs-extra");
 const path = require("path");
 const FileType = require("file-type");
 const { Sticker, createSticker, StickerTypes } = require("wa-sticker-formatter");
-const { getSettings } = require("./utils/settings");
 const evt = require("./Ibrahim/adams");
 const rateLimit = new Map();
 const chalk = require("chalk");
