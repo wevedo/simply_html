@@ -72,7 +72,7 @@ async function authentification() {
                 let decompressedData = zlib.gunzipSync(compressedData); // Decompress session
                 fs.writeFileSync(__dirname + "/Session/creds.json", decompressedData, "utf8"); // Save to file
             } else {
-                throw new Error("Invalid session format");
+            throw new Error("Invalid session format");
             }
         } else if (fs.existsSync(__dirname + "/Session/creds.json") && conf.session !== "zokk") {
             console.log("Updating existing session...");
@@ -101,17 +101,15 @@ const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
-// Increase Node.js performance limits
-process.setMaxListeners(50); // Higher limit for many messages
+// Increase EventEmitter limit to handle more messages
 require('events').EventEmitter.defaultMaxListeners = 50;
 
-// Optimize memory usage
-if (global.gc) {
-    setInterval(() => global.gc(), 300000); // Force GC every 5 minutes if available
-}
+// Enhanced memory management
+const MAX_STORE_SIZE = 100000; // Max messages to store in memory
+const CLEANUP_INTERVAL = 600000; // Cleanup every minute
 
 async function main() {
-    const { version } = await fetchLatestBaileysVersion();
+    const { version, isLatest } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
     
     const sockOptions = {
@@ -121,126 +119,137 @@ async function main() {
         printQRInTerminal: true,
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, pino())
+            keys: makeCacheableSignalKeyStore(state.keys, logger)
         },
-        // Optimized message handling
         getMessage: async (key) => {
-            return store?.loadMessage(key.remoteJid, key.id) 
-                || { conversation: 'Message not in cache' };
+            if (store) {
+                const msg = await store.loadMessage(key.remoteJid, key.id);
+                return msg.message || undefined;
+            }
+            return { conversation: 'Error occurred' };
         },
-        // High performance options
-        markOnlineOnConnect: false, // Reduces overhead
-        syncFullHistory: false,      // Don't sync old messages
+        // Optimized for high message volume
+        maxMsgRetryCount: 5,
+        msgRetryCounterCache: new NodeCache({ stdTTL: 60 * 60 }), // 1 hour TTL
         transactionOpts: {
-            maxCommitRetries: 2,     // Faster failover
-            delayBetweenTriesMs: 1000
-        },
-        msgRetryCounterCache: new NodeCache({
-            stdTTL: 60 * 60,        // 1 hour cache
-            checkperiod: 120         // Check every 2 minutes
-        }),
-        generateHighQualityLinkPreview: false // Reduces processing
+            maxRetries: 5,
+            delayBetweenTriesMs: 3000
+        }
     };
 
-    const sock = makeWASocket(sockOptions);
+    const adams = makeWASocket(sockOptions);
     
-    // Bind store with high-performance settings
-    store.bind(sock.ev, {
-        maxCommitRetries: 2,
-        delayBetweenTriesMs: 500
+    // Bind store with enhanced cleanup
+    store.bind(adams.ev, {
+        cleanupIntervalMs: CLEANUP_INTERVAL,
+        maxMessages: MAX_STORE_SIZE
     });
-    sock.ev.setMaxListeners(50);
 
-    // High-capacity rate limiting
+    // Rate limiting with enhanced capacity
     const rateLimit = new Map();
-    const MAX_REQUESTS_PER_MINUTE = 3000; // High limit for many messages
+    const RATE_LIMIT_WINDOW = 3000; // 3 seconds
     
     function isRateLimited(jid) {
         const now = Date.now();
-        const windowStart = now - 60000; // 1 minute window
-        
         if (!rateLimit.has(jid)) {
-            rateLimit.set(jid, [{ timestamp: now }]);
+            rateLimit.set(jid, { count: 1, lastRequestTime: now });
             return false;
         }
         
-        const requests = rateLimit.get(jid).filter(r => r.timestamp > windowStart);
-        if (requests.length >= MAX_REQUESTS_PER_MINUTE) return true;
+        const jidData = rateLimit.get(jid);
+        if (now - jidData.lastRequestTime > RATE_LIMIT_WINDOW) {
+            jidData.count = 1;
+            jidData.lastRequestTime = now;
+            return false;
+        }
         
-        requests.push({ timestamp: now });
-        rateLimit.set(jid, requests);
-        return false;
+        jidData.count++;
+        jidData.lastRequestTime = now;
+        
+        // Allow more requests from groups than individual chats
+        const isGroup = jid.endsWith('@g.us');
+        return jidData.count > (isGroup ? 15 : 5);
     }
 
-    // Optimized group metadata cache
+    // Enhanced group metadata handling with cache
     const groupMetadataCache = new Map();
-    const MAX_CACHE_SIZE = 500; // Large cache for many groups
+    const CACHE_TTL = 60000; // 1 minute
     
     async function getGroupMetadata(groupId) {
         if (groupMetadataCache.has(groupId)) {
             return groupMetadataCache.get(groupId);
         }
         
-        // Auto-cleanup when cache gets large
-        if (groupMetadataCache.size > MAX_CACHE_SIZE) {
-            const oldest = [...groupMetadataCache.entries()]
-                .sort((a, b) => a[1].lastAccess - b[1].lastAccess)
-                .slice(0, 100); // Remove 100 oldest
-            oldest.forEach(([key]) => groupMetadataCache.delete(key));
-        }
-        
         try {
-            const metadata = await sock.groupMetadata(groupId);
-            groupMetadataCache.set(groupId, {
-                ...metadata,
-                lastAccess: Date.now()
-            });
+            const metadata = await adams.groupMetadata(groupId);
+            groupMetadataCache.set(groupId, metadata);
+            
+            // Auto-clean cache
+            setTimeout(() => {
+                groupMetadataCache.delete(groupId);
+            }, CACHE_TTL);
+            
             return metadata;
         } catch (error) {
+            if (error.message.includes("rate-overlimit")) {
+                await new Promise(res => setTimeout(res, 5000));
+                return getGroupMetadata(groupId); // Retry
+            }
             console.error('Group metadata error:', error);
             return null;
         }
     }
 
-    // High-performance message handler
-    async function handleMessages() {
-        sock.ev.on('messages.upsert', async ({ messages, type }) => {
-            if (type !== 'notify') return;
-            
-            // Process messages in batches for efficiency
-            const batchSize = 50;
-            for (let i = 0; i < messages.length; i += batchSize) {
-                const batch = messages.slice(i, i + batchSize);
-                await Promise.allSettled(batch.map(processMessage));
-            }
-        });
-    }
-
-    // Optimized message processing
-    async function processMessage(message) {
-        try {
-            // Your message processing logic here
-            // Keep it lean and fast
-        } catch (error) {
-            console.error('Message processing error:', error);
-        }
-    }
-
-    // Memory management for high message volume
+    // Storage management - auto cleanup when memory is high
     setInterval(() => {
         const memoryUsage = process.memoryUsage();
-        if (memoryUsage.heapUsed > 500 * 1024 * 1024) { // 500MB
-            console.log('Optimizing memory...');
-            // Clear non-essential caches
+        if (memoryUsage.rss > 500 * 1024 * 1024) { // 500MB threshold
+            console.log('High memory usage detected, cleaning up...');
+            
+            // Clean oldest messages from store
+            if (store.messages && store.messages.size > MAX_STORE_SIZE / 2) {
+                const keys = Array.from(store.messages.keys());
+                for (let i = 0; i < Math.floor(keys.length / 4); i++) {
+                    store.messages.delete(keys[i]);
+                }
+            }
+            
+            // Clear some cache
             groupMetadataCache.clear();
-            if (global.gc) global.gc();
+            
+            // Force garbage collection if available
+            if (global.gc) {
+                global.gc();
+            }
         }
-    }, 60000); // Check every minute
+    }, CLEANUP_INTERVAL);
 
-    // Start processing
-    handleMessages();
-    console.log('Bot ready to handle high message volume');
+    // Handle connection updates
+    adams.ev.on('connection.update', (update) => {
+        if (update.connection === 'close') {
+            // Implement reconnection logic if needed
+        }
+    });
+
+    // Message handling with high capacity
+    adams.ev.on('messages.upsert', async ({ messages }) => {
+        if (messages.length > 100) {
+            // Process in batches to avoid memory spikes
+            for (let i = 0; i < messages.length; i += 50) {
+                const batch = messages.slice(i, i + 50);
+                await processMessageBatch(batch);
+            }
+        } else {
+            await processMessageBatch(messages);
+        }
+    });
+
+    async function processMessageBatch(messages) {
+        // Your message processing logic here
+        // This helps handle large volumes without overwhelming memory
+    }
 }
+
 
  //============================================================================//
             
