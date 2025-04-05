@@ -9,56 +9,39 @@ adams({
     nomFichier: __filename 
 }, async (dest, zk, { ms, repondre }) => {
     try {
-        // SOLUTION 1: Use List Message Instead (More Reliable)
+        // Mobile-friendly button message
         await zk.sendMessage(dest, {
-            text: "📱 *BWM-XMD INTERACTIVE MENU*",
-            footer: "Select an option",
-            title: "TEST MENU",
-            buttonText: "VIEW OPTIONS",
-            sections: [
-                {
-                    title: "TEST SECTION",
-                    rows: [
-                        { title: "OPTION 1", rowId: `${PREFIX}test1` },
-                        { title: "OPTION 2", rowId: `${PREFIX}test2` }
-                    ]
-                }
-            ]
-        }, { quoted: ms });
-
-        // SOLUTION 2: Alternative Button Format (If list doesn't work)
-        await zk.sendMessage(dest, {
-            text: "🔘 *BUTTON TEST*",
+            text: "📲 *BWM-XMD MOBILE TEST* 📲\n\nPlease select:",
+            footer: "Mobile button test",
             templateButtons: [
-                { 
+                {
                     index: 1,
-                    quickReplyButton: { 
-                        displayText: "TEST BUTTON", 
-                        id: `${PREFIX}test` 
+                    quickReplyButton: {
+                        displayText: "⭐ OPTION 1",
+                        id: `${PREFIX}test1`
+                    }
+                },
+                {
+                    index: 2,
+                    quickReplyButton: {
+                        displayText: "✨ OPTION 2",
+                        id: `${PREFIX}test2`
                     }
                 }
             ]
         }, { quoted: ms });
 
-        // Track responses
+        // Button response handler
         zk.ev.on("messages.upsert", ({ messages }) => {
             const msg = messages[0];
-            
-            // For list messages
-            if (msg?.message?.listResponseMessage) {
-                const selected = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
-                repondre(`LIST SELECTED: ${selected}`);
-            }
-            
-            // For template buttons
             if (msg?.message?.templateButtonReplyMessage) {
                 const selected = msg.message.templateButtonReplyMessage.selectedId;
-                repondre(`BUTTON SELECTED: ${selected}`);
+                repondre(`📱 You chose: ${selected.replace(PREFIX, "")}`);
             }
         });
 
     } catch (error) {
-        console.error("Full Error:", error);
-        repondre("❌ Test failed - Check console");
+        console.error("Mobile Button Error:", error);
+        repondre("❌ Mobile button test failed");
     }
 });
