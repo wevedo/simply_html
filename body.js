@@ -519,7 +519,7 @@ adams.ev.on("connection.update", async (update) => {
         
         // Message processing logic here
     });
-}
+
 
 setTimeout(() => {
     main().catch(err => console.log("Initialization error:", err));
