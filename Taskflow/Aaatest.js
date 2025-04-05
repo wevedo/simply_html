@@ -1,5 +1,7 @@
 const { adams } = require('../Ibrahim/adams');
 const { generateWAMessageFromContent, proto } = require('@whiskeysockets/baileys');
+const conf = require(__dirname + "/../config");
+const PREFIX = conf.PREFIX;
 
 adams({ 
     nomCom: "menutest", 
