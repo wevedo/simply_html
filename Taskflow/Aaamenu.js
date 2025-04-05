@@ -19,6 +19,13 @@ const githubRawBaseUrl = "https://raw.githubusercontent.com/ibrahimaitech/bwm-xm
 const audioFiles = Array.from({ length: 100 }, (_, i) => `sound${i + 1}.mp3`);
 const getRandomAudio = () => audioFiles[Math.floor(Math.random() * audioFiles.length)];
 
+
+
+const imageUrl = "https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg";
+const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+const imageBuffer = Buffer.from(response.data);
+
+
 // Menu images
 const menuImages = [
     "https://bwm-xmd-files.vercel.app/bwmxmd_lzgu8w.jpeg",
@@ -126,13 +133,13 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
                     footer: proto.Message.InteractiveMessage.Footer.create({
                         text: "© Powered By BWM-XMD"
                     }),
-                    header: proto.Message.InteractiveMessage.Header.create({
-                        ...(await prepareWAMessageMedia({ image: fs.readFileSync('./IMG-20250405-WA0025.jpg') }, { upload: zk.waUploadToServer })),
-                        title: ``,
-                        gifPlayback: true,
-                        subtitle: "",
-                        hasMediaAttachment: false  
-                    }),
+                    const header = proto.Message.InteractiveMessage.Header.create({
+    ...(await prepareWAMessageMedia({ image: imageBuffer }, { upload: zk.waUploadToServer })),
+    title: ``,
+    gifPlayback: true,
+    subtitle: "",
+    hasMediaAttachment: false  
+});
                     nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
                         buttons: [
                             {
