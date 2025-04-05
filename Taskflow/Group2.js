@@ -150,36 +150,88 @@ adams({ nomCom: "canceltimer", categorie: "Group",reaction: "❌", nomFichier: _
 });
 
 
-adams({ nomCom: "online", categorie: "Group", reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ 
+  nomCom: "online", 
+  categorie: "Group",
+  reaction: "🟢", 
+  nomFichier: __filename 
+}, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
   
   try {
     const metadata = await zk.groupMetadata(dest);
     const onlineMembers = [];
+    const offlineMembers = [];
     
     // Check presence for each member
     await Promise.all(metadata.participants.map(async (member) => {
       try {
-        const presence = await zk.presenceSubscribe(member.id);
+        // Get presence data safely
+        const presence = await zk.presenceSubscribe(member.id).catch(() => null);
         
-        // Check if presence data exists and has lastSeen property
-        if (presence && typeof presence === 'object') {
-          const isOnline = !presence.lastSeen; // If no lastSeen, they're online
-          const isRecentlyActive = presence.lastSeen && (Date.now() - presence.lastSeen < 300000); // 5 min threshold
-          
-          if (isOnline || isRecentlyActive) {
-            onlineMembers.push({
-              id: member.id,
-              name: member.id.split('@')[0],
-              lastSeen: presence.lastSeen || null,
-              status: isOnline ? "Online Now" : "Recently Active"
-            });
-          }
+        if (!presence || !presence.lastKnownPresence) {
+          offlineMembers.push({
+            id: member.id,
+            name: member.id.split('@')[0],
+            status: "Status Unknown"
+          });
+          return;
+        }
+        
+        const isOnline = presence.lastKnownPresence === 'available';
+        const isRecent = presence.lastSeen && (Date.now() - presence.lastSeen < 300000); // 5 min threshold
+        
+        if (isOnline || isRecent) {
+          onlineMembers.push({
+            id: member.id,
+            name: member.id.split('@')[0],
+            status: isOnline ? "Online Now" : "Recently Active"
+          });
+        } else {
+          offlineMembers.push({
+            id: member.id,
+            name: member.id.split('@')[0],
+            status: "Offline"
+          });
         }
       } catch (error) {
         console.error(`Presence check failed for ${member.id}:`, error);
+        offlineMembers.push({
+          id: member.id,
+          name: member.id.split('@')[0],
+          status: "Error Checking Status"
+        });
       }
     }));
+
+    // Format the response
+    let responseText = `🟢 *${BOT_NAME} Online Check* 🟢\n\n`;
+    responseText += `👥 *Group:* ${metadata.subject}\n`;
+    responseText += `🟢 *Online Members (${onlineMembers.length}):*\n`;
+    
+    onlineMembers.forEach((member, index) => {
+      responseText += `${index + 1}. @${member.name} (${member.status})\n`;
+    });
+    
+    responseText += `\n⚫ *Offline/Unknown (${offlineMembers.length})*\n`;
+    
+    if (onlineMembers.length === 0) {
+      responseText += `\nNo members currently online or recently active.`;
+    }
+
+    // Send the response with mentions
+    await repondre({
+      text: responseText,
+      mentions: onlineMembers.map(member => member.id)
+    });
+
+  } catch (error) {
+    console.error('Error in online command:', error);
+    await repondre({
+      text: `${EMOJI_THEME.error} *Failed to check online status*\n${error.message}`
+    });
+  }
+});
 
 
 adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) => {
