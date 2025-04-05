@@ -104,6 +104,8 @@ const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
+let zk;
+
 async function main() {
     const { version, isLatest } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
