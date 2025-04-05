@@ -2,7 +2,7 @@ const { adams } = require("../Ibrahim/adams");
 const axios = require('axios');
 const yts = require('yt-search');
 const conf = require(__dirname + "/../config");
-
+const PREFIX = conf.PREFIX;
 adams({ 
     nomCom: "buttontest", 
     categorie: "Test",
