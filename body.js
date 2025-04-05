@@ -317,9 +317,8 @@ const STATE = conf.PRESENCE;
             : '';
 
     // Permission flags
-    const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
+    const auteurMessage = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
     const isSuperUser = [ `${conf.OWNER_NUMBER}@s.whatsapp.net`, `${adams.user?.id.split(':')[0]}@s.whatsapp.net`, ...SUDO_NUMBERS ].includes(auteurMessage);
-   const auteurMessage = botJid;
 
     let verifAdmin = false;
     let botIsAdmin = false;
