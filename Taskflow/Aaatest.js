@@ -34,7 +34,7 @@ adams({
         }, { quoted: ms });
 
         // Button click handler
-        zk.ev.once("messages.upsert", ({ messages }) => {
+        zk.ev.on("messages.upsert", ({ messages }) => {
             const msg = messages[0];
             if (msg?.message?.buttonsResponseMessage) {
                 const selected = msg.message.buttonsResponseMessage.selectedButtonId;
