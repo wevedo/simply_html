@@ -1,87 +1,84 @@
-const { adams } = require("../Ibrahim/adams");
-const conf = require(__dirname + "/../config");
-const PREFIX = conf.PREFIX;
+const { adams } = require('../Ibrahim/adams');
+const { generateWAMessageFromContent, proto } = require('@whiskeysockets/baileys');
 
 adams({ 
-    nomCom: "mobilemenu", 
+    nomCom: "menutest", 
     categorie: "General",
     reaction: "📱",
     nomFichier: __filename 
 }, async (dest, zk, { ms, repondre }) => {
     try {
-        // Main menu message
-        await zk.sendMessage(dest, {
-            text: `📱 *BWM-XMD MOBILE MENU* 📱
-            
-1. 🎵 Media Commands
-2. 👥 Group Tools
-3. 🛠️ Utilities
-4. 🤖 AI Features
-            
-Reply with the *number* of your choice`,
-            footer: "Works on all devices",
-            contextInfo: {
-                mentionedJid: [ms.key.participant || ms.key.remoteJid],
-                forwardingScore: 999,
-                isForwarded: true
-            }
-        }, { quoted: ms });
-
-        // Command handler
-        zk.ev.once("messages.upsert", async ({ messages }) => {
-            const msg = messages[0];
-            if (!msg || msg.key.remoteJid !== dest) return;
-            
-            const choice = msg.message?.conversation?.trim();
-            let response = "";
-            
-            switch(choice) {
-                case "1":
-                    response = `🎵 *Media Commands*\n\n` +
-                              `${PREFIX}play - Search music\n` +
-                              `${PREFIX}ytdl - Download videos\n` +
-                              `${PREFIX}igdl - Instagram downloader`;
-                    break;
-                    
-                case "2":
-                    response = `👥 *Group Tools*\n\n` +
-                              `${PREFIX}add - Add members\n` +
-                              `${PREFIX}kick - Remove members\n` +
-                              `${PREFIX}promote - Make admin`;
-                    break;
-                    
-                case "3":
-                    response = `🛠️ *Utilities*\n\n` +
-                              `${PREFIX}calc - Calculator\n` +
-                              `${PREFIX}trt - Translator\n` +
-                              `${PREFIX}tts - Text-to-speech`;
-                    break;
-                    
-                case "4":
-                    response = `🤖 *AI Features*\n\n` +
-                              `${PREFIX}gpt - ChatGPT\n` +
-                              `${PREFIX}dalle - Image generator\n` +
-                              `${PREFIX}gemini - Google AI`;
-                    break;
-                    
-                default:
-                    return; // Ignore other messages
-            }
-            
-            await repondre(response);
-            
-            // Reset menu after selection
-            zk.ev.once("messages.upsert", async ({ messages }) => {
-                if (messages[0]?.message?.conversation?.toLowerCase() === "menu") {
-                    await zk.sendMessage(dest, { 
-                        text: "Returning to main menu...\nType *.mobilemenu* again" 
-                    });
+        // Create the interactive message
+        const msg = generateWAMessageFromContent(dest, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: {
+                        deviceListMetadata: {},
+                        deviceListMetadataVersion: 2
+                    },
+                    interactiveMessage: proto.Message.InteractiveMessage.create({
+                        body: proto.Message.InteractiveMessage.Body.create({
+                            text: `╭─────═━┈┈━═──━┈⊷
+│ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ-ᴍᴅ*
+│ ᴠᴇʀꜱɪᴏɴ: *6.0.3*
+│ ᴏᴡɴᴇʀ: *sɪʀ ɪʙʀᴀʜɪᴍ*
+╰─────═━┈┈━═──━┈⊷`
+                        }),
+                        footer: proto.Message.InteractiveMessage.Footer.create({
+                            text: "Powered by BWM-XMD"
+                        }),
+                        nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                            buttons: [
+                                {
+                                    name: "quick_reply",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "📜 COMMAND LIST",
+                                        id: `${PREFIX}commands`
+                                    })
+                                },
+                                {
+                                    name: "quick_reply",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "⏳ PING BOT",
+                                        id: `${PREFIX}ping`
+                                    })
+                                },
+                                {
+                                    name: "cta_url",
+                                    buttonParamsJson: JSON.stringify({
+                                        display_text: "⭐ GITHUB REPO",
+                                        url: "https://github.com/devibraah/BWM-XMD"
+                                    })
+                                }
+                            ]
+                        })
+                    })
                 }
-            });
+            }
+        }, {});
+
+        // Send the message
+        await zk.relayMessage(dest, msg.message, { messageId: msg.key.id });
+
+        // Button response handler
+        zk.ev.on("messages.upsert", async ({ messages }) => {
+            const message = messages[0];
+            
+            // Handle template button replies
+            if (message?.message?.templateButtonReplyMessage) {
+                const selectedId = message.message.templateButtonReplyMessage.selectedId;
+                repondre(`You selected: ${selectedId}`);
+            }
+            
+            // Handle native flow responses
+            if (message?.message?.interactiveResponseMessage?.nativeFlowResponseMessage) {
+                const params = JSON.parse(message.message.interactiveResponseMessage.nativeFlowResponseMessage.paramsJson);
+                repondre(`You clicked: ${params.display_text}`);
+            }
         });
 
     } catch (error) {
-        console.error("Mobile Menu Error:", error);
-        repondre("❌ Menu system error. Please try again.");
+        console.error("Menu Error:", error);
+        repondre("❌ Failed to load menu. Please try again.");
     }
 });
