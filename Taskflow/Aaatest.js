@@ -56,7 +56,7 @@ const fetchGitHubStats = async () => {
 const commandList = {};
 let commandsStored = false;
 
-adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "btest", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre } = commandeOptions;
     let { cm } = require(__dirname + "/../Ibrahim/adams");
 
