@@ -37,6 +37,9 @@ const more = String.fromCharCode(8206);
 const herokuAppName = process.env.HEROKU_APP_NAME || "Unknown App Name";
 const herokuAppLink = process.env.HEROKU_APP_LINK || `https://dashboard.heroku.com/apps/${herokuAppName}`;
 const botOwner = process.env.NUMERO_OWNER || "Unknown Owner";
+const rateLimit = new Map();
+const MAX_RATE_LIMIT_ENTRIES = 100000;
+const RATE_LIMIT_WINDOW = 3000; 
 const PORT = process.env.PORT || 3000;
 const app = express();
 let adams;
@@ -126,12 +129,7 @@ async function main() {
     adams = makeWASocket(sockOptions);
     store.bind(adams.ev);
 
-  // Enhanced Rate Limiting with automatic cleanup
-const rateLimit = new Map();
-const MAX_RATE_LIMIT_ENTRIES = 100000;
-const RATE_LIMIT_WINDOW = 3000; // 3 seconds
-
-function isRateLimited(jid) {
+    function isRateLimited(jid) {
     // Automatic cleanup when map gets too large
     if (rateLimit.size > MAX_RATE_LIMIT_ENTRIES) {
         const now = Date.now();
@@ -571,7 +569,7 @@ adams.ev.on("connection.update", ({ connection }) => {
     }
 });
 
-
+}
         
 //===============================================================================================================//
 
