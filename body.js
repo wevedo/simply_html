@@ -135,8 +135,32 @@ async function main() {
         const adams = makeWASocket(sockOptions);        
         store.bind(adams.ev);
         adams.ev.on('creds.update', saveCreds);
+        adams.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect } = update;
+            
+            if (connection === 'close') {
+                const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
+                console.log(`Connection closed, reconnecting... (${shouldReconnect ? 'Yes' : 'No'})`);
+                if (shouldReconnect) {
+                    setTimeout(main, 5000); // Reconnect after 5 seconds
+                }
+            } else if (connection === 'open') {
+                console.log('✅ Successfully connected to WhatsApp!');
+            }
+        });
+        adams.ev.on('messages.upsert', async ({ messages }) => {
+            console.log('Received new message:', messages[0]?.message?.conversation);
+        });
+
+        return adams;
+        
+    } catch (error) {
+        console.error('⚠️ Error in main function:', error);
+        setTimeout(main, 10000); 
     }
-});
+}
+
+const adams = main().catch(console.error);
 
 
  //============================================================================//
