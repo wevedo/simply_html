@@ -317,7 +317,6 @@ const STATE = conf.PRESENCE;
             : '';
 
     // Permission flags
-    const auteurMessage = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
     const isSuperUser = [ `${conf.OWNER_NUMBER}@s.whatsapp.net`, `${adams.user?.id.split(':')[0]}@s.whatsapp.net`, ...SUDO_NUMBERS ].includes(auteurMessage);
 
     let verifAdmin = false;
