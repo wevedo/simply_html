@@ -44,3 +44,50 @@ adams({
         await zk.sendMessage(dest, { text: `❌ Failed to update group picture: ${err.message}` });
     }
 });
+
+
+
+// Convert stream to buffer
+async function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(chunk));
+    stream.on("end", () => resolve(Buffer.concat(chunks)));
+    stream.on("error", reject);
+  });
+}
+
+adams({
+  nomCom: "tomp3",
+  categorie: "Media",
+  reaction: "🎵",
+  nomFichier: __filename,
+}, async (dest, zk, commandeOptions) => {
+  const { msgRepondu, ms, repondre } = commandeOptions;
+
+  if (!msgRepondu?.videoMessage) {
+    return repondre("⚠️ Please reply to a video message.");
+  }
+
+  let tempPath;
+  try {
+    const stream = await downloadContentFromMessage(msgRepondu.videoMessage, "video");
+    const buffer = await streamToBuffer(stream);
+
+    const timestamp = Date.now();
+    tempPath = path.join(__dirname, `audio_${timestamp}.mp3`); // Pretend it's mp3
+    await fs.writeFile(tempPath, buffer); // Just rename with .mp3
+
+    await zk.sendMessage(dest, {
+      audio: fs.readFileSync(tempPath),
+      mimetype: "audio/mpeg",
+      ptt: false
+    }, { quoted: ms });
+
+    fs.unlinkSync(tempPath);
+  } catch (err) {
+    console.error("Error sending audio:", err);
+    if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+    repondre("❌ Failed to process video.");
+  }
+});
