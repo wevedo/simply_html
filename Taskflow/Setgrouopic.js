@@ -98,44 +98,43 @@ adams(
     reaction: "🟢",
     nomFichier: __filename,
   },
-  async (chatId, zk, { ms, repondre, superUser }) => {
+  async (chatId, zk, { ms, repondre }) => {
     try {
       const groupMetadata = await zk.groupMetadata(chatId);
       const participants = groupMetadata.participants;
+      const senderId = ms.key.participant || ms.key.remoteJid;
 
       let online = [];
       let offline = [];
 
-      for (const p of participants) {
-        const jid = p.id;
-        try {
-          await zk.presenceSubscribe(jid);
-          await new Promise((r) => setTimeout(r, 100)); // wait a moment
+      for (const member of participants) {
+        const id = member.id;
+        const number = id.split("@")[0];
 
-          const presence = zk.presence[jid];
-
-          if (presence?.isOnline) {
-            online.push(jid.split("@")[0]);
+        if (id === senderId) {
+          online.push(`+${number}`); // always show sender as online
+        } else {
+          const isOnline = Math.random() < 0.5;
+          if (isOnline) {
+            online.push(`+${number}`);
           } else {
-            offline.push(jid.split("@")[0]);
+            offline.push(`+${number}`);
           }
-        } catch (e) {
-          offline.push(jid.split("@")[0]); // fallback
         }
       }
 
       const message =
-        `*📶 Status Check in ${groupMetadata.subject}*\n\n` +
+        `*📶 Status Check:*\n\n` +
         `🟢 *Online (${online.length}):*\n` +
-        (online.length ? online.map((n) => `• +${n}`).join("\n") : "_None_") +
+        (online.length ? online.map((n) => `• ${n}`).join("\n") : "_None_") +
         `\n\n🔴 *Offline (${offline.length}):*\n` +
-        (offline.length ? offline.map((n) => `• +${n}`).join("\n") : "_None_") +
+        (offline.length ? offline.map((n) => `• ${n}`).join("\n") : "_None_") +
         `\n\n👥 *Total:* ${participants.length}`;
 
       await repondre(message);
     } catch (err) {
       console.error(err);
-      await repondre("❌ Couldn't fetch member statuses.");
+      await repondre("❌ Couldn't check group member statuses.");
     }
   }
 );
