@@ -35,7 +35,7 @@ const fetchGitHubStats = async () => {
     }
 };
 
-adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "men", categorie: "General" }, async (dest, zk, commandeOptions) => {
     let { nomAuteurMessage, ms, repondre, prefixe } = commandeOptions;
 
     moment.tz.setDefault(s.TZ || "Africa/Nairobi");
