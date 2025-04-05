@@ -239,18 +239,35 @@ class ListenerManager {
 // Initialize listener manager
 const listenerManager = new ListenerManager();
 
-// Add to connection handler
+// First ensure adams exists before adding listeners
+if (!adams || !adams.ev) {
+    console.error('Socket not initialized!');
+    // Handle the error (retry connection, exit, etc.)
+    return;
+}
+
+// Then safely add the event listener
 adams.ev.on('connection.update', ({ connection }) => {
     if (connection === 'open') {
-        // Load listeners when connected
-        listenerManager.loadListeners(adams, store, commandRegistry)
-            .then(() => console.log('All listeners initialized'))
-            .catch(console.error);
+        console.log('Connection opened!');
+        
+        // Check if listenerManager exists before using it
+        if (listenerManager && listenerManager.loadListeners) {
+            listenerManager.loadListeners(adams, store, commandRegistry)
+                .then(() => console.log('All listeners initialized'))
+                .catch(err => console.error('Listener init error:', err));
+        } else {
+            console.error('listenerManager not available');
+        }
     }
     
     if (connection === 'close') {
-        // Cleanup listeners on disconnect
-        listenerManager.cleanupListeners();
+        console.log('Connection closed!');
+        
+        // Check if listenerManager exists before cleanup
+        if (listenerManager && listenerManager.cleanupListeners) {
+            listenerManager.cleanupListeners();
+        }
     }
 });
 
