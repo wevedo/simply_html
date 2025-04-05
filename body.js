@@ -187,18 +187,6 @@ async function main() {
             }
         });
 
-        // Credential saving
-        adams.ev.on('creds.update', saveCreds);
-    } else {
-        logger.error("adams.ev is not available - event listeners cannot be attached");
-    }
-
-    async function processMessage(message) {
-        // Your message processing logic here
-    }
-}
-
-
 
  //============================================================================//
             
