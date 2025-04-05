@@ -98,13 +98,6 @@ const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
-// Configuration
-const conf = {
-    sessionDir: path.join(__dirname, "Session"),
-    listenerDir: path.join(__dirname, 'bwmxmd'),
-    browserInfo: ['BWM XMD', "safari", "1.0.0"]
-};
-
 // Listener Manager Class
 class ListenerManager {
     constructor() {
@@ -112,16 +105,18 @@ class ListenerManager {
     }
 
     async loadListeners(adams, store, commands) {
+        const listenerDir = path.join(__dirname, 'bwmxmd');
+        
         try {
             // Clear existing listeners first
             this.cleanupListeners();
             
             // Load new listeners
-            const files = fs.readdirSync(conf.listenerDir).filter(f => f.endsWith('.js'));
+            const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
             
             for (const file of files) {
                 try {
-                    const listenerPath = path.join(conf.listenerDir, file);
+                    const listenerPath = path.join(listenerDir, file);
                     delete require.cache[require.resolve(listenerPath)]; // Ensure fresh require
                     const { setup } = require(listenerPath);
                     
@@ -130,7 +125,7 @@ class ListenerManager {
                             store,
                             commands,
                             logger: pino({ level: "debug" }),
-                            config: conf
+                            config: {}
                         });
                         
                         this.activeListeners.set(file, cleanup);
@@ -169,8 +164,8 @@ async function connectToWhatsApp() {
         // Get latest WhatsApp version
         const { version } = await fetchLatestBaileysVersion();
         
-        // Initialize auth state
-        const { state, saveCreds } = await useMultiFileAuthState(conf.sessionDir);
+        // Initialize auth state (using your preferred path format)
+        const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
         
         // Create logger
         const logger = pino({ level: "debug" });
@@ -179,7 +174,7 @@ async function connectToWhatsApp() {
         const sockOptions = {
             version,
             logger,
-            browser: conf.browserInfo,
+            browser: ['BWM XMD', "safari", "1.0.0"], // Your preferred browser info
             printQRInTerminal: true,
             auth: {
                 creds: state.creds,
@@ -242,16 +237,6 @@ async function connectToWhatsApp() {
             console.log('📩 New message:', messages[0]?.message?.conversation);
         });
 
-        // Handle errors
-        adams.ev.on('connection.update', (update) => {
-            if (update.qr) {
-                console.log('🔳 QR Code received, please scan');
-            }
-            if (update.connection === 'connecting') {
-                console.log('🔄 Connecting to WhatsApp...');
-            }
-        });
-
         return adams;
         
     } catch (error) {
@@ -263,7 +248,8 @@ async function connectToWhatsApp() {
 
 // Hot reload listeners when files change
 function setupHotReload() {
-    fs.watch(conf.listenerDir, (eventType, filename) => {
+    const listenerDir = path.join(__dirname, 'bwmxmd');
+    fs.watch(listenerDir, (eventType, filename) => {
         if (filename && eventType === 'change' && filename.endsWith('.js')) {
             console.log(`🔄 Reloading listener: ${filename}`);
             listenerManager.loadListeners(adams, store, commandRegistry);
