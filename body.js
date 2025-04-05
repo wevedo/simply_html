@@ -181,12 +181,23 @@ async function connectToWhatsApp() {
         console.error('Connection error:', error);
         setTimeout(connectToWhatsApp, 10000);
         return null;
-    }
-}
+const { makeWASocket, DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState, makeInMemoryStore, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
+const pino = require('pino');
+const path = require('path');
+const fs = require('fs');
 
- //============================================================================//
-            
-                         
+// Initialize store
+const store = makeInMemoryStore({ 
+    logger: pino().child({ level: "silent", stream: "store" })
+});
+
+// Configuration
+const conf = {
+    sessionDir: path.join(__dirname, "Session"),
+    listenerDir: path.join(__dirname, 'bwmxmd'),
+    browserInfo: ['BWM XMD', "safari", "1.0.0"]
+};
+
 // Listener Manager Class
 class ListenerManager {
     constructor() {
@@ -194,33 +205,36 @@ class ListenerManager {
     }
 
     async loadListeners(adams, store, commands) {
-        const listenerDir = path.join(__dirname, 'bwmxmd');
-        
-        // Clear existing listeners first
-        this.cleanupListeners();
-        
-        // Load new listeners
-        const files = fs.readdirSync(listenerDir).filter(f => f.endsWith('.js'));
-        
-        for (const file of files) {
-            try {
-                const listenerPath = path.join(listenerDir, file);
-                const { setup } = require(listenerPath);
-                
-                if (typeof setup === 'function') {
-                    const cleanup = await setup(adams, { 
-                        store,
-                        commands,
-                        logger,
-                        config: conf
-                    });
+        try {
+            // Clear existing listeners first
+            this.cleanupListeners();
+            
+            // Load new listeners
+            const files = fs.readdirSync(conf.listenerDir).filter(f => f.endsWith('.js'));
+            
+            for (const file of files) {
+                try {
+                    const listenerPath = path.join(conf.listenerDir, file);
+                    delete require.cache[require.resolve(listenerPath)]; // Ensure fresh require
+                    const { setup } = require(listenerPath);
                     
-                    this.activeListeners.set(file, cleanup);
-                    console.log(`Loaded listener: ${file}`);
+                    if (typeof setup === 'function') {
+                        const cleanup = await setup(adams, { 
+                            store,
+                            commands,
+                            logger: pino({ level: "debug" }),
+                            config: conf
+                        });
+                        
+                        this.activeListeners.set(file, cleanup);
+                        console.log(`✅ Loaded listener: ${file}`);
+                    }
+                } catch (e) {
+                    console.error(`❌ Error loading listener ${file}:`, e.message);
                 }
-            } catch (e) {
-                console.error(`Error loading listener ${file}: ${e.message}`);
             }
+        } catch (e) {
+            console.error('⚠️ Listener loading failed:', e);
         }
     }
 
@@ -228,8 +242,9 @@ class ListenerManager {
         for (const [name, cleanup] of this.activeListeners) {
             try {
                 if (typeof cleanup === 'function') cleanup();
+                console.log(`♻️ Cleaned up listener: ${name}`);
             } catch (e) {
-                console.error(`Error cleaning up listener ${name}: ${e.message}`);
+                console.error(`❌ Error cleaning up listener ${name}:`, e.message);
             }
         }
         this.activeListeners.clear();
@@ -238,47 +253,133 @@ class ListenerManager {
 
 // Initialize listener manager
 const listenerManager = new ListenerManager();
+let adams = null; // Global socket instance
 
-// First ensure adams exists before adding listeners
-if (!adams || !adams.ev) {
-    console.error('Socket not initialized!');
-    // Handle the error (retry connection, exit, etc.)
-    return;
+async function connectToWhatsApp() {
+    try {
+        console.log('🔌 Initializing WhatsApp connection...');
+        
+        // Get latest WhatsApp version
+        const { version } = await fetchLatestBaileysVersion();
+        
+        // Initialize auth state
+        const { state, saveCreds } = await useMultiFileAuthState(conf.sessionDir);
+        
+        // Create logger
+        const logger = pino({ level: "debug" });
+        
+        // Socket configuration
+        const sockOptions = {
+            version,
+            logger,
+            browser: conf.browserInfo,
+            printQRInTerminal: true,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, logger)
+            },
+            getMessage: async (key) => {
+                if (store) {
+                    const msg = await store.loadMessage(key.remoteJid, key.id);
+                    return msg?.message || undefined;
+                }
+                return { conversation: 'Message not found' };
+            },
+            // Recommended additional options
+            shouldSyncHistoryMessage: () => true,
+            syncFullHistory: false,
+            linkPreviewImageThumbnailWidth: 192
+        };
+
+        // Create socket instance
+        adams = makeWASocket(sockOptions);
+        
+        // Verify socket creation
+        if (!adams?.ev) {
+            throw new Error('Socket initialization failed - no event emitter');
+        }
+
+        // Bind store to events
+        store.bind(adams.ev);
+        
+        // Handle credentials update
+        adams.ev.on('creds.update', saveCreds);
+        
+        // Handle connection updates
+        adams.ev.on('connection.update', (update) => {
+            const { connection, lastDisconnect } = update;
+            
+            if (connection === 'open') {
+                console.log('✅ Connected to WhatsApp!');
+                // Initialize your listeners here
+                listenerManager.loadListeners(adams, store, commandRegistry)
+                    .then(() => console.log('🎧 All listeners initialized'))
+                    .catch(err => console.error('Listener init error:', err));
+            }
+            
+            if (connection === 'close') {
+                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+                console.log(`🔌 Connection closed. Reconnecting: ${shouldReconnect}`);
+                
+                if (shouldReconnect) {
+                    setTimeout(connectToWhatsApp, 5000);
+                }
+                
+                // Cleanup listeners
+                listenerManager.cleanupListeners();
+            }
+        });
+
+        // Message handling
+        adams.ev.on('messages.upsert', ({ messages }) => {
+            console.log('📩 New message:', messages[0]?.message?.conversation);
+        });
+
+        // Handle errors
+        adams.ev.on('connection.update', (update) => {
+            if (update.qr) {
+                console.log('🔳 QR Code received, please scan');
+            }
+            if (update.connection === 'connecting') {
+                console.log('🔄 Connecting to WhatsApp...');
+            }
+        });
+
+        return adams;
+        
+    } catch (error) {
+        console.error('⚠️ Connection error:', error);
+        setTimeout(connectToWhatsApp, 10000);
+        return null;
+    }
 }
 
-// Then safely add the event listener
-adams.ev.on('connection.update', ({ connection }) => {
-    if (connection === 'open') {
-        console.log('Connection opened!');
-        
-        // Check if listenerManager exists before using it
-        if (listenerManager && listenerManager.loadListeners) {
-            listenerManager.loadListeners(adams, store, commandRegistry)
-                .then(() => console.log('All listeners initialized'))
-                .catch(err => console.error('Listener init error:', err));
-        } else {
-            console.error('listenerManager not available');
+// Hot reload listeners when files change
+function setupHotReload() {
+    fs.watch(conf.listenerDir, (eventType, filename) => {
+        if (filename && eventType === 'change' && filename.endsWith('.js')) {
+            console.log(`🔄 Reloading listener: ${filename}`);
+            listenerManager.loadListeners(adams, store, commandRegistry);
         }
-    }
-    
-    if (connection === 'close') {
-        console.log('Connection closed!');
-        
-        // Check if listenerManager exists before cleanup
-        if (listenerManager && listenerManager.cleanupListeners) {
-            listenerManager.cleanupListeners();
-        }
-    }
-});
+    });
+    console.log('🔥 Hot reload enabled for listeners');
+}
 
-// Optional: Hot reload listeners when files change
-fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
-    if (eventType === 'change' && filename.endsWith('.js')) {
-        console.log(`Reloading listener: ${filename}`);
-        delete require.cache[require.resolve(path.join(__dirname, 'bwmxmd', filename))];
-        listenerManager.loadListeners(adams, store, commandRegistry);
-    }
-});
+// Start the bot
+(async () => {
+    // First connection attempt
+    await connectToWhatsApp();
+    
+    // Setup hot reload
+    setupHotReload();
+    
+    // Handle process exit
+    process.on('SIGINT', () => {
+        console.log('🛑 Shutting down gracefully...');
+        listenerManager.cleanupListeners();
+        process.exit(0);
+    });
+})();
 
 
  
