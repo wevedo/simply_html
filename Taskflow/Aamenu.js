@@ -1,42 +1,66 @@
 const { adams } = require("../Ibrahim/adams");
-const { generateWAMessageFromContent, proto } = require("@whiskeysockets/baileys");
+const { proto } = require("@whiskeysockets/baileys");
 
-adams({ nomCom: "abu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "menutest", categorie: "General" }, async (dest, zk, commandeOptions) => {
     const { ms } = commandeOptions;
 
-    // Simple test message with buttons
-    const msg = {
-        text: "TESTING BUTTONS - Please select an option:",
-        footer: "Button Test",
-        buttons: [
-            { buttonId: 'btn1', buttonText: { displayText: 'Button 1' }, type: 1 },
-            { buttonId: 'btn2', buttonText: { displayText: 'Button 2' }, type: 1 }
-        ],
-        headerType: 1
+    // Create a list message
+    const sections = [
+        {
+            title: "MAIN MENU",
+            rows: [
+                {
+                    title: "📜 ALL COMMANDS",
+                    description: "Show all available commands",
+                    rowId: "all_commands"
+                },
+                {
+                    title: "⬇️ DOWNLOADER",
+                    description: "Media download commands",
+                    rowId: "downloader"
+                },
+                {
+                    title: "👥 GROUP",
+                    description: "Group management commands",
+                    rowId: "group"
+                }
+            ]
+        }
+    ];
+
+    const listMessage = {
+        text: "BWM-XMD TEST MENU\nPlease select an option:",
+        footer: "Testing menu buttons",
+        title: "MAIN MENU",
+        buttonText: "View Categories",
+        sections
     };
 
-    // Send the message with buttons
-    await zk.sendMessage(dest, msg);
+    // Send the list message
+    await zk.sendMessage(dest, listMessage);
 
-    // Button selection handler
+    // Handle list selection
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
-        if (!message.message) return;
+        if (!message.message.listResponseMessage) return;
 
-        // Check for button response
-        if (message.message.buttonsResponseMessage) {
-            const selectedId = message.message.buttonsResponseMessage.selectedButtonId;
-            
-            let replyText = "";
-            if (selectedId === 'btn1') {
-                replyText = "You pressed Button 1!";
-            } else if (selectedId === 'btn2') {
-                replyText = "You pressed Button 2!";
-            }
+        const selectedId = message.message.listResponseMessage.singleSelectReply.selectedRowId;
+        let replyText = "";
+        
+        switch(selectedId) {
+            case "all_commands":
+                replyText = "You selected: All Commands";
+                break;
+            case "downloader":
+                replyText = "You selected: Downloader";
+                break;
+            case "group":
+                replyText = "You selected: Group";
+                break;
+        }
 
-            if (replyText) {
-                await zk.sendMessage(dest, { text: replyText }, { quoted: message });
-            }
+        if (replyText) {
+            await zk.sendMessage(dest, { text: replyText }, { quoted: message });
         }
     });
 });
