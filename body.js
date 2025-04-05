@@ -93,16 +93,18 @@ let zk;
 
 //===============================================================================//
 
-const store = makeInMemoryStore({ 
-    logger: pino().child({ level: "silent", stream: "store" })
-});
-
 async function main() {
     try {
+        // Get latest WhatsApp version
         const { version } = await fetchLatestBaileysVersion();
+        
+        // Initialize auth state
         const { state, saveCreds } = await useMultiFileAuthState(path.join(__dirname, "Session"));
+        
+        // Create logger
         const logger = pino({ level: "silent" });
-
+        
+        // Socket configuration
         const sockOptions = {
             version,
             logger: logger,
@@ -126,31 +128,40 @@ async function main() {
 
         // Initialize socket
         const adams = makeWASocket(sockOptions);
-
-        // Check if socket was created successfully
+        
+        // Verify socket is created before attaching listeners
         if (!adams || !adams.ev) {
-            throw new Error("Failed to initialize WhatsApp socket");
+            throw new Error('Failed to initialize WhatsApp socket');
         }
 
-        // Bind store and set up event listeners
+        // Bind store and events
         store.bind(adams.ev);
-        
         adams.ev.on('creds.update', saveCreds);
         
-        adams.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update;
+        // Modified connection.update handler with your listener management
+        adams.ev.on('connection.update', ({ connection }) => {
+            if (connection === 'open') {
+                console.log('✅ Successfully connected to WhatsApp!');
+                // Load listeners when connected
+                listenerManager.loadListeners(adams, store, commandRegistry)
+                    .then(() => console.log('All listeners initialized'))
+                    .catch(console.error);
+            }
             
             if (connection === 'close') {
-                const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-                console.log(`Connection closed, reconnecting... (${shouldReconnect ? 'Yes' : 'No'})`);
+                console.log('Connection closed');
+                // Cleanup listeners on disconnect
+                listenerManager.cleanupListeners();
+                
+                // Reconnect logic
+                const shouldReconnect = true; // Add your disconnect reason check here
                 if (shouldReconnect) {
                     setTimeout(main, 5000);
                 }
-            } else if (connection === 'open') {
-                console.log('✅ Successfully connected to WhatsApp!');
             }
         });
 
+        // Message handler
         adams.ev.on('messages.upsert', async ({ messages }) => {
             console.log('Received new message:', messages[0]?.message?.conversation);
         });
@@ -160,6 +171,7 @@ async function main() {
     } catch (error) {
         console.error('⚠️ Error in main function:', error);
         setTimeout(main, 10000); 
+        return null; // Important: Return null on error
     }
 }
 
