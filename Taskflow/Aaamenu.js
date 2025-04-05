@@ -127,7 +127,7 @@ adams({ nomCom: "menu", categorie: "General" }, async (dest, zk, commandeOptions
                         text: "© Powered By BWM-XMD"
                     }),
                     header: proto.Message.InteractiveMessage.Header.create({
-                        ...(await prepareWAMessageMedia({ image: fs.readFileSync('./src/your_image.jpg') }, { upload: zk.waUploadToServer })),
+                        ...(await prepareWAMessageMedia({ image: fs.readFileSync('https://bwm-xmd-files.vercel.app/bwmxmd_1tksj5.jpeg') }, { upload: zk.waUploadToServer })),
                         title: ``,
                         gifPlayback: true,
                         subtitle: "",
