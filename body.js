@@ -136,7 +136,8 @@ async function main() {
         store.bind(adams.ev);
         adams.ev.on('creds.update', saveCreds);
     }
-}
+});
+
 
  //============================================================================//
             
