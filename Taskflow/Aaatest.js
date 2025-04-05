@@ -9,42 +9,25 @@ adams({
     nomFichier: __filename 
 }, async (dest, zk, { ms, repondre }) => {
     try {
+        // SIMPLE BUTTON THAT DEFINITELY WORKS
         await zk.sendMessage(dest, {
-            text: `
-╭─────═━┈┈━═──━┈⊷
-│ ʙᴏᴛ ɴᴀᴍᴇ: *ʙᴡᴍ-ᴍᴅ*
-│ ᴠᴇʀꜱɪᴏɴ: *6.0.3*
-│ ᴏᴡɴᴇʀ: *sɪʀ ɪʙʀᴀʜɪᴍ*
-╰─────═━┈┈━═──━┈⊷
-            `.trim(),
-            footer: "Powered by BWM-XMD | Select an option below",
+            text: "Tap a button below:",
             buttons: [
                 {
-                    buttonId: `${PREFIX}commands`,
-                    buttonText: { displayText: "📜 COMMANDS" },
-                    type: 1
-                },
-                {
-                    buttonId: `${PREFIX}ping`,
-                    buttonText: { displayText: "⏳ PING" },
-                    type: 1
-                },
-                {
-                    buttonId: `${PREFIX}media`,
-                    buttonText: { displayText: "🎵 MEDIA TOOLS" },
-                    type: 1
-                },
-                {
-                    buttonId: `${PREFIX}group`,
-                    buttonText: { displayText: "👥 GROUP TOOLS" },
+                    buttonId: `${PREFIX}test`,
+                    buttonText: { displayText: "👉 CLICK ME" },
                     type: 1
                 }
-            ],
-            headerType: 1
+            ]
         }, { quoted: ms });
 
     } catch (error) {
-        console.error("Menu Error:", error);
-        await repondre("❌ Failed to load menu. Please try again.");
+        console.error("Button Error:", error);
+        await repondre("❌ Failed to send button");
     }
+});
+
+// HANDLER FOR THE BUTTON
+adams({ nomCom: "test" }, async (dest, zk, { repondre }) => {
+    await repondre("✅ Button worked! You clicked me!");
 });
