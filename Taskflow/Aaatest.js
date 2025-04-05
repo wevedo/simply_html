@@ -3,50 +3,57 @@ const conf = require(__dirname + "/../config");
 const PREFIX = conf.PREFIX;
 
 adams({ 
-    nomCom: "buttontest", 
+    nomCom: "listtest", 
     categorie: "Test",
-    reaction: "🔘",
+    reaction: "📋",
     nomFichier: __filename 
 }, async (dest, zk, { ms, repondre }) => {
     try {
-        // Create the button message properly
-        const buttonMessage = {
-            text: "🛠️ *BWM-XMD BUTTON TEST* 🛠️\n\nSelect an option:",
-            footer: "Testing button functionality",
-            buttons: [
+        // Create interactive list message
+        const listMessage = {
+            text: "📋 *BWM-XMD LIST TEST* 📋",
+            footer: "Select an option from the list",
+            title: "TEST OPTIONS",
+            buttonText: "View Options",
+            sections: [
                 {
-                    buttonId: `${PREFIX}test1`,
-                    buttonText: { displayText: "🔊 Test Button 1" }
-                },
-                {
-                    buttonId: `${PREFIX}test2`, 
-                    buttonText: { displayText: "📸 Test Button 2" }
+                    title: "MAIN TEST SECTION",
+                    rows: [
+                        {
+                            title: "🔊 Audio Test",
+                            description: "Test audio functionality",
+                            rowId: `${PREFIX}test1`
+                        },
+                        {
+                            title: "📸 Video Test",
+                            description: "Test video functionality", 
+                            rowId: `${PREFIX}test2`
+                        }
+                    ]
                 }
-            ],
-            headerType: 1, // Important for button display
-            viewOnce: true // Makes message disappear after selection
+            ]
         };
 
-        // Send the message
-        await zk.sendMessage(dest, buttonMessage, { quoted: ms });
+        // Send list message
+        await zk.sendMessage(dest, listMessage, { quoted: ms });
 
-        // Button click handler
+        // List selection handler
         zk.ev.on("messages.upsert", async ({ messages }) => {
             const msg = messages[0];
-            if (!msg?.message?.buttonsResponseMessage) return;
+            if (!msg?.message?.listResponseMessage) return;
             
-            const selected = msg.message.buttonsResponseMessage.selectedButtonId;
-            await repondre(`✅ You clicked: ${selected.replace(PREFIX, "")}`);
+            const selected = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+            await repondre(`✅ You selected: ${selected.replace(PREFIX, "")}`);
             
-            // Optional: Send a visible confirmation
-            await zk.sendMessage(dest, { 
-                text: `You selected: ${selected.includes('test1') ? "Button 1" : "Button 2"}`,
-                footer: "BWM-XMD Test"
+            // Additional response
+            await zk.sendMessage(dest, {
+                text: `You chose: ${selected.includes('test1') ? "Audio Test" : "Video Test"}`,
+                footer: "BWM-XMD Test Result"
             }, { quoted: msg });
         });
 
     } catch (error) {
-        console.error("Button Test Error:", error);
-        await repondre("❌ Button test failed");
+        console.error("List Test Error:", error);
+        await repondre("❌ List test failed");
     }
 });
