@@ -11,25 +11,26 @@ adams({
     try {
         // Mobile-friendly button message
         await zk.sendMessage(dest, {
-            text: "📲 *BWM-XMD MOBILE TEST* 📲\n\nPlease select:",
-            footer: "Mobile button test",
-            templateButtons: [
+    text: "📋 BWM-XMD MOBILE MENU",
+    footer: "Select an option",
+    title: "YOUR CHOICE",
+    buttonText: "VIEW OPTIONS",
+    sections: [
+        {
+            title: "MAIN OPTIONS",
+            rows: [
                 {
-                    index: 1,
-                    quickReplyButton: {
-                        displayText: "⭐ OPTION 1",
-                        id: `${PREFIX}test1`
-                    }
+                    title: "Option 1",
+                    rowId: `${PREFIX}mopt1`
                 },
                 {
-                    index: 2,
-                    quickReplyButton: {
-                        displayText: "✨ OPTION 2",
-                        id: `${PREFIX}test2`
-                    }
+                    title: "Option 2", 
+                    rowId: `${PREFIX}mopt2`
                 }
             ]
-        }, { quoted: ms });
+        }
+    ]
+}, { quoted: ms });
 
         // Button response handler
         zk.ev.on("messages.upsert", ({ messages }) => {
