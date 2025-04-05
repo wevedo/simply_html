@@ -21,31 +21,26 @@ adams({
 }, async (dest, zk, commandeOptions) => {
     const { ms, repondre } = commandeOptions;
 
-    // Get quoted image message
     const quotedMsg = ms.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     if (!quotedMsg?.imageMessage) {
         return repondre("ℹ️ Please reply to an image message to set as group picture.");
     }
 
-    let tempPath;
+    let pp = null;
     try {
-        // Download image stream
+        // Download and save image
         const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
         const buffer = await streamToBuffer(stream);
+        pp = path.join(__dirname, `groupimg_${Date.now()}.jpg`);
+        await fs.writeFile(pp, buffer);
 
-        // Save to temporary file
-        tempPath = path.join(__dirname, `groupimg_${Date.now()}.jpg`);
-        await fs.writeFile(tempPath, buffer);
-
-        // Set group picture
-        await zk.groupUpdatePicture(dest, buffer);
-
-        // Clean up
-        fs.unlinkSync(tempPath);
-        repondre("✅ Group picture updated successfully");
+        // Update profile picture
+        await zk.updateProfilePicture(dest, { url: pp });
+        await zk.sendMessage(dest, { text: "✅ Group picture updated successfully." });
+        fs.unlinkSync(pp);
     } catch (err) {
-        console.error("Group pic error:", err);
-        if (tempPath && fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-        repondre(`❌ Failed to update group picture: ${err.message}`);
+        console.error("Error setting group picture:", err);
+        if (pp && fs.existsSync(pp)) fs.unlinkSync(pp);
+        await zk.sendMessage(dest, { text: `❌ Failed to update group picture: ${err.message}` });
     }
 });
