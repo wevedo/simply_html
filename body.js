@@ -101,8 +101,17 @@ const store = makeInMemoryStore({
     logger: pino().child({ level: "silent", stream: "store" })
 });
 
+// Increase Node.js performance limits
+process.setMaxListeners(50); // Higher limit for many messages
+require('events').EventEmitter.defaultMaxListeners = 50;
+
+// Optimize memory usage
+if (global.gc) {
+    setInterval(() => global.gc(), 300000); // Force GC every 5 minutes if available
+}
+
 async function main() {
-    const { version, isLatest } = await fetchLatestBaileysVersion();
+    const { version } = await fetchLatestBaileysVersion();
     const { state, saveCreds } = await useMultiFileAuthState(__dirname + "/Session");
     
     const sockOptions = {
@@ -112,52 +121,126 @@ async function main() {
         printQRInTerminal: true,
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, logger)
+            keys: makeCacheableSignalKeyStore(state.keys, pino())
         },
+        // Optimized message handling
         getMessage: async (key) => {
-            if (store) {
-                const msg = await store.loadMessage(key.remoteJid, key.id);
-                return msg.message || undefined;
-            }
-            return { conversation: 'Error occurred' };
-        }
+            return store?.loadMessage(key.remoteJid, key.id) 
+                || { conversation: 'Message not in cache' };
+        },
+        // High performance options
+        markOnlineOnConnect: false, // Reduces overhead
+        syncFullHistory: false,      // Don't sync old messages
+        transactionOpts: {
+            maxCommitRetries: 2,     // Faster failover
+            delayBetweenTriesMs: 1000
+        },
+        msgRetryCounterCache: new NodeCache({
+            stdTTL: 60 * 60,        // 1 hour cache
+            checkperiod: 120         // Check every 2 minutes
+        }),
+        generateHighQualityLinkPreview: false // Reduces processing
     };
 
-    adams = makeWASocket(sockOptions);
-    store.bind(adams.ev);
+    const sock = makeWASocket(sockOptions);
+    
+    // Bind store with high-performance settings
+    store.bind(sock.ev, {
+        maxCommitRetries: 2,
+        delayBetweenTriesMs: 500
+    });
+    sock.ev.setMaxListeners(50);
 
-    // Silent Rate Limiting
+    // High-capacity rate limiting
+    const rateLimit = new Map();
+    const MAX_REQUESTS_PER_MINUTE = 3000; // High limit for many messages
+    
     function isRateLimited(jid) {
         const now = Date.now();
+        const windowStart = now - 60000; // 1 minute window
+        
         if (!rateLimit.has(jid)) {
-            rateLimit.set(jid, now);
+            rateLimit.set(jid, [{ timestamp: now }]);
             return false;
         }
-        const lastRequestTime = rateLimit.get(jid);
-        if (now - lastRequestTime < 3000) return true;
-        rateLimit.set(jid, now);
+        
+        const requests = rateLimit.get(jid).filter(r => r.timestamp > windowStart);
+        if (requests.length >= MAX_REQUESTS_PER_MINUTE) return true;
+        
+        requests.push({ timestamp: now });
+        rateLimit.set(jid, requests);
         return false;
     }
 
-    // Group Metadata Handling
+    // Optimized group metadata cache
     const groupMetadataCache = new Map();
+    const MAX_CACHE_SIZE = 500; // Large cache for many groups
+    
     async function getGroupMetadata(groupId) {
         if (groupMetadataCache.has(groupId)) {
             return groupMetadataCache.get(groupId);
         }
+        
+        // Auto-cleanup when cache gets large
+        if (groupMetadataCache.size > MAX_CACHE_SIZE) {
+            const oldest = [...groupMetadataCache.entries()]
+                .sort((a, b) => a[1].lastAccess - b[1].lastAccess)
+                .slice(0, 100); // Remove 100 oldest
+            oldest.forEach(([key]) => groupMetadataCache.delete(key));
+        }
+        
         try {
-            const metadata = await zk.groupMetadata(groupId);
-            groupMetadataCache.set(groupId, metadata);
-            setTimeout(() => groupMetadataCache.delete(groupId), 60000);
+            const metadata = await sock.groupMetadata(groupId);
+            groupMetadataCache.set(groupId, {
+                ...metadata,
+                lastAccess: Date.now()
+            });
             return metadata;
         } catch (error) {
-            if (error.message.includes("rate-overlimit")) {
-                await new Promise(res => setTimeout(res, 5000));
-            }
+            console.error('Group metadata error:', error);
             return null;
         }
     }
 
+    // High-performance message handler
+    async function handleMessages() {
+        sock.ev.on('messages.upsert', async ({ messages, type }) => {
+            if (type !== 'notify') return;
+            
+            // Process messages in batches for efficiency
+            const batchSize = 50;
+            for (let i = 0; i < messages.length; i += batchSize) {
+                const batch = messages.slice(i, i + batchSize);
+                await Promise.allSettled(batch.map(processMessage));
+            }
+        });
+    }
+
+    // Optimized message processing
+    async function processMessage(message) {
+        try {
+            // Your message processing logic here
+            // Keep it lean and fast
+        } catch (error) {
+            console.error('Message processing error:', error);
+        }
+    }
+
+    // Memory management for high message volume
+    setInterval(() => {
+        const memoryUsage = process.memoryUsage();
+        if (memoryUsage.heapUsed > 500 * 1024 * 1024) { // 500MB
+            console.log('Optimizing memory...');
+            // Clear non-essential caches
+            groupMetadataCache.clear();
+            if (global.gc) global.gc();
+        }
+    }, 60000); // Check every minute
+
+    // Start processing
+    handleMessages();
+    console.log('Bot ready to handle high message volume');
+}
 
  //============================================================================//
             
