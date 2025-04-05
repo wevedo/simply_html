@@ -18,43 +18,29 @@ adams({
 ╰─────═━┈┈━═──━┈⊷
             `.trim(),
             footer: "Powered by BWM-XMD | Select an option below",
-            templateButtons: [
-                { 
-                    index: 1, 
-                    quickReplyButton: { 
-                        displayText: "📜 COMMANDS", 
-                        id: `${PREFIX}commands` 
-                    }
+            buttons: [
+                {
+                    buttonId: `${PREFIX}commands`,
+                    buttonText: { displayText: "📜 COMMANDS" },
+                    type: 1
                 },
-                { 
-                    index: 2, 
-                    quickReplyButton: { 
-                        displayText: "⏳ PING", 
-                        id: `${PREFIX}ping` 
-                    }
+                {
+                    buttonId: `${PREFIX}ping`,
+                    buttonText: { displayText: "⏳ PING" },
+                    type: 1
                 },
-                { 
-                    index: 3, 
-                    quickReplyButton: { 
-                        displayText: "🎵 MEDIA TOOLS", 
-                        id: `${PREFIX}media` 
-                    }
+                {
+                    buttonId: `${PREFIX}media`,
+                    buttonText: { displayText: "🎵 MEDIA TOOLS" },
+                    type: 1
                 },
-                { 
-                    index: 4, 
-                    quickReplyButton: { 
-                        displayText: "👥 GROUP TOOLS", 
-                        id: `${PREFIX}group` 
-                    }
-                },
-                { 
-                    index: 5, 
-                    urlButton: { 
-                        displayText: "⭐ GITHUB", 
-                        url: "https://github.com/devibraah/BWM-XMD" 
-                    }
+                {
+                    buttonId: `${PREFIX}group`,
+                    buttonText: { displayText: "👥 GROUP TOOLS" },
+                    type: 1
                 }
-            ]
+            ],
+            headerType: 1
         }, { quoted: ms });
 
     } catch (error) {
