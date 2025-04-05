@@ -150,7 +150,7 @@ adams({ nomCom: "canceltimer", categorie: "Group",reaction: "❌", nomFichier: _
 });
 
 
-adams({ nomCom: "online", categorie: "Group",reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
+adams({ nomCom: "online", categorie: "Group", reaction: "🟢", nomFichier: __filename }, async (dest, zk, commandeOptions) => {
   const { repondre } = commandeOptions;
   
   try {
@@ -161,36 +161,25 @@ adams({ nomCom: "online", categorie: "Group",reaction: "🟢", nomFichier: __fil
     await Promise.all(metadata.participants.map(async (member) => {
       try {
         const presence = await zk.presenceSubscribe(member.id);
-        if (presence.lastSeen === null || Date.now() - presence.lastSeen < 300000) { // 5 min threshold
-          onlineMembers.push({
-            id: member.id,
-            name: member.id.split('@')[0],
-            lastSeen: presence.lastSeen,
-            status: presence.lastSeen === null ? "Online Now" : "Recently Active"
-          });
+        
+        // Check if presence data exists and has lastSeen property
+        if (presence && typeof presence === 'object') {
+          const isOnline = !presence.lastSeen; // If no lastSeen, they're online
+          const isRecentlyActive = presence.lastSeen && (Date.now() - presence.lastSeen < 300000); // 5 min threshold
+          
+          if (isOnline || isRecentlyActive) {
+            onlineMembers.push({
+              id: member.id,
+              name: member.id.split('@')[0],
+              lastSeen: presence.lastSeen || null,
+              status: isOnline ? "Online Now" : "Recently Active"
+            });
+          }
         }
       } catch (error) {
         console.error(`Presence check failed for ${member.id}:`, error);
       }
     }));
-    
-    // Format message
-    let message = "🟢 *Online Members* 🟢\n\n";
-    message += `Total: ${onlineMembers.length}/${metadata.participants.length}\n\n`;
-    
-    onlineMembers.forEach((member, index) => {
-      message += `${index+1}. @${member.name} - ${member.status}\n`;
-    });
-    
-    await zk.sendMessage(dest, {
-      text: message,
-      mentions: onlineMembers.map(m => m.id)
-    });
-    
-  } catch (error) {
-    repondre(`❌ Failed to check online status: ${error.message}`);
-  }
-});
 
 
 adams({ nomCom: "info", categorie: 'Group' }, async (dest, zk, commandeOptions) => {
