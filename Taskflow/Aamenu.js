@@ -1,66 +1,94 @@
 const { adams } = require("../Ibrahim/adams");
 const { proto } = require("@whiskeysockets/baileys");
 
-adams({ nomCom: "menutest", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { ms } = commandeOptions;
+adams({ nomCom: "cartmenu", categorie: "General" }, async (dest, zk, commandeOptions) => {
+    const { ms, prefixe } = commandeOptions;
 
-    // Create a list message
+    // Create catalog-like sections
     const sections = [
         {
-            title: "MAIN MENU",
-            rows: [
+            title: "📁 COMMAND CATEGORIES",
+            productRows: [
                 {
-                    title: "📜 ALL COMMANDS",
-                    description: "Show all available commands",
-                    rowId: "all_commands"
-                },
-                {
-                    title: "⬇️ DOWNLOADER",
+                    title: "DOWNLOADER TOOLS",
                     description: "Media download commands",
-                    rowId: "downloader"
+                    productId: "downloader_cat"
                 },
                 {
-                    title: "👥 GROUP",
+                    title: "GROUP TOOLS",
                     description: "Group management commands",
-                    rowId: "group"
+                    productId: "group_cat"
+                },
+                {
+                    title: "AI COMMANDS",
+                    description: "Artificial intelligence features",
+                    productId: "ai_cat"
                 }
             ]
         }
     ];
 
-    const listMessage = {
-        text: "BWM-XMD TEST MENU\nPlease select an option:",
-        footer: "Testing menu buttons",
-        title: "MAIN MENU",
+    // Create the interactive catalog message
+    const catalogMessage = {
+        text: `BWM-XMD COMMAND MENU (${prefixe})`,
+        footer: "Select a category to view commands",
+        title: "COMMAND STORE",
         buttonText: "View Categories",
-        sections
+        productSections: sections,
+        productListInfo: {
+            productSections: sections,
+            headerImage: { 
+                productId: "header_img",
+                jpegThumbnail: Buffer.from("IMAGE_BUFFER_HERE") // Optional
+            }
+        }
     };
 
-    // Send the list message
-    await zk.sendMessage(dest, listMessage);
+    // Send the catalog-style message
+    await zk.sendMessage(dest, catalogMessage);
 
-    // Handle list selection
+    // Handle category selection
     zk.ev.on("messages.upsert", async (update) => {
         const message = update.messages[0];
-        if (!message.message.listResponseMessage) return;
+        if (!message.message.productMessage) return;
 
-        const selectedId = message.message.listResponseMessage.singleSelectReply.selectedRowId;
-        let replyText = "";
-        
+        const selectedId = message.message.productMessage.product.productId;
+        let commands = "";
+
         switch(selectedId) {
-            case "all_commands":
-                replyText = "You selected: All Commands";
+            case "downloader_cat":
+                commands = `╭─❖ DOWNLOADER ❖─╮
+┃✰ ${prefixe}ytmp3
+┃✰ ${prefixe}ytmp4
+┃✰ ${prefixe}tiktok
+┃✰ ${prefixe}facebook
+╰──────────────╯`;
                 break;
-            case "downloader":
-                replyText = "You selected: Downloader";
+                
+            case "group_cat":
+                commands = `╭─❖ GROUP ❖─╮
+┃✰ ${prefixe}add
+┃✰ ${prefixe}kick
+┃✰ ${prefixe}promote
+┃✰ ${prefixe}demote
+╰────────────╯`;
                 break;
-            case "group":
-                replyText = "You selected: Group";
+                
+            case "ai_cat":
+                commands = `╭─❖ AI ❖─╮
+┃✰ ${prefixe}gpt
+┃✰ ${prefixe}dalle
+┃✰ ${prefixe}gemini
+┃✰ ${prefixe}remini
+╰──────────╯`;
                 break;
         }
 
-        if (replyText) {
-            await zk.sendMessage(dest, { text: replyText }, { quoted: message });
+        if (commands) {
+            await zk.sendMessage(dest, { 
+                text: commands,
+                footer: "BWM-XMD Command List" 
+            }, { quoted: message });
         }
     });
 });
