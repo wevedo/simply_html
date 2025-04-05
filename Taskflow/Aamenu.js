@@ -1,94 +1,86 @@
 const { adams } = require("../Ibrahim/adams");
-const { proto } = require("@whiskeysockets/baileys");
+const { PREFIX } = require(__dirname + "/../config");
 
-adams({ nomCom: "cartmenu", categorie: "General" }, async (dest, zk, commandeOptions) => {
-    const { ms, prefixe } = commandeOptions;
+adams(
+  { nomCom: "cartmenu", categorie: "General" },
+  async (dest, zk, commandeOptions) => {
+    const { ms } = commandeOptions;
 
-    // Create catalog-like sections
+    // Define command menu sections
     const sections = [
-        {
-            title: "📁 COMMAND CATEGORIES",
-            productRows: [
-                {
-                    title: "DOWNLOADER TOOLS",
-                    description: "Media download commands",
-                    productId: "downloader_cat"
-                },
-                {
-                    title: "GROUP TOOLS",
-                    description: "Group management commands",
-                    productId: "group_cat"
-                },
-                {
-                    title: "AI COMMANDS",
-                    description: "Artificial intelligence features",
-                    productId: "ai_cat"
-                }
-            ]
-        }
+      {
+        title: "📁 COMMAND CATEGORIES",
+        rows: [
+          {
+            title: "DOWNLOADER TOOLS",
+            description: "Media download commands",
+            rowId: "cartmenu_downloader"
+          },
+          {
+            title: "GROUP TOOLS",
+            description: "Group management commands",
+            rowId: "cartmenu_group"
+          },
+          {
+            title: "AI COMMANDS",
+            description: "Artificial intelligence features",
+            rowId: "cartmenu_ai"
+          }
+        ]
+      }
     ];
 
-    // Create the interactive catalog message
-    const catalogMessage = {
-        text: `BWM-XMD COMMAND MENU (${prefixe})`,
-        footer: "Select a category to view commands",
-        title: "COMMAND STORE",
-        buttonText: "View Categories",
-        productSections: sections,
-        productListInfo: {
-            productSections: sections,
-            headerImage: { 
-                productId: "header_img",
-                jpegThumbnail: Buffer.from("IMAGE_BUFFER_HERE") // Optional
-            }
-        }
-    };
+    // Send WhatsApp list message
+    await zk.sendMessage(dest, {
+      text: `BWM-XMD COMMAND MENU (${PREFIX})`,
+      footer: "Select a category to view commands",
+      title: "COMMAND STORE",
+      buttonText: "View Categories",
+      sections
+    }, { quoted: ms });
+  }
+);
 
-    // Send the catalog-style message
-    await zk.sendMessage(dest, catalogMessage);
+// Handle selection from menu (using your own zk.ev)
+zk.ev.on("messages.upsert", async (update) => {
+  const msg = update.messages[0];
+  if (!msg.message || !msg.message.listResponseMessage) return;
 
-    // Handle category selection
-    zk.ev.on("messages.upsert", async (update) => {
-        const message = update.messages[0];
-        if (!message.message.productMessage) return;
+  const rowId = msg.message.listResponseMessage.singleSelectReply.selectedRowId;
+  const from = msg.key.remoteJid;
 
-        const selectedId = message.message.productMessage.product.productId;
-        let commands = "";
+  let reply = "";
 
-        switch(selectedId) {
-            case "downloader_cat":
-                commands = `╭─❖ DOWNLOADER ❖─╮
-┃✰ ${prefixe}ytmp3
-┃✰ ${prefixe}ytmp4
-┃✰ ${prefixe}tiktok
-┃✰ ${prefixe}facebook
+  switch (rowId) {
+    case "cartmenu_downloader":
+      reply = `╭─❖ DOWNLOADER ❖─╮
+┃✰ ${PREFIX}ytmp3
+┃✰ ${PREFIX}ytmp4
+┃✰ ${PREFIX}tiktok
+┃✰ ${PREFIX}facebook
 ╰──────────────╯`;
-                break;
-                
-            case "group_cat":
-                commands = `╭─❖ GROUP ❖─╮
-┃✰ ${prefixe}add
-┃✰ ${prefixe}kick
-┃✰ ${prefixe}promote
-┃✰ ${prefixe}demote
-╰────────────╯`;
-                break;
-                
-            case "ai_cat":
-                commands = `╭─❖ AI ❖─╮
-┃✰ ${prefixe}gpt
-┃✰ ${prefixe}dalle
-┃✰ ${prefixe}gemini
-┃✰ ${prefixe}remini
-╰──────────╯`;
-                break;
-        }
+      break;
 
-        if (commands) {
-            await zk.sendMessage(dest, { 
-                text: commands,
-                footer: "BWM-XMD Command List" 
-            }, { quoted: message });
-        }
-    });
+    case "cartmenu_group":
+      reply = `╭─❖ GROUP ❖─╮
+┃✰ ${PREFIX}add
+┃✰ ${PREFIX}kick
+┃✰ ${PREFIX}promote
+┃✰ ${PREFIX}demote
+╰────────────╯`;
+      break;
+
+    case "cartmenu_ai":
+      reply = `╭─❖ AI ❖─╮
+┃✰ ${PREFIX}gpt
+┃✰ ${PREFIX}dalle
+┃✰ ${PREFIX}gemini
+┃✰ ${PREFIX}remini
+╰──────────╯`;
+      break;
+  }
+
+  if (reply) {
+    await zk.sendMessage(from, { text: reply }, { quoted: msg });
+  }
 });
