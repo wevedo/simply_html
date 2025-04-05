@@ -91,3 +91,50 @@ adams({
     repondre("❌ Failed to process video.");
   }
 });
+
+
+adams(
+  {
+    nomCom: "online",
+    reaction: "🟢",
+    nomFichier: __filename,
+  },
+  async (chatId, zk, { ms, repondre, superUser }) => {
+    try {
+      const groupMetadata = await zk.groupMetadata(chatId);
+      const participants = groupMetadata.participants;
+
+      let online = [];
+      let offline = [];
+
+      for (const participant of participants) {
+        const id = participant.id;
+        try {
+          await zk.presenceSubscribe(id);
+          const presence = zk.presence[id];
+
+          if (presence?.lastKnownPresence === "available") {
+            online.push(id.split("@")[0]);
+          } else {
+            offline.push(id.split("@")[0]);
+          }
+        } catch (err) {
+          offline.push(id.split("@")[0]); // Fallback
+        }
+      }
+
+      const msg =
+        `*📶 Status Check for ${groupMetadata.subject}*\n\n` +
+        `🟢 *Online (${online.length}):*\n` +
+        `${online.map((num) => `• +${num}`).join("\n") || "_None_"}\n\n` +
+        `🔴 *Offline (${offline.length}):*\n` +
+        `${offline.map((num) => `• +${num}`).join("\n") || "_None_"}\n\n` +
+        `👥 *Total Members:* ${participants.length}`;
+
+      await repondre(msg);
+    } catch (e) {
+      console.error(e);
+      await repondre("❌ Failed to check member statuses.");
+    }
+  }
+);
