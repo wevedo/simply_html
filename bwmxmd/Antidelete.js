@@ -17,11 +17,102 @@ module.exports = {
         const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
         let store = { chats: {} };
 
-        adams.ev.on("messages.upsert", async (m) => {
+        // Function to process and send media messages
+        const processMediaMessage = async (deletedMessage, participant, notification) => {
+            let mediaType, mediaInfo;
+            
+            if (deletedMessage.message?.imageMessage) {
+                mediaType = 'image';
+                mediaInfo = deletedMessage.message.imageMessage;
+            } else if (deletedMessage.message?.videoMessage) {
+                mediaType = 'video';
+                mediaInfo = deletedMessage.message.videoMessage;
+            } else if (deletedMessage.message?.audioMessage) {
+                mediaType = 'audio';
+                mediaInfo = deletedMessage.message.audioMessage;
+            } else if (deletedMessage.message?.stickerMessage) {
+                mediaType = 'sticker';
+                mediaInfo = deletedMessage.message.stickerMessage;
+            } else if (deletedMessage.message?.documentMessage) {
+                mediaType = 'document';
+                mediaInfo = deletedMessage.message.documentMessage;
+            }
+
+            if (!mediaType || !mediaInfo) return null;
+
             try {
-                const { messages } = m;
-                const ms = messages[0];
+                const mediaStream = await downloadMediaMessage(deletedMessage, { logger });
                 
+                let ext;
+                switch (mediaType) {
+                    case 'image': ext = 'jpg'; break;
+                    case 'video': ext = 'mp4'; break;
+                    case 'audio': ext = 'ogg'; break;
+                    case 'sticker': ext = 'webp'; break;
+                    case 'document': 
+                        ext = mediaInfo.fileName?.split('.').pop() || 'bin';
+                        break;
+                    default: ext = 'bin';
+                }
+                
+                const tempPath = path.join(__dirname, `temp_media_${Date.now()}.${ext}`);
+                const writeStream = fs.createWriteStream(tempPath);
+                
+                await pipeline(mediaStream, writeStream);
+                
+                const caption = mediaInfo.caption || '';
+                const messageContent = {
+                    [mediaType]: { url: tempPath },
+                    ...(mediaType !== 'audio' && mediaType !== 'sticker' ? { 
+                        caption: `${notification}\n${caption}`.trim() 
+                    } : {}),
+                    mentions: [participant],
+                    ...createContext(participant, {
+                        title: "Anti-Delete Protection",
+                        body: "Deleted media recovered",
+                        thumbnail: "https://files.catbox.moe/sd49da.jpg"
+                    }),
+                    ...(mediaType === 'document' ? {
+                        mimetype: mediaInfo.mimetype,
+                        fileName: mediaInfo.fileName || `file.${ext}`
+                    } : {}),
+                    ...(mediaType === 'audio' ? {
+                        ptt: mediaInfo.ptt,
+                        mimetype: 'audio/ogg; codecs=opus'
+                    } : {})
+                };
+                
+                // Clean up the temp file after sending
+                setTimeout(() => {
+                    if (fs.existsSync(tempPath)) {
+                        fs.unlink(tempPath, (err) => {
+                            if (err) logger.error('Error deleting temp file:', err);
+                        });
+                    }
+                }, 30000); // 30 seconds delay for cleanup
+                
+                return messageContent;
+                
+            } catch (mediaError) {
+                logger.error(`Failed to process ${mediaType}:`, mediaError);
+                return null;
+            }
+        };
+
+        // Function to send messages with error handling
+        const sendMessage = async (jid, content) => {
+            try {
+                await adams.sendMessage(jid, content);
+                return true;
+            } catch (sendError) {
+                logger.error('Failed to send message:', sendError);
+                return false;
+            }
+        };
+
+        adams.ev.on("messages.upsert", async ({ messages }) => {
+            try {
+                const ms = messages[0];
                 if (!ms?.message) return;
 
                 const messageKey = ms.key;
@@ -38,17 +129,13 @@ module.exports = {
                     return;
                 }
 
-                // Skip if not a group message (unless configured otherwise)
-                if (!remoteJid.endsWith('@g.us') && !config.ANTIDELETE_PM) {
-                    return;
-                }
-
+                // Store the message for potential deletion tracking
                 if (!store.chats[remoteJid]) {
                     store.chats[remoteJid] = [];
                 }
-
                 store.chats[remoteJid].push(ms);
 
+                // Check if this is a deletion notification
                 if (ms.message?.protocolMessage?.type === 0) {
                     const protocolMsg = ms.message.protocolMessage;
                     if (!protocolMsg?.key?.id) return;
@@ -67,8 +154,9 @@ module.exports = {
                         return;
                     }
 
-                    const notification = `♻️ *BWM-XMD Anti-Delete Alert* ♻️\n\n` +
-                                       `🛑 Message deleted by @${participant.split("@")[0]}`;
+                    const notification = `♻️ *Anti-Delete Alert* ♻️\n\n` +
+                                     `🛑 Message deleted by @${participant.split("@")[0]}\n` +
+                                     `💬 In: ${remoteJid.endsWith('@g.us') ? 'Group' : 'Private Chat'}`;
 
                     const context = createContext(participant, {
                         title: "Anti-Delete Protection",
@@ -76,23 +164,14 @@ module.exports = {
                         thumbnail: "https://files.catbox.moe/sd49da.jpg"
                     });
 
-                    const sendMessage = async (jid, content) => {
-                        try {
-                            await adams.sendMessage(jid, {
-                                ...content,
-                                ...context
-                            });
-                        } catch (sendError) {
-                            logger.error('Failed to send message:', sendError);
-                        }
-                    };
-
                     try {
                         let messageContent = { 
                             text: notification, 
-                            mentions: [participant] 
+                            mentions: [participant],
+                            ...context
                         };
 
+                        // Handle text messages
                         if (deletedMessage.message?.conversation) {
                             messageContent.text += `\n\n📝 *Content:* ${deletedMessage.message.conversation}`;
                         } 
@@ -100,106 +179,52 @@ module.exports = {
                             messageContent.text += `\n\n📝 *Content:* ${deletedMessage.message.extendedTextMessage.text}`;
                         } 
                         else {
-                            let mediaType, mediaInfo;
-                            
-                            if (deletedMessage.message?.imageMessage) {
-                                mediaType = 'image';
-                                mediaInfo = deletedMessage.message.imageMessage;
-                            } else if (deletedMessage.message?.videoMessage) {
-                                mediaType = 'video';
-                                mediaInfo = deletedMessage.message.videoMessage;
-                            } else if (deletedMessage.message?.audioMessage) {
-                                mediaType = 'audio';
-                                mediaInfo = deletedMessage.message.audioMessage;
-                            } else if (deletedMessage.message?.stickerMessage) {
-                                mediaType = 'sticker';
-                                mediaInfo = deletedMessage.message.stickerMessage;
-                            } else if (deletedMessage.message?.documentMessage) {
-                                mediaType = 'document';
-                                mediaInfo = deletedMessage.message.documentMessage;
-                            }
-
-                            if (mediaType && mediaInfo) {
-                                try {
-                                    const mediaStream = await downloadMediaMessage(deletedMessage, { logger });
-                                    
-                                    let ext;
-                                    switch (mediaType) {
-                                        case 'image': ext = 'jpg'; break;
-                                        case 'video': ext = 'mp4'; break;
-                                        case 'audio': ext = 'ogg'; break;
-                                        case 'sticker': ext = 'webp'; break;
-                                        case 'document': 
-                                            ext = mediaInfo.fileName?.split('.').pop() || 'bin';
-                                            break;
-                                        default: ext = 'bin';
-                                    }
-                                    
-                                    const tempPath = path.join(__dirname, `temp_media.${ext}`);
-                                    const writeStream = fs.createWriteStream(tempPath);
-                                    
-                                    await pipeline(mediaStream, writeStream);
-                                    
-                                    const caption = mediaInfo.caption || '';
-                                    messageContent = {
-                                        [mediaType]: { url: tempPath },
-                                        ...(mediaType !== 'audio' && mediaType !== 'sticker' ? { 
-                                            caption: `${notification}\n${caption}`.trim() 
-                                        } : {}),
-                                        mentions: [participant],
-                                        ...context,
-                                        ...(mediaType === 'document' ? {
-                                            mimetype: mediaInfo.mimetype,
-                                            fileName: mediaInfo.fileName
-                                        } : {}),
-                                        ...(mediaType === 'audio' ? {
-                                            ptt: mediaInfo.ptt,
-                                            mimetype: 'audio/ogg; codecs=opus'
-                                        } : {})
-                                    };
-                                    
-                                    if (config.ANTIDELETE1 === "yes") {
-                                        await sendMessage(botOwnerJid, messageContent);
-                                    }
-
-                                    if (config.ANTIDELETE2 === "yes") {
-                                        await sendMessage(remoteJid, messageContent);
-                                    }
-                                    
-                                    fs.unlinkSync(tempPath);
-                                    return;
-                                    
-                                } catch (mediaError) {
-                                    logger.error(`Failed to process ${mediaType}:`, mediaError);
-                                    throw new Error(`Failed to process ${mediaType}`);
+                            // Handle media messages
+                            const mediaContent = await processMediaMessage(deletedMessage, participant, notification);
+                            if (mediaContent) {
+                                // ANTIDELETE1: Send to chat where deletion occurred
+                                if (config.ANTIDELETE1 === "yes") {
+                                    await sendMessage(remoteJid, mediaContent);
                                 }
+                                
+                                // ANTIDELETE2: Send to bot owner
+                                if (config.ANTIDELETE2 === "yes") {
+                                    // Add context for owner with more info
+                                    const ownerContent = {
+                                        ...mediaContent,
+                                        text: `${notification}\n\n💬 Chat: ${remoteJid}`,
+                                        contextInfo: undefined // Remove mentions for owner
+                                    };
+                                    await sendMessage(botOwnerJid, ownerContent);
+                                }
+                                return;
                             }
                         }
 
+                        // For text messages
+                        // ANTIDELETE1: Send to chat where deletion occurred
                         if (config.ANTIDELETE1 === "yes") {
-                            await sendMessage(botOwnerJid, messageContent);
-                        }
-
-                        if (config.ANTIDELETE2 === "yes") {
                             await sendMessage(remoteJid, messageContent);
+                        }
+                        
+                        // ANTIDELETE2: Send to bot owner
+                        if (config.ANTIDELETE2 === "yes") {
+                            const ownerContent = {
+                                text: `${notification}\n\n📝 *Content:* ${messageContent.text.split('*Content:*')[1] || 'Unknown'}\n\n💬 Chat: ${remoteJid}`,
+                                ...context,
+                                mentions: undefined // Remove mentions for owner
+                            };
+                            await sendMessage(botOwnerJid, ownerContent);
                         }
 
                     } catch (error) {
                         logger.error('Error handling deleted message:', error);
-                        try {
-                            const fallbackContent = {
-                                text: `⚠️ A message was deleted but couldn't be recovered`,
-                                mentions: participant ? [participant] : [],
-                                ...context
-                            };
-                            if (config.ANTIDELETE1 === "yes") {
-                                await adams.sendMessage(botOwnerJid, fallbackContent);
-                            }
-                            if (config.ANTIDELETE2 === "yes") {
-                                await adams.sendMessage(remoteJid, fallbackContent);
-                            }
-                        } catch (err) {
-                            logger.error('Fallback message failed:', err);
+                        const fallbackContent = {
+                            text: `⚠️ A message was deleted but couldn't be recovered\n\n💬 Chat: ${remoteJid}`,
+                            ...context
+                        };
+                        if (config.ANTIDELETE2 === "yes") {
+                            await sendMessage(botOwnerJid, fallbackContent);
                         }
                     }
                 }
