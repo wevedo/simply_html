@@ -18,7 +18,7 @@ module.exports = {
         let store = { chats: {} };
 
         // Function to process and send media messages
-        const processMediaMessage = async (deletedMessage, participant, notification) => {
+        const processMediaMessage = async (deletedMessage, participant, notification, remoteJid) => {
             let mediaType, mediaInfo;
             
             if (deletedMessage.message?.imageMessage) {
@@ -105,8 +105,69 @@ module.exports = {
                 await adams.sendMessage(jid, content);
                 return true;
             } catch (sendError) {
-                logger.error('Failed to send message:', sendError);
+                logger.error('Failed to send message to', jid, ':', sendError);
                 return false;
+            }
+        };
+
+        // Function to notify owner about deleted message
+        const notifyOwner = async (deletedMessage, participant, remoteJid) => {
+            try {
+                const isGroup = remoteJid.endsWith('@g.us');
+                const notification = `♻️ *Anti-Delete Alert* ♻️\n\n` +
+                                   `🛑 Message deleted by @${participant.split("@")[0]}\n` +
+                                   `💬 In: ${isGroup ? 'Group' : 'Private Chat'}\n` +
+                                   `📌 Chat: ${remoteJid}`;
+
+                let ownerContent;
+                
+                // Handle text messages
+                if (deletedMessage.message?.conversation) {
+                    ownerContent = { 
+                        text: `${notification}\n\n📝 *Content:* ${deletedMessage.message.conversation}`,
+                        ...createContext(participant, {
+                            title: "Anti-Delete Protection",
+                            body: "Deleted message recovered",
+                            thumbnail: "https://files.catbox.moe/sd49da.jpg"
+                        })
+                    };
+                } 
+                else if (deletedMessage.message?.extendedTextMessage?.text) {
+                    ownerContent = { 
+                        text: `${notification}\n\n📝 *Content:* ${deletedMessage.message.extendedTextMessage.text}`,
+                        ...createContext(participant, {
+                            title: "Anti-Delete Protection",
+                            body: "Deleted message recovered",
+                            thumbnail: "https://files.catbox.moe/sd49da.jpg"
+                        })
+                    };
+                } 
+                else {
+                    // Handle media messages
+                    const mediaContent = await processMediaMessage(deletedMessage, participant, notification, remoteJid);
+                    if (mediaContent) {
+                        ownerContent = {
+                            ...mediaContent,
+                            text: notification,
+                            mentions: undefined // Remove mentions for owner
+                        };
+                    } else {
+                        ownerContent = {
+                            text: `${notification}\n\n⚠️ Could not recover media content`,
+                            ...createContext(participant, {
+                                title: "Anti-Delete Protection",
+                                body: "Deleted media detected but not recovered",
+                                thumbnail: "https://files.catbox.moe/sd49da.jpg"
+                            })
+                        };
+                    }
+                }
+
+                // Send to bot owner
+                await sendMessage(botOwnerJid, ownerContent);
+                
+            } catch (error) {
+                logger.error('Error notifying owner:', error);
             }
         };
 
@@ -155,8 +216,7 @@ module.exports = {
                     }
 
                     const notification = `♻️ *Anti-Delete Alert* ♻️\n\n` +
-                                     `🛑 Message deleted by @${participant.split("@")[0]}\n` +
-                                     `💬 In: ${remoteJid.endsWith('@g.us') ? 'Group' : 'Private Chat'}`;
+                                     `🛑 Message deleted by @${participant.split("@")[0]}`;
 
                     const context = createContext(participant, {
                         title: "Anti-Delete Protection",
@@ -165,56 +225,43 @@ module.exports = {
                     });
 
                     try {
-                        let messageContent = { 
-                            text: notification, 
-                            mentions: [participant],
-                            ...context
-                        };
+                        // ANTIDELETE1: Always send to owner (regardless of config)
+                        await notifyOwner(deletedMessage, participant, remoteJid);
 
-                        // Handle text messages
-                        if (deletedMessage.message?.conversation) {
-                            messageContent.text += `\n\n📝 *Content:* ${deletedMessage.message.conversation}`;
-                        } 
-                        else if (deletedMessage.message?.extendedTextMessage?.text) {
-                            messageContent.text += `\n\n📝 *Content:* ${deletedMessage.message.extendedTextMessage.text}`;
-                        } 
-                        else {
-                            // Handle media messages
-                            const mediaContent = await processMediaMessage(deletedMessage, participant, notification);
-                            if (mediaContent) {
-                                // ANTIDELETE1: Send to chat where deletion occurred
-                                if (config.ANTIDELETE1 === "yes") {
-                                    await sendMessage(remoteJid, mediaContent);
-                                }
-                                
-                                // ANTIDELETE2: Send to bot owner
-                                if (config.ANTIDELETE2 === "yes") {
-                                    // Add context for owner with more info
-                                    const ownerContent = {
-                                        ...mediaContent,
-                                        text: `${notification}\n\n💬 Chat: ${remoteJid}`,
-                                        contextInfo: undefined // Remove mentions for owner
-                                    };
-                                    await sendMessage(botOwnerJid, ownerContent);
-                                }
-                                return;
-                            }
-                        }
-
-                        // For text messages
-                        // ANTIDELETE1: Send to chat where deletion occurred
-                        if (config.ANTIDELETE1 === "yes") {
-                            await sendMessage(remoteJid, messageContent);
-                        }
-                        
-                        // ANTIDELETE2: Send to bot owner
+                        // ANTIDELETE2: Send to original chat if enabled
                         if (config.ANTIDELETE2 === "yes") {
-                            const ownerContent = {
-                                text: `${notification}\n\n📝 *Content:* ${messageContent.text.split('*Content:*')[1] || 'Unknown'}\n\n💬 Chat: ${remoteJid}`,
-                                ...context,
-                                mentions: undefined // Remove mentions for owner
-                            };
-                            await sendMessage(botOwnerJid, ownerContent);
+                            let messageContent;
+                            
+                            // Handle text messages
+                            if (deletedMessage.message?.conversation) {
+                                messageContent = { 
+                                    text: `${notification}\n\n📝 *Content:* ${deletedMessage.message.conversation}`,
+                                    mentions: [participant],
+                                    ...context
+                                };
+                            } 
+                            else if (deletedMessage.message?.extendedTextMessage?.text) {
+                                messageContent = { 
+                                    text: `${notification}\n\n📝 *Content:* ${deletedMessage.message.extendedTextMessage.text}`,
+                                    mentions: [participant],
+                                    ...context
+                                };
+                            } 
+                            else {
+                                // Handle media messages
+                                const mediaContent = await processMediaMessage(deletedMessage, participant, notification, remoteJid);
+                                if (mediaContent) {
+                                    messageContent = mediaContent;
+                                } else {
+                                    messageContent = {
+                                        text: `${notification}\n\n⚠️ Could not recover media content`,
+                                        mentions: [participant],
+                                        ...context
+                                    };
+                                }
+                            }
+
+                            await sendMessage(remoteJid, messageContent);
                         }
 
                     } catch (error) {
@@ -223,9 +270,7 @@ module.exports = {
                             text: `⚠️ A message was deleted but couldn't be recovered\n\n💬 Chat: ${remoteJid}`,
                             ...context
                         };
-                        if (config.ANTIDELETE2 === "yes") {
-                            await sendMessage(botOwnerJid, fallbackContent);
-                        }
+                        await sendMessage(botOwnerJid, fallbackContent);
                     }
                 }
             } catch (outerError) {
