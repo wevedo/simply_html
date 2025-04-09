@@ -45,7 +45,7 @@ logger.level = "silent";
 app.use(express.static("public"));
 app.get("/", (req, res) => res.sendFile(__dirname + "/index.html"));
 app.listen(PORT, () => console.log(`Bwm xmd is starting with a speed of ${PORT}ms🚀`));
-
+let store = { chats: {} };
 
 //============================================================================//
 
@@ -243,7 +243,7 @@ fs.watch(path.join(__dirname, 'bwmxmd'), (eventType, filename) => {
 
         const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
         const botOwnerJid = `${conf.OWNER_NUMBER}@s.whatsapp.net`;
-        let store = { chats: {} };
+        
 
         // Improved media processing function
         const processMediaMessage = async (deletedMessage) => {
