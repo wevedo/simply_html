@@ -1,4 +1,5 @@
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const { createContext } = require('../utils/helper');
 const fs = require('fs');
 const path = require('path');
 const stream = require('stream');
@@ -12,76 +13,113 @@ module.exports = {
             return;
         }
 
+        const botJid = `${adams.user?.id.split(':')[0]}@s.whatsapp.net`;
+        const botOwnerJid = `${config.OWNER_NUMBER}@s.whatsapp.net`;
         let store = { chats: {} };
 
-        const processMedia = async (msg) => {
-            let type, content;
-            if (msg.message?.imageMessage) {
-                type = 'image';
-                content = msg.message.imageMessage;
-            } else if (msg.message?.videoMessage) {
-                type = 'video';
-                content = msg.message.videoMessage;
-            } else if (msg.message?.audioMessage) {
-                type = 'audio';
-                content = msg.message.audioMessage;
-            } else if (msg.message?.stickerMessage) {
-                type = 'sticker';
-                content = msg.message.stickerMessage;
-            } else if (msg.message?.documentMessage) {
-                type = 'document';
-                content = msg.message.documentMessage;
+        // Improved media processing function
+        const processMediaMessage = async (deletedMessage) => {
+            let mediaType, mediaInfo;
+            
+            const mediaTypes = {
+                imageMessage: 'image',
+                videoMessage: 'video',
+                audioMessage: 'audio',
+                stickerMessage: 'sticker',
+                documentMessage: 'document'
+            };
+
+            for (const [key, type] of Object.entries(mediaTypes)) {
+                if (deletedMessage.message?.[key]) {
+                    mediaType = type;
+                    mediaInfo = deletedMessage.message[key];
+                    break;
+                }
             }
 
-            if (!type) return null;
+            if (!mediaType || !mediaInfo) return null;
 
             try {
-                const stream = await downloadMediaMessage(msg, { logger });
-                const ext = type === 'document' ? 
-                    (content.fileName?.split('.').pop() || 'bin') :
-                    { image: 'jpg', video: 'mp4', audio: 'ogg', sticker: 'webp' }[type];
+                const mediaStream = await downloadMediaMessage(deletedMessage, { logger });
                 
-                const filePath = path.join(__dirname, `temp_${Date.now()}.${ext}`);
-                await pipeline(stream, fs.createWriteStream(filePath));
+                const extensions = {
+                    image: 'jpg',
+                    video: 'mp4',
+                    audio: mediaInfo.mimetype?.includes('mpeg') ? 'mp3' : 'ogg',
+                    sticker: 'webp',
+                    document: mediaInfo.fileName?.split('.').pop() || 'bin'
+                };
+                
+                const tempPath = path.join(__dirname, `temp_media_${Date.now()}.${extensions[mediaType]}`);
+                await pipeline(mediaStream, fs.createWriteStream(tempPath));
                 
                 return {
-                    type,
-                    path: filePath,
-                    caption: content.caption || '',
-                    mimetype: content.mimetype,
-                    fileName: content.fileName,
-                    ptt: content.ptt
+                    path: tempPath,
+                    type: mediaType,
+                    caption: mediaInfo.caption || '',
+                    mimetype: mediaInfo.mimetype,
+                    fileName: mediaInfo.fileName || `${mediaType}_${Date.now()}.${extensions[mediaType]}`,
+                    ptt: mediaInfo.ptt
                 };
             } catch (error) {
-                logger.error('Media download failed:', error);
+                logger.error(`Media processing failed:`, error);
                 return null;
+            }
+        };
+
+        // Enhanced message sending function with retry logic
+        const sendTo = async (jid, content) => {
+            const maxRetries = 3;
+            let attempts = 0;
+            
+            while (attempts < maxRetries) {
+                try {
+                    await adams.sendMessage(jid, content);
+                    return true;
+                } catch (error) {
+                    attempts++;
+                    if (attempts === maxRetries) {
+                        logger.error(`Failed to send to ${jid} after ${maxRetries} attempts:`, error);
+                        return false;
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+                }
             }
         };
 
         adams.ev.on("messages.upsert", async ({ messages }) => {
             try {
-                const msg = messages[0];
-                if (!msg?.message) return;
+                const ms = messages[0];
+                if (!ms?.message) return;
 
-                const { key } = msg;
+                const { key } = ms;
                 if (!key?.remoteJid) return;
+
+                const sender = key.participant || key.remoteJid;
+                if (sender === botJid || sender === botOwnerJid || key.fromMe) return;
 
                 // Store message
                 if (!store.chats[key.remoteJid]) store.chats[key.remoteJid] = [];
-                store.chats[key.remoteJid].push(msg);
+                store.chats[key.remoteJid].push(ms);
 
                 // Check for deletion
-                if (msg.message?.protocolMessage?.type === 0) {
-                    const deletedId = msg.message.protocolMessage.key.id;
+                if (ms.message?.protocolMessage?.type === 0) {
+                    const deletedId = ms.message.protocolMessage.key.id;
                     const deletedMsg = store.chats[key.remoteJid].find(m => m.key.id === deletedId);
                     if (!deletedMsg?.message) return;
 
                     const deleter = deletedMsg.key.participant || deletedMsg.key.remoteJid;
-                    const chatJid = key.remoteJid;
+                    if (deleter === botJid || deleter === botOwnerJid) return;
+
+                    const context = createContext(deleter, {
+                        title: "Anti-Delete Protection",
+                        body: "Deleted message recovered",
+                        thumbnail: "https://files.catbox.moe/sd49da.jpg"
+                    });
 
                     const baseAlert = `♻️ *Anti-Delete Alert* ♻️\n\n` +
-                                    `🛑 Deleted by: ${deleter}\n` +
-                                    `💬 In chat: ${chatJid}`;
+                                    `🛑 Deleted by @${deleter.split('@')[0]}\n` +
+                                    `💬 In: ${key.remoteJid.includes('@g.us') ? 'Group' : 'DM'}`;
 
                     try {
                         // Text message handling
@@ -89,28 +127,70 @@ module.exports = {
                             const text = deletedMsg.message.conversation || 
                                        deletedMsg.message.extendedTextMessage.text;
                             
-                            await adams.sendMessage(config.OWNER_NUMBER + "@s.whatsapp.net", {
-                                text: `${baseAlert}\n\n📝 Content:\n${text}`
-                            });
+                            const messageContent = {
+                                text: `${baseAlert}\n\n📝 *Content:* ${text}`,
+                                mentions: [deleter],
+                                ...context
+                            };
+
+                            // Send to original chat if enabled
+                            if (config.ANTIDELETE1 === "yes") {
+                                await sendTo(key.remoteJid, messageContent);
+                            }
+
+                            // Send to owner if enabled
+                            if (config.ANTIDELETE2 === "yes") {
+                                const ownerContent = {
+                                    text: `${baseAlert}\n\n📝 *Content:* ${text}\n\n👤 *Sender:* ${deleter}`,
+                                    ...context
+                                };
+                                await sendTo(botOwnerJid, ownerContent);
+                            }
                         } 
                         // Media message handling
                         else {
-                            const media = await processMedia(deletedMsg);
+                            const media = await processMediaMessage(deletedMsg);
                             if (media) {
-                                const mediaAlert = `${baseAlert}${media.caption ? `\n\n📝 Caption: ${media.caption}` : ''}`;
+                                const mediaAlert = `${baseAlert}${media.caption ? `\n\n📝 *Caption:* ${media.caption}` : ''}`;
 
-                                await adams.sendMessage(config.OWNER_NUMBER + "@s.whatsapp.net", {
-                                    [media.type]: { url: media.path },
-                                    caption: mediaAlert,
-                                    ...(media.type === 'document' ? {
-                                        mimetype: media.mimetype,
-                                        fileName: media.fileName
-                                    } : {}),
-                                    ...(media.type === 'audio' ? {
-                                        ptt: media.ptt,
-                                        mimetype: 'audio/ogg; codecs=opus'
-                                    } : {})
-                                });
+                                // Prepare media message for original chat
+                                if (config.ANTIDELETE1 === "yes") {
+                                    const chatMediaMessage = {
+                                        [media.type]: { url: media.path },
+                                        ...(media.type !== 'audio' && media.type !== 'sticker' ? { 
+                                            caption: mediaAlert,
+                                            mentions: [deleter]
+                                        } : {}),
+                                        ...context,
+                                        ...(media.type === 'document' ? {
+                                            mimetype: media.mimetype,
+                                            fileName: media.fileName
+                                        } : {}),
+                                        ...(media.type === 'audio' ? {
+                                            ptt: media.ptt,
+                                            mimetype: media.mimetype
+                                        } : {})
+                                    };
+                                    await sendTo(key.remoteJid, chatMediaMessage);
+                                }
+
+                                // Prepare media message for owner
+                                if (config.ANTIDELETE2 === "yes") {
+                                    const ownerMediaMessage = {
+                                        [media.type]: { url: media.path },
+                                        caption: `${baseAlert}\n\n👤 *Sender:* ${deleter}${media.caption ? `\n\n📝 *Caption:* ${media.caption}` : ''}`,
+                                        ...context,
+                                        ...(media.type === 'document' ? {
+                                            mimetype: media.mimetype,
+                                            fileName: media.fileName
+                                        } : {}),
+                                        ...(media.type === 'audio' ? {
+                                            ptt: media.ptt,
+                                            mimetype: media.mimetype
+                                        } : {})
+                                    };
+                                    await sendTo(botOwnerJid, ownerMediaMessage);
+                                }
 
                                 // Cleanup temp file
                                 setTimeout(() => {
@@ -123,10 +203,13 @@ module.exports = {
                             }
                         }
                     } catch (error) {
-                        logger.error('Failed to send to owner:', error);
-                        await adams.sendMessage(config.OWNER_NUMBER + "@s.whatsapp.net", {
-                            text: `⚠️ Failed to process deleted message from ${chatJid}\nError: ${error.message}`
-                        });
+                        logger.error('Anti-delete failed:', error);
+                        if (config.ANTIDELETE2 === "yes") {
+                            await sendTo(botOwnerJid, {
+                                text: `⚠️ Failed to recover deleted message in ${key.remoteJid}\n\nError: ${error.message}`,
+                                ...context
+                            });
+                        }
                     }
                 }
             } catch (error) {
