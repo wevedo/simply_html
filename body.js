@@ -364,8 +364,7 @@ async function main() {
                 logger.error('Anti-delete system error:', error);
             }
         });
-    }
-};                     
+                         
 // Listener Manager Class
 class ListenerManager {
     constructor() {
